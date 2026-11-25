@@ -70,6 +70,7 @@ async function paintWall(ctx, s, W, wh, kind){
     fill(grad(ctx, 0, wh, '#fff3d6', '#ffe9bd'));
     fill(tile(ctx, s, 26, 26, t => dot(t, 10, 10, 2.8, '#fff')));
   }
+  else if (typeof decoDef === 'function' && decoDef('wall', kind)) decoPaint(ctx, s, 0, W, wh, decoDef('wall', kind));   // 新的壁紙（js/furn3.js）
   else fill('#ffe3ef');
 }
 function paintFloor(ctx, s, W, H, wh, kind){
@@ -86,6 +87,7 @@ function paintFloor(ctx, s, W, H, wh, kind){
     t.fillStyle = '#e6defc'; t.fillRect(0, 0, 48, 30);
     t.fillStyle = '#fff'; t.beginPath(); t.ellipse(20, 14, 13.6, 7.4, 0, 0, 7); t.fill();
   }, 0, wh));
+  else if (typeof decoDef === 'function' && decoDef('floor', kind)) decoPaint(ctx, s, wh, W, H - wh, decoDef('floor', kind));   // 新的地板（js/furn3.js）
   else fill('#f3cb9a');
   // 牆腳下面的淡影子（.floor::before）
   const g = ctx.createLinearGradient(0, wh, 0, wh + (H - wh) * .4);

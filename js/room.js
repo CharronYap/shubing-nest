@@ -193,7 +193,7 @@ $('#items').addEventListener('click',e=>{
     const f=FURN[id];const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
     if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();}
   else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast((typeof GIFT_WALL!=='undefined'&&GIFT_WALL[t.dataset.wall])||'娃娃機夾得到，小店也買得到');return;}cur().wall=t.dataset.wall;paintRoom();renderTray();}
-  else if(t.dataset.floor){if(!FLOOR_OWN[t.dataset.floor]){toast('湊齊雲朵系列送你');return;}cur().floor=t.dataset.floor;paintRoom();renderTray();}
+  else if(t.dataset.floor){if(!FLOOR_OWN[t.dataset.floor]){toast((typeof GIFT_FLOOR!=='undefined'&&GIFT_FLOOR[t.dataset.floor])||'火腿的小店買得到');return;}cur().floor=t.dataset.floor;paintRoom();renderTray();}
 });
 document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;renderTray();}));
 /* 收起來：縮成房間右下角的圓按鈕，房間一直延伸到底。收著還是打開記在這台裝置（個人設定，不上雲端） */

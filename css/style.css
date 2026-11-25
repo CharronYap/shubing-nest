@@ -788,3 +788,14 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .room[data-rid="attic"] .win::after{content:"";position:absolute;left:50%;top:50%;width:92%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:5px solid #c98f56;box-shadow:0 0 0 2px #a8714f;pointer-events:none}
 .shoot{position:absolute;width:46px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff);transform:rotate(24deg);opacity:0;animation:shoot 1.2s ease-out;pointer-events:none}
 @keyframes shoot{0%{opacity:0;transform:translate(-30px,-14px) rotate(24deg)}20%{opacity:1}100%{opacity:0;transform:translate(70px,32px) rotate(24deg)}}
+/* 魚缸：魚會游、泡泡往上；貓咪老師盯著看 */
+.fz{transform-box:fill-box;transform-origin:center}
+.fz1{animation:fz1 5s ease-in-out infinite}
+.fz2{animation:fz2 6.4s ease-in-out infinite}
+.fzb{animation:fzb 2.6s ease-in infinite}
+@keyframes fz1{0%,100%{transform:translateX(-9px)}48%{transform:translateX(16px)}50%{transform:translateX(16px) scaleX(-1)}98%{transform:translateX(-9px) scaleX(-1)}}
+@keyframes fz2{0%,100%{transform:translateX(8px)}48%{transform:translateX(-22px)}50%{transform:translateX(-22px) scaleX(-1)}98%{transform:translateX(8px) scaleX(-1)}}
+@keyframes fzb{0%{transform:translateY(8px);opacity:0}30%{opacity:1}100%{transform:translateY(-10px);opacity:0}}
+.doll.sp-watch .body{animation:spWatch 5s ease-in-out infinite}
+@keyframes spWatch{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@media (prefers-reduced-motion:reduce){.fz1,.fz2,.fzb,.doll.sp-watch .body{animation:none!important}}

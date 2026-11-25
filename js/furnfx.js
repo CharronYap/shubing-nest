@@ -8,6 +8,8 @@ function furnSpecial(){
     if (it && it.sit){ const f = items.find(o => o.uid === it.sit); if (f && FURN[f.id] && FURN[f.id].own === it.id) cls = 'sp-' + f.id; }
     [...el.classList].forEach(c => { if (c.startsWith('sp-') && c !== cls) el.classList.remove(c); });
     if (cls) el.classList.add(cls);
+    // 房間裡有魚缸：貓咪老師盯著看（坐在自己的點心櫃前面時照舊守點心）
+    el.classList.toggle('sp-watch', !cls && !!it && it.id === 'nyanko' && items.some(o => o.kind === 'furn' && o.id === 'fishtank'));
   });
 }
 {

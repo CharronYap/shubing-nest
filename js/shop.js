@@ -25,7 +25,7 @@ function shopStock(){
   const pool = [
     ...Object.keys(FURN).filter(id => !FURN_OWN[id] && !FURN[id].season && !FURN[id].gift && !SHOP_NO.furn.includes(id)).map(id => 'f:' + id),
     ...WALLS.filter(id => !WALL_OWN[id] && !SHOP_NO.wall.includes(id) && !(typeof GIFT_WALL !== 'undefined' && GIFT_WALL[id])).map(id => 'w:' + id),
-    ...FLOORS.filter(id => !FLOOR_OWN[id] && !SHOP_NO.floor.includes(id)).map(id => 'l:' + id),
+    ...FLOORS.filter(id => !FLOOR_OWN[id] && !SHOP_NO.floor.includes(id) && !(typeof GIFT_FLOOR !== 'undefined' && GIFT_FLOOR[id])).map(id => 'l:' + id),
   ];
   const rnd = mulberry32(hashStr('shop' + t) ^ (S.seed || 1));
   for (let i = pool.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
