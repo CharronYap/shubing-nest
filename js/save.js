@@ -1,5 +1,8 @@
-/* 存檔：只存在這台裝置的瀏覽器（localStorage） */
-const SAVE_KEY = 'shubingNest.v1';
+/* 存檔：放在這台裝置的瀏覽器（localStorage）。登入雲端帳號後，每個帳號另外一份，再由 js/account.js 同步到雲端 */
+const SAVE_KEY = 'shubingNest.v1';          // 沒登入（訪客）的存檔
+const ACCT_KEY = 'shubingNest.acct';        // 這台裝置現在用哪個帳號（uid）；沒有 = 訪客
+function acctUid(){try{return localStorage.getItem(ACCT_KEY)||'';}catch(e){return '';}}
+function saveKeyFor(u){return u?SAVE_KEY+'.u.'+u:SAVE_KEY;}
 let uid = 1;
 function mk(wall,floor,list){
   const arr=[];
@@ -29,16 +32,22 @@ function newGame(){
 }
 function loadGame(){
   try{
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(saveKeyFor(acctUid()));
     if(raw){const s=JSON.parse(raw); if(s&&s.v===1&&s.home){uid=s.uid||1000;return s;}}
   }catch(e){}
   return newGame();
 }
 const S = loadGame();
 const home = S.home, DOLL_N = S.dollN, FURN_OWN = S.furnOwn, WALL_OWN = S.wallOwn, FLOOR_OWN = S.floorOwn;
-let saveT;
+let saveT, saveLock = false;
+// S.t：最後一次改動的時間。S.base：這份存檔上一次跟雲端對上的時間（js/account.js 用來判斷誰比較新）
+function writeLocal(){S.uid=uid;try{localStorage.setItem(saveKeyFor(acctUid()),JSON.stringify(S));}catch(e){}}
 function save(){
+  if(saveLock)return;
+  S.t = Date.now();
   clearTimeout(saveT);
-  saveT = setTimeout(()=>{S.uid=uid;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}},250);
+  saveT = setTimeout(()=>{writeLocal();if(window.onNestSave)window.onNestSave();},250);
 }
+// 換帳號或拿雲端的存檔來用之前：停掉還排著的存檔，免得舊的內容蓋回去
+function lockSave(){saveLock=true;clearTimeout(saveT);}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}

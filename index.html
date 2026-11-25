@@ -7,6 +7,7 @@
 <title>薯餅的小窩</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/cover.css">
+<link rel="stylesheet" href="css/account.css">
 <link rel="preload" href="fonts/gensen-rounded-heavy.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
@@ -71,9 +72,11 @@
         </div>
         <button class="cv-cb cv-mu mbtn" id="coverMusic" aria-label="關掉音樂" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.5l10-2.3v11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.9" fill="currentColor"/><circle cx="16.6" cy="15.4" r="2.9" fill="currentColor"/><path class="mx" d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
         <button class="cv-cb cv-cl" id="coverClaw" aria-label="去娃娃機"></button>
+        <button class="cv-acct" id="coverAcct" hidden></button>
       </div>
       <div class="toast" id="toast" role="status"></div>
       <div class="sheet" id="sheet" hidden></div>
+      <div class="acct" id="acct" hidden></div>
     </div></div>
 <script src="js/data.js"></script>
 <script src="js/save.js"></script>
@@ -82,5 +85,6 @@
 <script src="js/main.js"></script>
 <script src="js/music.js"></script>
 <script src="js/cover.js"></script>
+<script type="module" src="js/account.js"></script>
 </body>
 </html>

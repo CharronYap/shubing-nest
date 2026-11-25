@@ -1,6 +1,6 @@
 # 薯餅的小窩
 
-在網頁上布置娃娃房間、用娃娃機夾娃娃和家具，每天陪八隻娃娃做幾件小事。第一版只有自己的房間，還沒有朋友互訪和送禮。
+在網頁上布置娃娃房間、用娃娃機夾娃娃和家具，每天陪八隻娃娃做幾件小事。可以登入跟薯餅蛋蛋島同一個雲端帳號，換裝置接著玩。還沒有朋友互訪和送禮。
 
 ## 直接玩
 
@@ -27,6 +27,7 @@ python3 -m http.server 8765
 ## 第一版有什麼
 
 - **封面**：打開先看到封面，按中間的薯餅進房間，右上角的按鈕直接去娃娃機。
+- **雲端帳號**：封面左上角的「登入」。帳號跟薯餅蛋蛋島共用，好友也是同一份。沒登入也能玩，登入時會把這台的進度帶進帳號。設定和後台步驟在 `docs/CLOUD.md`。
 - **背景音樂**：按了封面的按鈕才開始放，音量放得比較小。封面左上角和房間上方的音符按鈕可以開關，關掉後這台裝置會記住。
 - **房間**：客廳、臥室、浴室三間。房間直接鋪滿畫面。娃娃可以拖來拖去，也能坐到沙發、床這些家具上。晚上七點到早上五點窗外會變成夜空，燈開著時房間跟白天一樣亮。
 - **開燈關燈**：窗戶左邊的牆上有電燈開關，每個房間各自記得開或關。關燈後房間變暗，有檯燈的話只剩檯燈亮著。
@@ -42,13 +43,20 @@ python3 -m http.server 8765
 index.html      頁面
 css/style.css   遊戲樣式
 css/cover.css   封面樣式
+css/account.css 帳號按鈕和登入視窗
 js/data.js      娃娃、家具、小事、規則數字
-js/save.js      存檔（瀏覽器的 localStorage）
+js/save.js      存檔（瀏覽器的 localStorage，訪客和每個帳號各一份）
 js/room.js      房間：擺放、拖曳、收納架
 js/claw.js      娃娃機
 js/main.js      換頁、幣、每天的小事
 js/cover.js     封面
 js/music.js     背景音樂和開關
+js/account.js   雲端帳號：登入、同步、好友碼
+js/cloud.js     Firebase 登入和讀寫（從蛋蛋島改來的）
+js/cloud-config.js  Firebase 專案設定
+firestore.rules Firestore 規則（蛋蛋島原本的＋小窩的 nestSaves）
+firebase.json   本機模擬器設定
+docs/CLOUD.md   雲端帳號說明和後台步驟
 audio/          背景音樂
 img/            八隻娃娃的圖（img/cover/ 是封面用的）
 fonts/          封面標題字型
@@ -58,7 +66,9 @@ fonts/          封面標題字型
 
 ## 存檔和重來
 
-進度存在各自的瀏覽器裡，不會同步到別的裝置。想從頭玩：瀏覽器開發者工具 → Application → Local Storage → 刪掉 `shubingNest.v1`，或在 Console 輸入：
+沒登入時，進度只存在這台裝置的瀏覽器（`shubingNest.v1`）。登入後存在雲端的 `nestSaves/{uid}`，這台裝置另外留一份 `shubingNest.v1.u.{uid}`，換裝置登入同一個帳號就能接著玩。
+
+訪客想從頭玩：瀏覽器開發者工具 → Application → Local Storage → 刪掉 `shubingNest.v1`，或在 Console 輸入：
 
 ```js
 localStorage.removeItem('shubingNest.v1'); location.reload();
@@ -66,7 +76,7 @@ localStorage.removeItem('shubingNest.v1'); location.reload();
 
 ## 還沒做的
 
-- 朋友互訪、送娃娃、信箱（打算之後接 Firebase）
+- 朋友互訪、送娃娃、信箱（帳號和好友碼已經有了，之後接在 Firebase 上）
 - 音效
 
 ## 音樂

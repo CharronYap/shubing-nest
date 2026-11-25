@@ -1,0 +1,61 @@
+/* 雲端帳號：封面左上角的帳號按鈕、登入／帳號視窗 */
+.cover .cv-acct{position:absolute;top:calc(19px + env(safe-area-inset-top,0px));left:74px;z-index:9;height:40px;max-width:calc(100% - 158px);
+  display:flex;align-items:center;gap:6px;padding:0 14px 0 10px;border:0;border-radius:20px;cursor:pointer;
+  font:900 15px/1 "GenSenRounded","PingFang TC","Noto Sans TC",sans-serif;color:var(--ink);
+  background:radial-gradient(circle at 40% 30%,#fff,#ffeaf3);box-shadow:0 4px 0 #f0b8cf,0 8px 10px rgba(80,30,60,.16)}
+.cover .cv-acct[hidden]{display:none}
+.cover .cv-acct:active{transform:translateY(2px);box-shadow:0 2px 0 #f0b8cf,0 4px 6px rgba(80,30,60,.14)}
+.cover .cv-acct svg{flex:none;width:20px;height:20px;color:var(--pink)}
+.cover .cv-acct span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cover .cv-acct .st{flex:none;width:9px;height:9px;border-radius:50%;background:#c9b3be}
+.cover .cv-acct .st.synced{background:#4cc38a}
+.cover .cv-acct .st.syncing{background:var(--gold)}
+.cover .cv-acct .st.offline,.cover .cv-acct .st.blocked{background:#ff8a5c}
+
+.acct{position:absolute;inset:0;z-index:800;display:grid;place-items:center;padding:20px 16px;background:rgba(80,30,55,.38);overflow-y:auto}
+.acct[hidden]{display:none}
+.ac-card{position:relative;width:100%;max-width:340px;padding:22px 20px 18px;border-radius:24px;background:#fff;color:var(--ink);
+  box-shadow:0 6px 0 #f0b8cf,0 18px 36px rgba(80,30,60,.28);animation:acIn .22s ease-out}
+.ac-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;background:#ffeef5;color:var(--soft)}
+.ac-x svg{width:14px;height:14px}
+.ac-hd{display:flex;align-items:center;gap:8px;margin:0 36px 10px 0;font-size:19px}
+.ac-hd svg{flex:none;width:26px;height:26px;color:var(--pink)}
+.ac-hd b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-p{margin:0 0 14px;font-size:14px;line-height:1.55;color:var(--soft)}
+.ac-note{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--soft)}
+.ac-form{display:grid;gap:10px}
+.ac-form label{display:grid;gap:5px;font-size:13px;font-weight:700;color:var(--soft)}
+.ac-form input,.ac-add input{width:100%;box-sizing:border-box;height:44px;padding:0 12px;border:2px solid #f6d2e2;border-radius:12px;background:#fff9fc;
+  font-weight:600;font-size:16px;line-height:1;font-family:inherit;color:var(--ink);outline:none}
+.ac-form input:focus,.ac-add input:focus{border-color:var(--pink)}
+.ac-err{min-height:1.2em;margin:0;font-size:13px;line-height:1.4;color:#d9435f}
+.ac-b{height:46px;padding:0 18px;border:0;border-radius:23px;cursor:pointer;font-weight:900;font-size:16px;line-height:1;font-family:inherit;color:#fff;
+  background:radial-gradient(circle at 40% 30%,#ff9cc8,var(--pink2));box-shadow:0 4px 0 #c4407f}
+.ac-b:active{transform:translateY(2px);box-shadow:0 2px 0 #c4407f}
+.ac-b:disabled{opacity:.6;cursor:default}
+.ac-b.ghost{color:var(--ink);background:#ffeef5;box-shadow:0 4px 0 #f0c3d6}
+.ac-b.sm{flex:none;height:44px;font-size:14px;padding:0 14px}
+.ac-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.ac-link{display:block;margin:14px auto 0;padding:6px 8px;border:0;background:none;cursor:pointer;font-weight:700;font-size:14px;line-height:1.3;font-family:inherit;color:var(--pink2);text-decoration:underline;text-underline-offset:3px}
+.ac-link.out{color:var(--soft)}
+.ac-st{display:flex;align-items:center;gap:7px;margin:0 0 14px;font-size:14px;color:var(--soft)}
+.ac-st::before{content:'';flex:none;width:9px;height:9px;border-radius:50%;background:#c9b3be}
+.ac-st.synced::before{background:#4cc38a}
+.ac-st.syncing::before{background:var(--gold)}
+.ac-st.offline::before,.ac-st.blocked::before{background:#ff8a5c}
+.ac-fr{padding-top:12px;border-top:2px dashed #f6d2e2}
+.ac-fr[hidden]{display:none}
+.ac-sub{margin-bottom:6px;font-size:15px;font-weight:900}
+.ac-code{margin:0 0 10px;font-size:14px;color:var(--soft)}
+.ac-code b{margin-left:4px;font-size:18px;letter-spacing:2px;color:var(--pink2);user-select:all}
+.ac-add{display:flex;gap:8px}
+.ac-add+.ac-err{margin-top:6px}
+.ac-list{list-style:none;margin:4px 0 0;padding:0;max-height:180px;overflow-y:auto}
+.ac-list li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid #fbe3ee;font-size:15px}
+.ac-list li:last-child{border-bottom:0}
+.ac-list .nm{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-list .cd{flex:none;font-size:12.5px;letter-spacing:1px;color:var(--soft)}
+.ac-list .ac-empty{display:block;color:var(--soft);font-size:13.5px;line-height:1.5}
+.acct button:focus-visible,.cover .cv-acct:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+@keyframes acIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ac-card{animation:none}}
