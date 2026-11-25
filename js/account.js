@@ -109,6 +109,11 @@ function mergeSave(remote, guest) {
   }
   ma.heard = ma.heard || {};
   for (const [id, b] of Object.entries(ga.heard || {})) ma.heard[id] = (ma.heard[id] || 0) | b;
+  // 看過的夢也合在一起；娃娃之間的感情取比較高的
+  ma.dreams = ma.dreams || {};
+  for (const [id, b] of Object.entries(ga.dreams || {})) ma.dreams[id] = (ma.dreams[id] || 0) | b;
+  ma.pals = ma.pals || {};
+  for (const [k, n] of Object.entries(ga.pals || {})) ma.pals[k] = Math.max(ma.pals[k] || 0, n || 0);
   // 衣櫃：擁有的東西合在一起；穿什麼用帳號裡的，帳號裡沒換過的娃娃才用這台的
   m.closet = [...new Set([...(m.closet || []), ...(guest.closet || [])])];
   m.look = Object.assign({}, guest.look || {}, m.look || {});

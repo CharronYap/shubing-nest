@@ -121,7 +121,7 @@ function say(it, text){
 }
 const lastLine = {};
 function onDollTap(it){
-  if (typeof awayWake === 'function' && awayWake(it)) return;   // 晚上睡著的先叫醒
+  if (typeof awayWake === 'function' && awayWake(it)) return;   // 晚上睡著的不吵醒，看牠的夢
   const ev = doable().find(e => e.d[0] === it.id) || doable().find(e => e.d.includes(it.id));
   if (ev && ev.tap){
     const r = doEvent(ev.id);

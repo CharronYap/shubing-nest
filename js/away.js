@@ -1,6 +1,6 @@
 /* 你不在的時候：隔超過 3 小時再打開，娃娃換了位置、地上多了小東西，進房間時有一張便條
    S.away = {date:'今天', picked:今天撿了幾個, drops:[{r:房間, k:'leaf'|'slipper'|'paper', x, y}], note:[一兩句] 或 null}
-   家具不會動。晚上 10 點到早上 7 點，薯餅和蛋黃哥在睡覺，點一下會醒來 */
+   家具不會動。晚上各自的時間睡到早上 7 點（data.js 的 SLEEP_FROM），點睡著的娃娃看牠做的夢，不會吵醒牠 */
 const AWAY_GAP = 3 * 3600e3;   // 隔多久算「不在」
 const AWAY_MAX = 3;            // 一次最多變幾件
 const PICK_MAX = 3;            // 一天最多撿幾個小東西拿幣
@@ -20,7 +20,6 @@ const AWAY_LINES = {
   snoopy:{mv:['史努比開著浴缸飛了一圈。'], drop:'史努比寫了小說的第一句，又撕掉。'},
   piggy:{mv:['火腿說你不在的時候，牠管得很好。', '火腿列了一張大家的壞話清單。']},
 };
-const WAKE = {sloth:'……我沒有睡，我在想事情', egg:'吵醒我了……再睡一下'};
 const DROP_SVG = {
   leaf:'<svg viewBox="0 0 40 30"><path d="M4 22C8 8 22 3 36 6c-2 13-14 21-30 18z" fill="#8fd47a" stroke="#4f9a3c" stroke-width="2.4" stroke-linejoin="round"/><path d="M8 22C16 16 24 12 32 9" fill="none" stroke="#4f9a3c" stroke-width="2" stroke-linecap="round"/><path d="M5 23l-3 4" stroke="#4f9a3c" stroke-width="2.4" stroke-linecap="round"/></svg>',
   slipper:'<svg viewBox="0 0 44 26"><path d="M4 16c0-6 5-10 12-10h12c7 0 13 4 13 9 0 4-3 7-8 7H10c-4 0-6-2-6-6z" fill="#ffb8d4" stroke="#d9649c" stroke-width="2.4" stroke-linejoin="round"/><path d="M17 7c4-3 11-3 15 1 2 3 1 7-1 9H17z" fill="#fff" stroke="#d9649c" stroke-width="2.2" stroke-linejoin="round"/><circle cx="24" cy="11" r="2.4" fill="#ff6fb0"/></svg>',
@@ -148,21 +147,48 @@ room.addEventListener('click', e => {
   renderDrops(); save();
 });
 
-/* 睡覺：晚上 10 點到早上 7 點，點一下醒來 */
-const sleepTime = () => { const h = new Date().getHours(); return h >= 22 || h < 7; };
-const woke = new Set();
+/* 睡覺：每隻從 SLEEP_FROM 的時間睡到早上 7 點。點一下跳一張夢卡，不叫醒、不扣東西
+   S.album.night = {date:'那一晚的日期', d:{娃娃:第幾個夢}}：同一晚再點，看到的是同一個夢
+   S.album.dreams = {娃娃:位元}：看過的夢，相簿那隻的頁面會列出來 */
+const asleep = d => { const h = new Date().getHours(), f = SLEEP_FROM[d]; return f !== undefined && (h >= f || h < WAKE_AT); };
+// 那一晚算哪一天：過了半夜、早上 7 點前，還算前一天晚上
+function nightKey(){ const t = new Date(); if (t.getHours() < WAKE_AT) t.setDate(t.getDate() - 1); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }
 function paintSleep(){
-  const night = sleepTime();
-  if (!night) woke.clear();
   room.querySelectorAll('.doll').forEach(el => {
     const it = items.find(i => String(i.uid) === el.dataset.u);
-    el.classList.toggle('sleep', night && !!it && !!WAKE[it.id] && !woke.has(it.id));
+    el.classList.toggle('sleep', !!it && asleep(it.id));
   });
 }
+function dreamOf(d){
+  const a = S.album, key = nightKey();
+  if (!a.night || a.night.date !== key) a.night = {date: key, d: {}};
+  let i = a.night.d[d];
+  if (i === undefined){
+    const n = DREAMS[d].length, bits = (a.dreams = a.dreams || {})[d] || 0;
+    const fresh = [...Array(n).keys()].filter(k => !(bits & (1 << k)));
+    i = a.night.d[d] = pick(fresh.length ? fresh : [...Array(n).keys()]);
+  }
+  a.dreams = a.dreams || {};
+  a.dreams[d] = (a.dreams[d] || 0) | (1 << i);
+  save();
+  return DREAMS[d][i];
+}
+const MOON = '<svg viewBox="0 0 24 24"><path d="M15.5 3.2A8.6 8.6 0 1 0 20.8 15 7 7 0 0 1 15.5 3.2z" fill="#ffe07a" stroke="#d9a400" stroke-width="1.6" stroke-linejoin="round"/><circle cx="17.5" cy="6" r="1" fill="#fff"/><circle cx="20.5" cy="9.5" r=".8" fill="#fff"/></svg>';
+function dreamCard(d, text){
+  const o = document.createElement('div'); o.className = 'over';
+  o.innerHTML = `<div class="pcard gcard dcard" role="dialog" aria-label="${DOLL_NAME[d]}的夢">
+      <h3>${DOLL_NAME[d]}的夢</h3>
+      <div class="pic"><img alt="" src="${SPR[d]}"><span class="gi">${MOON}</span></div>
+      <p>${text}</p>
+      <button class="btn y ok" aria-label="好，讓牠繼續睡">${CKS}</button></div>`;
+  screen.appendChild(o);
+  const ok = o.querySelector('.ok'); ok.focus({preventScroll:true});
+  ok.onclick = () => o.remove();
+}
+// main.js 點娃娃時先問這裡：睡著的就看夢，回傳 true
 function awayWake(it){
-  if (!WAKE[it.id] || !sleepTime() || woke.has(it.id)) return false;
-  woke.add(it.id); paintSleep();
-  say(it, WAKE[it.id]);
+  if (!DREAMS[it.id] || !asleep(it.id)) return false;
+  dreamCard(it.id, dreamOf(it.id));
   return true;
 }
 function afterRoomRender(){ renderDrops(); paintSleep(); }
