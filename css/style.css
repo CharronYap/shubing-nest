@@ -71,9 +71,19 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .seat.hot{background:var(--pink);border-style:solid}
 
 .nightov{position:absolute;inset:0;background:rgba(40,40,110,.42);mix-blend-mode:multiply;pointer-events:none;z-index:400;opacity:0;transition:opacity .6s}
-.screen.night .nightov{opacity:1}
+.screen.night .nightov{opacity:.45}
+.room.off .nightov{opacity:.9}
+.screen.night .room.off .nightov{opacity:1;background:rgba(18,18,70,.74)}
 .glow{position:absolute;width:56%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,226,150,.85),rgba(255,210,120,.35) 40%,rgba(255,200,120,0) 70%);mix-blend-mode:screen;pointer-events:none;z-index:401;opacity:0;transition:opacity .6s}
-.screen.night .glow{opacity:1}
+.screen.night .glow{opacity:.55}
+.room.off .glow{opacity:1}
+/* 牆上的電燈開關，在窗戶左邊；疊在暗色上面，關了燈也點得到 */
+.lsw{position:absolute;left:24%;top:15%;width:7%;transform:translateX(-50%);z-index:402;border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 2px 0 rgba(120,60,90,.18))}
+.lsw svg{display:block;width:100%;height:auto}
+.lsw .nub{transition:transform .18s ease}
+.room.off .lsw .nub{transform:translateY(9.5px);fill:#b9a6c9}
+.lsw::after{content:'';position:absolute;inset:-35%}
+.lsw:focus-visible{outline:3px solid var(--pink);outline-offset:3px;border-radius:6px}
 
 .stage .roof,.stage .under{position:absolute;pointer-events:none}
 .stage .roof svg{display:block;width:100%;height:100%;overflow:visible}

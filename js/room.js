@@ -201,10 +201,19 @@ function paintRoom(){
   $('#wall').className='wall w-'+cur().wall;$('#floor').className='floor f-'+cur().floor;
   $('#win').innerHTML=winSVG(night);
   screen.classList.toggle('night',night);
+  paintLight();
   const [c,s]=['#ff8fbf','#e0609d'];
   $('#roof').innerHTML=`<svg viewBox="0 0 120 30" preserveAspectRatio="none"><rect x="86" y="2" width="10" height="16" rx="2" fill="#ff9e7a" stroke="#d9673f" stroke-width="1.4"/><path d="M4 28 L60 3 L116 28 Q118 30 114 30 H6 Q2 30 4 28Z" fill="${c}" stroke="${s}" stroke-width="1.6" stroke-linejoin="round"/><path d="M20 24 L60 7 L100 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="3 4" stroke-linecap="round"/><circle cx="60" cy="18" r="4.5" fill="#fff7d9" stroke="#e5c97a" stroke-width="1.2"/></svg>`;
   layout();
 }
+/* 開燈關燈：每個房間各記各的，沒記過就是開著 */
+const lightOn=()=>cur().light!==false;
+function paintLight(){
+  const on=lightOn(),b=$('#lsw');
+  room.classList.toggle('off',!on);
+  b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'關燈':'開燈');
+}
+$('#lsw').addEventListener('click',()=>{cur().light=!lightOn();paintLight();save();});
 function layout(){
   const r=area.getBoundingClientRect();
   const topExtra=.26,botExtra=.16;

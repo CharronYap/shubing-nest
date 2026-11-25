@@ -1,0 +1,71 @@
+/* 封面：粉色房間、小房子標題、沙發上的娃娃、薯餅開始鍵 */
+@font-face{font-family:"GenSenRounded";src:url("../fonts/gensen-rounded-heavy.woff2") format("woff2");font-weight:400 1000;font-display:block}
+.cover{position:absolute;inset:0;z-index:700;overflow:hidden;isolation:isolate;font-family:"GenSenRounded","PingFang TC","Noto Sans TC",sans-serif;font-weight:900;color:var(--ink);
+  --k:1;--floor:calc(250px * var(--k));
+  background:radial-gradient(circle,rgba(255,255,255,.55) 2.2px,transparent 2.6px) 0 0/26px 26px,linear-gradient(#ffe9f1,#ffd6e6);
+  transition:opacity .45s ease}
+.cover.cv-out{opacity:0;pointer-events:none}
+.cover .cv-floor{position:absolute;left:0;right:0;bottom:0;height:var(--floor);
+  background:repeating-linear-gradient(90deg,transparent 0 62px,rgba(184,116,58,.13) 62px 64px),linear-gradient(#f7deb9,#f0cd9c)}
+.cover .cv-floor::before{content:'';position:absolute;left:-10%;right:-10%;top:calc(-22px * var(--k));height:calc(44px * var(--k));border-radius:50%;background:#f7deb9}
+/* 375×780 的畫布，依畫面大小等比縮放，貼著底部 */
+.cover .cv-cvs{position:absolute;left:50%;bottom:0;width:375px;height:780px;margin-left:-187.5px;transform:scale(var(--k));transform-origin:50% 100%}
+.cover .cv-win{position:absolute;left:50%;top:205px;width:250px;height:250px;margin-left:-125px;border-radius:125px 125px 22px 22px;background:linear-gradient(#bfe6ff,#e6f6ff 70%);box-shadow:inset 0 0 0 9px #fff,inset 0 0 0 12px #f5c6da,0 6px 0 #f0b8cf}
+.cover .cv-win::before{content:'';position:absolute;left:50%;top:9px;bottom:9px;width:9px;margin-left:-4.5px;background:#fff}
+.cover .cv-win::after{content:'';position:absolute;left:9px;right:9px;top:120px;height:9px;background:#fff}
+.cover .cv-rug{position:absolute;left:50%;bottom:18px;width:300px;height:140px;margin-left:-150px;border-radius:50%;background:radial-gradient(ellipse,#ffc2da 0 52%,#fff 53% 57%,#ffb0cf 58% 70%,transparent 71%)}
+
+/* 上面兩顆糖果圓鈕，只放圖示 */
+.cover .cv-cb{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));z-index:9;width:50px;height:50px;border:0;border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;color:#fff;
+  background:radial-gradient(circle at 40% 32%,var(--c1),var(--c2));box-shadow:0 5px 0 var(--c3),0 9px 12px rgba(80,30,60,.22)}
+.cover .cv-cb::before{content:'';position:absolute;top:8px;left:11px;width:15px;height:8px;border-radius:50%;background:rgba(255,255,255,.7);transform:rotate(-24deg)}
+.cover .cv-cb:active{transform:translateY(3px);box-shadow:0 2px 0 var(--c3),0 5px 8px rgba(80,30,60,.2)}
+.cover .cv-cb svg{width:26px;height:26px;position:relative}
+.cover .cv-cb.cv-mu{left:14px;--c1:#ffb3d3;--c2:#ec6aa5;--c3:#c4407f}
+.cover .cv-cb.cv-cl{right:14px;--c1:#d9d0ff;--c2:#9d8ef0;--c3:#7364c8}
+
+/* 標題：五個字各住一間小房子 */
+.cover .cv-ttl{position:absolute;left:0;right:0;top:86px;z-index:6;display:flex;justify-content:center;gap:5px;margin:0;font-size:inherit;font-weight:inherit}
+.cover .cv-t{position:relative;display:grid;place-items:center;flex:none;width:64px;height:84px;padding-top:26px;color:var(--fg);font-size:35px;line-height:1;text-shadow:var(--ts);
+  filter:drop-shadow(0 6px 0 var(--edge)) drop-shadow(0 12px 10px rgba(80,40,30,.2));animation:cvBob 3.2s ease-in-out infinite;animation-delay:var(--d)}
+.cover .cv-t::before{content:'';position:absolute;left:0;right:0;bottom:0;height:62px;border-radius:12px 12px 16px 16px;background:var(--bg)}
+.cover .cv-t i{position:absolute;top:6px;left:50%;width:48px;height:48px;margin-left:-24px;border-radius:9px;background:var(--bg);transform:rotate(45deg) scaleY(.92)}
+.cover .cv-t::after{content:'';position:absolute;z-index:1;top:12px;left:21px;width:14px;height:8px;border-radius:50%;background:rgba(255,255,255,.72);transform:rotate(-24deg)}
+.cover .cv-t span{position:relative;z-index:2}
+.cover .cv-t:nth-child(1),.cover .cv-t:nth-child(5){--bg:radial-gradient(circle at 40% 30%,#e8b072,#b8743a);--fg:#fff6e6;--edge:#8a5226;--ts:0 2px 0 #7a4520}
+.cover .cv-t:nth-child(2){--bg:radial-gradient(circle at 40% 30%,#fff08f,#ffc72e);--fg:#7a4520;--edge:#d99a17;--ts:0 1px 0 rgba(255,255,255,.6);--d:-.6s}
+.cover .cv-t:nth-child(3){--bg:radial-gradient(circle at 40% 30%,#fff,#f6e4ee);--fg:#c23f7c;--edge:#e3bfd0;--ts:0 1px 0 #fff;--d:-1.2s}
+.cover .cv-t:nth-child(4){--bg:radial-gradient(circle at 40% 30%,#ffb3d3,#ec5f9e);--fg:#fff;--edge:#c23f7c;--ts:0 2px 0 #a8326a;--d:-1.8s}
+.cover .cv-t:nth-child(5){--d:-2.4s}
+
+/* 舞台：粉色沙發，薯餅坐中間，兩邊有娃娃探頭 */
+.cover .cv-stg{position:absolute;left:0;right:0;bottom:210px;height:300px;z-index:4;pointer-events:none}
+.cover .cv-stg img{position:absolute;height:auto;filter:drop-shadow(0 6px 7px rgba(78,28,45,.28));transform-origin:50% 100%}
+.cover .cv-sw{animation:cvSway 4.4s ease-in-out infinite;animation-delay:var(--d,0s)}
+.cover .cv-pk{animation:cvPeek 3.4s ease-in-out infinite;animation-delay:var(--d,0s);z-index:-1}
+.cover .cv-sofa{position:absolute;left:50%;bottom:0;width:300px;height:150px;margin-left:-150px}
+.cover .cv-sofa .cv-bk{position:absolute;left:28px;right:28px;top:0;height:100px;border-radius:40px 40px 18px 18px;background:radial-gradient(circle at 40% 25%,#ffc4dc,#f07fb1);box-shadow:inset 0 -8px 0 rgba(194,63,124,.25)}
+.cover .cv-sofa .cv-bk::before{content:'';position:absolute;left:50%;top:26px;bottom:14px;width:4px;margin-left:-2px;border-radius:2px;background:rgba(194,63,124,.25)}
+.cover .cv-sofa .cv-st{position:absolute;left:18px;right:18px;top:78px;height:46px;border-radius:20px;background:radial-gradient(circle at 45% 20%,#ffd3e5,#f591bd);box-shadow:0 6px 0 #d0558d}
+.cover .cv-sofa .cv-ar{position:absolute;top:58px;width:56px;height:80px;border-radius:28px 28px 18px 18px;background:radial-gradient(circle at 40% 25%,#ffc4dc,#ec6aa5);box-shadow:0 6px 0 #c4407f}
+.cover .cv-sofa .cv-ar::before{content:'';position:absolute;top:8px;left:12px;width:16px;height:9px;border-radius:50%;background:rgba(255,255,255,.65);transform:rotate(-24deg)}
+.cover .cv-sofa .cv-ar.cv-l{left:0}.cover .cv-sofa .cv-ar.cv-r{right:0}
+.cover .cv-sofa .cv-lg{position:absolute;bottom:-14px;width:12px;height:18px;border-radius:0 0 6px 6px;background:#b8743a}
+.cover .cv-sofa .cv-lg.cv-l{left:40px}.cover .cv-sofa .cv-lg.cv-r{right:40px}
+
+/* 開始鍵：一塊薯餅，上面一個播放三角形 */
+.cover .cv-go{position:absolute;left:50%;bottom:50px;z-index:8;transform:translateX(-50%);border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cover .cv-go>span{position:relative;display:grid;place-items:center;width:176px;height:118px;border-radius:46% 46% 44% 44%/40% 40% 44% 44%;animation:cvSquish 2.6s ease-in-out infinite;
+  background:radial-gradient(circle,rgba(160,80,10,.33) 2px,transparent 2.6px) 0 0/15px 12px,radial-gradient(circle,rgba(255,245,200,.55) 1.8px,transparent 2.4px) 7px 6px/15px 12px,radial-gradient(circle at 42% 32%,#ffdf8a,#eaa23a);
+  box-shadow:0 8px 0 #b8661c,0 16px 22px rgba(120,70,20,.28),inset 0 -6px 0 rgba(184,102,28,.25)}
+.cover .cv-go>span::before{content:'';position:absolute;top:14px;left:34px;width:34px;height:13px;border-radius:50%;background:rgba(255,255,255,.7);transform:rotate(-18deg)}
+.cover .cv-go:active>span{translate:0 4px}
+.cover .cv-go svg{width:46px;height:46px;margin-left:6px;fill:#fff;stroke:#fff;stroke-width:2.5;stroke-linejoin:round;position:relative;filter:drop-shadow(0 2px 0 rgba(150,70,0,.5))}
+.cover button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
+@keyframes cvBob{0%,100%{translate:0 0}50%{translate:0 -5px}}
+@keyframes cvSway{0%,100%{rotate:-1.6deg}50%{rotate:1.6deg}}
+@keyframes cvPeek{0%,100%{translate:0 0}50%{translate:0 -6px}}
+@keyframes cvSquish{0%,100%{scale:1 1}50%{scale:1.03 .97}}
+@media (prefers-reduced-motion:reduce){.cover *{animation:none!important}.cover{transition:none}}
+.cover .cv-cb[hidden]{display:none}

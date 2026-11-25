@@ -26,7 +26,9 @@ python3 -m http.server 8765
 
 ## 第一版有什麼
 
+- **封面**：打開先看到封面，按中間的薯餅進房間，右上角的按鈕直接去娃娃機。
 - **房間**：客廳、臥室、浴室三間。娃娃可以拖來拖去，也能坐到沙發、床這些家具上。晚上七點到早上五點會變成夜晚。
+- **開燈關燈**：窗戶左邊的牆上有電燈開關，每個房間各自記得開或關。關燈後房間變暗，有檯燈的話只剩檯燈亮著。
 - **娃娃機**：夾一次 2 枚幣。第一次進來送 20 枚，之後每天第一次打開送 10 枚。連續沒夾到時，第 10 次只要爪子底下有東西就一定夾到。
 - **扭蛋**：娃娃機裡約兩成是扭蛋，開出來是家具、壁紙或小事要用的道具。湊齊雲朵系列（床、地毯、檯燈、蛋椅、相框）會送雲朵地板。
 - **爪子**：一開始有兩款，夾到 3、8、15 次各解鎖一款。
@@ -37,13 +39,16 @@ python3 -m http.server 8765
 
 ```
 index.html      頁面
-css/style.css   全部樣式
+css/style.css   遊戲樣式
+css/cover.css   封面樣式
 js/data.js      娃娃、家具、小事、規則數字
 js/save.js      存檔（瀏覽器的 localStorage）
 js/room.js      房間：擺放、拖曳、收納架
 js/claw.js      娃娃機
 js/main.js      換頁、幣、每天的小事
-img/            八隻娃娃的圖
+js/cover.js     封面
+img/            八隻娃娃的圖（img/cover/ 是封面用的）
+fonts/          封面標題字型
 ```
 
 規則數字（價錢、送幣、解鎖次數）都在 `js/data.js` 最上面，改數字就好。
@@ -60,6 +65,10 @@ localStorage.removeItem('shubingNest.v1'); location.reload();
 
 - 朋友互訪、送娃娃、信箱（打算之後接 Firebase）
 - 音效
+
+## 字型
+
+封面標題用「源泉圓體」（GenSen Rounded）Heavy，SIL Open Font License 1.1，授權全文在 `fonts/OFL.txt`。
 
 ## 注意
 

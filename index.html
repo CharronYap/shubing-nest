@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#ffe3ef">
 <title>薯餅的小窩</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/cover.css">
+<link rel="preload" href="fonts/gensen-rounded-heavy.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
 <div class="phone"><div class="screen" id="screen">
@@ -28,6 +30,7 @@
             <div class="floor" id="floor"></div>
             <div class="win" id="win"></div>
             <div class="nightov"></div>
+            <button class="lsw" id="lsw" aria-label="關燈" aria-pressed="true"><svg viewBox="0 0 24 32"><rect x="1.5" y="1.5" width="21" height="29" rx="6" fill="#fff" stroke="#e7cfdc" stroke-width="2"/><rect x="7" y="6" width="10" height="20" rx="4" fill="#ffe3ef"/><rect class="nub" x="8" y="7.5" width="8" height="9" rx="3" fill="#ff8fbf"/></svg></button>
           </div>
         </div>
       </div>
@@ -51,6 +54,25 @@
           <div class="optc" id="optClaw"></div>
         </div>
       </div>
+      <div class="cover" id="cover">
+        <div class="cv-floor"></div>
+        <div class="cv-cvs">
+          <div class="cv-win"></div>
+          <div class="cv-rug"></div>
+          <h1 class="cv-ttl" id="coverTitle" aria-label="薯餅的小窩"></h1>
+          <div class="cv-stg" aria-hidden="true">
+            <div class="cv-sofa"><i class="cv-lg cv-l"></i><i class="cv-lg cv-r"></i><div class="cv-bk"></div><div class="cv-st"></div><div class="cv-ar cv-l"></div><div class="cv-ar cv-r"></div></div>
+            <img class="cv-pk" src="img/piggy.png" alt="" style="width:92px;left:calc(50% - 128px);bottom:118px;--d:-.8s">
+            <img class="cv-pk" src="img/nyanko.png" alt="" style="width:88px;left:calc(50% + 46px);bottom:122px;--d:-2s">
+            <img class="cv-sw" src="img/cover/sloth_orange.webp" alt="" style="width:170px;left:50%;margin-left:-85px;bottom:58px">
+            <img class="cv-sw" src="img/egg.png" alt="" style="width:96px;left:calc(50% - 148px);bottom:66px;--d:-1.4s">
+            <img class="cv-sw" src="img/dog.png" alt="" style="width:100px;left:calc(50% + 52px);bottom:62px;--d:-2.8s">
+          </div>
+          <button class="cv-go" id="coverGo" aria-label="開始"><span><svg viewBox="0 0 24 24"><path d="M8 5.2v13.6a1 1 0 0 0 1.5.86l10.8-6.8a1 1 0 0 0 0-1.72L9.5 4.34A1 1 0 0 0 8 5.2z"/></svg></span></button>
+        </div>
+        <button class="cv-cb cv-mu" id="coverMusic" aria-label="音樂" hidden></button>
+        <button class="cv-cb cv-cl" id="coverClaw" aria-label="去娃娃機"></button>
+      </div>
       <div class="toast" id="toast" role="status"></div>
       <div class="sheet" id="sheet" hidden></div>
     </div></div>
@@ -59,5 +81,6 @@
 <script src="js/room.js"></script>
 <script src="js/claw.js"></script>
 <script src="js/main.js"></script>
+<script src="js/cover.js"></script>
 </body>
 </html>
