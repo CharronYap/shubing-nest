@@ -318,6 +318,8 @@ export function createCloud(config, { emulator = false } = {}) {
     async stayGo({ to, doll, look, day, x, y, fromName }) {
       await ready;
       if (!user) throw new Error('not signed in');
+      // 上一次的那筆如果還留著（例如換過裝置），先刪掉：蓋在舊的上面會被規則當成「修改」擋下來
+      try { await F.deleteDoc(F.doc(db, 'nestStays', user.uid)); } catch (e) {}
       await F.setDoc(F.doc(db, 'nestStays', user.uid), {
         from: user.uid, fromName: String(fromName || user.name).slice(0, 24), to, doll, look: look || {}, day, note: '', x, y,
       });

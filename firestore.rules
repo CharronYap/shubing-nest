@@ -2,7 +2,12 @@ rules_version = '2';
 // 薯餅的小窩的 Firestore 規則（Firebase 專案 shubing-nest）。
 // 2026-11-26 新增 nestRooms（去朋友家）和 nestRooms/{uid}/hearts（留愛心）兩段。
 // 2026-11-26 第四版：小窩存檔多收 season（季節）、mail（信箱）、yard（門外小島）三個欄位；新增 nestGifts（送娃娃）一段。
-// 上面兩行的改動已經在 2026-11-26 整份發布，這個檔案跟主控台上的一樣。
+// 上面兩行的改動已經在 2026-11-26 整份發布。
+// 2026-11-27 第五版（還沒發布，等檢查過再整份換掉發布一次）：
+//   nestRooms 公開資料多 want（願望清單）、yard（小島給朋友看的樣子）兩欄；
+//   新的子集合 nestRooms/{uid}/book（訪客簿）、nestRooms/{uid}/water（幫忙澆水）；
+//   新集合 nestStays（娃娃去朋友家過夜）、nestCards（明信片）；nestGifts 多一欄 msg（自己打的一句話）。
+//   自己打的字都檢查是文字、有長度上限：訪客簿、小紙條、送娃娃 40 字，明信片 80 字。其他段落跟已發布的一樣。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
@@ -122,10 +127,13 @@ service cloud.firestore {
         && okNest(request.resource.data);
     }
 
-    // 去朋友家：nestRooms/{uid}，公開的房間。只放三個房間的擺設、娃娃穿什麼、名字和更新時間；
+    // 去朋友家：nestRooms/{uid}，公開的房間。只放三個房間的擺設、娃娃穿什麼、名字和更新時間（第五版多願望清單和小島的樣子）；
     // 存檔裡的幣、相簿、道具這些都不在這裡。登入的人都能讀，只有本人能寫、能刪
     function okNestPublic(d) {
-      return d.keys().hasOnly(['name', 'home', 'look', 't'])
+      return d.keys().hasOnly(['name', 'home', 'look', 't', 'want', 'yard'])
+        // 第五版：want = 願望清單，最多 3 個娃娃的編號；yard = 小島 12 塊地現在的樣子，只給人看
+        && (!('want' in d) || (d.want is list && d.want.size() <= 3))
+        && (!('yard' in d) || (d.yard is map && d.yard.keys().hasOnly(['p']) && d.yard.p is list && d.yard.p.size() == 12))
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 24
         && d.home is map && d.home.keys().hasOnly(['living', 'bed', 'bath'])
         && okNestRoom(d.home.living) && okNestRoom(d.home.bed) && okNestRoom(d.home.bath)
@@ -176,8 +184,11 @@ service cloud.firestore {
       allow list: if request.auth != null
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'toName', 'doll', 'line', 't'])
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'toName', 'doll', 'line', 't', 'msg'])
         && request.resource.data.keys().hasAll(['from', 'fromName', 'to', 'doll', 'line', 't'])
+        // 第五版：msg = 自己打的一句話，可以不填，40 字以內
+        && (!('msg' in request.resource.data)
+            || (request.resource.data.msg is string && request.resource.data.msg.size() <= 40))
         && request.resource.data.from == request.auth.uid
         && request.resource.data.to is string
         && request.resource.data.to != request.auth.uid
@@ -191,6 +202,142 @@ service cloud.firestore {
         && request.resource.data.t is int
         && (nestFriendOf(request.resource.data.from, request.resource.data.to)
             || nestFriendOf(request.resource.data.to, request.resource.data.from));
+      allow delete: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow update: if false;
+    }
+
+    // ---------- 第五版：朋友之間的玩法 ----------
+    // a 和 b 是不是朋友：任一邊的好友名單裡有對方就算（跟愛心、送娃娃一樣）
+    function nestFriends(a, b) {
+      return nestFriendOf(a, b) || nestFriendOf(b, a);
+    }
+    // day 是不是今天：台灣時間（UTC+8）從 1970-01-01 算起的第幾天（跟愛心一樣的算法）
+    function nestToday(day) {
+      return day is int
+        && day * 86400000 - 28800000 <= request.time.toMillis()
+        && request.time.toMillis() < (day + 1) * 86400000 - 28800000;
+    }
+    function okNestName(n) {
+      return n is string && n.size() >= 1 && n.size() <= 24;
+    }
+
+    // 訪客簿：nestRooms/{主人}/book/{日子_寫的人}
+    //   只有主人的朋友能寫，不能寫在自己家；文件名字由今天和寫的人組成，所以一人一天一則
+    //   sticker 貼紙的編號；msg 自己打的一句話，可以不填，40 字以內
+    //   主人和主人的朋友都讀得到（訪客簿的字，來家裡的朋友都看得到）
+    //   主人可以刪任何一則，寫的人可以刪自己的；寫了不能改
+    match /nestRooms/{uid}/book/{bid} {
+      allow read: if request.auth != null
+        && (request.auth.uid == uid || nestFriends(uid, request.auth.uid));
+      allow create: if request.auth != null
+        && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'day', 'sticker', 'msg'])
+        && request.resource.data.keys().hasAll(['from', 'fromName', 'day', 'sticker'])
+        && request.resource.data.from == request.auth.uid
+        && okNestName(request.resource.data.fromName)
+        && nestToday(request.resource.data.day)
+        && bid == string(request.resource.data.day) + '_' + request.auth.uid
+        && request.resource.data.sticker is string
+        && request.resource.data.sticker.size() >= 1 && request.resource.data.sticker.size() <= 40
+        && (!('msg' in request.resource.data)
+            || (request.resource.data.msg is string && request.resource.data.msg.size() <= 40))
+        && nestFriends(uid, request.auth.uid);
+      allow delete: if request.auth != null
+        && (request.auth.uid == uid || resource.data.from == request.auth.uid);
+      allow update: if false;
+    }
+
+    // 幫朋友的小島澆水：nestRooms/{主人}/water/{日子_澆的人}
+    //   只有主人的朋友能寫，一人一天一次；plot 是第幾塊地（0～11）
+    //   主人讀得到全部（打開遊戲時套用到自己的存檔，再刪掉）；澆的人只能確認自己今天那一筆在不在
+    match /nestRooms/{uid}/water/{wid} {
+      allow get: if request.auth != null
+        && (request.auth.uid == uid || wid.split('_')[1] == request.auth.uid);
+      allow list: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'day', 'plot'])
+        && request.resource.data.keys().hasAll(['from', 'fromName', 'day', 'plot'])
+        && request.resource.data.from == request.auth.uid
+        && okNestName(request.resource.data.fromName)
+        && nestToday(request.resource.data.day)
+        && wid == string(request.resource.data.day) + '_' + request.auth.uid
+        && request.resource.data.plot is int
+        && request.resource.data.plot >= 0 && request.resource.data.plot <= 11
+        && nestFriends(uid, request.auth.uid);
+      allow delete: if request.auth != null && request.auth.uid == uid;
+      allow update: if false;
+    }
+
+    // 娃娃去朋友家過夜：nestStays/{出門的人的 uid}，一人一筆，所以一次只能有一隻在外面
+    //   from 出門的人（一定是本人）、to 主人（要是朋友、不能是自己）、doll 哪一隻、look 穿什麼、day 出門那天（要是今天）
+    //   note 主人塞的小紙條：出門時一定是空的，只有主人能寫，40 字以內；x、y 在主人客廳的位置（0～100）
+    //   出門的人能建立、能刪（回家）；主人只能改 note、x、y，也能刪（送牠回家）；兩邊都讀得到
+    //   讀一筆不存在的（已經回家）要能讀到「不存在」，所以 resource == null 放行
+    function okStayPos(d) {
+      return (d.x is int || d.x is float) && d.x >= 0 && d.x <= 100
+        && (d.y is int || d.y is float) && d.y >= 0 && d.y <= 100;
+    }
+    match /nestStays/{sid} {
+      allow get: if request.auth != null
+        && (resource == null || resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow list: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null
+        && sid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'doll', 'look', 'day', 'note', 'x', 'y'])
+        && request.resource.data.keys().hasAll(['from', 'fromName', 'to', 'doll', 'look', 'day', 'note', 'x', 'y'])
+        && request.resource.data.from == request.auth.uid
+        && okNestName(request.resource.data.fromName)
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.doll is string
+        && request.resource.data.doll.size() >= 1 && request.resource.data.doll.size() <= 20
+        && request.resource.data.look is map && request.resource.data.look.size() <= 4
+        && nestToday(request.resource.data.day)
+        && request.resource.data.note is string && request.resource.data.note.size() == 0
+        && okStayPos(request.resource.data)
+        && nestFriends(request.auth.uid, request.resource.data.to);
+      allow update: if request.auth != null
+        && resource.data.to == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['note', 'x', 'y'])
+        && request.resource.data.note is string && request.resource.data.note.size() <= 40
+        && okStayPos(request.resource.data);
+      allow delete: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+    }
+
+    // 明信片：nestCards/{自動編號}
+    //   不放圖片，放那一間房間的擺法 snap = {rid 哪一間, room 擺設（檢查跟公開房間的一間一樣）, look 娃娃穿什麼, night 是不是晚上}
+    //   msg 自己打的一句話，80 字以內
+    //   寄的人必須是本人、收的人要是朋友、不能寄給自己；寄的人和收的人都讀得到、都能刪；寄出後不能改
+    //   一天寄幾張只在遊戲畫面上擋，這裡不檢查
+    function okCardSnap(s) {
+      return s is map
+        && s.keys().hasOnly(['rid', 'room', 'look', 'night'])
+        && s.keys().hasAll(['rid', 'room'])
+        && s.rid is string && s.rid.size() <= 10
+        && okNestRoom(s.room)
+        && (!('look' in s) || (s.look is map && s.look.size() <= 60))
+        && (!('night' in s) || s.night is bool);
+    }
+    match /nestCards/{cid} {
+      allow get: if request.auth != null
+        && (resource == null || resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow list: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'snap', 'msg', 't'])
+        && request.resource.data.keys().hasAll(['from', 'fromName', 'to', 'snap', 'msg', 't'])
+        && request.resource.data.from == request.auth.uid
+        && okNestName(request.resource.data.fromName)
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && okCardSnap(request.resource.data.snap)
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 80
+        && request.resource.data.t is int
+        && nestFriends(request.resource.data.from, request.resource.data.to);
       allow delete: if request.auth != null
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
       allow update: if false;
