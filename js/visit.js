@@ -2,7 +2,8 @@
    - 房間照朋友擺的樣子畫，三個房間可以換著看；不能拖、不能點家具、不能開關燈，也不會存檔
    - 點娃娃冒一顆愛心
    - 下面一條：「留一顆愛心」，每個朋友一天一顆（firestore.rules 擋）。不顯示誰送的，對方只看得到今天收到幾顆
-   - 「回家」回自己的房間 */
+   - 「回家」回自己的房間
+   - 第五版：下面多一排小按鈕（訪客簿、看小島、讓娃娃過夜）和願望木牌，各自寫在 book.js、water.js、stay.js、want.js */
 const VB_HEART = HEART('#ff6fb0', '#fff');
 let visitBack = 'living';
 
@@ -40,13 +41,14 @@ function visitTap(it){
 function visitOpen(f){
   const v = visitClean(f.data);
   if (!VISIT) visitBack = roomId;
-  VISIT = {name: f.name, home: v.home, look: v.look};
+  VISIT = {name: f.name, uid: f.uid || '', home: v.home, look: v.look, want: f.data.want, yard: f.data.yard};
   screen.classList.add('visiting');
   setPage('room');
   roomId = 'living';
   load();
   const bar = $('#vbar');
   bar.innerHTML = `<div class="vb-hd"><b></b><small>點娃娃會冒愛心</small></div>
+    <div class="vb-more"></div>
     <div class="vb-row"><button class="btn vb-home">${HOUSE}<span>回家</span></button><button class="btn y vb-heart"></button></div>`;
   bar.querySelector('b').textContent = `${f.name}的小窩`;
   const hb = bar.querySelector('.vb-heart');
@@ -69,6 +71,9 @@ function visitOpen(f){
     }
   };
   bar.querySelector('.vb-home').onclick = visitClose;
+  // 第五版：訪客簿、願望木牌、看小島、過夜，各自在自己的檔案裡加按鈕（js/social.js 的 visitExtras）
+  const more = bar.querySelector('.vb-more');
+  if (f.uid) visitExtras.forEach(fn => { try { fn(f, more); } catch (e) { console.info('[visit]', e); } });
   bar.hidden = false;
 }
 

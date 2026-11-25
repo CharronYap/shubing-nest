@@ -596,3 +596,44 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .ng-chip{border:2px solid var(--line);border-radius:999px;background:#fff;padding:6px 12px;font:inherit;font-size:13px;font-weight:800;color:inherit;cursor:pointer}
 .ng-chip.on{border-color:var(--pink);background:#fff0f7;color:var(--pink2)}
 .ml-ft .btn[disabled]{filter:grayscale(.6);opacity:.55;cursor:default}
+
+/* ---------- 第五版：朋友之間的玩法 ---------- */
+/* 房間左上角（門邊）的小按鈕：訪客簿 */
+.rbtn{position:absolute;left:10px;top:10px;width:36px;height:36px;border-radius:50%;border:3px solid #fff;background:#fff;color:var(--pink);box-shadow:0 3px 0 #ead9e2;display:grid;place-items:center;padding:0;cursor:pointer;z-index:402;-webkit-tap-highlight-color:transparent}
+.rbtn svg{width:20px;height:20px}
+.rbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #ead9e2}
+.rbtn:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.rbtn[hidden]{display:none}
+/* 朋友家下面那條多出來的一排 */
+.vb-more{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.vb-more:empty{display:none}
+.vb-more .btn{display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:13px}
+.vb-more .btn svg,.vb-more .btn img{width:18px;height:18px;flex:none;object-fit:contain}
+.tx{overflow-wrap:anywhere}
+/* 訪客簿 */
+.bk-box{display:grid;gap:8px;max-height:calc(100dvh - 220px);overflow-y:auto;overscroll-behavior:contain;padding:2px}
+.bk-form{display:grid;gap:8px;padding:10px;border-radius:16px;background:#fff8e6;border:2px solid #ffe9a8}
+.bk-form .al-sec{margin:0}
+.bk-st{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px}
+.bk-st button{flex:none;width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:#fff;box-shadow:0 0 0 2px var(--line);padding:4px;cursor:pointer;display:grid;place-items:center}
+.bk-st button.on{box-shadow:0 0 0 3px var(--pink);background:#fff0f7}
+.bk-st button img,.bk-st button svg{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.bk-in,.tx-in{width:100%;box-sizing:border-box;border:2px solid var(--line);border-radius:14px;padding:9px 12px;font:inherit;font-size:16px;color:inherit;background:#fff}
+.bk-in:focus,.tx-in:focus{outline:none;border-color:var(--pink)}
+.bk-go{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bk-go small,.bk-note{font-size:12px;color:var(--soft)}
+.bk-note{margin:4px 2px 0}
+.bk-it{display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:16px;border:2px solid #f3e7ef;background:#fff}
+.bk-it.new{border-color:#ffd3e6;background:#fff7fb}
+.bk-s{flex:none;width:46px;height:46px;border-radius:50%;background:#fff;border:3px solid #fff;box-shadow:0 0 0 2px #ffd3e6,0 3px 0 #f3d6e4;display:grid;place-items:center;padding:4px;transform:rotate(-6deg)}
+.bk-it:nth-child(even) .bk-s{transform:rotate(5deg)}
+.bk-s img,.bk-s svg{width:100%;height:100%;object-fit:contain}
+.bk-tx{flex:1;min-width:0;display:grid;gap:2px}
+.bk-tx b{font-size:14px;font-weight:900;color:var(--pink2)}
+.bk-tx small{font-size:12px;color:var(--soft)}
+.bk-tx p{margin:2px 0 0;font-size:14px;line-height:1.5}
+.bk-del{flex:none;width:26px;height:26px;border-radius:50%;border:0;background:#f6eef2;color:var(--soft);cursor:pointer;display:grid;place-items:center}
+.bk-del svg{width:12px;height:12px}
+.bk-pg{display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;font-weight:800;color:var(--soft)}
+.bk-pg button{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:#fff;font:inherit;font-size:18px;font-weight:900;color:var(--pink);cursor:pointer}
+.bk-pg button[disabled]{opacity:.35;cursor:default}

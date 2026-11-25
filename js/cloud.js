@@ -22,6 +22,11 @@
 //   cloud.giftsTo() / cloud.giftsFrom()  寄給自己的、自己寄出去還沒被領的 → [{id, from, fromName, to, toName, doll, line, t}]
 //   cloud.gift(id)           讀一份（領或收回前先確認還在）→ 物件或 null
 //   cloud.delGift(id)        刪掉（領走或收回）
+//   第五版（規則發布前都會被擋，呼叫的地方要接住錯誤）：
+//   cloud.bookAdd(uid, day, {fromName, sticker, msg}) / cloud.bookMine(uid, day) / cloud.book(uid) / cloud.bookDel(uid, id)   訪客簿
+//   cloud.waterAdd(uid, day, {fromName, plot}) / cloud.waterMine(uid, day) / cloud.waters() / cloud.waterDel(id)             幫朋友澆水
+//   cloud.stayGo({to, doll, look, day, x, y, fromName}) / cloud.stayMine() / cloud.stayGuests() / cloud.staySet(uid, patch) / cloud.stayEnd(uid)   過夜
+//   cloud.cardSend({to, snap, msg, fromName}) / cloud.cardsTo() / cloud.cardDel(id)                                          明信片
 //
 // SDK 從 Google 的 CDN 載（約 110 KB gzip），只有打開遊戲後才在背景載，不會拖慢開始。
 
@@ -194,7 +199,14 @@ export function createCloud(config, { emulator = false } = {}) {
     async saveRoom(data) {
       await ready;
       if (!user) throw new Error('not signed in');
-      await F.setDoc(F.doc(db, 'nestRooms', user.uid), data);
+      try { await F.setDoc(F.doc(db, 'nestRooms', user.uid), data); }
+      catch (e) {
+        // 第五版的 want（願望清單）、yard（小島給朋友看的樣子）要等規則發布才收。還沒發布時先拿掉再寫，房間照樣放得上去
+        const extra = ['want', 'yard'].filter(k => k in data);
+        if (!(e && e.code === 'permission-denied' && extra.length)) throw e;
+        const d = { ...data }; extra.forEach(k => delete d[k]);
+        await F.setDoc(F.doc(db, 'nestRooms', user.uid), d);
+      }
     },
     async room(uid) {
       await ready;
@@ -220,11 +232,13 @@ export function createCloud(config, { emulator = false } = {}) {
     },
     // ---------- 送娃娃（nestGifts） ----------
     // 不用 transaction：寄的時候先寫這份，成功了呼叫的地方才把自己的數量減一；領的時候先加進自己的存檔，再刪這份
-    async sendGift({ to, toName, doll, line, fromName }) {
+    // msg：自己打的一句話（第五版，40 字以內），沒有就不放這一欄
+    async sendGift({ to, toName, doll, line, fromName, msg }) {
       await ready;
       if (!user) throw new Error('not signed in');
       const r = await F.addDoc(F.collection(db, 'nestGifts'), {
         from: user.uid, fromName: String(fromName || user.name).slice(0, 24), to, toName: String(toName || '').slice(0, 24), doll, line, t: Date.now(),
+        ...(msg ? { msg: String(msg).slice(0, 40) } : {}),
       });
       return r.id;
     },
@@ -249,6 +263,104 @@ export function createCloud(config, { emulator = false } = {}) {
       await ready;
       if (!user) throw new Error('not signed in');
       await F.deleteDoc(F.doc(db, 'nestGifts', id));
+    },
+    // ---------- 第五版：訪客簿（nestRooms/{主人}/book/{日子_寫的人}） ----------
+    async bookAdd(uid, day, { fromName, sticker, msg }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'nestRooms', uid, 'book', `${day}_${user.uid}`), {
+        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), day, sticker: String(sticker || '').slice(0, 40),
+        ...(msg ? { msg: String(msg).slice(0, 40) } : {}),
+      });
+    },
+    async bookMine(uid, day) {
+      await ready;
+      if (!user) return null;
+      const s = await F.getDoc(F.doc(db, 'nestRooms', uid, 'book', `${day}_${user.uid}`));
+      return s.exists() ? { ...s.data(), id: s.id } : null;
+    },
+    // 最新的在前面
+    async book(uid) {
+      await ready;
+      const r = await F.getDocs(F.query(F.collection(db, 'nestRooms', uid, 'book'), F.orderBy('day', 'desc'), F.limit(80)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    async bookDel(uid, id) {
+      await ready;
+      await F.deleteDoc(F.doc(db, 'nestRooms', uid, 'book', id));
+    },
+    // ---------- 幫朋友的小島澆水（nestRooms/{主人}/water/{日子_澆的人}） ----------
+    async waterAdd(uid, day, { fromName, plot }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'nestRooms', uid, 'water', `${day}_${user.uid}`), {
+        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), day, plot,
+      });
+    },
+    async waterMine(uid, day) {
+      await ready;
+      if (!user) return false;
+      const s = await F.getDoc(F.doc(db, 'nestRooms', uid, 'water', `${day}_${user.uid}`));
+      return s.exists();
+    },
+    async waters() {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestRooms', user.uid, 'water'), F.limit(30)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    async waterDel(id) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.deleteDoc(F.doc(db, 'nestRooms', user.uid, 'water', id));
+    },
+    // ---------- 娃娃去朋友家過夜（nestStays/{出門的人}，一人一筆） ----------
+    async stayGo({ to, doll, look, day, x, y, fromName }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'nestStays', user.uid), {
+        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), to, doll, look: look || {}, day, note: '', x, y,
+      });
+    },
+    async stayMine() {
+      await ready;
+      if (!user) return null;
+      const s = await F.getDoc(F.doc(db, 'nestStays', user.uid));
+      return s.exists() ? s.data() : null;
+    },
+    async stayGuests() {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestStays'), F.where('to', '==', user.uid), F.limit(10)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    // 主人只能改小紙條和位置（規則擋）
+    async staySet(uid, patch) {
+      await ready;
+      await F.updateDoc(F.doc(db, 'nestStays', uid), patch);
+    },
+    async stayEnd(uid) {
+      await ready;
+      await F.deleteDoc(F.doc(db, 'nestStays', uid));
+    },
+    // ---------- 明信片（nestCards/{自動編號}） ----------
+    async cardSend({ to, snap, msg, fromName }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      const r = await F.addDoc(F.collection(db, 'nestCards'), {
+        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), to, snap, msg: String(msg || '').slice(0, 80), t: Date.now(),
+      });
+      return r.id;
+    },
+    async cardsTo() {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestCards'), F.where('to', '==', user.uid), F.limit(20)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    async cardDel(id) {
+      await ready;
+      await F.deleteDoc(F.doc(db, 'nestCards', id));
     },
     async addedMe() {
       await ready;

@@ -88,6 +88,10 @@ const pubRoom = r => ({ wall: r.wall, floor: r.floor, items: r.items, ...(r.ligh
 async function pushRoom() {
   if (!me) return;
   const data = { name: me.name.slice(0, 24), home: { living: pubRoom(home.living), bed: pubRoom(home.bed), bath: pubRoom(home.bath) }, look: S.look || {} };
+  // 第五版：願望清單（最多 3 隻還沒有的娃娃）和小島給朋友看的樣子（每塊地是什麼，不含種子、次數）
+  const want = typeof wantList === 'function' ? wantList() : [];
+  if (want.length) data.want = want;
+  if (S.yard && Array.isArray(S.yard.p) && S.yard.day) data.yard = { p: S.yard.p.map(p => (p.k ? { s: p.s, k: p.k } : { s: p.s })) };
   const key = JSON.stringify(data);
   if (key === roomSent) return;
   try { await cloud.saveRoom({ ...data, t: Date.now() }); roomSent = key; }
@@ -328,7 +332,7 @@ async function goVisit(p) {
     close();
     $('#cover').hidden = true;
     music.start?.();
-    visitOpen({ name: p.name, data, sent, send: () => cloud.sendHeart(p.uid, day) });
+    visitOpen({ name: p.name, uid: p.uid, data, sent, send: () => cloud.sendHeart(p.uid, day) });
   } finally { visiting = false; }
 }
 
@@ -370,7 +374,12 @@ window.nestNet = {
   gift: id => cloud.gift(id),
   delGift: id => cloud.delGift(id),
   push: () => push(),
+  room: uid => cloud.room(uid),
 };
+// 第五版的雲端動作，原樣轉給 cloud.js
+['bookAdd', 'bookMine', 'book', 'bookDel', 'waterAdd', 'waterMine', 'waters', 'waterDel',
+  'stayGo', 'stayMine', 'stayGuests', 'staySet', 'stayEnd', 'cardSend', 'cardsTo', 'cardDel']
+  .forEach(k => { window.nestNet[k] = (...a) => cloud[k](...a); });
 
 /* ---------- 開始 ---------- */
 async function start() {
