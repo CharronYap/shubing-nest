@@ -17,7 +17,7 @@ function setPage(p){
   sw.setAttribute('aria-label', p === 'room' ? '去娃娃機' : '回房間');
   $('#sheet').hidden = true;
   claw.dir = 0;
-  if (p === 'claw') renderOpt(); else layout();
+  if (p === 'claw'){ renderOpt(); planDay(); if (!S.day.free) setTimeout(() => toast('今天第一次夾，不用幣'), 300); } else layout();
 }
 $('#swap').addEventListener('click', () => setPage(page === 'room' ? 'claw' : 'room'));
 

@@ -106,6 +106,8 @@ const SNOOPY_REST = ['作家去泡澡找靈感了，下一章快寫好了。', '
 // 小窩更新了：薯餅寫的，不佔娃娃一天一封的名額。t 之後才開始玩的人不會收到
 const MAIL_NEWS = [
   {id:'v4', t:'2026-11-26', b:'小窩多了幾樣東西，跟你說一下。\n信箱：大家會寫信給你。信不會過期，附件也一直留著，有空再看就好。\n季節：窗外跟著月份換，過節的那幾天，收納架會多出節日的東西。\n門外小島：上面最右邊那顆鈕。可以種東西，大家會輪流來幫忙。沒來也沒關係，種子會等你。\n送娃娃：登入以後，同一隻有兩隻的，可以從信箱送一隻去朋友家。朋友什麼時候開門都可以。\n我要去睡午覺了，剩下的你自己逛逛'},
+  // a：附件。coin-30 = 30 枚幣（2026-11-27 補給已經在玩的人）
+  {id:'coin1', t:'2026-11-27', a:'coin-30', b:'我數了一下，大家的幣好像都不太夠用。\n所以改了幾件事：每天領的幣變 20 枚，做完一件小事給 3 枚，每天第一次夾娃娃不用幣。\n幣不夠的時候，會告訴你現在還有什麼事可以賺。點上面的幣也看得到。\n信裡附了 30 枚，先拿去用。\n之後還會有別的賺幣方法，我先去躺一下'},
   {id:'v5', t:'2026-11-27', b:'小窩又多了幾樣，都是跟朋友一起的，要登入才有。\n訪客簿：房間左上角那本小本子。朋友來可以貼貼紙、寫一句話，來你家的朋友都看得到。\n願望清單：相簿裡還沒來的娃娃，點星星。朋友有多的可以送你。\n小島：朋友可以來幫你澆水，你也可以去幫他澆。\n過夜：去朋友家的時候，可以讓一隻娃娃留下來住一晚，隔天牠帶日記回來。\n明信片：拍完照可以寄給朋友。\n沒有朋友來也沒關係，我也常常一個人發呆'},
 ];
 
@@ -145,6 +147,7 @@ function mailAdd(d, type, q, today){
   if (d === 'snoopy' && type !== 'news') parts.push(`c=${(m.arch.snoopy || []).length + 1}`);
   const k = `${d}.${type}.${i}${parts.length ? '#' + parts.join(';') : ''}`;
   let a = null;
+  if (type === 'news') a = (MAIL_NEWS.find(x => 'id=' + x.id === q) || {}).a || null;
   if (type !== 'news' && m.att !== today && d !== 'nyanko' && Math.random() < MAIL_ATT_RATE){
     // 去過小島之後，三成的附件改成一顆種子
     const seed = typeof yardPickSeed === 'function' && S.yard && S.yard.day && Math.random() < .3;
@@ -248,7 +251,7 @@ function mailCard(o, j, open){
     inner = x.d === 'dino' && x.type !== 'news' && !o.f
       ? `<button class="ml-leaf" data-flip="${j}" aria-label="把葉子翻過來">${MAIL_LEAF}<small>點一下翻過來</small></button>`
       : mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
-    if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>附上一個${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
+    if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
   }
   return `<div class="ml ${o.r ? '' : 'unread'} ${open ? 'open' : ''}">
     <button class="ml-hd" data-ml="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${from}・${md(o.t)}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
@@ -269,9 +272,10 @@ function openMail(keep){
   if (!keep && typeof cardRefresh === 'function') cardRefresh(true);
 }
 // 附件的圖和名字：點心盒、泡泡球，或小島的種子（seed-種類）
-const mailAtt = a => (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a];
+const mailAtt = a => (a.startsWith('coin-') ? {name: `${+a.slice(5) || 0} 枚幣`, svg: COIN} : (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a]);
 function mailTake(o){
   if (!o.a || o.g) return; o.g = 1;
+  if (o.a.startsWith('coin-')){ S.coins += +o.a.slice(5) || 0; renderHud(); return; }
   if (o.a.startsWith('seed-')){ if (typeof yardInit === 'function'){ const y = yardInit(), k = o.a.slice(5); y.seeds[k] = (y.seeds[k] || 0) + 1; } return; }
   S.wish[o.a] = (S.wish[o.a] || 0) + 1;
 }

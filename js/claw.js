@@ -278,8 +278,13 @@ function topToyAt(x){
 }
 function startDrop(){
   if (claw.state !== 'idle') return;
-  if (S.coins < COST){ toast('幣不夠了，明天再來領'); return; }
-  S.coins -= COST; S.misses++; renderHud(); save();
+  // 每天第一次夾不用幣（記在 S.day.free，換一天 planDay 會整個重排）
+  planDay();
+  const free = !S.day.free;
+  // 幣不夠：不只說「明天再來」，列出現在還能賺幣的事（js/earn.js）
+  if (!free && S.coins < COST){ if (typeof earnOpen === 'function') earnOpen(true); else toast('幣不夠了，明天再來領'); return; }
+  if (free){ S.day.free = 1; toast('今天第一次，不用幣'); } else S.coins -= COST;
+  S.misses++; renderHud(); save();
   const target = topToyAt(claw.x);
   const guaranteed = S.misses >= 10;
   const win = target && (guaranteed || Math.random() < POW[pow].p);
@@ -372,7 +377,8 @@ function renderCtrl(){
   const c = $('#ctrl'), busy = claw.state !== 'idle';
   c.innerHTML = '';
   const l = document.createElement('button'); l.className='rb'; l.innerHTML=CICON.l; l.setAttribute('aria-label','往左');
-  const go = document.createElement('button'); go.className='rb go'; go.innerHTML=CICON.go+`<span class="cost">${COIN}${COST}</span>`; go.setAttribute('aria-label',`放下爪子（${COST} 枚幣）`);
+  const go = document.createElement('button'); go.className='rb go'; const freeNow = S.day && S.day.date === todayStr() && !S.day.free;   // 今天第一次不用幣
+  go.innerHTML=CICON.go+`<span class="cost">${COIN}${freeNow ? 0 : COST}</span>`; go.setAttribute('aria-label', freeNow ? '放下爪子（今天第一次，不用幣）' : `放下爪子（${COST} 枚幣）`);
   const r = document.createElement('button'); r.className='rb'; r.innerHTML=CICON.r; r.setAttribute('aria-label','往右');
   [l,go,r].forEach(b => { b.disabled = busy; c.appendChild(b); });
   holdBtn(l, () => claw.dir = -1, () => claw.dir = 0);

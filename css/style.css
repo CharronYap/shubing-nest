@@ -678,3 +678,15 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .incard #nav,.incard .rbtn{display:none!important}
 .incard .vb-row .btn{flex:1}
 .ml-hd .tx,.bk-tx .tx,.hd .tx{display:inline}
+/* 賺幣：幣不夠時、點上面的幣，列出現在能賺幣的事 */
+#coinPill{cursor:pointer}
+.er-box{display:grid;gap:8px;padding:2px}
+.er-hi{margin:0;font-size:13px;line-height:1.6;color:var(--soft)}
+.er-it{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;border:2px solid #f3e7ef;background:#fff}
+.er-it .ic{flex:none;width:36px;height:36px;display:grid;place-items:center}
+.er-it .ic svg,.er-it .ic img{width:100%;height:100%;object-fit:contain}
+.er-it .tx2{flex:1;min-width:0;display:grid;gap:1px}
+.er-it b{font-size:14px;font-weight:900}
+.er-it small{font-size:12px;color:var(--soft)}
+.er-it.off{opacity:.55}
+.er-sec{margin:6px 2px 0;font-size:12px;font-weight:900;color:var(--soft)}
