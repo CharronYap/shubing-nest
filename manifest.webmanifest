@@ -1,0 +1,17 @@
+{
+  "name": "薯餅的小窩",
+  "short_name": "小窩",
+  "description": "跟薯餅和朋友們一起住的小窩：布置房間、夾娃娃、整理門外的小島。",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffe3ef",
+  "theme_color": "#ffe3ef",
+  "icons": [
+    { "src": "img/icon/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

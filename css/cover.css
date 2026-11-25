@@ -16,7 +16,7 @@
 .cover .cv-rug{position:absolute;left:50%;bottom:18px;width:300px;height:140px;margin-left:-150px;border-radius:50%;background:radial-gradient(ellipse,#ffc2da 0 52%,#fff 53% 57%,#ffb0cf 58% 70%,transparent 71%)}
 
 /* 上面兩顆糖果圓鈕，只放圖示 */
-.cover .cv-cb{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));z-index:9;width:50px;height:50px;border:0;border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;color:#fff;
+.cover .cv-cb{position:absolute;top:calc(14px + var(--sat,0px));z-index:9;width:50px;height:50px;border:0;border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;color:#fff;
   background:radial-gradient(circle at 40% 32%,var(--c1),var(--c2));box-shadow:0 5px 0 var(--c3),0 9px 12px rgba(80,30,60,.22)}
 .cover .cv-cb::before{content:'';position:absolute;top:8px;left:11px;width:15px;height:8px;border-radius:50%;background:rgba(255,255,255,.7);transform:rotate(-24deg)}
 .cover .cv-cb:active{transform:translateY(3px);box-shadow:0 2px 0 var(--c3),0 5px 8px rgba(80,30,60,.2)}

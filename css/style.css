@@ -281,7 +281,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
   html,body{height:100%;overflow:hidden}
   body{padding:0}
   .phone{max-width:none;height:100dvh;border:0;border-radius:0;box-shadow:none}
-  .screen{aspect-ratio:auto;height:100%;border-radius:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .screen{aspect-ratio:auto;height:100%;border-radius:0;padding-top:var(--sat);padding-bottom:var(--sab)}
 }
 
 /* 音樂開關：關掉時音符上多一條斜線 */
@@ -805,3 +805,12 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .ph-bgs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .ph-bgs .ng-chip{padding:5px 12px}
 .ng-chip.off{opacity:.45;cursor:default;border-style:dashed}
+/* 加到主畫面全螢幕開的時候：瀏海（上面）和底部橫條（下面）留邊。一般瀏覽器裡這兩個數字是 0，樣子不變 */
+:root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+@media (max-width:480px){
+  .sheet{top:calc(60px + var(--sat));max-height:calc(100% - 80px - var(--sat) - var(--sab))}
+  .toast{top:calc(62px + var(--sat))}
+  .over,.acct{padding-top:calc(20px + var(--sat));padding-bottom:calc(20px + var(--sab))}
+  /* 狀態列（時間、電量）是白字，後面墊一條淡淡的深色，白天的粉色天空上才看得清楚 */
+  .screen::before{content:"";position:absolute;left:0;right:0;top:0;height:var(--sat);background:linear-gradient(rgba(107,45,74,.36),rgba(107,45,74,.08));z-index:900;pointer-events:none}
+}
