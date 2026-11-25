@@ -63,8 +63,8 @@ const EVENTS_PER_DAY = 3;
 /* 幣 */
 const COST = 2;          // 夾一次
 const OPEN_COINS = 20;   // 第一次進來送
-const DAILY_COINS = 20;  // 每天第一次打開（2026-11-27 從 10 調成 20）
-const EVENT_COINS = 3;   // 處理一件小事（2026-11-27 從 2 調成 3）
+const DAILY_COINS = 20;  // 每天第一次打開（2026-11-26 從 10 調成 20）
+const EVENT_COINS = 3;   // 處理一件小事（2026-11-26 從 2 調成 3）
 const GIFT_RATE = .25;   // 做完小事後娃娃送東西的機率（js/gift.js）
 
 /* 爪子：夾到幾次解鎖 */

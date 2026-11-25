@@ -158,8 +158,8 @@ export function createCloud(config, { emulator = false } = {}) {
       if (uid && (!user || user.uid !== uid)) throw Object.assign(new Error('account changed'), { code: 'cloud/account-changed' });
       try { await F.setDoc(ref(), data); }
       catch (e) {
-        // 新欄位要等 firestore.rules 發布後才收。還沒發布時先拿掉再寫，其他進度照樣上雲端
-        // 賺幣的 earn、新房間（home 的 kitchen、attic）在規則發布前只存在這台裝置
+        // 保險：規則已經在 2026-11-26 發布，正常不會走到這裡。萬一主控台的規則被換回舊版、不收新欄位，
+        // 就先拿掉賺幣的 earn 和新房間（home 的 kitchen、attic）再寫，其他進度照樣上雲端
         const extra = ['earn'].filter(k => k in data);
         const rooms = data.home ? ['kitchen', 'attic'].filter(k => k in data.home) : [];
         if (!(e && e.code === 'permission-denied' && (extra.length || rooms.length))) throw e;
@@ -210,7 +210,7 @@ export function createCloud(config, { emulator = false } = {}) {
       if (!user) throw new Error('not signed in');
       try { await F.setDoc(F.doc(db, 'nestRooms', user.uid), data); }
       catch (e) {
-        // 第五版的 want（願望清單）、yard（小島給朋友看的樣子）要等規則發布才收。還沒發布時先拿掉再寫，房間照樣放得上去
+        // 保險（規則已發布，正常不會走到這裡）：第五版的 want（願望清單）、yard（小島給朋友看的樣子）舊版規則不收。還沒發布時先拿掉再寫，房間照樣放得上去
         const extra = ['want', 'yard'].filter(k => k in data);
         const rooms = data.home ? ['kitchen', 'attic'].filter(k => k in data.home) : [];
         if (!(e && e.code === 'permission-denied' && (extra.length || rooms.length))) throw e;

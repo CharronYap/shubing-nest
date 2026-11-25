@@ -1,4 +1,4 @@
-/* 賺幣（2026-11-27）
+/* 賺幣（2026-11-26）
    第一步：幣不夠、或點上面的幣時，列出「現在就能做、做了就有幣」的事，點了直接過去。
      每天領 20 枚、小事一件 3 枚、每天第一次夾不用幣的數字在 data.js 和 claw.js。
    不懲罰、不催人：這張清單只在你自己點開、或幣真的不夠時出現，不會自己跳出來。 */
@@ -48,7 +48,7 @@ $('#coinPill').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key
      ms:[領過的里程碑],
      shop:{d:'今天', items:[今天擺的], bought:[今天買過的]}   （js/shop.js）
    }
-   規則發布前 earn 只存在這台裝置（js/cloud.js 存檔被擋時會先拿掉再寫）。 */
+   earn 跟著存檔一起上雲端（規則 2026-11-26 發布）。js/cloud.js 留著保險：存檔被擋時會先拿掉 earn 再寫。 */
 const EARN_GAME_TOP = 3, EARN_WORK_MAX = 3, EARN_WORK_PAY = 2, EARN_HEART_MAX = 5;
 // 家具系列：湊齊一個 10 枚。雲朵系列，加上 js/furn2.js 裡有獎品的系列
 const EARN_SETS = {cloud: CLOUD_SET}, EARN_SET_NAME = {cloud: '雲朵系列'};
