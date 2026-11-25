@@ -68,4 +68,3 @@
 @keyframes cvPeek{0%,100%{translate:0 0}50%{translate:0 -6px}}
 @keyframes cvSquish{0%,100%{scale:1 1}50%{scale:1.03 .97}}
 @media (prefers-reduced-motion:reduce){.cover *{animation:none!important}.cover{transition:none}}
-.cover .cv-cb[hidden]{display:none}

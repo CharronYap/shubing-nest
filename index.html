@@ -16,6 +16,7 @@
         <div id="nav"></div>
         <div class="pity" id="pity" hidden></div>
         <div class="topr">
+          <button class="ib w sm mbtn" id="musicBtn" aria-label="關掉音樂" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.5l10-2.3v11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.9" fill="currentColor"/><circle cx="16.6" cy="15.4" r="2.9" fill="currentColor"/><path class="mx" d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
           <span class="coin" aria-label="幣"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ffd75e" stroke="#d98e00" stroke-width="2"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#fff3b8" stroke-width="1.6"/><path d="M12 15.6s-3.4-2-3.4-4.2c0-1.1.8-1.9 1.8-1.9.7 0 1.2.4 1.6.9.4-.5.9-.9 1.6-.9 1 0 1.8.8 1.8 1.9 0 2.2-3.4 4.2-3.4 4.2z" fill="#ff8fbf"/></svg><span id="coins">0</span></span>
           <button class="ib w" id="evBtn" aria-label="今天的小事"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.6 3.6c-.5.4-1.2 0-1.2-.6V16h.3A2.5 2.5 0 0 1 4 13.5z"/><g fill="#fff"><circle cx="8.5" cy="9.6" r="1.4"/><circle cx="12" cy="9.6" r="1.4"/><circle cx="15.5" cy="9.6" r="1.4"/></g></svg><span class="bd" hidden></span></button>
         </div>
@@ -70,7 +71,7 @@
           </div>
           <button class="cv-go" id="coverGo" aria-label="開始"><span><svg viewBox="0 0 24 24"><path d="M8 5.2v13.6a1 1 0 0 0 1.5.86l10.8-6.8a1 1 0 0 0 0-1.72L9.5 4.34A1 1 0 0 0 8 5.2z"/></svg></span></button>
         </div>
-        <button class="cv-cb cv-mu" id="coverMusic" aria-label="音樂" hidden></button>
+        <button class="cv-cb cv-mu mbtn" id="coverMusic" aria-label="關掉音樂" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.5l10-2.3v11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.9" fill="currentColor"/><circle cx="16.6" cy="15.4" r="2.9" fill="currentColor"/><path class="mx" d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
         <button class="cv-cb cv-cl" id="coverClaw" aria-label="去娃娃機"></button>
       </div>
       <div class="toast" id="toast" role="status"></div>
@@ -81,6 +82,7 @@
 <script src="js/room.js"></script>
 <script src="js/claw.js"></script>
 <script src="js/main.js"></script>
+<script src="js/music.js"></script>
 <script src="js/cover.js"></script>
 </body>
 </html>

@@ -20,6 +20,6 @@
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) done();
     else setTimeout(done, 460);
   };
-  $('#coverGo').addEventListener('click', () => { setPage('room'); close(); });
-  $('#coverClaw').addEventListener('click', () => { setPage('claw'); close(); });
+  $('#coverGo').addEventListener('click', () => { music.start(); setPage('room'); close(); });
+  $('#coverClaw').addEventListener('click', () => { music.start(); setPage('claw'); close(); });
 })();

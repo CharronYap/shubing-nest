@@ -272,3 +272,11 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
   .phone{max-width:none;height:100dvh;border:0;border-radius:0;box-shadow:none}
   .screen{aspect-ratio:auto;height:100%;border-radius:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 }
+
+/* 音樂開關：關掉時音符上多一條斜線 */
+.ib.sm{width:34px;height:34px;border-width:2px}
+.ib.sm svg{width:18px;height:18px}
+.mbtn .mx{display:none}
+.mbtn.off .mx{display:inline}
+.mbtn.off svg{opacity:.75}
+@media (max-width:370px){.top{gap:5px;padding-left:9px;padding-right:9px}.topr{gap:5px}}
