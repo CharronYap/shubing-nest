@@ -11,6 +11,12 @@
 //   cloud.ensurePlayer()     還沒有公開資料（第一次登入）就建一份最基本的；已經有就不動
 //   cloud.addFriend(uid)     把 uid 加進自己的好友名單（只動 friends 這一欄）
 //   cloud.findCode(code) / cloud.addedMe()
+//   去朋友家（nestRooms/{uid}，規則發布前讀寫都會被擋，呼叫的地方要接住錯誤、不出聲）：
+//   cloud.saveRoom(data)     寫自己的公開房間 {name, home, look, t}
+//   cloud.room(uid)          讀朋友的公開房間 → 物件或 null
+//   cloud.sendHeart(uid, day)  在朋友家留一顆愛心（一人一天一顆，規則擋）
+//   cloud.sentHeart(uid, day)  今天在這個朋友家留過了沒
+//   cloud.heartsToday(day)   自己家今天收到幾顆
 //
 // SDK 從 Google 的 CDN 載（約 110 KB gzip），只有打開遊戲後才在背景載，不會拖慢開始。
 
@@ -170,6 +176,34 @@ export function createCloud(config, { emulator = false } = {}) {
       await ready;
       const r = await F.getDocs(F.query(F.collection(db, 'players'), F.where('code', '==', code), F.limit(5)));
       return r.docs.map(d => ({ ...d.data(), uid: d.id }));
+    },
+    // ---------- 去朋友家、留愛心（nestRooms） ----------
+    async saveRoom(data) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'nestRooms', user.uid), data);
+    },
+    async room(uid) {
+      await ready;
+      const s = await F.getDoc(F.doc(db, 'nestRooms', uid));
+      return s.exists() ? s.data() : null;
+    },
+    async sendHeart(uid, day) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'nestRooms', uid, 'hearts', `${day}_${user.uid}`), { from: user.uid, day });
+    },
+    async sentHeart(uid, day) {
+      await ready;
+      if (!user) return false;
+      const s = await F.getDoc(F.doc(db, 'nestRooms', uid, 'hearts', `${day}_${user.uid}`));
+      return s.exists();
+    },
+    async heartsToday(day) {
+      await ready;
+      if (!user) return 0;
+      const r = await F.getDocs(F.query(F.collection(db, 'nestRooms', user.uid, 'hearts'), F.where('day', '==', day), F.limit(60)));
+      return r.size;
     },
     async addedMe() {
       await ready;

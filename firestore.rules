@@ -1,6 +1,7 @@
 rules_version = '2';
-// 薯餅的小窩的 Firestore 規則（Firebase 專案 shubing-nest，已經發布）。
-// 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）和最後的 nestSaves（存檔），saves 用不到。
+// 薯餅的小窩的 Firestore 規則（Firebase 專案 shubing-nest）。
+// 2026-11-26 新增 nestRooms（去朋友家）和 nestRooms/{uid}/hearts（留愛心）兩段，這兩段還沒發布；其他段落跟已發布的一樣。
+// 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
 //
@@ -113,6 +114,48 @@ service cloud.firestore {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
         && okNest(request.resource.data);
+    }
+
+    // 去朋友家：nestRooms/{uid}，公開的房間。只放三個房間的擺設、娃娃穿什麼、名字和更新時間；
+    // 存檔裡的幣、相簿、道具這些都不在這裡。登入的人都能讀，只有本人能寫、能刪
+    function okNestPublic(d) {
+      return d.keys().hasOnly(['name', 'home', 'look', 't'])
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 24
+        && d.home is map && d.home.keys().hasOnly(['living', 'bed', 'bath'])
+        && okNestRoom(d.home.living) && okNestRoom(d.home.bed) && okNestRoom(d.home.bath)
+        && (!('look' in d) || okNestExtra(d.look))
+        && d.t is int;
+    }
+    match /nestRooms/{uid} {
+      allow read: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && okNestPublic(request.resource.data);
+    }
+
+    // a 的好友名單（players/{a}.friends）裡有沒有 b
+    function nestFriendOf(a, b) {
+      return exists(/databases/$(database)/documents/players/$(a))
+        && b in get(/databases/$(database)/documents/players/$(a)).data.get('friends', []);
+    }
+    // 留在朋友家的愛心：nestRooms/{朋友的 uid}/hearts/{日子_送的人的 uid}
+    //   day = 台灣時間（UTC+8）從 1970-01-01 算起的第幾天，要等於今天
+    //   文件名字由日子和送的人組成，同一天同一個人只能建一次（不能改、不能刪），所以一人一天一顆
+    //   只能留給好友（任一邊加了對方都算），不能留給自己
+    //   收到的人只看得到數量和自己的；送的人只能讀自己送的那顆（確認今天送過沒）
+    match /nestRooms/{uid}/hearts/{hid} {
+      allow get: if request.auth != null
+        && (request.auth.uid == uid || hid.split('_')[1] == request.auth.uid);
+      allow list: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['from', 'day'])
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.day is int
+        && request.resource.data.day * 86400000 - 28800000 <= request.time.toMillis()
+        && request.time.toMillis() < (request.resource.data.day + 1) * 86400000 - 28800000
+        && hid == string(request.resource.data.day) + '_' + request.auth.uid
+        && (nestFriendOf(uid, request.auth.uid) || nestFriendOf(request.auth.uid, uid));
     }
 
     // 其他東西一律不能讀寫

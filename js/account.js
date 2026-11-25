@@ -75,10 +75,23 @@ async function push() {
       await cloud.save(d, who);
       S.base = d.t; writeLocal();
       setState('synced');
+      pushRoom();
     } catch (e) { failState(e); }
   })();
   try { await pushing; } finally { pushing = null; }
   if (me && S.t > (S.base || 0) && state === 'synced') schedulePush();
+}
+// 公開房間（朋友來家裡看的那份）：只有擺設、燈、娃娃穿什麼。跟上次一樣就不寫。
+// 規則還沒發布時會被擋，不影響存檔，也不出聲
+let roomSent = '';
+const pubRoom = r => ({ wall: r.wall, floor: r.floor, items: r.items, ...(r.light === false ? { light: false } : {}) });
+async function pushRoom() {
+  if (!me) return;
+  const data = { name: me.name.slice(0, 24), home: { living: pubRoom(home.living), bed: pubRoom(home.bed), bath: pubRoom(home.bath) }, look: S.look || {} };
+  const key = JSON.stringify(data);
+  if (key === roomSent) return;
+  try { await cloud.saveRoom({ ...data, t: Date.now() }); roomSent = key; }
+  catch (e) { roomSent = key; console.info('[account] 公開房間沒寫上去（規則可能還沒發布）', e && e.code); }
 }
 function schedulePush() { clearTimeout(pushT); pushT = setTimeout(push, 1500); }
 
