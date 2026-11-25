@@ -2,9 +2,15 @@
 
 在網頁上布置娃娃房間、用娃娃機夾娃娃和家具，每天陪八隻娃娃做幾件小事。第一版只有自己的房間，還沒有朋友互訪和送禮。
 
-## 怎麼玩起來
+## 直接玩
 
-不用安裝任何套件，Mac 內建的 Python 就能跑。
+網頁版：https://charronyap.github.io/shubing-nest/
+
+手機、電腦打開就能玩。push 到 main 之後，大約一兩分鐘網頁版會自動更新。
+
+## 在自己電腦跑
+
+改程式時用這個方式。不用安裝任何套件，Mac 內建的 Python 就能跑。
 
 ```bash
 git clone https://github.com/CharronYap/shubing-nest.git
@@ -54,9 +60,8 @@ localStorage.removeItem('shubingNest.v1'); location.reload();
 
 - 朋友互訪、送娃娃、信箱（打算之後接 Firebase）
 - 音效
-- 網頁版上線
 
 ## 注意
 
-- 這個 repo 是私密的。免費帳號的私密 repo 不能開 GitHub Pages，所以目前只能 clone 下來在自己電腦跑。
-- 蛋黃哥、貓咪老師、史努比、火腿是別人有版權的角色，圖片只供我們自己玩。repo 改成公開或放上網之前，要先換成原創角色。
+- 這個 repo 是公開的，網頁版放在 GitHub Pages。任何人都看得到程式和圖片。
+- 蛋黃哥、貓咪老師、史努比、火腿是別人有版權的角色，圖片只供我們自己玩，不要拿去商用或另外散布。之後如果要正式推出，要先換成原創角色。
