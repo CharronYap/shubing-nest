@@ -499,7 +499,6 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .ml-tx p.tilt{color:var(--soft);letter-spacing:.04em;padding-bottom:16px}
 .ml-tx p.tilt span{display:inline-block;transform:translateY(calc(var(--i)*1.7px)) rotate(calc(var(--i)*2.4deg));transform-origin:0 60%}
 .ml-tx p.tilt .zz{color:#9d8fe0;font-weight:900;margin-left:3px;letter-spacing:.02em}
-.ml-tx p.ml-zz{margin:0;font-size:11px;color:#b9aab2}
 .ml-sl{margin:2px 0}
 .ml-sl svg{width:54px;height:32px}
 .ml-sg{margin:6px 0 0;text-align:right;font-size:12px;font-weight:800;color:var(--soft)}

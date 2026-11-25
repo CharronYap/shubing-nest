@@ -251,10 +251,10 @@ function mailBodyHTML(x){
     if (l === '[拖鞋]') return `<p class="ml-sl">${typeof DROP_SVG !== 'undefined' ? DROP_SVG.slipper : ''}</p>`;
     const last = j === lines.length - 1;
     if (x.d === 'sloth' && last && x.type !== 'trip'){
-      // 薯餅寫到一半睡著：最後幾個字一個比一個往下掉，後面接 Zzz，下面一行小字說明（不然看起來像字被切掉）
+      // 薯餅寫到一半睡著：最後幾個字一個比一個往下掉，後面接 Zzz（不然看起來像字被切掉）
       const cs = /[<&]/.test(l) ? null : [...l], n = 7;
       const tail = cs ? cs.slice(0, Math.max(0, cs.length - n)).join('') + cs.slice(-n).map((c, k) => `<span style="--i:${k + 1}">${c}</span>`).join('') : l;
-      return `<p class="tilt">${tail}<span class="zz" style="--i:${cs ? Math.min(n, cs.length) + 2 : 3}">……Zzz</span></p><p class="ml-zz">（薯餅寫到這裡睡著了）</p>`;
+      return `<p class="tilt">${tail}<span class="zz" style="--i:${cs ? Math.min(n, cs.length) + 2 : 3}">……Zzz</span></p>`;
     }
     return `<p>${l}</p>`;
   }).join('');
