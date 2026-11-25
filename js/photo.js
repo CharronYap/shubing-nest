@@ -9,7 +9,7 @@
 const CAM_ICON = '<svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.2-1.8c.3-.5.8-.7 1.3-.7h2.8c.5 0 1 .2 1.3.7L15.9 6h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z" fill="currentColor"/><circle cx="12" cy="12.4" r="3.6" fill="#fff"/><circle cx="12" cy="12.4" r="1.9" fill="currentColor"/><circle cx="17" cy="9" r=".9" fill="#fff"/></svg>';
 const PIGGY_QUIPS = ['拍我要先付錢', '這張我拍得比較好', '又拍？手機容量夠嗎', '記得把我拍瘦一點', '剛剛有人閉眼睛', '我早就知道你會拍', '拍完要請吃點心', '構圖普通，可以啦'];
 const PH = {W: 960, H: 1380, pad: 30, pw: 900, ph: 1200};   // 整張、照片四周的白邊、照片的寬高
-const ROOM_NAME = {living: '客廳', bed: '臥室', bath: '浴室'};
+const ROOM_NAME = {living: '客廳', bed: '臥室', bath: '浴室', kitchen: '廚房', attic: '閣樓'};
 
 /* ---------- 讀圖 ---------- */
 const imgCache = {};

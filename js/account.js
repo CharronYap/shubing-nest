@@ -88,6 +88,7 @@ const pubRoom = r => ({ wall: r.wall, floor: r.floor, items: r.items, ...(r.ligh
 async function pushRoom() {
   if (!me) return;
   const data = { name: me.name.slice(0, 24), home: { living: pubRoom(home.living), bed: pubRoom(home.bed), bath: pubRoom(home.bath) }, look: S.look || {} };
+  ['kitchen', 'attic'].forEach(r => { if (home[r] && Array.isArray(home[r].items)) data.home[r] = pubRoom(home[r]); });   // 買了才有的房間（js/rooms.js）
   // 第五版：願望清單（最多 3 隻還沒有的娃娃）和小島給朋友看的樣子（每塊地是什麼，不含種子、次數）
   const want = typeof wantList === 'function' ? wantList() : [];
   if (want.length) data.want = want;

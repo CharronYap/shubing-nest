@@ -238,6 +238,7 @@ function winSVG(night){
 function paintRoom(){
   const night=isNight();
   $('#wall').className='wall w-'+cur().wall;$('#floor').className='floor f-'+cur().floor;
+  room.dataset.rid=roomId;   // 閣樓的斜屋頂、圓天窗看這個（css）
   $('#win').innerHTML=winSVG(night);
   screen.classList.toggle('night',night);
   if(typeof skyPaint==='function')skyPaint();
@@ -273,7 +274,8 @@ setInterval(()=>{if(isNight()!==screen.classList.contains('night')||(typeof skyK
 function renderNav(){
   const yd=typeof yardOn!=='undefined'&&yardOn;
   const ids=VISIT&&!VISIT.yard?RIDS:[...RIDS,'yard'];
-  $('#nav').innerHTML=`<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'}[r]}">${ICON[r]}</button>`).join('')}</div>`;
+  $('#nav').innerHTML=`<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'})[r]}">${ICON[r]}</button>`).join('')}</div>`;
+  const rn=$('#nav .rnav'),on=$('#nav .on');if(rn&&on&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=on.offsetLeft-rn.clientWidth/2+on.offsetWidth/2;   // 房間多的時候，讓現在這間留在看得到的地方
 }
 function slide(dir,swap){
   if(REDUCE){swap();return;}
@@ -300,6 +302,6 @@ function goRoom(r){
   if(r==='yard'){if(typeof yardOpen==='function'&&!yardOn)yardOpen();return;}
   if(typeof yardOn!=='undefined'&&yardOn){yardClose();if(r===(goingTo??roomId)){renderNavTo(r);return;}}
   const from=goingTo??roomId;if(r===from)return;const d=RIDS.indexOf(r)>RIDS.indexOf(from)?1:-1;goingTo=r;slide(d,()=>{roomId=r;goingTo=null;load();});renderNavTo(r);}
-function renderNavTo(r){document.querySelectorAll('.rnav button').forEach(b=>b.classList.toggle('on',b.dataset.r===r));}
+function renderNavTo(r){document.querySelectorAll('.rnav button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);if(on&&b.scrollIntoView)b.scrollIntoView({block:'nearest',inline:'nearest'});});}
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-r]');if(b)goRoom(b.dataset.r);});
 let toastT;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),1400);}

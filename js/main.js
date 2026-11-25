@@ -44,7 +44,9 @@ function planDay(){
   const fest = typeof festEvents === 'function' ? festEvents(today).slice(0, 1) : [];
   // 下雨天的小事（js/sky.js）：那天多排一件
   const rain = typeof skyEvents === 'function' ? skyEvents(today) : [];
-  S.day = { date: today, ids: [...fest, ...rain, ...pool.slice(0, EVENTS_PER_DAY)].map(e => e.id), done: [], tap: {} };
+  // 廚房、閣樓的小事（js/rooms.js）：有那一間才排，一天多一件；下雨那天就不再加
+  const rm = !rain.length && typeof roomEvents === 'function' ? roomEvents(today) : [];
+  S.day = { date: today, ids: [...fest, ...rain, ...rm, ...pool.slice(0, EVENTS_PER_DAY)].map(e => e.id), done: [], tap: {} };
   save();
 }
 const evById = id => EVENTS.find(e => e.id === id);
@@ -90,7 +92,7 @@ function doEvent(id){
   S.day.done.push(id);
   albumCard(id);
   if (typeof mailCount === 'function') mailCount(e);   // 信箱：一起做完幾件（js/mail.js）
-  if (e.when && e.when !== 'rain' && typeof festDone === 'function') festDone(e);
+  if (e.when && typeof FEST_WHEN !== 'undefined' && FEST_WHEN[e.when] && typeof festDone === 'function') festDone(e);
   S.coins += EVENT_COINS;
   if (typeof giftAfter === 'function') giftAfter(e);   // 有時候娃娃會送東西
   renderHud(); renderEvBadge(); markDolls(); save();

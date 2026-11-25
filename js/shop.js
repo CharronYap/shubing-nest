@@ -69,7 +69,9 @@ function shopBuy(i){
   else if (typeof shopKeyBuy === 'function') shopKeyBuy(x.id);
   const st = shopStock(); st.bought.push(`${x.kind[0]}:${x.id}`);
   if (typeof setCheck === 'function') setCheck();   // 湊齊系列的獎品（js/furn2.js）
-  renderHud(); save(); render();
+  renderHud(); save();
+  if (x.kind === 'key') return;   // 新房間：js/rooms.js 會關掉小店、帶你過去
+  render();
   toast(`買了${shopName(x)}，在收納架裡`);
   shopOpen(true);
 }
