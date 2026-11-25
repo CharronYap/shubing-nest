@@ -576,3 +576,23 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 @container (max-width:360px){.rnav:has(>:nth-child(4)) button{width:26px}}
 @container (max-width:340px){.rnav:has(>:nth-child(4)) button{width:24px}}
 @container (max-width:318px){.rnav:has(>:nth-child(4)) button{width:22px}.rnav:has(>:nth-child(4)) button svg{width:17px;height:17px}}
+
+/* ===== 第四版：送娃娃（js/nestgift.js） ===== */
+.ml.ng-in{border-color:#ffd98a;background:#fffbea}
+.ng-in .ml-hd{cursor:default}
+.ng-in .ml-ft{margin-top:8px}
+.ng-sec{margin-top:6px}
+.ng-out{display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px dashed var(--line);border-radius:16px;background:#fff}
+.ng-out img{width:36px;height:36px;object-fit:contain;flex:none}
+.ng-out span{display:grid;gap:1px;flex:1;min-width:0}
+.ng-out b{font-size:13.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ng-out small{font-size:11px;color:var(--soft);font-weight:700}
+.ng-box{display:grid;gap:2px;max-height:calc(100dvh - 240px);overflow-y:auto;overscroll-behavior:contain;padding:2px}
+.ng-box .al-sec:first-child{margin-top:2px}
+.ng-dolls{display:flex;flex-wrap:wrap;gap:8px}
+.ng-dolls .tile{width:64px;height:64px}
+.ng-dolls .tile.on{border-color:var(--pink);box-shadow:0 0 0 3px #ffd0e6}
+.ng-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ng-chip{border:2px solid var(--line);border-radius:999px;background:#fff;padding:6px 12px;font:inherit;font-size:13px;font-weight:800;color:inherit;cursor:pointer}
+.ng-chip.on{border-color:var(--pink);background:#fff0f7;color:var(--pink2)}
+.ml-ft .btn[disabled]{filter:grayscale(.6);opacity:.55;cursor:default}

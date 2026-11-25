@@ -17,6 +17,11 @@
 //   cloud.sendHeart(uid, day)  在朋友家留一顆愛心（一人一天一顆，規則擋）
 //   cloud.sentHeart(uid, day)  今天在這個朋友家留過了沒
 //   cloud.heartsToday(day)   自己家今天收到幾顆
+//   送娃娃（nestGifts/{id}，第四版；規則發布前一樣會被擋）：
+//   cloud.sendGift({to, toName, doll, line, fromName})  寄一隻娃娃 → 新文件的 id
+//   cloud.giftsTo() / cloud.giftsFrom()  寄給自己的、自己寄出去還沒被領的 → [{id, from, fromName, to, toName, doll, line, t}]
+//   cloud.gift(id)           讀一份（領或收回前先確認還在）→ 物件或 null
+//   cloud.delGift(id)        刪掉（領走或收回）
 //
 // SDK 從 Google 的 CDN 載（約 110 KB gzip），只有打開遊戲後才在背景載，不會拖慢開始。
 
@@ -212,6 +217,38 @@ export function createCloud(config, { emulator = false } = {}) {
       if (!user) return 0;
       const r = await F.getDocs(F.query(F.collection(db, 'nestRooms', user.uid, 'hearts'), F.where('day', '==', day), F.limit(60)));
       return r.size;
+    },
+    // ---------- 送娃娃（nestGifts） ----------
+    // 不用 transaction：寄的時候先寫這份，成功了呼叫的地方才把自己的數量減一；領的時候先加進自己的存檔，再刪這份
+    async sendGift({ to, toName, doll, line, fromName }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      const r = await F.addDoc(F.collection(db, 'nestGifts'), {
+        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), to, toName: String(toName || '').slice(0, 24), doll, line, t: Date.now(),
+      });
+      return r.id;
+    },
+    async giftsTo() {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestGifts'), F.where('to', '==', user.uid), F.limit(30)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    async giftsFrom() {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestGifts'), F.where('from', '==', user.uid), F.limit(30)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    async gift(id) {
+      await ready;
+      const s = await F.getDoc(F.doc(db, 'nestGifts', id));
+      return s.exists() ? { ...s.data(), id } : null;
+    },
+    async delGift(id) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.deleteDoc(F.doc(db, 'nestGifts', id));
     },
     async addedMe() {
       await ready;

@@ -332,16 +332,21 @@ async function goVisit(p) {
   } finally { visiting = false; }
 }
 
+// 好友：自己加的 + 加了自己的（兩個方向都算，跟留愛心、送娃娃的規則一樣）
+async function fetchFriends() {
+  const mine = await cloud.ensurePlayer();
+  const ids = new Set(mine.friends || []);
+  const back = await cloud.addedMe();
+  back.forEach(p => ids.delete(p.uid));
+  const fwd = (await Promise.all([...ids].map(id => cloud.player(id).catch(() => null)))).filter(Boolean);
+  friends = [...fwd, ...back].filter((p, i, a) => p.uid !== me.uid && a.findIndex(q => q.uid === p.uid) === i);
+  return friends;
+}
 async function loadFriends() {
   const list = box.querySelector('.ac-list');
   if (!list) return;
   try {
-    const mine = await cloud.ensurePlayer();
-    const ids = new Set(mine.friends || []);
-    const back = await cloud.addedMe();
-    back.forEach(p => ids.delete(p.uid));
-    const fwd = (await Promise.all([...ids].map(id => cloud.player(id).catch(() => null)))).filter(Boolean);
-    friends = [...fwd, ...back].filter((p, i, a) => p.uid !== me.uid && a.findIndex(q => q.uid === p.uid) === i);
+    await fetchFriends();
     const el = box.querySelector('.ac-list');
     if (!el) return;
     el.innerHTML = friends.length
@@ -353,6 +358,19 @@ async function loadFriends() {
     const fr = box.querySelector('.ac-fr'); if (fr) fr.hidden = true;
   }
 }
+
+/* ---------- 給一般 script 用（js/nestgift.js 送娃娃） ---------- */
+// 沒登入時 me 是 null；登入好、存檔同步過一次之後發一個 nestnet 事件
+window.nestNet = {
+  get me() { return cloud && me ? { uid: me.uid, name: me.name } : null; },
+  friends: () => friends ? Promise.resolve(friends) : fetchFriends(),
+  sendGift: o => cloud.sendGift(o),
+  giftsTo: () => cloud.giftsTo(),
+  giftsFrom: () => cloud.giftsFrom(),
+  gift: id => cloud.gift(id),
+  delGift: id => cloud.delGift(id),
+  push: () => push(),
+};
 
 /* ---------- 開始 ---------- */
 async function start() {
@@ -377,6 +395,7 @@ async function start() {
   me = u; paintBtn();
   if (me) {
     await syncStart();
+    dispatchEvent(new Event('nestnet'));
     addEventListener('online', () => { if (me && state !== 'synced') push(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden && me && (pushT || S.t > (S.base || 0))) push(); });
   }
