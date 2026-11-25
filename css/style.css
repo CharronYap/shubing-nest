@@ -458,3 +458,17 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .vb-home{flex:none}
 .vb-heart{flex:1}
 .vb-heart[disabled]{filter:grayscale(.5);opacity:.7;cursor:default}
+
+/* 拍照（js/photo.js）：房間右上角的相機鈕、閃光、拍好的預覽 */
+.cam{position:absolute;right:10px;top:10px;width:36px;height:36px;border-radius:50%;border:3px solid #fff;background:#fff;color:var(--pink);box-shadow:0 3px 0 #ead9e2;display:grid;place-items:center;padding:0;cursor:pointer;z-index:402;-webkit-tap-highlight-color:transparent}
+.cam svg{width:20px;height:20px}
+.cam:active{transform:translateY(2px);box-shadow:0 1px 0 #ead9e2}
+.cam:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.visiting .cam{display:none}
+.flash{position:absolute;inset:0;background:#fff;z-index:640;pointer-events:none;animation:flash .42s ease-out forwards}
+@keyframes flash{0%{opacity:.95}100%{opacity:0}}
+.phcard{position:relative;max-width:320px;padding:16px 14px 14px;gap:14px}
+.phimg{display:block;width:100%;height:auto;border-radius:4px;box-shadow:0 2px 10px rgba(80,40,70,.18);transform:rotate(-1.2deg)}
+.phcard .row .btn{min-width:110px}
+.ph-x{position:absolute;right:-8px;top:-8px;width:32px;height:32px;border-radius:50%;border:3px solid #fff;background:#f6eef2;color:var(--soft);cursor:pointer;display:grid;place-items:center;padding:0}
+.ph-x svg{width:14px;height:14px}
