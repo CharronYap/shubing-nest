@@ -77,9 +77,19 @@ service cloud.firestore {
     function okNestCount(m) {
       return m is map && m.size() <= 200;
     }
+    // 第二版預留：album（娃娃相簿）、away（你不在的時候）、look（每隻娃娃穿什麼）、closet（擁有的配件）。
+    // 先放進白名單，功能做好時不用再發布一次規則。都可有可無，大小上限 200
+    function okNestExtra(x) {
+      return (x is map || x is list) && x.size() <= 200;
+    }
     function okNest(d) {
       return d.keys().hasOnly(['v', 't', 'coins', 'misses', 'wins', 'opened', 'lastDaily', 'seed',
-            'dollN', 'furnOwn', 'wallOwn', 'floorOwn', 'wish', 'clawStyle', 'day', 'home', 'uid'])
+            'dollN', 'furnOwn', 'wallOwn', 'floorOwn', 'wish', 'clawStyle', 'day', 'home', 'uid',
+            'album', 'away', 'look', 'closet'])
+        && (!('album' in d) || okNestExtra(d.album))
+        && (!('away' in d) || okNestExtra(d.away))
+        && (!('look' in d) || okNestExtra(d.look))
+        && (!('closet' in d) || okNestExtra(d.closet))
         && d.v is int && d.v >= 1 && d.v <= 100
         && d.t is int
         && d.coins is int && d.coins >= 0 && d.coins <= 1000000
