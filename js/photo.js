@@ -4,6 +4,7 @@
    - 「存下來」：手機叫出分享（可以存到相簿），電腦下載成 PNG。照片不上傳雲端
    - 照片裡有的娃娃，相簿那一頁記一行「○月○日一起拍了照」
    - 拍幾張都可以，不花幣，也沒有次數限制
+   - 第五版：登入後預覽多一顆「寄給朋友」，把這間房間當明信片寄出去（js/card.js）
    S.album.photos = {娃娃: ['日期', ...]}，同一天只記一次，每隻留最近 12 天 */
 const CAM_ICON = '<svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.2-1.8c.3-.5.8-.7 1.3-.7h2.8c.5 0 1 .2 1.3.7L15.9 6h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z" fill="currentColor"/><circle cx="12" cy="12.4" r="3.6" fill="#fff"/><circle cx="12" cy="12.4" r="1.9" fill="currentColor"/><circle cx="17" cy="9" r=".9" fill="#fff"/></svg>';
 const PIGGY_QUIPS = ['拍我要先付錢', '這張我拍得比較好', '又拍？手機容量夠嗎', '記得把我拍瘦一點', '剛剛有人閉眼睛', '我早就知道你會拍', '拍完要請吃點心', '構圖普通，可以啦'];
@@ -279,6 +280,7 @@ async function photoTake(){
   photoBusy = false;
   if (!shot){ toast('沒拍成，再試一次'); return; }
   photoRecord(shot.dolls);
+  const snap = typeof cardSnap === 'function' && typeof sNet === 'function' && sNet() ? cardSnap() : null;   // 寄明信片用（js/card.js）
   let url = '';
   try { url = shot.canvas.toDataURL('image/png'); } catch (e) {}
   if (!url){ toast('這台存不了照片'); return; }
@@ -286,13 +288,14 @@ async function photoTake(){
   const o = document.createElement('div'); o.className = 'over phov';
   o.innerHTML = `<div class="pcard phcard" role="dialog" aria-label="拍好的照片">
       <img class="phimg" alt="拍好的照片" src="${url}">
-      <div class="row"><button class="btn y ph-save">存下來</button><button class="btn ph-again">再拍一張</button></div>
+      <div class="row"><button class="btn y ph-save">存下來</button><button class="btn ph-again">再拍一張</button>${snap ? '<button class="btn ph-card">寄給朋友</button>' : ''}</div>
       <button class="ph-x" aria-label="關閉"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button></div>`;
   screen.appendChild(o);
   o.addEventListener('click', e => { if (e.target === o) o.remove(); });
   o.querySelector('.ph-x').onclick = () => o.remove();
   o.querySelector('.ph-save').onclick = () => photoSave(shot.canvas);
   o.querySelector('.ph-again').onclick = () => { o.remove(); setTimeout(photoTake, 120); };
+  if (snap) o.querySelector('.ph-card').onclick = () => { o.remove(); cardCompose(snap); };
   o.querySelector('.ph-save').focus({preventScroll: true});
 }
 

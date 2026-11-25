@@ -224,7 +224,7 @@ $('#setb').addEventListener('click',()=>{
 });
 
 /* ---------- 房子、窗戶、夜晚 ---------- */
-function isNight(){const h=new Date().getHours();return h>=19||h<5;}
+function isNight(){if(VISIT&&typeof VISIT.night==='boolean')return VISIT.night;const h=new Date().getHours();return h>=19||h<5;}   // 看明信片時照拍的那一刻（js/card.js）
 function winSVG(night){
   return `<svg viewBox="0 0 80 62"><rect x="3" y="3" width="74" height="56" rx="14" fill="#fff" stroke="#e9dff2" stroke-width="2"/>
   <rect x="9" y="9" width="62" height="44" rx="9" fill="${night?'#2f3478':'#aee0ff'}"/>

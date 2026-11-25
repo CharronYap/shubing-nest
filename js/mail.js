@@ -261,10 +261,11 @@ function openMail(keep){
   const ngBtn = typeof ngSendBtn === 'function' ? ngSendBtn() : '';
   const ngw = typeof ngWaiting === 'function' ? ngWaiting() : 0;
   openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>信箱</span>${unread || ngw ? `<small>${[unread ? `${unread} 封沒看` : '', ngw ? `${ngw} 隻在門口` : ''].filter(Boolean).join('・')}</small>` : ''}</div>
-    <div class="ml-box">${typeof ngSection === 'function' ? ngSection() : ''}${m.l.length ? m.l.map((o, j) => mailCard(o, j, j === mlOpenIx)).join('') : '<p class="al-em">還沒有信。娃娃們偶爾會寫信給你，不用特別等。</p>'}</div>
+    <div class="ml-box">${typeof ngSection === 'function' ? ngSection() : ''}${typeof cardSection === 'function' ? cardSection() : ''}${m.l.length ? m.l.map((o, j) => mailCard(o, j, j === mlOpenIx)).join('') : (m.pc || []).length ? '' : '<p class="al-em">還沒有信。娃娃們偶爾會寫信給你，不用特別等。</p>'}</div>
     ${todo || unread || ngBtn ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}${ngBtn}</div>` : ''}`);
   evOpen = false; alOpen = false;
   if (!keep && typeof ngRefresh === 'function') ngRefresh(true);
+  if (!keep && typeof cardRefresh === 'function') cardRefresh(true);
 }
 // 附件的圖和名字：點心盒、泡泡球，或小島的種子（seed-種類）
 const mailAtt = a => (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a];
@@ -299,7 +300,7 @@ $('#sheet').addEventListener('click', e => {
 function mailBadge(){
   const b = $('#mailBtn'); if (!b) return;
   // 沒看的信 + 朋友送來、還在門口等的娃娃
-  const n = (S.mail ? S.mail.l.filter(o => !o.r).length : 0) + (typeof ngWaiting === 'function' ? ngWaiting() : 0);
+  const n = (S.mail ? S.mail.l.filter(o => !o.r).length : 0) + (typeof ngWaiting === 'function' ? ngWaiting() : 0) + (typeof cardUnread === 'function' ? cardUnread() : 0);
   b.querySelector('.bd').textContent = n; b.querySelector('.bd').hidden = !n;
   b.classList.toggle('wig', !!n && !REDUCE);
   b.setAttribute('aria-label', n ? `信箱，${n} 封沒看` : '信箱');
