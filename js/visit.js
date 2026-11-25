@@ -41,7 +41,7 @@ function visitTap(it){
 function visitOpen(f){
   const v = visitClean(f.data);
   if (!VISIT) visitBack = roomId;
-  VISIT = {name: f.name, uid: f.uid || '', home: v.home, look: v.look, want: f.data.want, yard: f.data.yard};
+  VISIT = {name: f.name, uid: f.uid || '', home: v.home, look: v.look, want: f.data.want, yard: typeof waterClean === 'function' ? waterClean(f.data.yard) : null};
   screen.classList.add('visiting');
   setPage('room');
   roomId = 'living';
@@ -79,6 +79,7 @@ function visitOpen(f){
 
 function visitClose(){
   if (!VISIT) return;
+  if (typeof yardOn !== 'undefined' && yardOn) yardClose();   // 正在看朋友的小島
   VISIT = null;
   screen.classList.remove('visiting');
   $('#vbar').hidden = true;

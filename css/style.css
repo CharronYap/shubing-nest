@@ -645,3 +645,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .want-h{display:block;margin-top:8px;font-size:12px;color:var(--soft);line-height:1.5}
 .vb-want{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;background:#e9c79c;border:2px solid #b98958;color:#5f3b1c;font-size:13px;font-weight:800;box-shadow:0 2px 0 #b98958}
 .vb-want svg{width:14px;height:14px;color:#fff3c4;flex:none}
+/* 幫朋友的小島澆水 */
+.wg-ttl{font-size:15px;font-weight:900;color:var(--pink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wg-nt{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.yd-a[data-wg] .yd-hand svg{color:#6cc0ee}

@@ -269,7 +269,7 @@ setInterval(()=>{if(isNight()!==screen.classList.contains('night'))paintRoom();}
 /* 換房間 */
 function renderNav(){
   const yd=typeof yardOn!=='undefined'&&yardOn;
-  const ids=VISIT?RIDS:[...RIDS,'yard'];
+  const ids=VISIT&&!VISIT.yard?RIDS:[...RIDS,'yard'];
   $('#nav').innerHTML=`<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'}[r]}">${ICON[r]}</button>`).join('')}</div>`;
 }
 function slide(dir,swap){

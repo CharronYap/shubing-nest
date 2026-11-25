@@ -119,19 +119,21 @@ function yardObj(p, x, y){
   }
   return '';
 }
+// 朋友來澆過水留下的小牌子（js/water.js）
+const yardSign = (x, y) => `<g class="yd-ws"><path d="M${x + 15} ${y + 4}v-13" stroke="#a8714f" stroke-width="2.4" stroke-linecap="round"/><rect x="${x + 7}" y="${y - 19}" width="16" height="11" rx="2.5" fill="#fff" stroke="#4a9fd0" stroke-width="1.8"/><path d="M${x + 15} ${y - 17}c-2 2.6-3 3.8-3 5a3 3 0 0 0 6 0c0-1.2-1-2.4-3-5z" fill="#6cc0ee"/></g>`;
 let yardOn = false, ySel = -1, yBusy = null;
-function yardSVG(){
-  const y = S.yard;
+// y：畫哪一座島。自己的是 S.yard；去朋友家時是朋友公開的那份（js/water.js）
+function yardSVG(y = S.yard){
   const order = y.p.map((p, i) => i).sort((a, b) => { const sa = a % YARD_COLS + Math.floor(a / YARD_COLS), sb = b % YARD_COLS + Math.floor(b / YARD_COLS); return sa - sb || a - b; });
   const stayAt = {};
-  for (const [d, st] of Object.entries(y.stay)) stayAt[st.p] = d;
+  for (const [d, st] of Object.entries(y.stay || {})) stayAt[st.p] = d;
   const tiles = order.map(i => {
     const p = y.p[i], [x, yy] = yxy(i), sel = i === ySel;
     const doll = stayAt[i] ? `<image class="yd-sl" href="${SPR[stayAt[i]]}" x="${x - 17}" y="${yy - 36}" width="34" height="38"/><text class="yd-z" x="${x + 14}" y="${yy - 32}">z</text>` : '';
     const act = yBusy && yBusy.i === i ? (yBusy.d === 'me' ? `<g class="yd-me"><path d="${dia(x, yy, .6)}" fill="#fff" opacity=".7"/></g>` : `<image class="yd-hop" href="${SPR[yBusy.d]}" x="${x - 17}" y="${yy - 38}" width="34" height="38"/>`) : '';
     const label = `${p.s === 'deco' ? YARD_DECO[p.k] : YARD_NAME[p.s]}${stayAt[i] ? `，${DOLL_NAME[stayAt[i]]}在這裡睡` : ''}`;
     return `<g class="yd-p ${sel ? 'on' : ''}" data-p="${i}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${sel}">
-      <path class="yd-t" d="${dia(x, yy, .94)}" fill="${YARD_GROUND[p.s]}"/>${yardObj(p, x, yy)}${doll}${act}</g>`;
+      <path class="yd-t" d="${dia(x, yy, .94)}" fill="${YARD_GROUND[p.s]}"/>${yardObj(p, x, yy)}${(y.ws || []).some(w => w.p === i) ? yardSign(x, yy) : ''}${doll}${act}</g>`;
   }).join('');
   return `<svg class="yd-svg" viewBox="-108 -72 244 222" aria-label="門外小島">
     <g class="yd-cl" fill="#fff"><circle cx="-70" cy="112" r="20"/><circle cx="-44" cy="124" r="22"/><circle cx="-10" cy="130" r="20"/><circle cx="26" cy="128" r="24"/><circle cx="62" cy="122" r="20"/><circle cx="96" cy="108" r="18"/><circle cx="118" cy="92" r="14"/><circle cx="-92" cy="92" r="14"/></g>
@@ -212,13 +214,14 @@ function yardPanel(){
     if (p.s === 'soil' && !stayHere){
       btns += Object.entries(YARD_SEED).map(([k, s]) => `<button class="yd-a ${y.seeds[k] ? '' : 'off'}" data-yplant="${k}" aria-label="種${s.name}，還有 ${y.seeds[k]} 顆">${s.svg}<span>種${k === 'tree' ? '樹苗' : s.name.replace('的種子', '')}</span><small>×${y.seeds[k]}</small></button>`).join('');
     }
-    body = `<div class="yd-hd"><b>${name}</b><small>${desc}</small></div>${btns ? `<div class="yd-acts">${btns}</div>` : ''}`;
+    body = `<div class="yd-hd"><b>${name}</b><small>${desc}</small></div>${typeof waterSignNote === 'function' ? waterSignNote(ySel) : ''}${btns ? `<div class="yd-acts">${btns}</div>` : ''}`;
   }
   const piggy = DOLL_N.piggy ? `<div class="yd-pg"><img src="${SPR.piggy}" alt=""><p>${yardHint()}</p></div>` : '';
   return `<div class="yd-top"><span class="yd-sds">${seeds}</span><span class="yd-self" aria-label="今天自己還能做 ${Math.max(0, left)} 次">${YARD_HAND}<span class="dots">${dots}</span></span></div>${body}${piggy}`;
 }
 function yardPaint(){
   if (!yardOn) return;
+  if (VISIT){ if (typeof waterPaint === 'function') waterPaint(); return; }   // 朋友的小島
   const el = $('#yard');
   el.classList.toggle('night', isNight());
   $('#ydMap').innerHTML = yardSVG();
@@ -227,7 +230,7 @@ function yardPaint(){
 
 /* ---------- 打開、關上 ---------- */
 function yardOpen(){
-  if (VISIT) return;
+  if (VISIT){ if (typeof waterOpen === 'function') waterOpen(); return; }
   yardTick(); yardOn = true; ySel = -1;
   $('#yard').hidden = false; screen.classList.add('inyard');
   $('#sheet').hidden = true;
@@ -253,6 +256,8 @@ function yardDo(i, a){
   }, REDUCE ? 0 : 900);
 }
 $('#yard').addEventListener('click', e => {
+  if (VISIT){ if (typeof waterClick === 'function') waterClick(e); return; }
+  if (typeof waterSignClick === 'function' && waterSignClick(e)) return;
   if (yBusy) return;
   const y = S.yard;
   const g = e.target.closest('.yd-p');
@@ -294,4 +299,4 @@ function yardRows(d){
 
 yardInit();
 yardTick();
-setInterval(() => { if (S.yard.day !== todayStr()){ yardTick(); yardPaint(); } else if (yardOn) $('#yard').classList.toggle('night', isNight()); }, 60000);
+setInterval(() => { if (VISIT) return; if (S.yard.day !== todayStr()){ yardTick(); yardPaint(); } else if (yardOn) $('#yard').classList.toggle('night', isNight()); }, 60000);
