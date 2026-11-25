@@ -1,6 +1,8 @@
 rules_version = '2';
 // 薯餅的小窩的 Firestore 規則（Firebase 專案 shubing-nest）。
-// 2026-11-26 新增 nestRooms（去朋友家）和 nestRooms/{uid}/hearts（留愛心）兩段，這兩段還沒發布；其他段落跟已發布的一樣。
+// 2026-11-26 新增 nestRooms（去朋友家）和 nestRooms/{uid}/hearts（留愛心）兩段。
+// 2026-11-26 第四版：小窩存檔多收 season（季節）、mail（信箱）、yard（門外小島）三個欄位；新增 nestGifts（送娃娃）一段。
+// 上面兩行的改動都還沒發布，一次整份換掉發布就好；其他段落跟已發布的一樣。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
@@ -80,6 +82,7 @@ service cloud.firestore {
       return m is map && m.size() <= 200;
     }
     // 第二版預留：album（娃娃相簿）、away（你不在的時候）、look（每隻娃娃穿什麼）、closet（擁有的配件）。
+    // 第四版加：season（今年送過的節日東西）、mail（信箱）、yard（門外小島）。
     // 先放進白名單，功能做好時不用再發布一次規則。都可有可無，大小上限 200
     function okNestExtra(x) {
       return (x is map || x is list) && x.size() <= 200;
@@ -87,11 +90,14 @@ service cloud.firestore {
     function okNest(d) {
       return d.keys().hasOnly(['v', 't', 'coins', 'misses', 'wins', 'opened', 'lastDaily', 'seed',
             'dollN', 'furnOwn', 'wallOwn', 'floorOwn', 'wish', 'clawStyle', 'day', 'home', 'uid',
-            'album', 'away', 'look', 'closet'])
+            'album', 'away', 'look', 'closet', 'season', 'mail', 'yard'])
         && (!('album' in d) || okNestExtra(d.album))
         && (!('away' in d) || okNestExtra(d.away))
         && (!('look' in d) || okNestExtra(d.look))
         && (!('closet' in d) || okNestExtra(d.closet))
+        && (!('season' in d) || okNestExtra(d.season))
+        && (!('mail' in d) || okNestExtra(d.mail))
+        && (!('yard' in d) || okNestExtra(d.yard))
         && d.v is int && d.v >= 1 && d.v <= 100
         && d.t is int
         && d.coins is int && d.coins >= 0 && d.coins <= 1000000
@@ -156,6 +162,38 @@ service cloud.firestore {
         && request.time.toMillis() < (request.resource.data.day + 1) * 86400000 - 28800000
         && hid == string(request.resource.data.day) + '_' + request.auth.uid
         && (nestFriendOf(uid, request.auth.uid) || nestFriendOf(request.auth.uid, uid));
+    }
+
+    // 送娃娃：nestGifts/{自動編號}，一筆是一隻在朋友門口等的娃娃
+    //   from 寄的人（一定是本人）、to 收的人（不能是自己，要是好友，任一邊加了對方都算）
+    //   doll 哪一隻、line 第幾句話（0–5）、fromName / toName 顯示用的名字、t 寄出時間
+    //   寄的人和收的人都讀得到；收的人按「讓牠進來」或寄的人「收回」時刪掉。寄出後不能改
+    //   讀一筆已經不在的（對方剛領走或收回），也要能讀到「不存在」，所以 resource == null 放行
+    //   一天送幾次、門口幾隻，只在遊戲畫面上擋，這裡不檢查
+    match /nestGifts/{gid} {
+      allow get: if request.auth != null
+        && (resource == null || resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow list: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'toName', 'doll', 'line', 't'])
+        && request.resource.data.keys().hasAll(['from', 'fromName', 'to', 'doll', 'line', 't'])
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.doll is string && request.resource.data.doll.size() <= 20
+        && request.resource.data.line is int
+        && request.resource.data.line >= 0 && request.resource.data.line <= 5
+        && request.resource.data.fromName is string
+        && request.resource.data.fromName.size() >= 1 && request.resource.data.fromName.size() <= 24
+        && (!('toName' in request.resource.data)
+            || (request.resource.data.toName is string && request.resource.data.toName.size() <= 24))
+        && request.resource.data.t is int
+        && (nestFriendOf(request.resource.data.from, request.resource.data.to)
+            || nestFriendOf(request.resource.data.to, request.resource.data.from));
+      allow delete: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow update: if false;
     }
 
     // 其他東西一律不能讀寫
