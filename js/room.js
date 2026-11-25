@@ -12,6 +12,7 @@ const ICON = {
   bed:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="12" width="20" height="6" rx="2"/><rect x="2" y="6" width="3.2" height="15" rx="1.6"/><rect x="6" y="8.5" width="6" height="4" rx="2"/><rect x="19.5" y="11" width="2.5" height="10" rx="1.2"/></svg>',
   bath:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h20v2a6 6 0 0 1-6 6H8a6 6 0 0 1-6-6z"/><path d="M5 12V6.5a2.5 2.5 0 0 1 5 0" fill="none" stroke="currentColor" stroke-width="2"/><rect x="6" y="19" width="2" height="3" rx="1"/><rect x="16" y="19" width="2" height="3" rx="1"/><circle cx="14" cy="8" r="1.6"/><circle cx="18" cy="6" r="1.2"/></svg>',
 };
+ICON.yard='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 11.5L12 7l9.5 4.5L12 16z"/><path d="M2.5 11.5V13l9.5 4.5 9.5-4.5v-1.5L12 16z" opacity=".55"/><path d="M12 7V3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 3.4c1.6-.8 3.3-.4 4.4.6-1.5.8-3.1.7-4.4-.6z"/><path d="M5 19.4c1-1 2.6-1 3.4 0 .8-.8 2.2-.7 2.8.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const RIDS=['living','bed','bath'];
 let roomId='living', items=[];
 // 去朋友家的時候（visit.js）：VISIT = {name, home, look}，房間畫朋友的，不能拖、不存檔
@@ -148,7 +149,7 @@ let tab='doll';
 const LOCK='<span class="lk"><svg viewBox="0 0 10 12"><rect x="1" y="5" width="8" height="6.5" rx="1.6" fill="currentColor"/><path d="M3 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>';
 const CK=`<span class="ck">${CKS}</span>`;
 function whereFurn(id){for(const r of RIDS){if(home[r].items.some(i=>i.kind==='furn'&&i.id===id))return r;}return null;}
-function whereDoll(id){for(const r of RIDS){if(home[r].items.some(i=>i.kind==='doll'&&i.id===id))return r;}return null;}
+function whereDoll(id){if(typeof S!=='undefined'&&S.yard&&S.yard.stay&&S.yard.stay[id])return 'yard';for(const r of RIDS){if(home[r].items.some(i=>i.kind==='doll'&&i.id===id))return r;}return null;}
 function renderTray(){
   document.querySelectorAll('.tab[data-tab]').forEach(t=>t.classList.toggle('on',t.dataset.tab===tab));
   const box=$('#items');let h='';
@@ -182,7 +183,8 @@ $('#items').addEventListener('click',e=>{
   if(t.dataset.doll){const id=t.dataset.doll;if(!DOLL_N[id]){toast('還沒夾到');return;}
     const w=whereDoll(id);
     if(w===roomId){removeItem(items.find(i=>i.kind==='doll'&&i.id===id).uid);return;}
-    if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
+    if(w==='yard'){yardRecall(id);if(typeof yardPaint==='function')yardPaint();}
+    else if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
     const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();}
   else if(t.dataset.furn){const id=t.dataset.furn;if(!FURN_OWN[id]){toast('娃娃機夾得到');return;}
     const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);return;}
@@ -266,7 +268,9 @@ setInterval(()=>{if(isNight()!==screen.classList.contains('night'))paintRoom();}
 
 /* 換房間 */
 function renderNav(){
-  $('#nav').innerHTML=`<div class="rnav">${RIDS.map(r=>`<button data-r="${r}" class="${r===roomId?'on':''}" aria-label="${{living:'客廳',bed:'臥室',bath:'浴室'}[r]}">${ICON[r]}</button>`).join('')}</div>`;
+  const yd=typeof yardOn!=='undefined'&&yardOn;
+  const ids=VISIT?RIDS:[...RIDS,'yard'];
+  $('#nav').innerHTML=`<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'}[r]}">${ICON[r]}</button>`).join('')}</div>`;
 }
 function slide(dir,swap){
   if(REDUCE){swap();return;}
@@ -281,6 +285,7 @@ function slide(dir,swap){
   };
 }
 function load(){
+  if(VISIT&&typeof yardOn!=='undefined'&&yardOn)yardClose();
   items=cur().items;quiet=true;
   room.querySelectorAll('.it,.drop,.say').forEach(e=>e.remove());
   $('#sheet').hidden=true;
@@ -288,7 +293,10 @@ function load(){
 }
 // goingTo：正在切過去、還沒換好的房間。連點時用它判斷，不然點回原房間會被略過
 let goingTo=null;
-function goRoom(r){const from=goingTo??roomId;if(r===from)return;const d=RIDS.indexOf(r)>RIDS.indexOf(from)?1:-1;goingTo=r;slide(d,()=>{roomId=r;goingTo=null;load();});renderNavTo(r);}
+function goRoom(r){
+  if(r==='yard'){if(typeof yardOpen==='function'&&!yardOn)yardOpen();return;}
+  if(typeof yardOn!=='undefined'&&yardOn){yardClose();if(r===(goingTo??roomId)){renderNavTo(r);return;}}
+  const from=goingTo??roomId;if(r===from)return;const d=RIDS.indexOf(r)>RIDS.indexOf(from)?1:-1;goingTo=r;slide(d,()=>{roomId=r;goingTo=null;load();});renderNavTo(r);}
 function renderNavTo(r){document.querySelectorAll('.rnav button').forEach(b=>b.classList.toggle('on',b.dataset.r===r));}
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-r]');if(b)goRoom(b.dataset.r);});
 let toastT;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),1400);}

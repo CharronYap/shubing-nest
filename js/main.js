@@ -38,7 +38,7 @@ function planDay(){
   if (S.day.date === today) return;
   if (!S.seed) S.seed = Math.floor(Math.random() * 1e9);
   const rnd = mulberry32(hashStr(today) ^ S.seed);
-  const pool = EVENTS.filter(e => !e.when && e.d.every(d => DOLL_N[d]));
+  const pool = EVENTS.filter(e => !e.when && e.d.every(d => DOLL_N[d]) && (typeof yardHas === 'function' ? yardHas(e.yard) : !e.yard));
   for (let i = pool.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   // 節日的小事（js/season.js）：那幾天多排一件，放在最前面
   const fest = typeof festEvents === 'function' ? festEvents(today).slice(0, 1) : [];
@@ -163,7 +163,7 @@ function afterPrize(){
   renderOpt();
   // 夾到新娃娃後，如果今天還沒排滿，補一件跟牠有關的小事
   if (S.day.ids.length < EVENTS_PER_DAY){
-    const more = EVENTS.filter(e => !e.when && !S.day.ids.includes(e.id) && e.d.every(d => DOLL_N[d]));
+    const more = EVENTS.filter(e => !e.when && !S.day.ids.includes(e.id) && e.d.every(d => DOLL_N[d]) && (typeof yardHas === 'function' ? yardHas(e.yard) : !e.yard));
     if (more.length){ S.day.ids.push(more[Math.floor(Math.random() * more.length)].id); renderEvBadge(); }
   }
 }

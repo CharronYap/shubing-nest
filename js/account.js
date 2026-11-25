@@ -144,6 +144,11 @@ function mergeSave(remote, guest) {
     mm.last = [mm.last || '', gm.last || ''].sort().pop();
     mm.att = [mm.att || '', gm.att || ''].sort().pop();
   }
+  // 門外小島：用帳號裡的那份，帳號裡還沒有才用這台的；種子數量取比較多的
+  if (guest.yard) {
+    if (!m.yard) m.yard = guest.yard;
+    else { const ms = m.yard.seeds = m.yard.seeds || {}; for (const [k, n] of Object.entries(guest.yard.seeds || {})) ms[k] = Math.max(ms[k] || 0, n || 0); }
+  }
   m.coins = Math.max(m.coins || 0, guest.coins || 0);
   m.wins = Math.max(m.wins || 0, guest.wins || 0);
   m.t = Date.now();

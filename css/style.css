@@ -518,3 +518,61 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .al-ml .ml-tx{margin-top:6px}
 .al-ml .ml-tx p{font-size:13px}
 .al-ml .ml-tx.big p{font-size:16px}
+
+/* 門外小島（js/yard.js）：蓋在房間和收納架上面，上面是小島，下面是像收納架的面板 */
+.yard{position:absolute;inset:0;z-index:31;display:flex;flex-direction:column;background:linear-gradient(#cfe9ff,#fde7f1 70%,#fff4f8);transition:background .6s}
+.yard.night{background:linear-gradient(#3b3570,#6b5a96 70%,#a58bb8)}
+.yd-map{flex:1;min-height:0;display:grid;place-items:center;padding:4px 6px 0}
+.yd-svg{width:100%;height:100%;max-height:380px;overflow:visible}
+.yd-cl{opacity:.95}
+.yard.night .yd-cl{opacity:.55}
+.yd-p{cursor:pointer;outline:none}
+.yd-t{stroke:rgba(255,255,255,.75);stroke-width:1.5;transition:filter .2s}
+.yd-p:hover .yd-t{filter:brightness(1.05)}
+.yd-p.on .yd-t,.yd-p:focus-visible .yd-t{stroke:var(--pink);stroke-width:3.5}
+.yd-glow{opacity:0;transition:opacity .6s}
+.yard.night .yd-glow{opacity:.85}
+.yard.night .yd-t{filter:brightness(.78)}
+.yd-z{font:800 11px sans-serif;fill:#9d8fe0;animation:ydZ 2.4s ease-in-out infinite}
+@keyframes ydZ{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+.yd-hop{animation:ydHop .3s ease-in-out 3}
+@keyframes ydHop{50%{transform:translateY(-7px)}}
+.yd-me{animation:ydMe .45s ease-in-out 2}
+@keyframes ydMe{50%{opacity:.2}}
+.yd-panel{position:relative;margin:0 8px 10px;background:#fff;border-radius:24px;box-shadow:0 4px 0 #ecdff2;padding:10px 12px 12px;max-height:56%;overflow:auto}
+.yd-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:8px;border-bottom:2px dashed var(--line)}
+.yd-sds{display:flex;gap:8px}
+.yd-sd{display:flex;align-items:center;gap:2px;font-size:13px;font-weight:800;color:var(--ink)}
+.yd-sd svg{width:24px;height:24px}
+.yd-self{display:flex;align-items:center;gap:5px;color:#cfb2c1}
+.yd-self>svg{width:18px;height:18px}
+.yd-self .dots{display:flex;gap:3px}
+.yd-self i{width:8px;height:8px;border-radius:50%;background:#f1e3ea}
+.yd-self i.on{background:var(--pink)}
+.yd-hi{margin:10px 2px 2px;font-size:13.5px;color:var(--soft);font-weight:700}
+.yd-hd{margin:9px 2px 8px;display:flex;flex-direction:column;gap:2px}
+.yd-hd b{font-size:15px;color:var(--ink)}
+.yd-hd small{font-size:12.5px;color:var(--soft)}
+.yd-nt{margin:0 2px 8px;font-size:13px;color:var(--soft)}
+.yd-acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.yd-a{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px 7px;border:2px solid #f3e7ef;border-radius:16px;background:linear-gradient(#fff,#fbf6ff);font:inherit;font-size:12.5px;font-weight:800;color:var(--ink);cursor:pointer;min-height:44px}
+.yd-a img,.yd-a>svg{width:34px;height:34px;object-fit:contain}
+.yd-a .yd-hand{width:34px;height:34px;display:grid;place-items:center;color:var(--pink)}
+.yd-a .yd-hand svg{width:24px;height:24px}
+.yd-a small{font-size:11px;font-weight:700;color:var(--soft)}
+.yd-a:active{transform:translateY(1px)}
+.yd-a.off{opacity:.5;filter:grayscale(.4)}
+.yd-news{margin:10px 2px 2px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.yd-news p{margin:0;font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.5}
+.yd-pg{display:flex;align-items:center;gap:8px;margin-top:10px;padding:6px 10px 6px 6px;background:#fff7fb;border-radius:14px}
+.yd-pg img{width:30px;height:30px;object-fit:contain;flex:none}
+.yd-pg p{margin:0;font-size:12.5px;font-weight:700;color:var(--soft);line-height:1.45}
+.screen.inyard #tray,.screen.inyard #vbar{visibility:hidden}
+.al-yd small{margin-left:6px;font-size:11px;color:var(--soft)}
+@media (prefers-reduced-motion:reduce){.yd-z,.yd-hop,.yd-me{animation:none}}
+/* 多了小島那顆，上面四顆鈕擠一點 */
+.rnav:has(>:nth-child(4)) button{width:28px}
+.rnav:has(>:nth-child(4)) button svg{width:19px;height:19px}
+@container (max-width:360px){.rnav:has(>:nth-child(4)) button{width:26px}}
+@container (max-width:340px){.rnav:has(>:nth-child(4)) button{width:24px}}
+@container (max-width:318px){.rnav:has(>:nth-child(4)) button{width:22px}.rnav:has(>:nth-child(4)) button svg{width:17px;height:17px}}

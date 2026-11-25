@@ -53,6 +53,10 @@ const EVENTS = [
   {id:'roast', d:['piggy','nyanko'], t:'火腿和貓咪老師又在互相吐槽。', end:'吵到最後，兩隻分著吃了同一包餅乾。'},
   {id:'prank', d:['dino','piggy'], t:'龍龍的惡作劇失敗了，火腿在旁邊說風涼話。', end:'龍龍說下次一定會成功。'},
   {id:'still', d:['sloth','egg'], t:'薯餅和蛋黃哥湊在一起，一整天都沒動。', end:'牠們動了一下，換了個更舒服的姿勢。'},
+  // 小島的小事：小島上有那種地才會出現（js/yard.js 的 yardHas）
+  {id:'sloth-tree', d:['sloth'], yard:'tree', t:'薯餅想去小島的樹下發呆。', end:'薯餅在樹下坐了一個下午，說今天很有收穫。'},
+  {id:'moodeng-pond', d:['moodeng'], yard:'pond', t:'彈跳豬想去池塘泡水。', end:'彈跳豬在池塘泡到睡著，鼻子還露在外面。'},
+  {id:'snoopy-runway', d:['snoopy'], yard:'grass', t:'史努比想在小島的草地上開飛機。', end:'史努比在草地上起飛又降落，降落得有點歪。'},
 ];
 const EVENTS_PER_DAY = 3;
 

@@ -132,7 +132,9 @@ function mailAdd(d, type, q, today){
   const k = `${d}.${type}.${i}${parts.length ? '#' + parts.join(';') : ''}`;
   let a = null;
   if (type !== 'news' && m.att !== today && d !== 'nyanko' && Math.random() < MAIL_ATT_RATE){
-    a = d === 'moodeng' ? 'bubble' : Math.random() < .5 ? 'snack' : 'bubble';
+    // 去過小島之後，三成的附件改成一顆種子
+    const seed = typeof yardPickSeed === 'function' && S.yard && S.yard.day && Math.random() < .3;
+    a = seed ? 'seed-' + yardPickSeed() : d === 'moodeng' ? 'bubble' : Math.random() < .5 ? 'snack' : 'bubble';
     m.att = today;
   }
   m.l.unshift({k, t: today, r: 0, a, g: 0});
@@ -225,7 +227,7 @@ function mailCard(o, j, open){
     inner = x.d === 'dino' && x.type !== 'news' && !o.f
       ? `<button class="ml-leaf" data-flip="${j}" aria-label="把葉子翻過來">${MAIL_LEAF}<small>點一下翻過來</small></button>`
       : mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
-    if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${WISH[o.a].svg}<span>附上一個${WISH[o.a].name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
+    if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>附上一個${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
   }
   return `<div class="ml ${o.r ? '' : 'unread'} ${open ? 'open' : ''}">
     <button class="ml-hd" data-ml="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${from}・${md(o.t)}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
@@ -241,7 +243,13 @@ function openMail(keep){
     ${todo || unread ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}</div>` : ''}`);
   evOpen = false; alOpen = false;
 }
-function mailTake(o){ if (!o.a || o.g) return; o.g = 1; S.wish[o.a] = (S.wish[o.a] || 0) + 1; }
+// 附件的圖和名字：點心盒、泡泡球，或小島的種子（seed-種類）
+const mailAtt = a => (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a];
+function mailTake(o){
+  if (!o.a || o.g) return; o.g = 1;
+  if (o.a.startsWith('seed-')){ if (typeof yardInit === 'function'){ const y = yardInit(), k = o.a.slice(5); y.seeds[k] = (y.seeds[k] || 0) + 1; } return; }
+  S.wish[o.a] = (S.wish[o.a] || 0) + 1;
+}
 $('#sheet').addEventListener('click', e => {
   if (!$('#sheet .ml-box')) return;
   const m = S.mail, b = e.target.closest('button');
@@ -255,7 +263,7 @@ $('#sheet').addEventListener('click', e => {
     m.l[+b.dataset.flip].f = 1; save(); openMail(true);
   } else if (b.dataset.take !== undefined){
     const o = m.l[+b.dataset.take]; mailTake(o); save(); renderEvBadge();
-    toast(`收下${WISH[o.a].name}`); openMail(true);
+    toast(`收下${mailAtt(o.a).name}`); openMail(true);
   } else if (b.dataset.mall === 'take'){
     const got = m.l.filter(o => o.a && !o.g); got.forEach(mailTake); save(); renderEvBadge();
     toast(`收下 ${got.length} 個附件`); openMail(true);
