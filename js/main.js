@@ -106,7 +106,7 @@ function markDolls(){
     el.classList.toggle('has-ev', !!it && who.has(it.id));
   });
 }
-function afterRender(){ markDolls(); save(); }
+function afterRender(){ markDolls(); if (typeof afterRoomRender === 'function') afterRoomRender(); save(); }
 function say(it, text){
   room.querySelectorAll('.say').forEach(s => s.remove());
   const [, h] = sizeOf(it);
@@ -120,6 +120,7 @@ function say(it, text){
 }
 const lastLine = {};
 function onDollTap(it){
+  if (typeof awayWake === 'function' && awayWake(it)) return;   // 晚上睡著的先叫醒
   const ev = doable().find(e => e.d[0] === it.id) || doable().find(e => e.d.includes(it.id));
   if (ev && ev.tap){
     const r = doEvent(ev.id);

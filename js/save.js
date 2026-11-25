@@ -23,6 +23,7 @@ function newGame(){
     clawStyle:'egg',
     day:{date:'',ids:[],done:[],tap:{}},
     album:{met:{},heard:{},cards:{}},   // 相簿：娃娃哪天來、聽過哪幾句（位元）、哪件小事哪天做完
+    away:{date:'',picked:0,drops:[],note:null},   // 你不在的時候：今天撿了幾個、地上的小東西、還沒看的便條
     home:{
       living:mk('dots','check',['shelf 14 66','tv 48 63','plant 84 62','sofa 66 82','table 34 90','sloth >sofa 0','piggy 86 94']),
       bed:mk('stripe','wood',['rug 50 89','bed 32 76','lamp 88 72','dog >bed 1','egg 68 91']),
@@ -39,6 +40,7 @@ function loadGame(){
   return newGame();
 }
 const S = loadGame();
+const LAST_T = S.t || 0;   // 這次打開前，最後一次存檔的時間（js/away.js 用來算隔了多久）
 const home = S.home, DOLL_N = S.dollN, FURN_OWN = S.furnOwn, WALL_OWN = S.wallOwn, FLOOR_OWN = S.floorOwn;
 let saveT, saveLock = false;
 // S.t：最後一次改動的時間。S.base：這份存檔上一次跟雲端對上的時間（js/account.js 用來判斷誰比較新）
