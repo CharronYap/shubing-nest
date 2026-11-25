@@ -10,6 +10,10 @@
 | 給朋友看的房間（去朋友家） | Firestore `nestRooms/{uid}` |
 | 朋友留的愛心 | Firestore `nestRooms/{uid}/hearts/{日子}_{送的人}` |
 | 送給朋友、還在門口等的娃娃 | Firestore `nestGifts/{自動編號}` |
+| 訪客簿（第五版） | Firestore `nestRooms/{uid}/book/{日子}_{寫的人}` |
+| 朋友幫忙澆的水（第五版） | Firestore `nestRooms/{uid}/water/{日子}_{澆的人}` |
+| 去朋友家過夜的娃娃（第五版） | Firestore `nestStays/{出門的人}` |
+| 明信片（第五版） | Firestore `nestCards/{自動編號}` |
 
 ## Firebase 後台（2026-11-26 已經設好）
 
@@ -57,6 +61,29 @@
 
 換網址（例如綁自己的網域）時，要把新網址加進授權網域，不然登入會顯示「這個網址還不能登入」。
 
+### 2026-11-27 第五版新增、還沒發布：訪客簿、願望清單、澆水、過夜、明信片
+
+`firestore.rules` 這次的改動**要到主控台發布才會生效**：「Firestore Database」→「規則」，把編輯框整份換成 repo 裡的 `firestore.rules`，按「發布」。五項寫在一起，發布一次就好。發布之後，把檔案開頭「第五版（還沒發布…）」那句註解改掉。
+
+這版開放自己打字，規則裡每個打字的欄位都檢查是文字、有長度上限（訪客簿、小紙條、送娃娃 40 字，明信片 80 字），而且只有朋友之間能寫（任一邊的 `players` 好友名單裡有對方）。規則沒辦法看字的內容，所以沒有髒話過濾，靠刪除和移除朋友處理。畫面上這些字一律用 `textContent` 顯示（`js/social.js` 的 `txSlot`），不會被當成網頁內容。
+
+- `nestRooms/{uid}` 公開資料多兩欄：`want`（願望清單，list，最多 3 個）、`yard`（小島 12 塊地現在的樣子，`{p: [12 個]}`）。
+- `match /nestRooms/{uid}/book/{bid}`：訪客簿。主人的朋友才能寫、不能寫在自己家；文件名字是 `日子_寫的人uid`，日子要是今天，所以一人一天一則。欄位：`from`、`fromName`、`day`、`sticker`、`msg`（可以不填）。主人和主人的朋友都讀得到；主人能刪任何一則，寫的人能刪自己的；不能改。
+- `match /nestRooms/{uid}/water/{wid}`：幫忙澆水。主人的朋友才能寫，一人一天一次，`plot` 是 0～11。主人讀得到全部、能刪；澆的人只能確認自己今天那一筆在不在。
+- `match /nestStays/{sid}`：過夜。文件名字是出門的人的 uid，所以一次只能有一隻在外面。出門的人建立（`to` 要是朋友、`day` 要是今天、`note` 要是空的）；主人只能改 `note`（40 字以內）、`x`、`y`；兩邊都讀得到、都能刪（出門的人刪 = 回家，主人刪 = 送牠回家）。
+- `match /nestCards/{cid}`：明信片。寄的人是本人、收的人是朋友；`snap` 是那間房間的擺法，房間的部分跟公開房間用同一個檢查；`msg` 80 字以內。兩邊能讀、能刪，不能改。
+- `nestGifts` 多一欄 `msg`（自己打的一句話，可以不填，40 字以內）。
+- 一天寄幾張明信片、一天收幾個朋友的澆水、家裡最多幾隻客人，只在遊戲畫面上擋，規則不檢查。
+
+還沒發布前，登入的人照常玩，用到新集合的地方都不會跳錯誤：
+
+- 公開房間：程式會先拿掉 `want`、`yard` 再寫，去朋友家照舊能用；朋友看不到願望木牌和小島鈕。
+- 訪客簿打開會寫「訪客簿現在打不開，晚點再試」。
+- 過夜、明信片按下去會跳一句「雲端還沒開好這個功能，晚點再試」，娃娃不會出門、次數不會扣。
+- 送娃娃自己寫的那句送不出去，畫面會說把字清掉、用快速選的就可以送。
+
+這幾段沒有在模擬器跑過，也還沒用兩個真帳號試過。發布後可以用兩個帳號互加好友試一輪：在對方的訪客簿留言（同一天第二則應該被擋）、幫對方澆水、讓娃娃過夜再由對方塞紙條、寄一張明信片、送娃娃時自己寫一句。也可以試不是好友的帳號，應該全部被擋。
+
 ## 玩起來是怎樣
 
 - 沒登入也能玩，進度存在這台裝置（訪客存檔）。封面左上角的「登入」按鈕可以登入或開新帳號。
@@ -98,7 +125,9 @@ js/cloud.js          登入、讀寫存檔、好友、朋友的房間和愛心�
 js/account.js        帳號按鈕、登入視窗、同步、搬存檔、放公開房間、點好友去朋友家
 js/visit.js          朋友家的畫面（只能看、冒愛心、留一顆愛心）
 js/nestgift.js       送娃娃：寄、讓牠進來、收回（透過 account.js 開的 window.nestNet 連雲端）
+js/social.js         第五版共用的小工具（自己打的字用 textContent 顯示）
+js/book.js、want.js、water.js、stay.js、card.js   第五版：訪客簿、願望清單、澆水、過夜、明信片（都透過 window.nestNet）
 css/account.css      帳號按鈕和視窗的樣式
-firestore.rules      整份 Firestore 規則（好友 players、存檔 nestSaves、公開房間 nestRooms 和愛心 hearts、送娃娃 nestGifts）
+firestore.rules      整份 Firestore 規則（好友 players、存檔 nestSaves、公開房間 nestRooms 和愛心 hearts、送娃娃 nestGifts；第五版的 book、water、nestStays、nestCards）
 firebase.json        模擬器設定
 ```
