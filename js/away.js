@@ -133,7 +133,7 @@ function renderDrops(){
     const b = document.createElement('button');
     b.className = 'drop'; b.dataset.i = i;
     b.setAttribute('aria-label', `撿起${DROP_NAME[o.k]}`);
-    b.style.left = o.x + '%'; b.style.top = o.y + '%'; b.style.zIndex = 20 + Math.round(o.y * 3);
+    b.style.left = o.x + '%'; b.style.top = roomY(o.y) + '%'; b.style.zIndex = 20 + Math.round(o.y * 3);
     b.innerHTML = DROP_SVG[o.k];
     room.appendChild(b);
   });

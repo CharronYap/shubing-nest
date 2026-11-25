@@ -15,13 +15,22 @@ const ICON = {
 const RIDS=['living','bed','bath'];
 let roomId='living', items=[];
 const cur=()=>home[roomId];
+/* ---------- 牆和地板 ----------
+   存檔裡的 y 是「牆和地板各自裡面的位置」：0～52 在牆上（0 頂端、52 牆腳），52～100 在地板上（52 牆腳、100 最前面）。
+   收納架收起來時牆的高度不變，多出來的高度全給地板，所以要換算成畫面上的 %：roomY() 存檔→畫面，roomV() 畫面→存檔。
+   收納架打開時牆正好佔 52%，兩個數字一樣，舊存檔不用換算 */
+const WALL_V=52;
+let WALL=.52;   // 現在牆佔房間高度的比例，layout() 會更新
+function roomY(v){return v<=WALL_V?v/WALL_V*WALL*100:WALL*100+(v-WALL_V)/(100-WALL_V)*(1-WALL)*100;}
+function roomV(y){const w=WALL*100;return y<=w?y/w*WALL_V:WALL_V+(y-w)/(100-w)*(100-WALL_V);}
+
 /* ---------- 大小、前後 ---------- */
 function depth(y){return .8+.2*Math.max(0,Math.min(1,(y-52)/42));}
 function sizeOf(it){
   if(it.kind==='doll'){const s=depth(it.y)*(it.sit?.92:1);const w=22*s;return [w,w*RATIO];}
   const f=FURN[it.id];const s=f.wall?1:depth(it.y);const w=f.w*s;return [w,w*(f.vb[1]/f.vb[0])*RATIO];
 }
-function seatPos(f,k){const [w,h]=sizeOf(f);const [sx,sy]=FURN[f.id].seats[k];return [f.x+(sx-.5)*w,f.y-(1-sy)*h];}
+function seatPos(f,k){const [w,h]=sizeOf(f);const [sx,sy]=FURN[f.id].seats[k];return [f.x+(sx-.5)*w,roomV(roomY(f.y)-(1-sy)*h)];}
 function syncSeated(){items.forEach(d=>{if(d.kind==='doll'&&d.sit){const f=items.find(o=>o.uid===d.sit);if(!f){d.sit=null;return;}const [x,y]=seatPos(f,d.seat);d.x=x;d.y=y+.5;}});}
 function zOf(it){
   if(it.kind==='furn'){const f=FURN[it.id];if(f.floor)return 6;if(f.wall)return 8;return 20+Math.round(it.y*3);}
@@ -48,7 +57,7 @@ function render(){
   room.querySelectorAll('.it').forEach(e=>{if(!alive.has(e.dataset.u))e.remove();});
   items.forEach(it=>{
     const el=elFor(it);const [w]=sizeOf(it);
-    el.style.left=it.x+'%';el.style.top=it.y+'%';el.style.width=w+'%';el.style.zIndex=zOf(it);
+    el.style.left=it.x+'%';el.style.top=roomY(it.y)+'%';el.style.width=w+'%';el.style.zIndex=zOf(it);
     if(it.kind==='doll'){
       el.classList.toggle('sit',!!it.sit);el.classList.toggle('breathe',!it.sit);
       el.querySelector('.body').style.animationDelay=(-(it.uid*0.7)%3.2)+'s';
@@ -61,20 +70,21 @@ function renderGlow(){
   room.querySelectorAll('.glow').forEach(g=>g.remove());
   items.filter(i=>i.kind==='furn'&&FURN[i.id].glow).forEach(l=>{
     const [w,h]=sizeOf(l);const [gx,gy]=FURN[l.id].glow;
-    const g=document.createElement('div');g.className='glow';g.style.left=(l.x+(gx-.5)*w)+'%';g.style.top=(l.y-(1-gy)*h)+'%';room.appendChild(g);
+    const g=document.createElement('div');g.className='glow';g.style.left=(l.x+(gx-.5)*w)+'%';g.style.top=(roomY(l.y)-(1-gy)*h)+'%';room.appendChild(g);
   });
 }
 
 /* ---------- 拖曳 ---------- */
 let drag=null;
+// 畫面上的 %（y 還沒換算成存檔的位置）
 function pt(e){const r=room.getBoundingClientRect();return [(e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100];}
-function overTray(e){if(tray.hidden)return false;const r=tray.getBoundingClientRect();return e.clientY>r.top-6&&e.clientX>r.left&&e.clientX<r.right;}
+function overTray(e){if(tray.hidden||tray.classList.contains('min'))return false;const r=tray.getBoundingClientRect();return e.clientY>r.top-6&&e.clientX>r.left&&e.clientX<r.right;}
 function startDrag(e,u){
   const it=items.find(i=>i.uid===u);if(!it)return;
   e.preventDefault();
   const el=elFor(it);el.setPointerCapture(e.pointerId);
   const [px,py]=pt(e);
-  drag={it,el,sx:e.clientX,sy:e.clientY,dx:it.x-px,dy:it.y-py,moved:false,seatHot:null,ro:false};
+  drag={it,el,sx:e.clientX,sy:e.clientY,dx:it.x-px,dy:roomY(it.y)-py,moved:false,seatHot:null,ro:false};
   el.addEventListener('pointermove',onMove);el.addEventListener('pointerup',onUp);el.addEventListener('pointercancel',onUp);
 }
 function limits(it){
@@ -84,9 +94,9 @@ function limits(it){
 function onMove(e){
   if(!drag||drag.ro)return;const {it,el}=drag;
   if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6)return;
-  if(!drag.moved){drag.moved=true;el.classList.add('drag');if(it.kind==='doll'){room.classList.add('dragdoll');showSeats(it);}if(it.sit)it.sit=null;}
+  if(!drag.moved){drag.moved=true;el.classList.add('drag');tray.classList.add('ghost');if(it.kind==='doll'){room.classList.add('dragdoll');showSeats(it);}if(it.sit)it.sit=null;}
   const [px,py]=pt(e);const [x0,x1,y0,y1]=limits(it);
-  it.x=Math.max(x0,Math.min(x1,px+drag.dx));it.y=Math.max(y0,Math.min(y1,py+drag.dy));
+  it.x=Math.max(x0,Math.min(x1,px+drag.dx));it.y=Math.max(y0,Math.min(y1,roomV(py+drag.dy)));
   if(it.kind==='doll'){
     let best=null,bd=9;
     room.querySelectorAll('.seat').forEach(s=>{const d=Math.hypot(+s.dataset.x-it.x,(+s.dataset.y-it.y)*.85);if(d<bd){bd=d;best=s;}s.classList.remove('hot');});
@@ -98,7 +108,7 @@ function onMove(e){
 function onUp(e){
   if(!drag)return;const {it,el}=drag;
   el.removeEventListener('pointermove',onMove);el.removeEventListener('pointerup',onUp);el.removeEventListener('pointercancel',onUp);
-  el.classList.remove('drag');room.classList.remove('dragdoll');tray.classList.remove('over');
+  el.classList.remove('drag');room.classList.remove('dragdoll');tray.classList.remove('over','ghost');
   if(!drag.moved){drag=null;if(it.kind==='doll')react(it);else if(!(typeof onFurnTap==='function'&&onFurnTap(it)))nudge(el);return;}
   if(overTray(e)){removeItem(it.uid);drag=null;clearSeats();return;}
   if(it.kind==='doll'&&drag.seatHot){it.sit=+drag.seatHot.dataset.f;it.seat=+drag.seatHot.dataset.k;}
@@ -115,7 +125,7 @@ function showSeats(d){
     FURN[f.id].seats.forEach((_,k)=>{
       if(items.some(o=>o!==d&&o.sit===f.uid&&o.seat===k))return;
       const [x,y]=seatPos(f,k);const s=document.createElement('div');s.className='seat';
-      s.style.left=x+'%';s.style.top=(y-3)+'%';s.dataset.x=x;s.dataset.y=y;s.dataset.f=f.uid;s.dataset.k=k;room.appendChild(s);
+      s.style.left=x+'%';s.style.top=(roomY(y)-3)+'%';s.dataset.x=x;s.dataset.y=y;s.dataset.f=f.uid;s.dataset.k=k;room.appendChild(s);
     });
   });
 }
@@ -126,7 +136,7 @@ function react(it){
   const el=elFor(it);const b=el.querySelector('.body');
   b.classList.remove('r-heart');void b.offsetWidth;b.classList.add('r-heart');
   setTimeout(()=>b.classList.remove('r-heart'),900);
-  const [,h]=sizeOf(it);const hx=document.createElement('div');hx.className='hfx';hx.style.left=it.x+'%';hx.style.top=(it.y-h*.8)+'%';
+  const [,h]=sizeOf(it);const hx=document.createElement('div');hx.className='hfx';hx.style.left=it.x+'%';hx.style.top=(roomY(it.y)-h*.8)+'%';
   hx.innerHTML=HEART();room.appendChild(hx);setTimeout(()=>hx.remove(),1300);
   onDollTap(it);
 }
@@ -173,8 +183,22 @@ $('#items').addEventListener('click',e=>{
   else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast('娃娃機夾得到');return;}cur().wall=t.dataset.wall;paintRoom();renderTray();}
   else if(t.dataset.floor){if(!FLOOR_OWN[t.dataset.floor]){toast('湊齊雲朵系列送你');return;}cur().floor=t.dataset.floor;paintRoom();renderTray();}
 });
-document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;tray.classList.remove('min');renderTray();}));
-$('#fold').addEventListener('click',()=>tray.classList.toggle('min'));
+document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;renderTray();}));
+/* 收起來：縮成房間右下角的圓按鈕，房間一直延伸到底。收著還是打開記在這台裝置（個人設定，不上雲端） */
+const TRAY_KEY='shubingNest.trayMin';
+function setTray(min){
+  tray.classList.toggle('min',min);
+  $('#trayOpen').setAttribute('aria-expanded',!min);
+  try{localStorage.setItem(TRAY_KEY,min?'1':'0');}catch(e){}
+}
+try{if(localStorage.getItem(TRAY_KEY)==='1')setTray(true);}catch(e){}
+$('#trayOpen').addEventListener('click',()=>setTray(false));
+// 上緣的拉把：點一下收起，或往下滑
+let gripY=null;
+$('#grip').addEventListener('pointerdown',e=>{gripY=e.clientY;$('#grip').setPointerCapture(e.pointerId);});
+$('#grip').addEventListener('pointerup',e=>{if(gripY===null)return;const dy=e.clientY-gripY;gripY=null;if(dy>-10)setTray(true);});
+$('#grip').addEventListener('pointercancel',()=>{gripY=null;});
+$('#grip').addEventListener('click',e=>{if(!e.detail)setTray(true);});   // 鍵盤按的
 
 /* ---------- 雲朵系列 ---------- */
 const SET=CLOUD_SET;
@@ -213,14 +237,19 @@ function paintLight(){
   b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'關燈':'開燈');
 }
 $('#lsw').addEventListener('click',()=>{cur().light=!lightOn();paintLight();save();});
+// 房間直接鋪滿房間頁的空間；太扁或太長時才留邊
+function fitStage(W,H){const ratio=Math.max(.5,Math.min(1,W/H));const w=Math.min(W,H*ratio);return [w,w/ratio,ratio];}
 function layout(){
   const r=area.getBoundingClientRect();
   if(!r.width||!r.height)return;
-  // 房間直接鋪滿房間頁的空間；太扁或太長時才留邊
-  const ratio=Math.max(.5,Math.min(1,r.width/r.height));
-  const w=Math.min(r.width,r.height*ratio);
-  stage.style.width=w+'px';stage.style.height=(w/ratio)+'px';
-  if(Math.abs(ratio-RATIO)>.001){RATIO=ratio;if(items.length)render();}
+  const [w,h,ratio]=fitStage(r.width,r.height);
+  // 牆的高度用收納架打開時的牆高：收著的時候先打開量一下房間有多高，再收回去（同一刻做完，畫面不會閃）
+  let oh=h;
+  if(tray.classList.contains('min')){tray.classList.remove('min');const o=area.getBoundingClientRect();tray.classList.add('min');if(o.height)oh=fitStage(o.width,o.height)[1];}
+  const wall=Math.min(.52,.52*oh/h);
+  stage.style.width=w+'px';stage.style.height=h+'px';
+  room.style.setProperty('--wh',(wall*100)+'%');
+  if(Math.abs(ratio-RATIO)>.001||Math.abs(wall-WALL)>.001){RATIO=ratio;WALL=wall;if(items.length)render();}
 }
 new ResizeObserver(layout).observe(area);
 setInterval(()=>{if(isNight()!==screen.classList.contains('night'))paintRoom();},60000);

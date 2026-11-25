@@ -31,8 +31,9 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .stage{position:relative;isolation:isolate}
 .room{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;touch-action:none}
 .wall,.floor{position:absolute;left:0;right:0}
-.wall{top:0;height:52%}
-.floor{top:52%;bottom:0}
+/* --wh：牆的高度。收納架收起來時牆不變高，多的高度給地板（js/room.js 的 layout()） */
+.wall{top:0;height:var(--wh,52%)}
+.floor{top:var(--wh,52%);bottom:0}
 .wall::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:7px;background:#fff;box-shadow:0 2px 0 rgba(120,80,110,.12)}
 .w-stripe{background:repeating-linear-gradient(90deg,#ffe3ef 0 14px,#fff2f7 14px 28px)}
 .w-dots{background:radial-gradient(circle at 12px 12px,#ffd75e 0 3.5px,transparent 4.5px) 0 0/24px 24px,radial-gradient(circle at 0 0,#ffe9a8 0 2px,transparent 2.6px) 0 0/24px 24px,#fff9e3}
@@ -45,7 +46,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .f-cloud{background:radial-gradient(ellipse 22px 12px at 20px 14px,#fff 0 60%,transparent 64%) 0 0/48px 30px,#e6defc}
 .floor::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(90,50,80,.13),rgba(90,50,80,0) 40%);pointer-events:none}
 
-.win{position:absolute;left:50%;top:7%;width:28%;transform:translateX(-50%);pointer-events:none}
+.win{position:absolute;left:50%;top:calc(var(--wh,52%)*.135);width:28%;transform:translateX(-50%);pointer-events:none}
 .win svg{display:block;width:100%;height:auto}
 
 .it{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%;touch-action:none;cursor:grab}
@@ -77,7 +78,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .glow{position:absolute;width:56%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,226,150,.85),rgba(255,210,120,.35) 40%,rgba(255,200,120,0) 70%);mix-blend-mode:screen;pointer-events:none;z-index:401;opacity:0;transition:opacity .6s}
 .room.off .glow{opacity:1}
 /* 牆上的電燈開關，在窗戶左邊；疊在暗色上面，關了燈也點得到 */
-.lsw{position:absolute;left:24%;top:15%;width:7%;transform:translateX(-50%);z-index:402;border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 2px 0 rgba(120,60,90,.18))}
+.lsw{position:absolute;left:24%;top:calc(var(--wh,52%)*.29);width:7%;transform:translateX(-50%);z-index:402;border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 2px 0 rgba(120,60,90,.18))}
 .lsw svg{display:block;width:100%;height:auto}
 .lsw .nub{transition:transform .18s ease}
 .room.off .lsw .nub{transform:translateY(9.5px);fill:#b9a6c9}
@@ -88,19 +89,28 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 /* 收納架 */
 .tray{position:relative;z-index:30;margin:0 8px 10px;background:#fff;border-radius:24px;box-shadow:0 4px 0 #ecdff2;transition:box-shadow .2s,background .2s}
 .tray.over{background:#fff0f7;box-shadow:0 0 0 3px var(--pink),0 4px 0 #ecdff2}
-.tabs{display:flex;gap:6px;padding:8px 10px 0;align-items:center}
-.tray.min .tabs{padding-bottom:8px}
+.tabs{display:flex;gap:6px;padding:0 10px;align-items:center}
 .tab{width:38px;height:32px;border-radius:12px;border:2px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;padding:0;color:var(--soft);flex:none}
 .tab svg{width:20px;height:20px}
 .tab.on{background:var(--pink);border-color:var(--pink);color:#fff}
-.tray.min .tab.on{background:#fff;border-color:var(--line);color:var(--soft)}
 .tabs .sp{flex:1}
 .tabs .back{width:auto;padding:0 10px;font:inherit;font-size:12px;font-weight:800;gap:4px;display:none;align-items:center}
 .tray.over .tabs .back{display:flex;border-color:var(--pink);color:var(--pink2)}
-.tray.over .setb,.tray.over .fold{display:none}
-.fold{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:#fff;color:var(--soft);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
-.fold svg{width:16px;height:16px;transition:transform .3s}
-.tray.min .fold svg{transform:rotate(180deg)}
+.tray.over .setb{display:none}
+/* 上緣的拉把：點一下或往下滑收起來 */
+.grip{display:block;width:100%;height:20px;border:0;background:none;padding:7px 0 0;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
+.grip i{display:block;width:44px;height:5px;margin:0 auto;border-radius:3px;background:#ecd6e3}
+.grip:focus-visible{outline:3px solid var(--pink);outline-offset:-3px;border-radius:12px}
+/* 收起來：縮成房間右下角的圓按鈕；拖東西時變淡、點不到，底下的娃娃看得見 */
+#roomPage{position:relative}
+.trayopen{display:none}
+.tray.min{position:absolute;right:14px;bottom:14px;margin:0;width:56px;height:56px;border-radius:50%;border:3px solid #fff;
+  background:linear-gradient(#ff9ccb,var(--pink));box-shadow:0 4px 0 var(--pink2),0 6px 14px rgba(150,60,110,.22);transition:opacity .2s}
+.tray.min .tabs,.tray.min .grip{display:none}
+.tray.min .trayopen{display:grid;place-items:center;width:100%;height:100%;border:0;border-radius:50%;background:none;color:#fff;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.trayopen svg{width:28px;height:28px}
+.trayopen:focus-visible{outline:3px solid var(--pink2);outline-offset:3px}
+.tray.min.ghost{opacity:.22;pointer-events:none}
 .setb{display:flex;align-items:center;gap:5px;background:#fff;border:2px solid #e6dcf7;border-radius:999px;height:32px;padding:0 9px 0 5px;cursor:pointer;font:inherit;flex:none}
 .setb .cl{width:28px;height:15px;background:var(--cloud) center/100% 100% no-repeat}
 .setb .dots{display:flex;gap:3px}

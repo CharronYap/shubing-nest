@@ -1,4 +1,5 @@
-/* 背景音樂：要按過畫面才會開始放，音量放小；開或關記在這台裝置 */
+/* 背景音樂：一打開就試著放；瀏覽器不准自己出聲（手機一定會擋）就等第一次碰畫面再放。
+   音量放小；開或關記在這台裝置，關掉的人什麼都不做 */
 const music = (() => {
   const KEY = 'shubingNest.music';
   const VOL = 0.32;
@@ -6,6 +7,8 @@ const music = (() => {
   a.loop = true; a.preload = 'none'; a.volume = VOL;
   let on = true, started = false;
   try { on = localStorage.getItem(KEY) !== 'off'; } catch (e) {}
+  // 先下載好，碰到畫面時馬上有聲音
+  if (on){ a.preload = 'auto'; a.load(); }
 
   const paint = () => document.querySelectorAll('.mbtn').forEach(b => {
     b.classList.toggle('off', !on);
@@ -26,5 +29,18 @@ const music = (() => {
   // 切到別的分頁或鎖螢幕時先停，回來再接著放
   document.addEventListener('visibilitychange', () => { if (document.hidden) a.pause(); else if (started) play(); });
   paint();
+
+  // 第一次碰畫面任何地方（封面也算）就開始放；碰的是音樂按鈕就交給按鈕自己處理
+  const EVS = ['pointerdown', 'keydown'];
+  const first = e => {
+    if (!started && on && e.target.closest && e.target.closest('.mbtn')) return;
+    EVS.forEach(t => document.removeEventListener(t, first, true));
+    if (!started && on) start();
+  };
+  const waitTouch = () => EVS.forEach(t => document.addEventListener(t, first, true));
+  if (on){
+    if (document.hidden) waitTouch();
+    else a.play().then(() => { started = true; }).catch(waitTouch);   // 被擋就安靜等
+  }
   return { start };
 })();

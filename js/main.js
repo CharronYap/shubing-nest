@@ -114,7 +114,7 @@ function say(it, text){
   const b = document.createElement('div'); b.className = 'say';
   b.textContent = text;
   b.style.left = Math.max(14, Math.min(86, it.x)) + '%';
-  b.style.top = Math.max(6, it.y - h - 2) + '%';
+  b.style.top = Math.max(6, roomY(it.y) - h - 2) + '%';
   room.appendChild(b);
   setTimeout(() => b.classList.add('out'), 1900);
   setTimeout(() => b.remove(), 2300);
