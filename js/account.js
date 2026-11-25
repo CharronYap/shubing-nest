@@ -1,6 +1,6 @@
 /* 雲端帳號：登入、把這台的進度帶上雲端、換裝置接著玩、好友碼
  *
- * 帳號跟薯餅蛋蛋島共用（同一個 Firebase 專案，同一組名字密碼），小窩的存檔放在 nestSaves/{uid}。
+ * Firebase 專案是小窩自己的 shubing-nest（帳號和好友不跟蛋蛋島共用），小窩的存檔放在 nestSaves/{uid}。
  * 沒登入也能玩，存在這台裝置（訪客存檔）。登入後每個帳號在這台裝置有一份自己的存檔（save.js 的 saveKeyFor），
  * 有改動就等 1.5 秒合成一次寫上雲端。
  *
@@ -192,7 +192,7 @@ function loginError(e) {
 function openLogin(mode = 'in', msg = '') {
   const up = mode === 'up';
   open(`<div class="ac-hd">${USER_ICON}<b>${up ? '開一個新帳號' : '登入雲端帳號'}</b></div>
-    <p class="ac-p">${up ? '取一個名字、設一組密碼。開好之後，薯餅蛋蛋島也能用同一個帳號登入。' : '登入後，娃娃、家具和房間會存到雲端，換手機也能接著玩。跟薯餅蛋蛋島是同一個帳號。'}</p>
+    <p class="ac-p">${up ? '取一個名字、設一組密碼。換手機時用同一組登入，就能接著玩。' : '登入後，娃娃、家具和房間會存到雲端，換手機也能接著玩。'}</p>
     <form class="ac-form" novalidate>
       <label>名字<input name="n" autocomplete="username" maxlength="24" placeholder="2～12 個字" required></label>
       <label>密碼<input name="p" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" placeholder="至少 6 個字" required></label>
@@ -235,7 +235,7 @@ function openAccount() {
       <form class="ac-add" novalidate><input name="c" maxlength="6" autocapitalize="characters" autocomplete="off" placeholder="輸入朋友的好友碼" aria-label="朋友的好友碼"><button class="ac-b sm" type="submit">加好友</button></form>
       <p class="ac-err" role="alert"></p>
       <ul class="ac-list"><li class="ac-empty">讀取中…</li></ul>
-      <p class="ac-note">好友跟薯餅蛋蛋島是同一份，在那邊加過的朋友這裡也看得到。</p>
+      <p class="ac-note">把好友碼給朋友，對方輸入後就會出現在這裡。</p>
     </div>
     <button class="ac-link out" data-a="out">登出</button>`);
   paintStatus();

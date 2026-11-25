@@ -1,7 +1,6 @@
 // 雲端帳號：Firebase 的帳號名稱＋密碼登入 + Firestore（lite 版，只讀寫幾份文件，沒有即時同步）
-// 從薯餅蛋蛋島（毛絨消消樂）的 js/cloud.js 改來的，用同一個 Firebase 專案 plush-crush：
-//   帳號（Authentication）和好友（players/{uid}）跟蛋蛋島共用，同一組名字密碼兩邊都能登入、好友也是同一份。
-//   小窩自己的存檔放在 nestSaves/{uid}；蛋蛋島的存檔 saves/{uid} 這裡完全不讀也不寫。
+// 從薯餅蛋蛋島（毛絨消消樂）的 js/cloud.js 改來的。Firebase 專案是小窩自己的 shubing-nest，帳號和好友不跟蛋蛋島共用：
+//   帳號在 Authentication，好友碼和好友名單在 players/{uid}，小窩的存檔在 nestSaves/{uid}。
 //
 //   const cloud = createCloud(config, { emulator })
 //   cloud.ready / cloud.isReady / cloud.user / cloud.onUser(cb)
@@ -9,7 +8,7 @@
 //   cloud.load()             讀自己的小窩存檔 → 物件或 null
 //   cloud.save(data, uid)    寫自己的小窩存檔（整份覆蓋）；目前登入的不是 uid 就不寫
 //   cloud.player(uid)        讀一個人的公開資料（players）
-//   cloud.ensurePlayer()     還沒有公開資料（沒玩過蛋蛋島）就建一份最基本的；已經有就不動
+//   cloud.ensurePlayer()     還沒有公開資料（第一次登入）就建一份最基本的；已經有就不動
 //   cloud.addFriend(uid)     把 uid 加進自己的好友名單（只動 friends 這一欄）
 //   cloud.findCode(code) / cloud.addedMe()
 //
@@ -20,10 +19,10 @@ const CDN = `https://www.gstatic.com/firebasejs/${V}/`;
 
 // ---------- 帳號名稱 ↔ Firebase 的「email」 ----------
 // Firebase 的帳號密碼登入一定要 email，玩家只取名字：名字換成一個不會真的收信的地址（這個網域沒有信箱，Firebase 也不會寄信）。
-//   英數字的名字直接放：alice → alice@players.plush-crush.firebaseapp.com（在 Firebase 後台一眼看得出是誰）
+//   英數字的名字直接放：alice → alice@players.shubing-nest.firebaseapp.com（在 Firebase 後台一眼看得出是誰）
 //   其他文字（中文…）轉成 base32：小明 → u.4wyi7z4ymo@players…（「.」不會出現在名字裡，所以分得開）
 // 這個網域一改，所有用名字開的帳號都登不進去，所以不要改。
-const NAME_DOMAIN = 'players.plush-crush.firebaseapp.com';
+const NAME_DOMAIN = 'players.shubing-nest.firebaseapp.com';
 const B32 = 'abcdefghijklmnopqrstuvwxyz234567';
 // 名字：2–12 個字，字母（任何語言）、數字、_、-，第一個字要是字母或數字；英文不分大小寫
 export function normName(raw) {
@@ -107,7 +106,7 @@ export function createCloud(config, { emulator = false } = {}) {
   })();
   ready.catch(e => console.warn('[cloud] 雲端存檔載入失敗（照樣可以玩，存在這台裝置）', e));
 
-  // 小窩的存檔：nestSaves/{uid}（不要改成 saves，那是蛋蛋島的存檔）
+  // 小窩的存檔：nestSaves/{uid}（規則裡的 saves 是從蛋蛋島複製來的，小窩不用）
   const ref = () => {
     if (!user) throw new Error('not signed in');
     return F.doc(db, 'nestSaves', user.uid);
@@ -143,14 +142,14 @@ export function createCloud(config, { emulator = false } = {}) {
       if (uid && (!user || user.uid !== uid)) throw Object.assign(new Error('account changed'), { code: 'cloud/account-changed' });
       await F.setDoc(ref(), data);
     },
-    // ---------- 好友（跟蛋蛋島共用 players） ----------
+    // ---------- 好友（players/{uid}，只在小窩裡） ----------
     friendCode,
     async player(uid) {
       await ready;
       const s = await F.getDoc(F.doc(db, 'players', uid));
       return s.exists() ? { ...s.data(), uid } : null;
     },
-    // 公開資料一定要有 code、name、stars、best（規則這樣檢查）。蛋蛋島玩過的人已經有一份，這裡就不碰
+    // 公開資料一定要有 code、name、stars、best（規則從蛋蛋島複製來的，這樣檢查）。已經有一份就不碰
     async ensurePlayer() {
       await ready;
       if (!user) throw new Error('not signed in');
@@ -161,7 +160,7 @@ export function createCloud(config, { emulator = false } = {}) {
       await F.setDoc(r, data);
       return { ...data, uid: user.uid };
     },
-    // 只加進 friends，其他欄位（蛋蛋島的星星、最高分、頭像）不動
+    // 只加進 friends，其他欄位不動
     async addFriend(uid) {
       await ready;
       if (!user) throw new Error('not signed in');

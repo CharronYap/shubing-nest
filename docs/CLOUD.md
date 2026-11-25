@@ -1,36 +1,27 @@
 # 雲端帳號
 
-小窩的帳號跟薯餅蛋蛋島是同一套：同一個 Firebase 專案 `plush-crush`，同一組名字和密碼兩邊都能登入，好友也是同一份。
+小窩用自己的 Firebase 專案 `shubing-nest`，帳號和好友只在小窩裡，不跟薯餅蛋蛋島共用。
 
-| 放什麼 | 位置 | 誰會寫 |
-| --- | --- | --- |
-| 帳號（名字＋密碼） | Authentication | 兩邊都用 |
-| 好友碼、名字、好友名單 | Firestore `players/{uid}` | 兩邊都用；小窩只會新增自己的那份、加好友 |
-| 蛋蛋島的存檔 | Firestore `saves/{uid}` | 只有蛋蛋島，小窩完全不讀也不寫 |
-| 小窩的存檔 | Firestore `nestSaves/{uid}` | 只有小窩 |
+| 放什麼 | 位置 |
+| --- | --- |
+| 帳號（名字＋密碼） | Authentication |
+| 好友碼、名字、好友名單 | Firestore `players/{uid}` |
+| 小窩的存檔 | Firestore `nestSaves/{uid}` |
 
-## 要在 Firebase 後台做的兩件事
+## Firebase 後台（2026-11-26 已經設好）
 
-這兩件做完，網頁版才能登入、存到雲端。都在 https://console.firebase.google.com 的 `plush-crush` 專案裡。
+都在 https://console.firebase.google.com 的 `shubing-nest` 專案裡，下面這些已經做完，不用再動：
 
-### 1. 發布新的 Firestore 規則
+- 「Authentication」→「登入方式」：開了「電子郵件／密碼」。玩家只取名字，程式會把名字換成 `名字@players.shubing-nest.firebaseapp.com` 這種不會收信的地址。
+- 「Authentication」→「設定」→「授權網域」：加了 `charronyap.github.io`。
+- 「Firestore Database」：資料庫 `(default)`，位置 asia-southeast1。
+- 「Firestore Database」→「規則」：發布的是這個 repo 的 `firestore.rules`。
 
-1. 左邊選「Firestore Database」→ 上面的「規則」分頁。
-2. 把編輯框裡的內容全部刪掉，換成這個 repo 的 `firestore.rules` 整份內容。
-3. 按「發布」。
+`firestore.rules` 前面 `saves`、`players` 兩段是從蛋蛋島的規則原樣複製來的，小窩用 `players`（好友）和最後一段 `nestSaves`（存檔），`saves` 用不到。`nestSaves` 已經留好第二版的四個欄位（`album`、`away`、`look`、`closet`）。
 
-`firestore.rules` 是蛋蛋島 repo 裡的規則原封不動，最後面多一段「薯餅的小窩」（`nestSaves`）。這段已經先留好第二版要用的四個欄位（`album`、`away`、`look`、`closet`），之後做相簿、衣櫃這些功能時不用再發布一次。如果蛋蛋島之後又改過規則，不要整份蓋掉，只把「薯餅的小窩」那一段（從 `// ---------- 薯餅的小窩 ----------` 到 `match /nestSaves/{uid} { … }` 結束）貼進去，放在最後的 `match /{document=**}` 前面。
+之後改了 `firestore.rules`，要再到「Firestore Database」→「規則」，把編輯框整份換成新的內容，按「發布」。沒發布的話，存檔裡有新欄位時雲端會拒絕，畫面會跳出「雲端存檔還沒開好」，進度先存在這台裝置。
 
-還沒發布前，登入會成功，但會跳出「雲端存檔還沒開好」，進度先存在這台裝置。
-
-### 2. 把網址加進授權網域
-
-1. 左邊選「Authentication」→ 上面的「設定」分頁 →「授權網域」。
-2. 按「新增網域」，輸入 `charronyap.github.io`（不用加 https:// 和後面的路徑），新增。
-
-沒加的話，登入會顯示「這個網址還不能登入」。
-
-「登入方式」裡的「電子郵件／密碼」蛋蛋島已經開了，不用再動。
+換網址（例如綁自己的網域）時，要把新網址加進授權網域，不然登入會顯示「這個網址還不能登入」。
 
 ## 玩起來是怎樣
 
@@ -39,7 +30,7 @@
 - 登入後每次改動，等 1.5 秒存一次到雲端。封面帳號按鈕旁邊的小圓點：綠色＝已經存到雲端，黃色＝存檔中，橘色＝離線或雲端還沒開好（連上後會自動補存）。
 - 打開遊戲時，雲端那份是別台裝置後來存的，會換成雲端那份。玩到一半發現別台裝置改過，也會換成最新的，不會拿舊的蓋掉。
 - 登出後回到這台裝置的訪客存檔。
-- 帳號按鈕裡可以看自己的好友碼、輸入朋友的好友碼加好友。在蛋蛋島加過的朋友這裡也看得到。
+- 帳號按鈕裡可以看自己的好友碼、輸入朋友的好友碼加好友。對方輸入你的好友碼後，也會出現在你的名單裡。
 
 ## 本機測試
 
@@ -65,9 +56,9 @@ python3 -m http.server 8765
 
 ```
 js/cloud-config.js   Firebase 專案設定（本來就會出現在網頁裡，不是密碼）
-js/cloud.js          登入、讀寫存檔、好友（從蛋蛋島改來的）
+js/cloud.js          登入、讀寫存檔、好友（從蛋蛋島的程式改來的）
 js/account.js        帳號按鈕、登入視窗、同步、搬存檔
 css/account.css      帳號按鈕和視窗的樣式
-firestore.rules      整份 Firestore 規則（蛋蛋島原本的＋小窩的 nestSaves）
+firestore.rules      整份 Firestore 規則（好友 players、存檔 nestSaves）
 firebase.json        模擬器設定
 ```

@@ -1,7 +1,8 @@
 rules_version = '2';
-// 薯餅蛋蛋島（毛絨消消樂）＋薯餅的小窩，兩個遊戲共用的 Firestore 規則。
-// 2026-11-26：在蛋蛋島原本的規則後面加上 nestSaves（小窩的存檔），蛋蛋島那幾段一個字都沒改。
-// 貼到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（步驟見小窩的 docs/CLOUD.md）。
+// 薯餅的小窩的 Firestore 規則（Firebase 專案 shubing-nest，已經發布）。
+// 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）和最後的 nestSaves（存檔），saves 用不到。
+// 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
+// 下面是蛋蛋島原本的說明：
 //
 // 毛絨消消樂的雲端存檔規則（貼到 Firebase 主控台 → Firestore Database → 規則，見 docs/CLOUD_SAVE.md）
 // 2026-11-24 更新：players 可以多一個 look（朋友看得到的薯餅頭像）；saves 可以多一個 closet（衣櫃上雲端）。
@@ -107,7 +108,7 @@ service cloud.firestore {
         && okNestRoom(d.home.living) && okNestRoom(d.home.bed) && okNestRoom(d.home.bath);
     }
 
-    // 小窩的存檔：nestSaves/{登入帳號的 uid}。只有本人能讀、能寫；跟蛋蛋島的 saves 分開放
+    // 小窩的存檔：nestSaves/{登入帳號的 uid}。只有本人能讀、能寫
     match /nestSaves/{uid} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
