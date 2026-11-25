@@ -46,8 +46,10 @@ async function bookOpen(){
   if (!net){ toast('登入之後才有訪客簿'); return; }
   const owner = !VISIT;
   bk = {uid: owner ? net.me.uid : VISIT.uid, name: owner ? '' : VISIT.name, owner, list: null, mine: null, page: 0, sticker: null, msg: '', busy: false, fail: false};
+  // 對方還沒把你加進他的好友名單：訪客簿看不到也寫不了（firestore.rules），先說清楚，不去讀
+  bk.wait = !owner && VISIT.hasMe === false;
   bookPaint();
-  await bookLoad();
+  if (!bk.wait) await bookLoad();
 }
 async function bookLoad(){
   const net = sNet(), b = bk; if (!net || !b) return;
@@ -79,7 +81,8 @@ function bookHop(d){
 function bookPaint(){
   const b = bk, net = sNet(); if (!b || !net) return;
   let body;
-  if (b.fail) body = '<p class="al-em">訪客簿現在打不開，晚點再試。</p>';
+  if (b.wait) body = `<p class="al-em">等${txSlot(b.name)}加你為好友，就能看和寫他的訪客簿。</p><p class="bk-note">你已經加了他；他那邊在帳號的好友清單按「加回去」就可以。</p>`;
+  else if (b.fail) body = '<p class="al-em">訪客簿現在打不開，晚點再試。</p>';
   else if (!b.list) body = '<p class="al-em">翻開中……</p>';
   else {
     let form = '';

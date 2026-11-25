@@ -333,7 +333,7 @@ async function goVisit(p) {
     close();
     $('#cover').hidden = true;
     music.start?.();
-    visitOpen({ name: p.name, uid: p.uid, data, sent, send: () => cloud.sendHeart(p.uid, day) });
+    visitOpen({ name: p.name, uid: p.uid, hasMe: p.hasMe !== false, data, sent, send: () => cloud.sendHeart(p.uid, day) });
   } finally { visiting = false; }
 }
 
@@ -344,7 +344,10 @@ async function fetchFriends() {
   const back = await cloud.addedMe();
   back.forEach(p => ids.delete(p.uid));
   const fwd = (await Promise.all([...ids].map(id => cloud.player(id).catch(() => null)))).filter(Boolean);
-  friends = [...fwd, ...back].filter((p, i, a) => p.uid !== me.uid && a.findIndex(q => q.uid === p.uid) === i);
+  // mine：我的名單裡有他（我加過他）；hasMe：他的名單裡有我。自己打的字要對方加過你才寫得進去（firestore.rules）
+  const mineSet = new Set(mine.friends || []), backSet = new Set(back.map(p => p.uid));
+  friends = [...fwd, ...back].filter((p, i, a) => p.uid !== me.uid && a.findIndex(q => q.uid === p.uid) === i)
+    .map(p => ({ ...p, mine: mineSet.has(p.uid), hasMe: backSet.has(p.uid) || (p.friends || []).includes(me.uid) }));
   return friends;
 }
 async function loadFriends() {
@@ -355,9 +358,24 @@ async function loadFriends() {
     const el = box.querySelector('.ac-list');
     if (!el) return;
     el.innerHTML = friends.length
-      ? friends.map((p, i) => `<li><button class="ac-fv" data-fi="${i}" aria-label="去${esc(p.name)}家">${HOUSE}<span class="nm">${esc(p.name)}</span><span class="cd">${esc(p.code)}</span></button></li>`).join('')
+      ? friends.map((p, i) => `<li><button class="ac-fv" data-fi="${i}" aria-label="去${esc(p.name)}家">${HOUSE}<span class="nm">${esc(p.name)}</span><span class="cd">${p.mine ? (p.hasMe ? '' : '還沒加你') : '他加了你'}</span></button>${p.mine
+          ? `<button class="ac-fa rm" data-rm="${i}" aria-label="把${esc(p.name)}從好友移除">移除</button>`
+          : `<button class="ac-fa" data-add="${i}" aria-label="把${esc(p.name)}加回去">加回去</button>`}</li>`).join('')
+        + '<li class="ac-empty ac-fnote">兩邊都加了對方，才能互相在訪客簿寫字、寄明信片。移除之後，對方就寫不進來了。</li>'
       : '<li class="ac-empty">還沒有好友。把好友碼給朋友，或輸入朋友的好友碼。</li>';
-    el.onclick = e => { const b = e.target.closest('.ac-fv'); if (b && friends[b.dataset.fi]) goVisit(friends[b.dataset.fi]); };
+    el.onclick = async e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.classList.contains('ac-fv')){ if (friends[b.dataset.fi]) goVisit(friends[b.dataset.fi]); return; }
+      const p = friends[b.dataset.add ?? b.dataset.rm]; if (!p || b.disabled) return;
+      // 移除要按兩次（第一次只是問）
+      if (b.dataset.rm !== undefined && !b.dataset.sure){ b.dataset.sure = '1'; b.textContent = '確定移除'; setTimeout(() => { if (b.isConnected){ delete b.dataset.sure; b.textContent = '移除'; } }, 4000); return; }
+      b.disabled = true;
+      try {
+        if (b.dataset.add !== undefined){ await cloud.addFriend(p.uid); say(`加了 ${p.name}`); }
+        else { await cloud.removeFriend(p.uid); say(`把 ${p.name} 從好友移除了`); }
+        friends = null; await loadFriends();
+      } catch (e2) { console.warn('[account]', e2); say('沒有成功，請再試一次'); b.disabled = false; }
+    };
   } catch (e) {
     console.warn('[account]', e);
     const fr = box.querySelector('.ac-fr'); if (fr) fr.hidden = true;

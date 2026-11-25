@@ -8,6 +8,9 @@ rules_version = '2';
 //   新的子集合 nestRooms/{uid}/book（訪客簿）、nestRooms/{uid}/water（幫忙澆水）；
 //   新集合 nestStays（娃娃去朋友家過夜）、nestCards（明信片）；nestGifts 多一欄 msg（自己打的一句話）。
 //   自己打的字都檢查是文字、有長度上限：訪客簿、小紙條、送娃娃 40 字，明信片 80 字。
+//   2026-11-26 收緊：自己打的字（訪客簿、明信片、送娃娃的 msg）要「收的人自己的好友名單裡有寫的人」才寫得進去。
+//   好友名單是每個人自己寫自己的，只看「任一邊加了對方」的話，陌生人把你加進他的名單就能寫字給你；
+//   改成看收的人的名單，把對方從名單移除，他就寫不進來了。愛心、澆水、過夜、選寫好的句子送娃娃照舊任一邊都算。
 // 2026-11-27 賺幣和新房間（也還沒發布，跟第五版一起發布）：
 //   小窩存檔 nestSaves 多收 earn（小遊戲今天幾局、誰在打工、里程碑、小店）一欄；
 //   存檔和公開房間的 home 可以多兩間：kitchen（廚房）、attic（閣樓），可有可無，檢查跟原本三間一樣。
@@ -211,8 +214,10 @@ service cloud.firestore {
         && (!('toName' in request.resource.data)
             || (request.resource.data.toName is string && request.resource.data.toName.size() <= 24))
         && request.resource.data.t is int
-        && (nestFriendOf(request.resource.data.from, request.resource.data.to)
-            || nestFriendOf(request.resource.data.to, request.resource.data.from));
+        // 有自己打的字（msg）：收的人的名單裡要有寄的人。只選寫好的句子：任一邊加了對方就可以
+        && (nestFriendOf(request.resource.data.to, request.resource.data.from)
+            || (!('msg' in request.resource.data)
+                && nestFriendOf(request.resource.data.from, request.resource.data.to)));
       allow delete: if request.auth != null
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
       allow update: if false;
@@ -234,13 +239,15 @@ service cloud.firestore {
     }
 
     // 訪客簿：nestRooms/{主人}/book/{日子_寫的人}
-    //   只有主人的朋友能寫，不能寫在自己家；文件名字由今天和寫的人組成，所以一人一天一則
+    //   只有「主人自己加過的好友」能寫（主人的名單裡有他），不能寫在自己家；文件名字由今天和寫的人組成，所以一人一天一則
     //   sticker 貼紙的編號；msg 自己打的一句話，可以不填，40 字以內
-    //   主人和主人的朋友都讀得到（訪客簿的字，來家裡的朋友都看得到）
+    //   主人和主人加過的好友都讀得到（訪客簿的字，來家裡的朋友都看得到）；寫的人另外可以讀自己那一則
     //   主人可以刪任何一則，寫的人可以刪自己的；寫了不能改
     match /nestRooms/{uid}/book/{bid} {
-      allow read: if request.auth != null
-        && (request.auth.uid == uid || nestFriends(uid, request.auth.uid));
+      allow get: if request.auth != null
+        && (request.auth.uid == uid || nestFriendOf(uid, request.auth.uid) || bid.split('_')[1] == request.auth.uid);
+      allow list: if request.auth != null
+        && (request.auth.uid == uid || nestFriendOf(uid, request.auth.uid));
       allow create: if request.auth != null
         && request.auth.uid != uid
         && request.resource.data.keys().hasOnly(['from', 'fromName', 'day', 'sticker', 'msg'])
@@ -253,7 +260,7 @@ service cloud.firestore {
         && request.resource.data.sticker.size() >= 1 && request.resource.data.sticker.size() <= 40
         && (!('msg' in request.resource.data)
             || (request.resource.data.msg is string && request.resource.data.msg.size() <= 40))
-        && nestFriends(uid, request.auth.uid);
+        && nestFriendOf(uid, request.auth.uid);
       allow delete: if request.auth != null
         && (request.auth.uid == uid || resource.data.from == request.auth.uid);
       allow update: if false;
@@ -322,7 +329,7 @@ service cloud.firestore {
     // 明信片：nestCards/{自動編號}
     //   不放圖片，放那一間房間的擺法 snap = {rid 哪一間, room 擺設（檢查跟公開房間的一間一樣）, look 娃娃穿什麼, night 是不是晚上}
     //   msg 自己打的一句話，80 字以內
-    //   寄的人必須是本人、收的人要是朋友、不能寄給自己；寄的人和收的人都讀得到、都能刪；寄出後不能改
+    //   寄的人必須是本人、不能寄給自己，收的人自己的好友名單裡要有寄的人；寄的人和收的人都讀得到、都能刪；寄出後不能改
     //   一天寄幾張只在遊戲畫面上擋，這裡不檢查
     function okCardSnap(s) {
       return s is map
@@ -348,7 +355,7 @@ service cloud.firestore {
         && okCardSnap(request.resource.data.snap)
         && request.resource.data.msg is string && request.resource.data.msg.size() <= 80
         && request.resource.data.t is int
-        && nestFriends(request.resource.data.from, request.resource.data.to);
+        && nestFriendOf(request.resource.data.to, request.resource.data.from);
       allow delete: if request.auth != null
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
       allow update: if false;

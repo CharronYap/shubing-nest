@@ -193,6 +193,12 @@ export function createCloud(config, { emulator = false } = {}) {
       if (!user) throw new Error('not signed in');
       await F.setDoc(F.doc(db, 'players', user.uid), { friends: F.arrayUnion(uid) }, { merge: true });
     },
+    // 從自己的好友名單拿掉（對方的名單不會動）。拿掉之後對方就不能在你的訪客簿寫字、寄明信片給你
+    async removeFriend(uid) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'players', user.uid), { friends: F.arrayRemove(uid) }, { merge: true });
+    },
     async findCode(code) {
       await ready;
       const r = await F.getDocs(F.query(F.collection(db, 'players'), F.where('code', '==', code), F.limit(5)));

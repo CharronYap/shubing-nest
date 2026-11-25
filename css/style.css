@@ -805,3 +805,4 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 /* 出遊背景：拍照預覽下面的一排 */
 .ph-bgs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .ph-bgs .ng-chip{padding:5px 12px}
+.ng-chip.off{opacity:.45;cursor:default;border-style:dashed}

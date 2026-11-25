@@ -36,7 +36,10 @@ function cardPaint(){
   else if (!d.friends) body = '<p class="al-em">找好友中……</p>';
   else if (!d.friends.length) body = '<p class="al-em">還沒有好友。在帳號那裡輸入朋友的好友碼，加了之後就能寄。</p>';
   else body = `<div class="al-sec">寄給誰</div>
-    <div class="ng-chips">${d.friends.map((f, i) => `<button class="ng-chip ${d.to === f.uid ? 'on' : ''}" data-pcf="${i}" aria-pressed="${d.to === f.uid}">${txSlot(sText(f.name, 12))}</button>`).join('')}</div>
+    <div class="ng-chips">${d.friends.map((f, i) => f.hasMe === false
+      ? `<button class="ng-chip off" disabled aria-label="還沒加你為好友，不能寄">${txSlot(sText(f.name, 12))}</button>`
+      : `<button class="ng-chip ${d.to === f.uid ? 'on' : ''}" data-pcf="${i}" aria-pressed="${d.to === f.uid}">${txSlot(sText(f.name, 12))}</button>`).join('')}</div>
+    ${d.friends.some(f => f.hasMe === false) ? '<small class="bk-note">灰色的朋友還沒加你為好友，等他加你之後才能寄給他。</small>' : ''}
     <div class="al-sec">寫一句話</div>
     <input class="tx-in pc-in" type="text" maxlength="${CARD_LEN}" placeholder="想跟朋友說的話" aria-label="明信片上的話，${CARD_LEN} 字以內">
     <small class="bk-note">明信片上是剛剛拍的這間房間。只有收到的朋友看得到。</small>`;
@@ -52,6 +55,7 @@ async function cardSend(){
   if (!d || !net || cardBusy || !d.to || cardMail().pcn.n >= CARD_DAY) return;
   cardBusy = true;
   const f = (d.friends || []).find(x => x.uid === d.to);
+  if (!f || f.hasMe === false){ cardBusy = false; return; }
   try {
     await net.cardSend({to: d.to, snap: d.snap, msg: sText(d.msg, CARD_LEN), fromName: net.me.name});
     cardMail().pcn.n++; save();

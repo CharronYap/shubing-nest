@@ -41,7 +41,7 @@ function visitTap(it){
 function visitOpen(f){
   const v = visitClean(f.data);
   if (!VISIT) visitBack = roomId;
-  VISIT = {name: f.name, uid: f.uid || '', home: v.home, look: v.look, want: f.data.want, yard: typeof waterClean === 'function' ? waterClean(f.data.yard) : null};
+  VISIT = {name: f.name, uid: f.uid || '', hasMe: f.hasMe !== false, home: v.home, look: v.look, want: f.data.want, yard: typeof waterClean === 'function' ? waterClean(f.data.yard) : null};
   screen.classList.add('visiting');
   setPage('room');
   roomId = 'living';

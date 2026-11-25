@@ -68,3 +68,11 @@
 .acct button:focus-visible,.cover .cv-acct:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
 @keyframes acIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.ac-card{animation:none}}
+/* 好友清單：加回去、移除 */
+.ac-list li:has(.ac-fv){gap:6px}
+.ac-list li:has(.ac-fv) .ac-fv{flex:1;min-width:0;width:auto}
+.ac-fa{flex:none;border:2px solid #ffd3e6;border-radius:999px;background:#fff0f7;color:var(--pink2);font:inherit;font-size:12.5px;font-weight:800;padding:5px 10px;cursor:pointer}
+.ac-fa.rm{background:#fff;border-color:#eadde4;color:var(--soft)}
+.ac-fa.rm[data-sure]{background:#ffe9e9;border-color:#ffb3b3;color:#c0392b}
+.ac-fa[disabled]{opacity:.5;cursor:default}
+.ac-list .ac-fnote{font-size:12px;border-bottom:0;padding-top:8px}

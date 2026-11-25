@@ -125,7 +125,9 @@ function ngPaint(loading){
   else if (!can.length) stop = '同一隻有兩隻以上才能送。再夾到一樣的，就可以分一隻給朋友。';
   else if (!loading && !ngFriends.length) stop = '還沒有好友。在帳號那裡輸入朋友的好友碼，加了之後就能送。';
   if (p.doll && !can.includes(p.doll)) p.doll = null;
-  const said = () => p.m !== null || !!sText(p.msg, NG_LEN);
+  // 自己打的字要對方加過你才送得出去（firestore.rules）；還沒加的只能選寫好的句子
+  const ngCanType = () => { const f = ngFriends.find(x => x.uid === p.to); return !f || f.hasMe !== false; };
+  const said = () => p.m !== null || (ngCanType() && !!sText(p.msg, NG_LEN));
   const ready = !stop && !loading && p.doll && p.to && said();
   openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>送娃娃給朋友</span><small>今天還能送 ${Math.max(0, NG_MAX_DAY - today)} 次</small></div>
     <div class="ng-box">${stop ? `<p class="al-em">${stop}</p>` : `
@@ -135,8 +137,8 @@ function ngPaint(loading){
       <div class="ng-chips">${loading ? '<p class="al-em">找好友中……</p>' : ngFriends.map(f => `<button class="ng-chip ${p.to === f.uid ? 'on' : ''}" data-ngf="${f.uid}" aria-pressed="${p.to === f.uid}">${ngName(f.name)}</button>`).join('')}</div>
       <div class="al-sec">想跟朋友說的話</div>
       <div class="ng-chips">${MAIL_GIFT_LINES.map((l, i) => `<button class="ng-chip ${p.m === i ? 'on' : ''}" data-ngm="${i}" aria-pressed="${p.m === i}">${l}</button>`).join('')}</div>
-      <input class="tx-in ng-in" type="text" maxlength="${NG_LEN}" placeholder="或是自己寫一句" aria-label="自己寫一句，${NG_LEN} 字以內">
-      <small class="bk-note">自己寫了就用自己寫的；沒寫就用上面選的那一句。</small>`}
+      ${ngCanType() ? `<input class="tx-in ng-in" type="text" maxlength="${NG_LEN}" placeholder="或是自己寫一句" aria-label="自己寫一句，${NG_LEN} 字以內">
+      <small class="bk-note">自己寫了就用自己寫的；沒寫就用上面選的那一句。</small>` : '<small class="bk-note">這位朋友還沒加你為好友，先用上面寫好的句子；等他加你之後就能自己寫。</small>'}`}
     </div>
     <div class="ml-ft"><button class="btn" data-ng="mail">回信箱</button>${stop ? '' : `<button class="btn y" data-ng="send" ${ready ? '' : 'disabled'}>送出</button>`}</div>`);
   // 打字時不整個重畫（游標會跑掉），只更新「送出」能不能按
@@ -145,7 +147,8 @@ function ngPaint(loading){
 }
 async function ngSend(){
   const net = ngNet(), p = ngPick; if (!net || ngBusy || !p || !p.doll || !p.to) return;
-  const msg = sText(p.msg, NG_LEN), line = p.m === null ? 0 : p.m;
+  const tf = ngFriends.find(f => f.uid === p.to);
+  const msg = tf && tf.hasMe === false ? '' : sText(p.msg, NG_LEN), line = p.m === null ? 0 : p.m;
   if (p.m === null && !msg) return;
   if ((DOLL_N[p.doll] || 0) < 2 || ngOut.length >= NG_MAX_OUT || ngSentToday() >= NG_MAX_DAY){ ngPaint(false); return; }
   ngBusy = true;
