@@ -181,11 +181,15 @@ async function photoShoot(){
   ctx.setTransform(s, 0, 0, s, PH.pad - cx * s, PH.pad - cy * s);
 
   const r = cur(), wh = WALL * H, night = isNight();
-  await paintWall(ctx, s, W, wh, r.wall);
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, wh - 4, W, 7);   // 牆腳的白條
-  paintFloor(ctx, s, W, H, wh, r.floor);
-  const winEl = $('#win svg');
-  if (winEl){ const b = boxIn(winEl, R), im = await svgImg(winEl, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }
+  const trip = typeof tripBg === 'function' ? tripBg() : null;   // 出遊背景（js/trip.js）：只畫背景和娃娃
+  if (trip) trip.paint(ctx, W, H, wh);
+  else {
+    await paintWall(ctx, s, W, wh, r.wall);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, wh - 4, W, 7);   // 牆腳的白條
+    paintFloor(ctx, s, W, H, wh, r.floor);
+    const winEl = $('#win svg');
+    if (winEl){ const b = boxIn(winEl, R), im = await svgImg(winEl, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }
+  }
 
   // 家具、娃娃、地上的小東西：照前後順序（z-index）畫
   const fx = {pose: true, jump: Math.random() < .5};
@@ -199,6 +203,7 @@ async function photoShoot(){
       const b = boxIn(e, R);
       if (b.x + b.w * .5 > cx && b.x + b.w * .5 < cx + cw && b.y + b.h * .5 > cy && b.y + b.h * .5 < cy + ch) inShot.add(it.id);
     } else {
+      if (trip) continue;   // 出遊：家具和地上的東西不畫
       const svg = e.querySelector('svg'); if (!svg) continue;
       const b = boxIn(svg, R), im = await svgImg(svg, b.w * s, b.h * s);
       if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h);
@@ -206,7 +211,7 @@ async function photoShoot(){
   }
 
   // 關燈：跟畫面一樣蓋一層暗色，有檯燈的話再把光畫上去
-  if (room.classList.contains('off')){
+  if (room.classList.contains('off') && !trip){
     ctx.save(); ctx.globalCompositeOperation = 'multiply';
     if (night){ ctx.fillStyle = 'rgba(18,18,70,.74)'; } else { ctx.globalAlpha = .9; ctx.fillStyle = 'rgba(40,40,110,.42)'; }
     ctx.fillRect(0, 0, W, H); ctx.restore();
@@ -226,7 +231,7 @@ async function photoShoot(){
   const d = new Date();
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   ctx.fillStyle = '#e14f93'; ctx.font = font(900, 42); ctx.fillText('薯餅的小窩', PH.pad + 6, by + 66);
-  ctx.fillStyle = '#a8708c'; ctx.font = font(800, 26); ctx.fillText(`${ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`, PH.pad + 8, by + 110);
+  ctx.fillStyle = '#a8708c'; ctx.font = font(800, 26); ctx.fillText(`${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`, PH.pad + 8, by + 110);
   let quip = '';
   if (inShot.has('piggy')){
     quip = PIGGY_QUIPS[Math.floor(Math.random() * PIGGY_QUIPS.length)];
@@ -286,7 +291,7 @@ async function photoTake(){
   photoBusy = false;
   if (!shot){ toast('沒拍成，再試一次'); return; }
   photoRecord(shot.dolls);
-  const snap = typeof cardSnap === 'function' && typeof sNet === 'function' && sNet() ? cardSnap() : null;   // 寄明信片用（js/card.js）
+  const snap = typeof cardSnap === 'function' && typeof sNet === 'function' && sNet() && !(typeof tripBg === 'function' && tripBg()) ? cardSnap() : null;   // 寄明信片用（js/card.js）
   let url = '';
   try { url = shot.canvas.toDataURL('image/png'); } catch (e) {}
   if (!url){ toast('這台存不了照片'); return; }
@@ -294,12 +299,14 @@ async function photoTake(){
   const o = document.createElement('div'); o.className = 'over phov';
   o.innerHTML = `<div class="pcard phcard" role="dialog" aria-label="拍好的照片">
       <img class="phimg" alt="拍好的照片" src="${url}">
+      ${typeof tripRow === 'function' ? tripRow() : ''}
       <div class="row"><button class="btn y ph-save">存下來</button><button class="btn ph-again">再拍一張</button>${snap ? '<button class="btn ph-card">寄給朋友</button>' : ''}</div>
       <button class="ph-x" aria-label="關閉"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button></div>`;
   screen.appendChild(o);
   o.addEventListener('click', e => { if (e.target === o) o.remove(); });
   o.querySelector('.ph-x').onclick = () => o.remove();
   o.querySelector('.ph-save').onclick = () => photoSave(shot.canvas);
+  if (typeof tripWire === 'function') tripWire(o);
   o.querySelector('.ph-again').onclick = () => { o.remove(); setTimeout(photoTake, 120); };
   if (snap) o.querySelector('.ph-card').onclick = () => { o.remove(); cardCompose(snap); };
   o.querySelector('.ph-save').focus({preventScroll: true});

@@ -799,3 +799,6 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .doll.sp-watch .body{animation:spWatch 5s ease-in-out infinite}
 @keyframes spWatch{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
 @media (prefers-reduced-motion:reduce){.fz1,.fz2,.fzb,.doll.sp-watch .body{animation:none!important}}
+/* 出遊背景：拍照預覽下面的一排 */
+.ph-bgs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.ph-bgs .ng-chip{padding:5px 12px}
