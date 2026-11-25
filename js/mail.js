@@ -103,14 +103,18 @@ const SNOOPY_NOVEL = [
   '浴缸號回到浴室。船長泡了一個很長的澡，決定明天寫續集。（第一部完）',
 ];
 const SNOOPY_REST = ['作家去泡澡找靈感了，下一章快寫好了。', '作家在屋頂上想劇情，想著想著睡著了。下一章再說。', '第二部的開頭寫了三次，都被作家自己撕掉了。再等等。'];
-// 小窩更新了：薯餅寫的，不佔娃娃一天一封的名額。t 之後才開始玩的人不會收到
+// 小窩更新了：薯餅寫的，不佔娃娃一天一封的名額。順序是舊的在前、新的在後（後寄的排在信箱上面）。
+// 所有人都收得到，新玩家也收（才知道小窩有哪些功能）。幣只給一次：見 coin1 和 hi
+const MAIL_HI_FROM = '2026-11-26';   // 這天以後才開始玩的人算新玩家，收歡迎信
 const MAIL_NEWS = [
   {id:'v4', t:'2026-11-26', b:'小窩多了幾樣東西，跟你說一下。\n信箱：大家會寫信給你。信不會過期，附件也一直留著，有空再看就好。\n季節：窗外跟著月份換，過節的那幾天，收納架會多出節日的東西。\n門外小島：上面最右邊那顆鈕。可以種東西，大家會輪流來幫忙。沒來也沒關係，種子會等你。\n送娃娃：登入以後，同一隻有兩隻的，可以從信箱送一隻去朋友家。朋友什麼時候開門都可以。\n我要去睡午覺了，剩下的你自己逛逛'},
-  // a：附件。coin-30 = 30 枚幣（2026-11-27 補給已經在玩的人）
+  {id:'v5', t:'2026-11-27', b:'小窩又多了幾樣，都是跟朋友一起的，要登入才有。\n訪客簿：房間左上角那本小本子。朋友來可以貼貼紙、寫一句話，來你家的朋友都看得到。\n願望清單：相簿裡還沒來的娃娃，點星星。朋友有多的可以送你。\n小島：朋友可以來幫你澆水，你也可以去幫他澆。\n過夜：去朋友家的時候，可以讓一隻娃娃留下來住一晚，隔天牠帶日記回來。\n明信片：拍完照可以寄給朋友。\n沒有朋友來也沒關係，我也常常一個人發呆'},
+  // a：附件。coin-30 = 30 枚幣。coin1 是補給舊玩家的；新玩家改收歡迎信 hi（也附 30 枚），兩封只會收到一封
   {id:'coin1', t:'2026-11-27', a:'coin-30', b:'我數了一下，大家的幣好像都不太夠用。\n所以改了幾件事：每天領的幣變 20 枚，做完一件小事給 3 枚，每天第一次夾娃娃不用幣。\n幣不夠的時候，會告訴你現在還有什麼事可以賺。點上面的幣也看得到。\n信裡附了 30 枚，先拿去用。\n之後還會有別的賺幣方法，我先去躺一下'},
   {id:'f1', t:'2026-11-27', b:'家具多了 17 件，跟你說一下。\n每隻都有一件自己的：我的是吊床。把我放上去，我會睡得比平常還熟。其他人的你自己試試看。\n還有甜點系列，湊齊了送一款奶油壁紙。牆上也多了三樣可以掛的。\n娃娃機夾得到，火腿的小店也有賣，每天換一批。\n我先去試吊床，試完再'},
   {id:'f2', t:'2026-11-27', b:'又多了很多東西，我念一遍。\n家具：森林露營、海邊、太空三個系列，各六件，湊齊各送一款地板或壁紙。還有一個魚缸，貓咪老師會一直盯著看。\n壁紙和地板也多了幾款，火腿的小店買得到。\n新房間：廚房和閣樓。小店有賣廚房的鑰匙和閣樓的梯子，買了上面就多一顆房間鈕。閣樓晚上看得到流星。\n窗外：清晨和傍晚顏色不一樣，有時候會下雨。下雨天小島不用澆水。\n念完了，好累'},
-  {id:'v5', t:'2026-11-27', b:'小窩又多了幾樣，都是跟朋友一起的，要登入才有。\n訪客簿：房間左上角那本小本子。朋友來可以貼貼紙、寫一句話，來你家的朋友都看得到。\n願望清單：相簿裡還沒來的娃娃，點星星。朋友有多的可以送你。\n小島：朋友可以來幫你澆水，你也可以去幫他澆。\n過夜：去朋友家的時候，可以讓一隻娃娃留下來住一晚，隔天牠帶日記回來。\n明信片：拍完照可以寄給朋友。\n沒有朋友來也沒關係，我也常常一個人發呆'},
+  // 歡迎信：不在下面的迴圈裡寄，mailCheck 最後才寄，這樣會排在信箱最上面
+  {id:'hi', hi:1, title:'歡迎來小窩', a:'coin-30', b:'你好，我是薯餅。\n這裡是小窩，我跟大家住在這裡。我平常都在發呆，有事點我一下就好。\n信裡附了 30 枚幣。娃娃機夾一次 2 枚，你可以多夾幾次，每天第一次夾不用幣。\n幣不夠的時候點上面的幣，會告訴你現在可以做什麼。客廳的電視可以玩小遊戲，每天的小事做完也有幣。\n下面幾封信是在講小窩有什麼，有空再看就好。\n我本來還想跟你說一件事，可是'},
 ];
 
 /* ---------- 存檔 ---------- */
@@ -180,7 +184,14 @@ function mailCheck(atOpen){
   const met = S.album.met || {};
   const first = Object.values(met).sort()[0] || t;
   let changed = false;
-  MAIL_NEWS.forEach(n => { if (!m.s['news-' + n.id] && n.t >= first){ m.s['news-' + n.id] = t; mailAdd('sloth', 'news', 'id=' + n.id, t); changed = true; } });
+  const old = first < MAIL_HI_FROM;   // 歡迎信做好以前就在玩的人
+  MAIL_NEWS.forEach(n => {
+    if (n.hi || m.s['news-' + n.id]) return;
+    if (n.id === 'coin1' && (!old || m.s['news-hi'])) return;   // 新玩家的 30 枚在歡迎信裡，不重複給
+    m.s['news-' + n.id] = t; mailAdd('sloth', 'news', 'id=' + n.id, t); changed = true;
+  });
+  // 歡迎信：沒收過、也沒收過 coin1 的新玩家。最後寄，排在最上面
+  if (!old && !m.s['news-hi'] && !m.s['news-coin1']){ m.s['news-hi'] = t; mailAdd('sloth', 'news', 'id=hi', t); changed = true; }
   const have = DOLLS.filter(d => DOLL_N[d] && met[d]);
   if (m.last !== t && have.length){
     let pick = null;
@@ -219,7 +230,7 @@ function mailFill(s, p){
 function mailText(k){
   const {d, type, i, p} = mailParse(k);
   let title = mailFill(MAIL_TITLE[type] || '', p), body;
-  if (type === 'news') body = (MAIL_NEWS.find(n => n.id === p.id) || MAIL_NEWS[0]).b;
+  if (type === 'news'){ const n = MAIL_NEWS.find(n => n.id === p.id) || MAIL_NEWS[0]; body = n.b; if (n.title) title = n.title; }
   else if (type === 'trip'){
     // 過夜日記（data.js 的 STAY_DIARY）＋主人塞的小紙條
     const e = ((typeof STAY_DIARY !== 'undefined' && STAY_DIARY[d]) || [])[i];
@@ -239,7 +250,13 @@ function mailBodyHTML(x){
   const html = lines.map((l, j) => {
     if (l === '[拖鞋]') return `<p class="ml-sl">${typeof DROP_SVG !== 'undefined' ? DROP_SVG.slipper : ''}</p>`;
     const last = j === lines.length - 1;
-    return `<p${x.d === 'sloth' && last && x.type !== 'trip' ? ' class="tilt"' : ''}>${l}</p>`;
+    if (x.d === 'sloth' && last && x.type !== 'trip'){
+      // 薯餅寫到一半睡著：最後幾個字一個比一個往下掉，後面接 Zzz，下面一行小字說明（不然看起來像字被切掉）
+      const cs = /[<&]/.test(l) ? null : [...l], n = 7;
+      const tail = cs ? cs.slice(0, Math.max(0, cs.length - n)).join('') + cs.slice(-n).map((c, k) => `<span style="--i:${k + 1}">${c}</span>`).join('') : l;
+      return `<p class="tilt">${tail}<span class="zz" style="--i:${cs ? Math.min(n, cs.length) + 2 : 3}">……Zzz</span></p><p class="ml-zz">（薯餅寫到這裡睡著了）</p>`;
+    }
+    return `<p>${l}</p>`;
   }).join('');
   return `<div class="ml-tx ${x.d === 'moodeng' ? 'big' : ''} ${x.d === 'snoopy' ? 'novel' : ''}">${html}</div>`;
 }
