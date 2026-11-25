@@ -29,7 +29,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 
 .area{flex:1;position:relative;display:grid;place-items:center;min-height:0}
 .stage{position:relative;isolation:isolate}
-.room{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;touch-action:none;border-radius:6px 6px 18px 18px;box-shadow:inset 0 0 0 5px #fff}
+.room{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;touch-action:none}
 .wall,.floor{position:absolute;left:0;right:0}
 .wall{top:0;height:52%}
 .floor{top:52%;bottom:0}
@@ -71,11 +71,10 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .seat.hot{background:var(--pink);border-style:solid}
 
 .nightov{position:absolute;inset:0;background:rgba(40,40,110,.42);mix-blend-mode:multiply;pointer-events:none;z-index:400;opacity:0;transition:opacity .6s}
-.screen.night .nightov{opacity:.45}
+/* 開著燈的房間不管白天晚上都一樣亮，只有窗外變夜空；關燈才變暗 */
 .room.off .nightov{opacity:.9}
 .screen.night .room.off .nightov{opacity:1;background:rgba(18,18,70,.74)}
 .glow{position:absolute;width:56%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,226,150,.85),rgba(255,210,120,.35) 40%,rgba(255,200,120,0) 70%);mix-blend-mode:screen;pointer-events:none;z-index:401;opacity:0;transition:opacity .6s}
-.screen.night .glow{opacity:.55}
 .room.off .glow{opacity:1}
 /* 牆上的電燈開關，在窗戶左邊；疊在暗色上面，關了燈也點得到 */
 .lsw{position:absolute;left:24%;top:15%;width:7%;transform:translateX(-50%);z-index:402;border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 2px 0 rgba(120,60,90,.18))}
@@ -85,10 +84,6 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .lsw::after{content:'';position:absolute;inset:-35%}
 .lsw:focus-visible{outline:3px solid var(--pink);outline-offset:3px;border-radius:6px}
 
-.stage .roof,.stage .under{position:absolute;pointer-events:none}
-.stage .roof svg{display:block;width:100%;height:100%;overflow:visible}
-.stage .roof{left:-7%;right:-7%;bottom:99%;height:24%;z-index:449}
-.stage .under{left:-12%;right:-12%;top:92%;height:20%;background:var(--cloud) 0% 100%/40% 88% no-repeat,var(--cloud) 100% 100%/40% 88% no-repeat,var(--cloud) 50% 0%/48% 100% no-repeat;z-index:451}
 
 /* 收納架 */
 .tray{position:relative;z-index:30;margin:0 8px 10px;background:#fff;border-radius:24px;box-shadow:0 4px 0 #ecdff2;transition:box-shadow .2s,background .2s}

@@ -1,7 +1,8 @@
 /* 薯餅的小窩：娃娃房間（拖曳、坐家具、收納架、夜晚） */
 const $ = s=>document.querySelector(s);
 const room=$('#room'), stage=$('#stage'), area=$('#area'), screen=$('#screen'), tray=$('#tray');
-const RATIO = 340/400;
+/* 房間寬高比：依畫面空間算，layout() 會更新。位置和大小都用 % 記，所以比例變了也不會跑掉 */
+let RATIO = 340/400;
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const HEART = (c='#ff6fb0',s='#fff')=>`<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.3-9.2C1.4 8.4 3.6 5 7 5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8C19.5 16.4 12 21 12 21z" fill="${c}" stroke="${s}" stroke-width="1.6"/></svg>`;
 const CKS = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.2l2.4 2.3 4.6-5"/></svg>';
@@ -202,8 +203,6 @@ function paintRoom(){
   $('#win').innerHTML=winSVG(night);
   screen.classList.toggle('night',night);
   paintLight();
-  const [c,s]=['#ff8fbf','#e0609d'];
-  $('#roof').innerHTML=`<svg viewBox="0 0 120 30" preserveAspectRatio="none"><rect x="86" y="2" width="10" height="16" rx="2" fill="#ff9e7a" stroke="#d9673f" stroke-width="1.4"/><path d="M4 28 L60 3 L116 28 Q118 30 114 30 H6 Q2 30 4 28Z" fill="${c}" stroke="${s}" stroke-width="1.6" stroke-linejoin="round"/><path d="M20 24 L60 7 L100 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="3 4" stroke-linecap="round"/><circle cx="60" cy="18" r="4.5" fill="#fff7d9" stroke="#e5c97a" stroke-width="1.2"/></svg>`;
   layout();
 }
 /* 開燈關燈：每個房間各記各的，沒記過就是開著 */
@@ -216,10 +215,12 @@ function paintLight(){
 $('#lsw').addEventListener('click',()=>{cur().light=!lightOn();paintLight();save();});
 function layout(){
   const r=area.getBoundingClientRect();
-  const topExtra=.26,botExtra=.16;
-  const w=Math.min(r.width*.84,(r.height-16)*RATIO/(1+(topExtra+botExtra)*RATIO));
-  stage.style.width=w+'px';stage.style.height=(w/RATIO)+'px';
-  stage.style.marginTop=((topExtra-botExtra)*w)+'px';
+  if(!r.width||!r.height)return;
+  // 房間直接鋪滿房間頁的空間；太扁或太長時才留邊
+  const ratio=Math.max(.5,Math.min(1,r.width/r.height));
+  const w=Math.min(r.width,r.height*ratio);
+  stage.style.width=w+'px';stage.style.height=(w/ratio)+'px';
+  if(Math.abs(ratio-RATIO)>.001){RATIO=ratio;if(items.length)render();}
 }
 new ResizeObserver(layout).observe(area);
 setInterval(()=>{if(isNight()!==screen.classList.contains('night'))paintRoom();},60000);
