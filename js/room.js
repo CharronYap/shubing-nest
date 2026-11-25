@@ -149,7 +149,7 @@ let tab='doll';
 const LOCK='<span class="lk"><svg viewBox="0 0 10 12"><rect x="1" y="5" width="8" height="6.5" rx="1.6" fill="currentColor"/><path d="M3 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>';
 const CK=`<span class="ck">${CKS}</span>`;
 function whereFurn(id){for(const r of RIDS){if(home[r].items.some(i=>i.kind==='furn'&&i.id===id))return r;}return null;}
-function whereDoll(id){if(typeof S!=='undefined'&&S.yard&&S.yard.stay&&S.yard.stay[id])return 'yard';for(const r of RIDS){if(home[r].items.some(i=>i.kind==='doll'&&i.id===id))return r;}return null;}
+function whereDoll(id){if(typeof S!=='undefined'&&S.album&&S.album.out&&S.album.out.d===id)return 'out';if(typeof S!=='undefined'&&S.yard&&S.yard.stay&&S.yard.stay[id])return 'yard';for(const r of RIDS){if(home[r].items.some(i=>i.kind==='doll'&&i.id===id))return r;}return null;}
 function renderTray(){
   document.querySelectorAll('.tab[data-tab]').forEach(t=>t.classList.toggle('on',t.dataset.tab===tab));
   const box=$('#items');let h='';
@@ -183,6 +183,7 @@ $('#items').addEventListener('click',e=>{
   if(t.dataset.doll){const id=t.dataset.doll;if(!DOLL_N[id]){toast('還沒夾到');return;}
     const w=whereDoll(id);
     if(w===roomId){removeItem(items.find(i=>i.kind==='doll'&&i.id===id).uid);return;}
+    if(w==='out'){if(typeof stayTap==='function')stayTap();return;}
     if(w==='yard'){yardRecall(id);if(typeof yardPaint==='function')yardPaint();}
     else if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
     const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();}

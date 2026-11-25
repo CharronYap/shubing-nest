@@ -649,3 +649,15 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .wg-ttl{font-size:15px;font-weight:900;color:var(--pink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wg-nt{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .yd-a[data-wg] .yd-hand svg{color:#6cc0ee}
+/* 娃娃去朋友家過夜 */
+.st-box{display:grid;gap:8px;padding:2px}
+.st-hi{margin:0;font-size:13px;line-height:1.6;color:var(--soft)}
+.st-box .ng-dolls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.st-hdimg{width:30px;height:30px;object-fit:contain}
+.gst{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%}
+.st-guest{touch-action:none;cursor:grab}
+.st-tag{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:2px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;padding:2px 8px;border-radius:999px;background:#fff;border:2px solid #ffd3e6;color:var(--pink2);font-size:11px;font-weight:900;pointer-events:none}
+.st-note{width:15%;min-width:54px;aspect-ratio:1;border:0;padding:6px 4px;background:#fff8c9;box-shadow:0 2px 0 #e6d98a,0 4px 8px rgba(80,40,70,.12);transform:translate(-50%,-100%) rotate(-4deg);font:inherit;font-size:11px;font-weight:800;line-height:1.35;color:#7a5a12;cursor:pointer;display:grid;place-items:center;text-align:center}
+.st-note::before{content:"";position:absolute;left:50%;top:-5px;width:44%;height:10px;transform:translateX(-50%) rotate(3deg);background:rgba(255,156,200,.7);border-radius:2px}
+.st-note span{overflow:hidden;overflow-wrap:anywhere}
+.tile .rm svg{width:14px;height:14px}

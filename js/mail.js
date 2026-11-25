@@ -9,12 +9,14 @@
      att:'日期'          上次有附件的日子（一天最多一封有附件）
    }
    朋友送來的娃娃（js/nestgift.js）領了之後也變成一封信：k = '娃娃.gift.0#w=朋友名字;m=第幾句'，不算在一天一封裡
+   第五版：朋友自己打的字放在代號最後 ';x=encodeURIComponent(字)'，畫的時候走 txSlot（textContent），不接進 innerHTML
+     送娃娃自己寫的話：'娃娃.gift.0#w=名字;m=第幾句;x=字'      過夜回來（js/stay.js）：'娃娃.trip.第幾句日記#w=名字;x=小紙條'
    信裡的字寫在下面的 MAIL_TPL，存檔只存 key；同一個 key 永遠是同一封信 */
 const MAIL_MAX = 30, MAIL_ARCH = 24;
 const MAIL_CARDS = [5, 10, 20];          // 一起做完幾件小事時寫信
 const MAIL_MISS_DAYS = 3;                // 隔超過幾天才打開，寫一封「你不在的時候」
 const MAIL_ATT_RATE = .5;                // 一天第一封娃娃的信，有附件的機率
-const MAIL_TITLE = {intro:'你好', cards:'一起做了 {n} 件事', anniv:'來小窩滿 {y} 年', miss:'你不在的時候', news:'小窩更新了', gift:'從{w}家來的'};
+const MAIL_TITLE = {intro:'你好', cards:'一起做了 {n} 件事', anniv:'來小窩滿 {y} 年', miss:'你不在的時候', news:'小窩更新了', gift:'從{w}家來的', trip:'去{w}家過夜'};
 // 送娃娃（js/nestgift.js）：寄的人從這 6 句選一句，信裡用 {m} 帶出來
 const MAIL_GIFT_LINES = ['幫我照顧牠', '牠很想去你家玩', '牠說你家的沙發看起來很軟', '我家有兩隻，分你一隻', '牠跟你很合', '想你的時候就看看牠'];
 const MAIL_ICON = '<svg viewBox="0 0 40 40"><rect x="4" y="9" width="32" height="23" rx="5" fill="#fff" stroke="#ff6fb0" stroke-width="2.6"/><path d="M5 11l15 11 15-11" fill="none" stroke="#ff6fb0" stroke-width="2.6" stroke-linejoin="round"/><path d="M20 27.5s-4-2.4-4-5c0-1.3 1-2.3 2.1-2.3.8 0 1.4.4 1.9 1 .5-.6 1.1-1 1.9-1 1.2 0 2.1 1 2.1 2.3 0 2.6-4 5-4 5z" fill="#ffc928"/></svg>';
@@ -200,17 +202,23 @@ function mailCheck(atOpen){
 }
 
 /* ---------- 信的樣子 ---------- */
+const mailDec = s => { try { return decodeURIComponent(s || ''); } catch (e) { return ''; } };
 function mailFill(s, p){
   const yw = {1:'一', 2:'兩'}[p.y];   // 一年、兩年不留空格；3 年以上照數字寫
   return s.replace(/\{n\}/g, p.n || '').replace(/( ?)\{y\}( ?)/g, (_, a, b) => yw || a + (p.y || '') + b)
     .replace(/\{r\}/g, MAIL_ROOM[p.r] || '客廳').replace(/\{f\}/g, MAIL_FURN[p.f] || '沙發')
-    .replace(/\{w\}/g, p.w || '朋友').replace(/\{m\}/g, MAIL_GIFT_LINES[p.m] || MAIL_GIFT_LINES[0]);
+    .replace(/\{w\}/g, p.w || '朋友').replace(/\{m\}/g, () => p.x ? txSlot(mailDec(p.x)) : MAIL_GIFT_LINES[p.m] || MAIL_GIFT_LINES[0])
+    .replace(/\{x\}/g, () => txSlot(mailDec(p.x)));
 }
 function mailText(k){
   const {d, type, i, p} = mailParse(k);
   let title = mailFill(MAIL_TITLE[type] || '', p), body;
   if (type === 'news') body = (MAIL_NEWS.find(n => n.id === p.id) || MAIL_NEWS[0]).b;
-  else {
+  else if (type === 'trip'){
+    // 過夜日記（data.js 的 STAY_DIARY）＋主人塞的小紙條
+    const e = ((typeof STAY_DIARY !== 'undefined' && STAY_DIARY[d]) || [])[i];
+    body = mailFill((e ? e.t : '在{w}家住了一晚。') + (p.x ? '\n{w}塞了一張小紙條讓牠帶回來：\n「{x}」' : ''), p);
+  } else {
     body = mailFill((MAIL_TPL[d] && MAIL_TPL[d][type] || [''])[i] || '', p);
     if (d === 'snoopy' && type !== 'gift'){
       const c = +p.c || 1;
@@ -225,7 +233,7 @@ function mailBodyHTML(x){
   const html = lines.map((l, j) => {
     if (l === '[拖鞋]') return `<p class="ml-sl">${typeof DROP_SVG !== 'undefined' ? DROP_SVG.slipper : ''}</p>`;
     const last = j === lines.length - 1;
-    return `<p${x.d === 'sloth' && last ? ' class="tilt"' : ''}>${l}</p>`;
+    return `<p${x.d === 'sloth' && last && x.type !== 'trip' ? ' class="tilt"' : ''}>${l}</p>`;
   }).join('');
   return `<div class="ml-tx ${x.d === 'moodeng' ? 'big' : ''} ${x.d === 'snoopy' ? 'novel' : ''}">${html}</div>`;
 }
