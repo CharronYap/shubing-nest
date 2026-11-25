@@ -380,3 +380,10 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
   .doll.sleep::before,.doll.sleep::after{animation:none}
   .anote{animation:none}
 }
+
+/* ===== 娃娃送的小禮物 ===== */
+.gcard .pic{position:relative}
+.gcard .gi{position:absolute;right:-4px;bottom:-2px;width:52px;height:52px;border-radius:50%;background:#fff;box-shadow:0 3px 0 var(--line);display:grid;place-items:center}
+.gcard .gi svg{width:38px;height:38px}
+.gcard p{margin:0;font-size:14px;line-height:1.5;text-align:center;font-weight:700;text-wrap:balance}
+.al-gf .fa svg{width:30px;height:30px}

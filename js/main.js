@@ -85,6 +85,7 @@ function doEvent(id){
   S.day.done.push(id);
   albumCard(id);
   S.coins += EVENT_COINS;
+  if (typeof giftAfter === 'function') giftAfter(e);   // 有時候娃娃會送東西
   renderHud(); renderEvBadge(); markDolls(); save();
   toast(`+${EVENT_COINS} 枚幣`);
   if (evOpen && !$('#sheet').hidden) openEvents(id);

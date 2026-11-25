@@ -46,6 +46,7 @@ const COST = 2;          // 夾一次
 const OPEN_COINS = 20;   // 第一次進來送
 const DAILY_COINS = 10;  // 每天第一次打開
 const EVENT_COINS = 2;   // 處理一件小事
+const GIFT_RATE = .25;   // 做完小事後娃娃送東西的機率（js/gift.js）
 
 /* 爪子：夾到幾次解鎖 */
 const CLAW_UNLOCK = {egg:0, chick:0, cat:3, candy:8, gold:15};
