@@ -63,7 +63,8 @@ function visitOpen(f){
       await f.send();
       paint(true);
       visitRain();
-      toast(`在${f.name}家留了一顆愛心`);
+      if (typeof earnHeartSent === 'function'){ earnHeartSent(); toast(`在${f.name}家留了一顆愛心，+1 枚幣`); }
+      else toast(`在${f.name}家留了一顆愛心`);
     } catch (e) {
       console.info('[visit] 愛心沒送出去', e && e.code);
       hb.disabled = false;

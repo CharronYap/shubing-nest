@@ -690,3 +690,56 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .er-it small{font-size:12px;color:var(--soft)}
 .er-it.off{opacity:.55}
 .er-sec{margin:6px 2px 0;font-size:12px;font-weight:900;color:var(--soft)}
+/* 小遊戲 */
+.over.gm{z-index:660;padding:12px}
+.gm-card{width:100%;max-width:340px;background:#fff;border-radius:24px;border:4px solid #fff;box-shadow:0 8px 0 var(--line);padding:12px;display:grid;gap:8px}
+.gm-hd{display:flex;align-items:center;gap:8px;min-height:30px}
+.gm-hd b{font-size:16px;font-weight:900;color:var(--pink)}
+.gm-st{margin-left:auto;font-size:13px;font-weight:800;color:var(--soft)}
+.gm-x{flex:none;width:28px;height:28px;border-radius:50%;border:0;background:#f6eef2;color:var(--soft);cursor:pointer;display:grid;place-items:center}
+.gm-x svg{width:14px;height:14px}
+.gm-tip{margin:0;font-size:12px;color:var(--soft);text-align:center}
+.gm-body{display:grid;gap:8px}
+.gc-field{position:relative;height:min(52dvh,380px);border-radius:16px;overflow:hidden;background:linear-gradient(#e9f6ff,#fff6e6);touch-action:none;outline:none;cursor:ew-resize}
+.gc-cat{position:absolute;bottom:2%;width:26%;transform:translateX(-50%);pointer-events:none;transform-origin:50% 100%}
+.gc-cat.yum{animation:rsq .3s ease-out}
+.gc-d{position:absolute;width:11%;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none}
+.gc-d svg{width:100%;height:100%;display:block}
+.gf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.gf-c{position:relative;aspect-ratio:3/4;border-radius:12px;border:3px solid #fff;box-shadow:0 0 0 2px var(--line),0 3px 0 #ead9e2;background:#fff0f7;padding:0;cursor:pointer;display:grid;place-items:center;overflow:hidden}
+.gf-c img{width:84%;height:84%;object-fit:contain;opacity:0;transition:opacity .15s}
+.gf-c .bk{position:absolute;inset:0;display:grid;place-items:center;transition:opacity .15s}
+.gf-c .bk svg{width:46%}
+.gf-c.on{background:#fff}
+.gf-c.on img{opacity:1}
+.gf-c.on .bk{opacity:0}
+.gf-c.ok{box-shadow:0 0 0 2px #ffd66b,0 3px 0 #f0c040;background:#fffbea}
+.gm-end{display:grid;gap:8px;justify-items:center;padding:18px 6px;text-align:center}
+.gm-res{margin:0;font-size:16px;font-weight:900}
+.gm-coin{margin:0;display:flex;align-items:center;gap:6px;font-size:26px;font-weight:900;color:#c77d00}
+.gm-coin svg{width:30px;height:30px}
+.gm-end small{font-size:12px;color:var(--soft);line-height:1.5}
+.gm-end .row{display:flex;gap:10px;margin-top:6px}
+/* 打工的店員 */
+.wk-row{position:absolute;left:14px;bottom:14px;display:flex;align-items:flex-end;gap:2px;pointer-events:none}
+.wk-row[hidden]{display:none}
+.wk-row small{font-size:11px;font-weight:900;color:#fff;background:rgba(107,45,74,.45);border-radius:999px;padding:2px 8px;margin-right:4px}
+.wk-row img{width:34px;height:34px;object-fit:contain}
+.er-ms{max-height:calc(100dvh - 240px);overflow-y:auto}
+.er-it .ck{flex:none;width:20px;height:20px;border-radius:50%;background:var(--pink);color:#fff;display:grid;place-items:center}
+.er-it .ck svg{width:12px;height:12px}
+.er-it>.ic .ck{width:28px;height:28px}
+/* 火腿的小店 */
+.shopb{top:54px}
+.visiting .shopb{display:none}
+.sp-box{display:grid;gap:10px;padding:2px;max-height:calc(100dvh - 200px);overflow-y:auto}
+.sp-pg{margin:0}
+.sp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sp-it{display:grid;gap:4px;justify-items:center;text-align:center}
+.sp-it .tile{width:100%;cursor:default}
+.sp-it b{font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.sp-it small{font-size:12px;color:var(--soft);padding:6px 0}
+.sp-it .btn{display:flex;align-items:center;gap:4px;padding:5px 12px}
+.sp-it .btn svg{width:16px;height:16px}
+.sp-it.own .tile{opacity:.5}
+.pc-left svg{width:16px;height:16px;vertical-align:-3px;margin-right:3px}

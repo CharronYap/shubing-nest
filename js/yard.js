@@ -215,7 +215,7 @@ function yardPanel(){
     if (p.s === 'soil' && !stayHere){
       btns += Object.entries(YARD_SEED).map(([k, s]) => `<button class="yd-a ${y.seeds[k] ? '' : 'off'}" data-yplant="${k}" aria-label="種${s.name}，還有 ${y.seeds[k]} 顆">${s.svg}<span>種${k === 'tree' ? '樹苗' : s.name.replace('的種子', '')}</span><small>×${y.seeds[k]}</small></button>`).join('');
     }
-    body = `<div class="yd-hd"><b>${name}</b><small>${desc}</small></div>${typeof waterSignNote === 'function' ? waterSignNote(ySel) : ''}${btns ? `<div class="yd-acts">${btns}</div>` : ''}`;
+    body = `<div class="yd-hd"><b>${name}</b><small>${desc}</small></div>${typeof waterSignNote === 'function' ? waterSignNote(ySel) : ''}${typeof earnYardBtns === 'function' && !stayHere ? earnYardBtns(ySel) : ''}${btns ? `<div class="yd-acts">${btns}</div>` : ''}`;
   }
   const piggy = DOLL_N.piggy ? `<div class="yd-pg"><img src="${SPR.piggy}" alt=""><p>${yardHint()}</p></div>` : '';
   return `<div class="yd-top"><span class="yd-sds">${seeds}</span><span class="yd-self" aria-label="今天自己還能做 ${Math.max(0, left)} 次">${YARD_HAND}<span class="dots">${dots}</span></span></div>${body}${piggy}`;

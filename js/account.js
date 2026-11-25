@@ -375,6 +375,7 @@ window.nestNet = {
   delGift: id => cloud.delGift(id),
   push: () => push(),
   room: uid => cloud.room(uid),
+  heartsToday: () => cloud.heartsToday(nestDay()),   // 愛心換幣（js/earn.js）
 };
 // 第五版的雲端動作，原樣轉給 cloud.js
 ['bookAdd', 'bookMine', 'book', 'bookDel', 'waterAdd', 'waterMine', 'waters', 'waterDel',
