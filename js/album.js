@@ -28,7 +28,7 @@ const md = s => { const [, m, d] = s.split('-'); return `${+m}月${+d}日`; };
 let alOpen = false, alCur = 'sloth';
 function albumPage(d){
   const a = S.album;
-  if (!a.met[d]) return `<div class="al-no"><img src="${SPR[d]}" alt=""><p>娃娃機夾得到</p></div>`;
+  if (!a.met[d]) return `<div class="al-no"><img src="${SPR[d]}" alt=""><p>娃娃機夾得到</p>${typeof wantBtn === 'function' ? wantBtn(d) : ''}</div>`;
   const lines = LINES[d], bits = a.heard[d] || 0;
   const heard = lines.filter((_, i) => bits & (1 << i)).length;
   const evs = EVENTS.filter(e => e.d.includes(d) && (!e.when || a.cards[e.id]));   // 節日的小事做過才算

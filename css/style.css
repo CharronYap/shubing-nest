@@ -637,3 +637,11 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .bk-pg{display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;font-weight:800;color:var(--soft)}
 .bk-pg button{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:#fff;font:inherit;font-size:18px;font-weight:900;color:var(--pink);cursor:pointer}
 .bk-pg button[disabled]{opacity:.35;cursor:default}
+/* 願望清單 */
+.want-b{display:inline-flex;align-items:center;gap:6px;margin-top:10px}
+.want-b svg{width:16px;height:16px;color:#d9c7d1}
+.want-b.on{background:linear-gradient(#ffe27a,#ffb400);box-shadow:0 3px 0 var(--gold2);color:#6b3a00}
+.want-b.on svg{color:#fff}
+.want-h{display:block;margin-top:8px;font-size:12px;color:var(--soft);line-height:1.5}
+.vb-want{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;background:#e9c79c;border:2px solid #b98958;color:#5f3b1c;font-size:13px;font-weight:800;box-shadow:0 2px 0 #b98958}
+.vb-want svg{width:14px;height:14px;color:#fff3c4;flex:none}
