@@ -221,8 +221,13 @@ function renderNav(){
 }
 function slide(dir,swap){
   if(REDUCE){swap();return;}
-  stage.animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${-dir*16}%)`,opacity:0}],{duration:170,easing:'ease-in',fill:'forwards'}).onfinish=()=>{
+  // 連點時先把還在跑的動畫收掉，不然會疊在一起
+  stage.getAnimations().forEach(a=>a.cancel());
+  const out=stage.animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${-dir*16}%)`,opacity:0}],{duration:170,easing:'ease-in',fill:'forwards'});
+  out.onfinish=()=>{
     swap();
+    // 淡出停在透明，要取消掉，淡入播完才會留在看得到的狀態
+    out.cancel();
     stage.animate([{transform:`translateX(${dir*16}%)`,opacity:0},{transform:'translateX(0)',opacity:1}],{duration:260,easing:'ease-out'});
   };
 }
@@ -232,7 +237,9 @@ function load(){
   $('#sheet').hidden=true;
   paintRoom();render();renderNav();quiet=false;
 }
-function goRoom(r){if(r===roomId)return;const d=RIDS.indexOf(r)>RIDS.indexOf(roomId)?1:-1;slide(d,()=>{roomId=r;load();});renderNavTo(r);}
+// goingTo：正在切過去、還沒換好的房間。連點時用它判斷，不然點回原房間會被略過
+let goingTo=null;
+function goRoom(r){const from=goingTo??roomId;if(r===from)return;const d=RIDS.indexOf(r)>RIDS.indexOf(from)?1:-1;goingTo=r;slide(d,()=>{roomId=r;goingTo=null;load();});renderNavTo(r);}
 function renderNavTo(r){document.querySelectorAll('.rnav button').forEach(b=>b.classList.toggle('on',b.dataset.r===r));}
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-r]');if(b)goRoom(b.dataset.r);});
 let toastT;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),1400);}
