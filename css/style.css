@@ -279,4 +279,39 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .mbtn .mx{display:none}
 .mbtn.off .mx{display:inline}
 .mbtn.off svg{opacity:.75}
-@media (max-width:370px){.top{gap:5px;padding-left:9px;padding-right:9px}.topr{gap:5px}}
+
+/* 上方按鈕列：依手機框的實際寬度一段一段縮小。
+   電腦上視窗矮時手機框會變窄，所以看框的寬度，不看視窗寬度 */
+.screen{container-type:inline-size}
+.ib .bd{right:-4px;top:-4px}
+@media (min-width:481px){.top{padding-top:14px}}
+@container (max-width:380px){
+  .top{gap:5px;padding-left:10px;padding-right:10px}
+  .topr{gap:5px}
+  #pity{padding:0 7px}
+}
+@container (max-width:360px){
+  .top,.topr{gap:4px}
+  .top>.ib,.topr>.ib{width:36px;height:36px}
+  .topr>.ib.sm{width:32px;height:32px}
+  .rnav button{width:32px}
+  .top .coin{padding:3px 7px 3px 3px;font-size:14px;gap:4px;height:32px}
+  .top .coin svg{width:20px;height:20px}
+  .pity{gap:2px}
+  .pity i{width:7px;height:7px}
+}
+@container (max-width:318px){
+  .top,.topr{gap:3px}
+  .top{padding-left:6px}
+  .top>.ib,.topr>.ib{width:32px;height:32px}
+  .topr>.ib.sm{width:28px;height:28px}
+  .ib svg{width:18px;height:18px}
+  .ib.sm svg{width:16px;height:16px}
+  .rnav button{width:28px;height:28px}
+  .rnav button svg{width:19px;height:19px}
+}
+@container (max-width:300px){
+  #pity{padding:0 5px}
+  .pity i{width:6px;height:6px}
+  .top .coin{padding-right:5px}
+}
