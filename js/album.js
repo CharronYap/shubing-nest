@@ -26,8 +26,8 @@ function albumPage(d){
   const heard = lines.filter((_, i) => bits & (1 << i)).length;
   const evs = EVENTS.filter(e => e.d.includes(d));
   const done = evs.filter(e => a.cards[e.id]).sort((x, y) => a.cards[x.id] < a.cards[y.id] ? -1 : 1);
-  return `<div class="al-top"><img class="al-ph" src="${SPR[d]}" alt="">
-      <div><b class="al-nm">${DOLL_NAME[d]}</b><div class="al-tr">${DOLL_TRAIT[d].map(t => `<span>${t}</span>`).join('')}</div><small>${md(a.met[d])}來到小窩</small></div></div>
+  return `<div class="al-top"><span class="al-ph">${dollPic(d)}</span>
+      <div><b class="al-nm">${DOLL_NAME[d]}</b><div class="al-tr">${DOLL_TRAIT[d].map(t => `<span>${t}</span>`).join('')}</div><small>${md(a.met[d])}來到小窩</small><button class="btn al-dress" data-wd="${d}">換衣服</button></div></div>
     <div class="al-sec">說過的話</div>
     <ul class="al-ln">${lines.map((l, i) => bits & (1 << i) ? `<li>${l}</li>` : '<li class="no" aria-label="還沒聽過">……</li>').join('')}</ul>
     <div class="al-sec">回憶</div>

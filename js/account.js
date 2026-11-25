@@ -109,6 +109,9 @@ function mergeSave(remote, guest) {
   }
   ma.heard = ma.heard || {};
   for (const [id, b] of Object.entries(ga.heard || {})) ma.heard[id] = (ma.heard[id] || 0) | b;
+  // 衣櫃：擁有的東西合在一起；穿什麼用帳號裡的，帳號裡沒換過的娃娃才用這台的
+  m.closet = [...new Set([...(m.closet || []), ...(guest.closet || [])])];
+  m.look = Object.assign({}, guest.look || {}, m.look || {});
   m.coins = Math.max(m.coins || 0, guest.coins || 0);
   m.wins = Math.max(m.wins || 0, guest.wins || 0);
   m.t = Date.now();

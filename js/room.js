@@ -34,7 +34,7 @@ function elFor(it){
   let el=room.querySelector(`.it[data-u="${it.uid}"]`);
   if(!el){
     el=document.createElement('div');el.className='it';el.dataset.u=it.uid;
-    if(it.kind==='doll'){el.classList.add('doll');el.innerHTML=`<span class="body"><img src="${SPR[it.id]}" alt=""></span>`;}
+    if(it.kind==='doll'){el.classList.add('doll');el.innerHTML=`<span class="body">${dollPic(it.id)}</span>`;}
     else el.innerHTML=furnSVG(it.id);
     el.addEventListener('pointerdown',e=>startDrag(e,it.uid));
     room.appendChild(el);
@@ -99,7 +99,7 @@ function onUp(e){
   if(!drag)return;const {it,el}=drag;
   el.removeEventListener('pointermove',onMove);el.removeEventListener('pointerup',onUp);el.removeEventListener('pointercancel',onUp);
   el.classList.remove('drag');room.classList.remove('dragdoll');tray.classList.remove('over');
-  if(!drag.moved){drag=null;if(it.kind==='doll')react(it);else nudge(el);return;}
+  if(!drag.moved){drag=null;if(it.kind==='doll')react(it);else if(!(typeof onFurnTap==='function'&&onFurnTap(it)))nudge(el);return;}
   if(overTray(e)){removeItem(it.uid);drag=null;clearSeats();return;}
   if(it.kind==='doll'&&drag.seatHot){it.sit=+drag.seatHot.dataset.f;it.seat=+drag.seatHot.dataset.k;}
   drag=null;clearSeats();render();

@@ -387,3 +387,36 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .gcard .gi svg{width:38px;height:38px}
 .gcard p{margin:0;font-size:14px;line-height:1.5;text-align:center;font-weight:700;text-wrap:balance}
 .al-gf .fa svg{width:30px;height:30px}
+
+/* ---------- 玩偶衣櫃（js/wardrobe.js）：帽子、衣服疊在娃娃圖上，位置都用 % ---------- */
+.dz{position:relative;display:block;width:100%;aspect-ratio:1}
+.dz>img{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none}
+.dz>.dz-hat,.dz>.dz-out{inset:auto;object-fit:fill;overflow:visible}
+.doll .body .dz>img{height:100%}
+.al-ph{display:block}
+.al-ph>img{width:100%;height:100%;object-fit:contain}
+.al-dress{display:block;margin-top:8px;padding:6px 14px;font-size:13px;background:#fff;color:var(--pink2);box-shadow:0 0 0 1.5px #ffd0e4,0 2px 0 #ffd0e4}
+.wd-coin{margin-left:auto;margin-right:34px;font-size:13px;color:var(--gold2)}
+.wd-top{display:flex;align-items:center;gap:14px;background:#fff6fa;border-radius:18px;padding:10px 14px}
+.wd-ph{flex:none;width:112px;height:112px;display:block}
+.wd-ph>img{width:100%;height:100%;object-fit:contain}
+.wd-top b{display:block;font-size:20px;font-weight:900}
+.wd-top small{font-size:12px;color:var(--soft)}
+.wd-tabs{display:flex;gap:6px;margin:12px 0 8px}
+.wd-tabs button{flex:1;border:2px solid #f3e7ef;border-radius:999px;background:#fff;padding:7px 0;font:inherit;font-size:13px;font-weight:800;color:var(--soft);cursor:pointer}
+.wd-tabs button.on{border-color:var(--pink);color:var(--pink2);background:#fff0f7}
+.wd-note{margin:0 2px 8px;font-size:12px;color:var(--soft)}
+.wd-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.wd-it>img,.wd-it>.dz,.wd-it>svg{width:88%;height:88%;object-fit:contain;pointer-events:none}
+.wd-it>.dz{height:auto}
+.wd-it.lock{cursor:pointer}
+.wd-it.lock>img,.wd-it.lock>.dz{filter:none;opacity:.6}
+.wd-it.dim{opacity:.45}
+.wd-it.try{border-color:var(--gold);background:#fffaf0}
+.wd-it .pr{position:absolute;right:3px;bottom:2px;padding:0 5px;border-radius:999px;background:#fff3c4;color:#8a5600;font-size:10px;font-weight:900;line-height:16px}
+.wd-buy{position:sticky;bottom:0;display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;border-radius:16px;background:#fffaf0;box-shadow:0 0 0 1.5px #ffe6b0}
+.wd-buy span{flex:1;font-size:13px}
+.wd-buy .btn{padding:8px 16px}
+.wd-buy .btn[disabled]{filter:grayscale(.6);opacity:.6;cursor:default}
+.pcard .pic .lk-pic{width:112px;height:112px;display:grid;place-items:center}
+.pcard .pic .lk-pic>img{width:96px;height:96px;object-fit:contain}

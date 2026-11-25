@@ -392,6 +392,8 @@ const pickOne = a => a[Math.floor(Math.random()*a.length)];
 function rollCap(){
   const need = wishNeeded();
   if (need.length && Math.random() < .5) return {kind:'wish', id:pickOne(need)};
+  const look = typeof lookRoll === 'function' && lookRoll();   // 衣櫃的帽子、衣服（js/wardrobe.js）
+  if (look) return look;
   const pool = [
     ...Object.keys(FURN).filter(id=>!FURN_OWN[id]).map(id=>({kind:'furn', id})),
     ...WALLS.filter(id=>!WALL_OWN[id]).map(id=>({kind:'wall', id})),
@@ -408,7 +410,8 @@ function showPrize(t){
     if (r.kind === 'furn'){
       FURN_OWN[r.id] = 1; pic = furnSVG(r.id);
       if (!FLOOR_OWN.cloud && CLOUD_SET.every(i=>FURN_OWN[i])){ FLOOR_OWN.cloud = 1; bonus = true; }
-    } else if (r.kind === 'wall'){ WALL_OWN[r.id] = 1; pic = `<span class="sw w-${r.id}"></span>`; }
+    } else if (r.kind === 'look'){ lookGet(r.id); pic = `<span class="lk-pic">${lookIcon(r.id)}</span>`; }
+    else if (r.kind === 'wall'){ WALL_OWN[r.id] = 1; pic = `<span class="sw w-${r.id}"></span>`; }
     else { S.wish[r.id] = (S.wish[r.id]||0) + 1; pic = WISH[r.id].svg; renderEvBadge(); markDolls(); }
   } else {
     DOLL_N[t] = (DOLL_N[t]||0) + 1; albumMet(t); pic = `<img alt="" src="${SPR[t]}">`;

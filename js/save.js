@@ -17,16 +17,17 @@ function newGame(){
   return {
     v:1, coins:0, misses:0, wins:0, opened:false, lastDaily:'',
     dollN:{sloth:1,egg:1,dog:1,piggy:1,snoopy:1},
-    furnOwn:{bed:1,rug:1,lamp:1,sofa:1,tv:1,table:1,shelf:1,plant:1,tub:1,sink:1,mat:1,towel:1},
+    furnOwn:{bed:1,rug:1,lamp:1,sofa:1,tv:1,table:1,shelf:1,plant:1,tub:1,sink:1,mat:1,towel:1,closet:1},
     wallOwn:{stripe:1,dots:1,sky:1,tile:1}, floorOwn:{wood:1,check:1,mint:1},
     wish:{snack:0,bubble:0},
     clawStyle:'egg',
     day:{date:'',ids:[],done:[],tap:{}},
     album:{met:{},heard:{},cards:{}},   // 相簿：娃娃哪天來、聽過哪幾句（位元）、哪件小事哪天做完
     away:{date:'',picked:0,drops:[],note:null},   // 你不在的時候：今天撿了幾個、地上的小東西、還沒看的便條
+    look:{}, closet:['hat.none','outfit.none','outfit.sailor'],   // 衣櫃：每隻穿什麼、擁有哪些（js/wardrobe.js）
     home:{
       living:mk('dots','check',['shelf 14 66','tv 48 63','plant 84 62','sofa 66 82','table 34 90','sloth >sofa 0','piggy 86 94']),
-      bed:mk('stripe','wood',['rug 50 89','bed 32 76','lamp 88 72','dog >bed 1','egg 68 91']),
+      bed:mk('stripe','wood',['rug 50 89','closet 12 68','bed 32 76','lamp 88 72','dog >bed 1','egg 68 91']),
       bath:mk('tile','mint',['mat 40 91','sink 17 72','tub 64 82','towel 80 34','snoopy >tub 0']),
     },
     uid:0,

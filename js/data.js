@@ -87,6 +87,14 @@ const FURN = {
     <rect x="4" y="16" width="58" height="36" rx="6" fill="#8fd3ef" ${st('#3f97c4',2.2)}/>
     <rect x="2" y="8" width="62" height="12" rx="5" fill="#b4e3f7" ${st('#3f97c4',2.2)}/>
     <path d="M33 26l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z" fill="#ffd75e" ${st('#d99a00',1.4)}/>`},
+  closet:{room:'bed',vb:[60,86],w:17,svg:()=>`
+    <rect x="8" y="76" width="7" height="9" rx="2.5" fill="#c98f56" ${st('#9a6431')}/><rect x="45" y="76" width="7" height="9" rx="2.5" fill="#c98f56" ${st('#9a6431')}/>
+    <path d="M6 14q0-8 8-8h32q8 0 8 8v64H6z" fill="#ffc2dc" ${st('#d9649c',2.2)}/>
+    <path d="M14 6q16-7 32 0" fill="#ffe0ee" ${st('#d9649c',2.2)}/>
+    <rect x="11" y="14" width="18" height="58" rx="5" fill="#ffe0ee" ${st('#d9649c',2)}/><rect x="31" y="14" width="18" height="58" rx="5" fill="#ffe0ee" ${st('#d9649c',2)}/>
+    <circle cx="26" cy="44" r="2.4" fill="#ffd75e" ${st('#d99a00',1.4)}/><circle cx="34" cy="44" r="2.4" fill="#ffd75e" ${st('#d99a00',1.4)}/>
+    <path d="M18.5 24.5a1.8 1.8 0 1 1 2.4 1.7c-.4.2-.6.5-.6 1V28M20.3 28l-6 4.3h12z" fill="none" ${st('#d9649c',1.6)}/>
+    <path d="M40 22l1.6 3.2 3.5.5-2.5 2.5.6 3.5-3.2-1.7-3.2 1.7.6-3.5-2.5-2.5 3.5-.5z" fill="#fff" ${st('#d9649c',1.3)}/>`},
 
   sofa:{room:'living',vb:[110,72],w:36,seats:[[.33,.6],[.67,.6]],svg:()=>`
     <rect x="18" y="62" width="6" height="9" rx="2" fill="#a3683a"/><rect x="86" y="62" width="6" height="9" rx="2" fill="#a3683a"/>
@@ -148,7 +156,7 @@ const FURN = {
     <path d="M6 22c0-4 4-6 8-6h6c-4-2-4-12 4-13 8 0 10 8 6 12 6 0 12 0 14 4 0 12-10 19-22 19S6 32 6 22z" fill="#ffd75e" ${st('#d99a00',2)}/>
     <path d="M34 10l8 2-7 3" fill="#ff9e7a" ${st('#d9673f',1.4)}/><circle cx="29" cy="9" r="1.8" fill="#6b2d4a"/>`},
 };
-const ROOM_FURN={living:['sofa','tv','table','shelf','plant','clock'],bed:['bed','rug','lamp','eggchair','frame','toybox'],bath:['tub','sink','mat','towel','duck']};
+const ROOM_FURN={living:['sofa','tv','table','shelf','plant','clock'],bed:['bed','rug','lamp','eggchair','frame','toybox','closet'],bath:['tub','sink','mat','towel','duck']};
 const WALLS=['stripe','dots','sky','tile','star'], FLOORS=['wood','check','mint','cloud'];
 const CLOUD_SET=['bed','rug','lamp','eggchair','frame'];
 const furnSVG=(id)=>{const f=FURN[id];return `<svg viewBox="0 0 ${f.vb[0]} ${f.vb[1]}" style="overflow:visible">${f.svg()}</svg>`};
