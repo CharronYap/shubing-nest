@@ -44,6 +44,7 @@ function albumPage(d){
     ${dreamRows(d)}
     ${typeof giftRows === 'function' ? giftRows(d) : ''}
     ${typeof photoRows === 'function' ? photoRows(d) : ''}
+    ${typeof mailRows === 'function' ? mailRows(d) : ''}
     <div class="al-ft">說過的話 ${heard}/${lines.length}・回憶 ${done.length}/${evs.length}${dreamSeen(d) ? `・夢 ${dreamSeen(d)}/${DREAMS[d].length}` : ''}</div>`;
 }
 function openAlbum(d){

@@ -87,6 +87,7 @@ function doEvent(id){
   if (e.need) S.wish[e.need]--;
   S.day.done.push(id);
   albumCard(id);
+  if (typeof mailCount === 'function') mailCount(e);   // 信箱：一起做完幾件（js/mail.js）
   if (e.when && typeof festDone === 'function') festDone(e);
   S.coins += EVENT_COINS;
   if (typeof giftAfter === 'function') giftAfter(e);   // 有時候娃娃會送東西

@@ -131,6 +131,19 @@ function mergeSave(remote, guest) {
   m.closet = [...new Set([...(m.closet || []), ...(guest.closet || [])])];
   m.season = [...new Set([...(m.season || []), ...(guest.season || [])])];
   m.look = Object.assign({}, guest.look || {}, m.look || {});
+  // 信箱：寄過的、寫過的信合在一起，信箱裡的信兩邊都留（同一封只留一份）
+  if (guest.mail) {
+    const gm = guest.mail, mm = m.mail = m.mail || {};
+    mm.s = Object.assign({}, gm.s || {}, mm.s || {});
+    mm.n = mm.n || {};
+    for (const [d, n] of Object.entries(gm.n || {})) mm.n[d] = Math.max(mm.n[d] || 0, n || 0);
+    mm.arch = mm.arch || {};
+    for (const [d, a] of Object.entries(gm.arch || {})) mm.arch[d] = [...new Set([...(mm.arch[d] || []), ...a])].sort().slice(-24);
+    const seen = new Set((mm.l || []).map(o => o.t + o.k));
+    mm.l = [...(mm.l || []), ...(gm.l || []).filter(o => !seen.has(o.t + o.k))].sort((a, b) => a.t < b.t ? 1 : -1).slice(0, 30);
+    mm.last = [mm.last || '', gm.last || ''].sort().pop();
+    mm.att = [mm.att || '', gm.att || ''].sort().pop();
+  }
   m.coins = Math.max(m.coins || 0, guest.coins || 0);
   m.wins = Math.max(m.wins || 0, guest.wins || 0);
   m.t = Date.now();
