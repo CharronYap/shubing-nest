@@ -126,7 +126,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .tile.cur{box-shadow:0 0 0 3px var(--pink)}
 .grp{grid-column:1/-1;font-size:11px;color:var(--soft);font-weight:800;margin-top:2px;display:flex;align-items:center;gap:6px}
 .grp svg{width:16px;height:16px}
-.toast{position:absolute;left:50%;top:62px;transform:translate(-50%,-6px);background:rgba(107,45,74,.92);color:#fff;font-size:13px;font-weight:700;padding:7px 14px;border-radius:999px;opacity:0;transition:opacity .25s,transform .25s;z-index:600;pointer-events:none;white-space:nowrap}
+.toast{position:absolute;left:50%;top:62px;transform:translate(-50%,-6px);background:rgba(107,45,74,.92);color:#fff;font-size:13px;font-weight:700;padding:7px 14px;border-radius:999px;opacity:0;transition:opacity .25s,transform .25s;z-index:700;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .sheet{position:absolute;left:10px;right:10px;top:60px;background:#fff;border-radius:22px;box-shadow:0 10px 30px rgba(80,40,70,.2);padding:14px;z-index:620}
 .sheet .row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
@@ -244,6 +244,12 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .evb:active{transform:translateY(2px);box-shadow:0 1px 0 var(--gold2)}
 .evb.lock{background:#eee;box-shadow:0 3px 0 #ddd}
 .evb.lock svg{filter:grayscale(1);opacity:.45}
+.evb.go{width:auto;height:40px;border-radius:20px;padding:0 12px 0 9px;gap:3px;display:flex;align-items:center;color:#fff;background:radial-gradient(circle at 40% 30%,#ff9cc8,var(--pink2));box-shadow:0 3px 0 #c4407f;font:inherit;font-weight:900;font-size:13px;line-height:1}
+.evb.go svg{width:19px;height:19px}
+.evb.go:active{box-shadow:0 1px 0 #c4407f}
+.ev .nd{display:flex;align-items:center;gap:4px;margin-top:3px;font-size:12px;font-weight:700;color:#d9435f;line-height:1.35}
+.ev .nd.have{color:var(--soft)}
+.ev .nd svg{flex:none;width:18px;height:18px}
 .evb .tp{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);display:flex;gap:2px;background:#fff;border-radius:999px;padding:2px 4px}
 .evb .tp i{width:6px;height:6px;border-radius:50%;background:#f1d6e3}
 .evb .tp i.on{background:var(--pink)}

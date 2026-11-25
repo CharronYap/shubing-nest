@@ -7,30 +7,30 @@ const DOLL_NAME = {sloth:'薯餅',egg:'蛋黃哥',dog:'皮蛋',moodeng:'彈跳�
 /* 點一下娃娃會說的話（照個性寫） */
 const LINES = {
   sloth:['……嗯？','雲剛剛變成一隻兔子','慢慢來就好','我在想事情，想什麼忘了'],
-  egg:['好麻煩……','可以不要動嗎','再躺五分鐘','蛋殼裡比較舒服'],
+  egg:['好麻煩……','可以不要動嗎','再躺五分鐘','躺著比較舒服'],
   dog:['陪我玩！','我什麼都沒藏喔','你回來了！','汪！'],
   moodeng:['哼！','不要碰我……好啦可以','我要跳了喔','誰在看我'],
   nyanko:['有吃的嗎','才不是在等你','本大爺餓了','點心呢'],
   dino:['嘿嘿','剛剛不是我','吼～','要不要玩捉迷藏'],
-  snoopy:['我是王牌飛行員','今天要寫小說','噓，我在想故事','屋頂準備起飛'],
+  snoopy:['我是王牌飛行員','今天要寫小說','噓，我在想故事','飛機準備起飛'],
   piggy:['你又在發呆','這個我知道','哼哼，計畫進行中','那個不能吃啦'],
 };
 
 /* 願望道具：娃娃機的扭蛋裡夾得到 */
 const WISH = {
-  snack:{svg:'<svg viewBox="0 0 40 40"><rect x="6" y="10" width="28" height="22" rx="6" fill="#ffd8a8" stroke="#d98e3a" stroke-width="2.2"/><g fill="#b8682a"><circle cx="14" cy="18" r="2"/><circle cx="24" cy="16" r="2"/><circle cx="20" cy="25" r="2"/><circle cx="28" cy="24" r="1.8"/></g><path d="M10 10l3-4h14l3 4" fill="#ff9cc8" stroke="#e0609d" stroke-width="2" stroke-linejoin="round"/></svg>'},
-  bubble:{svg:'<svg viewBox="0 0 40 40"><circle cx="18" cy="22" r="12" fill="#e8f6ff" stroke="#8fc6e6" stroke-width="2.2"/><circle cx="30" cy="12" r="6" fill="#fff0f7" stroke="#ffb3d3" stroke-width="2"/><circle cx="13" cy="17" r="3" fill="#fff"/><circle cx="28" cy="10" r="1.6" fill="#fff"/></svg>'},
+  snack:{name:'點心盒', need:'要一盒點心', svg:'<svg viewBox="0 0 40 40"><rect x="6" y="10" width="28" height="22" rx="6" fill="#ffd8a8" stroke="#d98e3a" stroke-width="2.2"/><g fill="#b8682a"><circle cx="14" cy="18" r="2"/><circle cx="24" cy="16" r="2"/><circle cx="20" cy="25" r="2"/><circle cx="28" cy="24" r="1.8"/></g><path d="M10 10l3-4h14l3 4" fill="#ff9cc8" stroke="#e0609d" stroke-width="2" stroke-linejoin="round"/></svg>'},
+  bubble:{name:'泡泡球', need:'要一顆泡泡球', svg:'<svg viewBox="0 0 40 40"><circle cx="18" cy="22" r="12" fill="#e8f6ff" stroke="#8fc6e6" stroke-width="2.2"/><circle cx="30" cy="12" r="6" fill="#fff0f7" stroke="#ffb3d3" stroke-width="2"/><circle cx="13" cy="17" r="3" fill="#fff"/><circle cx="28" cy="10" r="1.6" fill="#fff"/></svg>'},
 };
 
 /* 每天的小事：d 是要有的娃娃，need 是要用的願望道具，tap 是要點幾次 */
 const EVENTS = [
-  {id:'egg-shell', d:['egg'], need:'snack', t:'蛋黃哥賴在蛋殼裡，翻都不翻身。', end:'吃到點心，蛋黃哥慢吞吞翻過來了。'},
+  {id:'egg-shell', d:['egg'], need:'snack', t:'蛋黃哥趴著不想動，翻都不翻身。', end:'吃到點心，蛋黃哥慢吞吞翻過來了。'},
   {id:'nyanko-taste', d:['nyanko','piggy'], need:'snack', t:'要給火腿的點心少了一塊。貓咪老師說牠在幫你試毒。', end:'補上新的點心，這次貓咪老師說不碰。'},
-  {id:'snoopy-pilot', d:['snoopy'], t:'史努比戴上飛行帽，說屋頂是牠的飛機。', end:'陪牠飛了一圈，史努比滿意地降落。'},
-  {id:'piggy-dr', d:['piggy'], t:'火腿戴上帽子，自稱邪惡豬排博士。', end:'博士宣布今天的邪惡計畫是睡午覺。'},
+  {id:'snoopy-pilot', d:['snoopy'], t:'史努比趴在沙發椅背上，說這是牠的飛機。', end:'陪牠飛了一圈，史努比滿意地降落。'},
+  {id:'piggy-dr', d:['piggy'], t:'火腿把自己叫做邪惡豬排博士。', end:'博士宣布今天的邪惡計畫是睡午覺。'},
   {id:'moodeng-bath', d:['moodeng'], need:'bubble', t:'彈跳豬洗澡亂踢水，來幫忙的娃娃全被噴濕。', end:'丟進泡泡球，彈跳豬忙著玩泡泡，終於安靜了。'},
   {id:'sloth-cloud', d:['sloth'], tap:3, t:'薯餅盯著窗外的雲發呆，要叫三次才會回頭。', end:'叫到第三次，薯餅慢慢轉過頭來。'},
-  {id:'dog-slipper', d:['dog'], t:'拖鞋又少一隻，皮蛋在院子門口搖尾巴。', end:'跟著皮蛋去院子，拖鞋埋在花盆旁邊。'},
+  {id:'dog-slipper', d:['dog'], t:'拖鞋又少一隻，皮蛋蹲在門邊搖尾巴。', end:'跟著皮蛋找了一圈，拖鞋藏在沙發後面。'},
   {id:'dino-leaf', d:['dino','sloth'], t:'龍龍趁薯餅發呆，在牠頭上放了一片葉子。', end:'葉子拿下來了，薯餅到現在都沒發現。'},
   {id:'mess', d:['dino','moodeng'], t:'龍龍和彈跳豬把房間弄得一團亂。', end:'收好了。兩隻假裝什麼事都沒發生。'},
   {id:'dog-snoopy', d:['dog','snoopy'], t:'皮蛋一直找史努比玩，史努比假裝在想事情。', end:'丟出一顆球，兩隻一起追出去了。'},

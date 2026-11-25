@@ -409,7 +409,7 @@ function showPrize(t){
       FURN_OWN[r.id] = 1; pic = furnSVG(r.id);
       if (!FLOOR_OWN.cloud && CLOUD_SET.every(i=>FURN_OWN[i])){ FLOOR_OWN.cloud = 1; bonus = true; }
     } else if (r.kind === 'wall'){ WALL_OWN[r.id] = 1; pic = `<span class="sw w-${r.id}"></span>`; }
-    else { S.wish[r.id] = (S.wish[r.id]||0) + 1; pic = WISH[r.id].svg; }
+    else { S.wish[r.id] = (S.wish[r.id]||0) + 1; pic = WISH[r.id].svg; renderEvBadge(); markDolls(); }
   } else {
     DOLL_N[t] = (DOLL_N[t]||0) + 1; pic = `<img alt="" src="${SPR[t]}">`;
   }

@@ -44,24 +44,29 @@ function planDay(){
 const evById = id => EVENTS.find(e => e.id === id);
 function pending(){ return S.day.ids.filter(id => !S.day.done.includes(id)).map(evById).filter(Boolean); }
 function wishNeeded(){ return [...new Set(pending().filter(e => e.need && !S.wish[e.need]).map(e => e.need))]; }
+// 現在就做得到的：不用道具，或道具已經有了。紅點和娃娃頭上的泡泡只算這些，缺道具的等夾到再亮
+const canDo = e => !e.need || S.wish[e.need] > 0;
+function doable(){ return pending().filter(canDo); }
 function renderEvBadge(){
-  const n = pending().length, b = $('#evBtn .bd');
+  const n = doable().length, left = pending().length, b = $('#evBtn .bd');
   b.textContent = n; b.hidden = !n;
-  $('#evBtn').setAttribute('aria-label', n ? `今天的小事，還有 ${n} 件` : '今天的小事都做完了');
+  $('#evBtn').setAttribute('aria-label', n ? `今天的小事，現在可以做 ${n} 件` : left ? `今天的小事，還有 ${left} 件要先去娃娃機夾道具` : '今天的小事都做完了');
 }
 let evOpen = false;
 function openEvents(focus){
   const list = S.day.ids.map(evById).filter(Boolean);
   const done = list.filter(e => S.day.done.includes(e.id)).length;
-  const wishes = Object.keys(WISH).map(k => `<span class="${S.wish[k] ? '' : 'none'}">${WISH[k].svg}${S.wish[k] || 0}</span>`).join('');
+  const wishes = Object.keys(WISH).map(k => `<span class="${S.wish[k] ? '' : 'none'}" aria-label="${WISH[k].name} ${S.wish[k] || 0} 個">${WISH[k].svg}${S.wish[k] || 0}</span>`).join('');
   const rows = list.map(e => {
     const isDone = S.day.done.includes(e.id);
     let btn;
     if (isDone) btn = `<span class="ck">${CKS}</span>`;
-    else if (e.need) btn = `<button class="evb ${S.wish[e.need] ? '' : 'lock'}" data-ev="${e.id}" aria-label="用道具">${WISH[e.need].svg}</button>`;
+    else if (e.need && !S.wish[e.need]) btn = `<button class="evb go" data-go="claw" aria-label="${WISH[e.need].need}，去娃娃機夾">${CLAW_ICON}<span>去夾</span></button>`;
+    else if (e.need) btn = `<button class="evb" data-ev="${e.id}" aria-label="給牠${WISH[e.need].name}">${WISH[e.need].svg}</button>`;
     else if (e.tap){ const n = S.day.tap[e.id] || 0; btn = `<button class="evb" data-ev="${e.id}" aria-label="叫牠（${n}/${e.tap}）">${PAW}<span class="tp">${Array.from({length: e.tap}, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span></button>`; }
     else btn = `<button class="evb" data-ev="${e.id}" aria-label="去看看">${HEART('#ff6fb0', '#fff')}</button>`;
-    return `<div class="ev ${isDone ? 'done' : ''} ${focus === e.id ? 'hi' : ''}"><span class="fa">${e.d.map(d => `<img src="${SPR[d]}" alt="">`).join('')}</span><p>${isDone ? e.end : e.t}</p>${btn}</div>`;
+    const need = !isDone && e.need ? `<small class="nd ${S.wish[e.need] ? 'have' : ''}">${WISH[e.need].svg}${S.wish[e.need] ? `用掉一個${WISH[e.need].name}` : `${WISH[e.need].need}，娃娃機夾得到`}</small>` : '';
+    return `<div class="ev ${isDone ? 'done' : ''} ${focus === e.id ? 'hi' : ''}"><span class="fa">${e.d.map(d => `<img src="${SPR[d]}" alt="">`).join('')}</span><p>${isDone ? e.end : e.t}${need}</p>${btn}</div>`;
   }).join('');
   openSheet(`<div class="hd">${EV_ICON}<span>${done} / ${list.length}</span><span class="wishes">${wishes}</span></div>
     <div class="evs">${rows || '<p class="empty">今天很安靜。</p>'}</div>`);
@@ -70,7 +75,7 @@ function openEvents(focus){
 function doEvent(id){
   const e = evById(id);
   if (!e || S.day.done.includes(id)) return;
-  if (e.need && !S.wish[e.need]){ toast('娃娃機夾得到'); return; }
+  if (e.need && !S.wish[e.need]){ toast(`${WISH[e.need].need}，娃娃機夾得到`); return; }
   if (e.tap){
     S.day.tap[id] = (S.day.tap[id] || 0) + 1;
     if (S.day.tap[id] < e.tap){ save(); if (evOpen && !$('#sheet').hidden) openEvents(id); return S.day.tap[id]; }
@@ -86,13 +91,14 @@ function doEvent(id){
 $('#evBtn').addEventListener('click', () => { if (evOpen && !$('#sheet').hidden){ $('#sheet').hidden = true; return; } openEvents(); });
 $('#sheet').addEventListener('click', e => {
   if (e.target.closest('.x')){ evOpen = false; return; }
+  if (e.target.closest('[data-go="claw"]')){ evOpen = false; setPage('claw'); return; }
   const b = e.target.closest('[data-ev]'); if (b) doEvent(b.dataset.ev);
 });
 $('#setb').addEventListener('click', () => { evOpen = false; });
 
 /* ---------- 房間裡的娃娃：有小事的頭上冒泡泡，點了會說話 ---------- */
 function markDolls(){
-  const who = new Set(pending().map(e => e.d[0]));
+  const who = new Set(doable().map(e => e.d[0]));
   room.querySelectorAll('.doll').forEach(el => {
     const it = items.find(i => String(i.uid) === el.dataset.u);
     el.classList.toggle('has-ev', !!it && who.has(it.id));
@@ -112,7 +118,7 @@ function say(it, text){
 }
 const lastLine = {};
 function onDollTap(it){
-  const ev = pending().find(e => e.d[0] === it.id) || pending().find(e => e.d.includes(it.id));
+  const ev = doable().find(e => e.d[0] === it.id) || doable().find(e => e.d.includes(it.id));
   if (ev && ev.tap){
     const r = doEvent(ev.id);
     say(it, r === true ? '……嗯？' : '……');
