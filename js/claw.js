@@ -395,7 +395,7 @@ function rollCap(){
   const look = typeof lookRoll === 'function' && lookRoll();   // 衣櫃的帽子、衣服（js/wardrobe.js）
   if (look) return look;
   const pool = [
-    ...Object.keys(FURN).filter(id=>!FURN_OWN[id]).map(id=>({kind:'furn', id})),
+    ...Object.keys(FURN).filter(id=>!FURN_OWN[id]&&!FURN[id].season).map(id=>({kind:'furn', id})),
     ...WALLS.filter(id=>!WALL_OWN[id]).map(id=>({kind:'wall', id})),
   ];
   if (pool.length) return pickOne(pool);

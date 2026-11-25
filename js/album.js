@@ -31,7 +31,7 @@ function albumPage(d){
   if (!a.met[d]) return `<div class="al-no"><img src="${SPR[d]}" alt=""><p>娃娃機夾得到</p></div>`;
   const lines = LINES[d], bits = a.heard[d] || 0;
   const heard = lines.filter((_, i) => bits & (1 << i)).length;
-  const evs = EVENTS.filter(e => e.d.includes(d));
+  const evs = EVENTS.filter(e => e.d.includes(d) && (!e.when || a.cards[e.id]));   // 節日的小事做過才算
   const done = evs.filter(e => a.cards[e.id]).sort((x, y) => a.cards[x.id] < a.cards[y.id] ? -1 : 1);
   return `<div class="al-top"><span class="al-ph">${dollPic(d)}</span>
       <div><b class="al-nm">${DOLL_NAME[d]}</b><div class="al-tr">${DOLL_TRAIT[d].map(t => `<span>${t}</span>`).join('')}</div><small>${md(a.met[d])}來到小窩</small><button class="btn al-dress" data-wd="${d}">換衣服</button></div></div>

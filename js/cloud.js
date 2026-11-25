@@ -146,7 +146,15 @@ export function createCloud(config, { emulator = false } = {}) {
     async save(data, uid) {
       await ready;
       if (uid && (!user || user.uid !== uid)) throw Object.assign(new Error('account changed'), { code: 'cloud/account-changed' });
-      await F.setDoc(ref(), data);
+      try { await F.setDoc(ref(), data); }
+      catch (e) {
+        // 第四版的新欄位（季節、信箱、小島）要等 firestore.rules 發布後才收。還沒發布時先拿掉再寫，其他進度照樣上雲端
+        const extra = ['season', 'mail', 'yard'].filter(k => k in data);
+        if (!(e && e.code === 'permission-denied' && extra.length)) throw e;
+        const d = { ...data }; extra.forEach(k => delete d[k]);
+        await F.setDoc(ref(), d);
+        console.info('[cloud] 規則還沒收新欄位，先存舊欄位', extra);
+      }
     },
     // ---------- 好友（players/{uid}，只在小窩裡） ----------
     friendCode,

@@ -9,7 +9,7 @@ const PAL_TICK = 5;                     // 開著時幾分鐘算一次
 const PAL_AWAY_MAX = 60;                // 不在的時候，一次最多算幾分鐘
 const palKey = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
 const palLv = n => PAL_LV.filter(v => n >= v).length;   // 0～3
-const palPairEv = (a, b) => EVENTS.find(e => e.d.length === 2 && e.d.includes(a) && e.d.includes(b));
+const palPairEv = (a, b) => EVENTS.find(e => !e.when && e.d.length === 2 && e.d.includes(a) && e.d.includes(b));
 
 function palsData(){ return S.album.pals = S.album.pals || {}; }
 

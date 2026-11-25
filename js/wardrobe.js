@@ -9,6 +9,7 @@ const HATS = [
   ['shades', '酷炫黑墨鏡', 12], ['bunny', '兔耳朵', 12], ['beret', '貝雷帽', 12], ['heartglasses', '愛心眼鏡', 12],
   ['crown', '迷你金皇冠', 16], ['tophat', '小禮帽', 16], ['chef', '小廚師帽', 16], ['flowers', '小花圈', 16],
   ['halo', '發光天使光環', 20], ['eggshell', '蛋殼帽', 20], ['santa', '聖誕帽', 20],
+  ['scarf', '紅圍巾', null],   // 不賣，十二月送（js/season.js）
 ];
 const OUTFIT_LIST = [
   ['none', '原本的樣子', 0], ['sailor', '碼頭水手', 0], ['night', '晚安睡帽', 12], ['party', '生日派對', 20],
@@ -105,7 +106,9 @@ function redressRoom(d){
 
 /* ---------- 扭蛋：claw.js 的 rollCap() 會先問這裡 ---------- */
 function lookRoll(){
-  const left = Object.keys(LOOK_ITEMS).filter(k => !hasLook(k));
+  // 不賣的（圍巾）平常開不到，十二月才會在扭蛋裡
+  const dec = todayStr().slice(5, 7) === '12';
+  const left = Object.keys(LOOK_ITEMS).filter(k => !hasLook(k) && (LOOK_ITEMS[k].price != null || dec));
   if (!left.length || Math.random() >= .35) return null;
   return {kind:'look', id:left[Math.floor(Math.random() * left.length)]};
 }
@@ -124,7 +127,7 @@ let wdDoll = 'sloth', wdTab = 'hat', wdTry = null;   // wdTry：還沒買、先�
 function wdPage(){
   const d = wdDoll, l = lookOf(d);
   const tryLook = wdTry ? Object.assign({}, l, {[LOOK_ITEMS[wdTry].kind]: LOOK_ITEMS[wdTry].id}) : l;
-  const list = Object.keys(LOOK_ITEMS).filter(k => LOOK_ITEMS[k].kind === wdTab);
+  const list = Object.keys(LOOK_ITEMS).filter(k => LOOK_ITEMS[k].kind === wdTab && (LOOK_ITEMS[k].price != null || hasLook(k)));
   const cant = wdTab === 'outfit' && !OUTFIT_OK(d);
   const tiles = list.map(k => {
     const it = LOOK_ITEMS[k], own = hasLook(k);

@@ -147,6 +147,7 @@ function react(it){
 let tab='doll';
 const LOCK='<span class="lk"><svg viewBox="0 0 10 12"><rect x="1" y="5" width="8" height="6.5" rx="1.6" fill="currentColor"/><path d="M3 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>';
 const CK=`<span class="ck">${CKS}</span>`;
+function whereFurn(id){for(const r of RIDS){if(home[r].items.some(i=>i.kind==='furn'&&i.id===id))return r;}return null;}
 function whereDoll(id){for(const r of RIDS){if(home[r].items.some(i=>i.kind==='doll'&&i.id===id))return r;}return null;}
 function renderTray(){
   document.querySelectorAll('.tab[data-tab]').forEach(t=>t.classList.toggle('on',t.dataset.tab===tab));
@@ -157,6 +158,11 @@ function renderTray(){
   } else if(tab==='furn'){
     ROOM_FURN[roomId].forEach(id=>{const own=FURN_OWN[id];const placed=items.some(i=>i.kind==='furn'&&i.id===id);
       h+=`<button class="tile ${own?'':'lock'} ${placed?'placed':''}" data-furn="${id}" aria-label="家具">${furnSVG(id)}${own?'':LOCK}${placed?CK:''}</button>`;});
+    // 季節家具（js/season.js）：有了才列出來，每個房間都看得到；擺在別的房間就標房間，點了搬過來
+    const sf=(typeof SEASON_FURN!=='undefined'?SEASON_FURN:[]).filter(id=>FURN_OWN[id]);
+    if(sf.length)h+=`<span class="grp">${SEASON_ICON}</span>`;
+    sf.forEach(id=>{const w=whereFurn(id),here=w===roomId,away=w&&!here;
+      h+=`<button class="tile ${here?'placed':''} ${away?'away':''}" data-furn="${id}" aria-label="${FURN[id].name}">${furnSVG(id)}${here?CK:''}${away?`<span class="rm">${ICON[w]}</span>`:''}</button>`;});
   } else {
     const wi='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="11" rx="2.5"/></svg>', fl='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 20l4-8h12l4 8z"/></svg>';
     h+=`<span class="grp">${wi}</span>`;
@@ -180,6 +186,7 @@ $('#items').addEventListener('click',e=>{
     const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();}
   else if(t.dataset.furn){const id=t.dataset.furn;if(!FURN_OWN[id]){toast('娃娃機夾得到');return;}
     const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);return;}
+    const w=whereFurn(id);if(w){removeItem(home[w].items.find(i=>i.kind==='furn'&&i.id===id).uid,home[w].items);}
     const f=FURN[id];const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
     if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();}
   else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast('娃娃機夾得到');return;}cur().wall=t.dataset.wall;paintRoom();renderTray();}
@@ -220,6 +227,7 @@ function winSVG(night){
   <rect x="9" y="9" width="62" height="44" rx="9" fill="${night?'#2f3478':'#aee0ff'}"/>
   ${night?'<circle cx="54" cy="22" r="8" fill="#fff3b0"/><circle cx="58" cy="19" r="7" fill="#2f3478"/><g fill="#fff"><circle cx="20" cy="18" r="1.3"/><circle cx="32" cy="30" r="1"/><circle cx="24" cy="40" r="1.2"/><circle cx="46" cy="42" r="1"/></g>'
   :'<circle cx="58" cy="20" r="6" fill="#ffd75e"/><path d="M16 40c-5 0-6-7-1-8 1-6 9-7 12-3 5-2 11 2 10 7 4 1 3 6-1 6z" fill="#fff"/>'}
+  ${typeof winSeason==='function'?winSeason(night):''}
   <path d="M40 9v44M9 31h62" stroke="#fff" stroke-width="4"/>
   <path d="M6 6c10 6 14 18 12 40-6 1-10-1-12-4z" fill="#ffc2dc" opacity=".9"/><path d="M74 6c-10 6-14 18-12 40 6 1 10-1 12-4z" fill="#ffc2dc" opacity=".9"/></svg>`;
 }

@@ -27,6 +27,7 @@ function grantCoins(){
   if (!S.opened){ S.opened = true; S.lastDaily = today; S.coins += OPEN_COINS; setTimeout(() => toast(`送你 ${OPEN_COINS} 枚幣`), 500); }
   else if (S.lastDaily !== today){ S.lastDaily = today; S.coins += DAILY_COINS; setTimeout(() => toast(`今天的 ${DAILY_COINS} 枚幣到了`), 500); }
   renderHud(); save();
+  if (typeof seasonGrant === 'function') seasonGrant(today);   // 節日家具、週年（js/season.js）
 }
 
 /* ---------- 每天的小事 ---------- */
@@ -37,9 +38,11 @@ function planDay(){
   if (S.day.date === today) return;
   if (!S.seed) S.seed = Math.floor(Math.random() * 1e9);
   const rnd = mulberry32(hashStr(today) ^ S.seed);
-  const pool = EVENTS.filter(e => e.d.every(d => DOLL_N[d]));
+  const pool = EVENTS.filter(e => !e.when && e.d.every(d => DOLL_N[d]));
   for (let i = pool.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-  S.day = { date: today, ids: pool.slice(0, EVENTS_PER_DAY).map(e => e.id), done: [], tap: {} };
+  // 節日的小事（js/season.js）：那幾天多排一件，放在最前面
+  const fest = typeof festEvents === 'function' ? festEvents(today).slice(0, 1) : [];
+  S.day = { date: today, ids: [...fest, ...pool.slice(0, EVENTS_PER_DAY)].map(e => e.id), done: [], tap: {} };
   save();
 }
 const evById = id => EVENTS.find(e => e.id === id);
@@ -84,6 +87,7 @@ function doEvent(id){
   if (e.need) S.wish[e.need]--;
   S.day.done.push(id);
   albumCard(id);
+  if (e.when && typeof festDone === 'function') festDone(e);
   S.coins += EVENT_COINS;
   if (typeof giftAfter === 'function') giftAfter(e);   // 有時候娃娃會送東西
   renderHud(); renderEvBadge(); markDolls(); save();
@@ -158,7 +162,7 @@ function afterPrize(){
   renderOpt();
   // 夾到新娃娃後，如果今天還沒排滿，補一件跟牠有關的小事
   if (S.day.ids.length < EVENTS_PER_DAY){
-    const more = EVENTS.filter(e => !S.day.ids.includes(e.id) && e.d.every(d => DOLL_N[d]));
+    const more = EVENTS.filter(e => !e.when && !S.day.ids.includes(e.id) && e.d.every(d => DOLL_N[d]));
     if (more.length){ S.day.ids.push(more[Math.floor(Math.random() * more.length)].id); renderEvBadge(); }
   }
 }
