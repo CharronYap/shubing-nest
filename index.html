@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffe3ef">
+<title>薯餅的小窩</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="phone"><div class="screen" id="screen">
+      <div class="top">
+        <button class="ib" id="swap" aria-label="去娃娃機"></button>
+        <div id="nav"></div>
+        <div class="pity" id="pity" hidden></div>
+        <div class="topr">
+          <span class="coin" aria-label="幣"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ffd75e" stroke="#d98e00" stroke-width="2"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#fff3b8" stroke-width="1.6"/><path d="M12 15.6s-3.4-2-3.4-4.2c0-1.1.8-1.9 1.8-1.9.7 0 1.2.4 1.6.9.4-.5.9-.9 1.6-.9 1 0 1.8.8 1.8 1.9 0 2.2-3.4 4.2-3.4 4.2z" fill="#ff8fbf"/></svg><span id="coins">0</span></span>
+          <button class="ib w" id="evBtn" aria-label="今天的小事"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.6 3.6c-.5.4-1.2 0-1.2-.6V16h.3A2.5 2.5 0 0 1 4 13.5z"/><g fill="#fff"><circle cx="8.5" cy="9.6" r="1.4"/><circle cx="12" cy="9.6" r="1.4"/><circle cx="15.5" cy="9.6" r="1.4"/></g></svg><span class="bd" hidden></span></button>
+        </div>
+      </div>
+      <div class="page" id="roomPage">
+      <div class="area" id="area">
+        <div class="stage" id="stage">
+          <div class="under"></div>
+          <div class="roof" id="roof"></div>
+          <div class="room" id="room">
+            <div class="wall" id="wall"></div>
+            <div class="floor" id="floor"></div>
+            <div class="win" id="win"></div>
+            <div class="nightov"></div>
+          </div>
+        </div>
+      </div>
+      <div class="tray" id="tray">
+        <div class="tabs">
+          <button class="tab on" data-tab="doll" aria-label="娃娃"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="13.5" rx="7.5" ry="8.5" fill="currentColor"/><circle cx="9.3" cy="13" r="1.2" fill="#fff"/><circle cx="14.7" cy="13" r="1.2" fill="#fff"/><path d="M10.5 16.2q1.5 1.2 3 0" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg></button>
+          <button class="tab" data-tab="furn" aria-label="家具"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="6" width="16" height="9" rx="4"/><rect x="2" y="10" width="5" height="8" rx="2.5"/><rect x="17" y="10" width="5" height="8" rx="2.5"/><rect x="5" y="13" width="14" height="5" rx="2"/><rect x="5" y="18" width="2" height="3" rx="1"/><rect x="17" y="18" width="2" height="3" rx="1"/></svg></button>
+          <button class="tab" data-tab="deco" aria-label="牆和地板"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="15" height="7" rx="2.5"/><path d="M18 6.5h2.5v6H11v3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="9" y="15" width="4" height="7" rx="1.5"/></svg></button>
+          <span class="sp"></span>
+          <button class="setb" id="setb" aria-label="雲朵系列"><span class="cl"></span><span class="dots" id="setdots"></span></button>
+          <button class="fold" id="fold" aria-label="收起收納架"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+          <span class="tab back"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v12M6 12l6 6 6-6"/></svg>收回</span>
+        </div>
+        <div class="items" id="items"></div>
+      </div>
+      </div>
+      <div class="page" id="clawPage" hidden>
+        <div class="cwrap">
+          <canvas id="claw" width="360" height="440" aria-label="娃娃機"></canvas>
+          <div class="ctrl" id="ctrl"></div>
+          <div class="optc" id="optClaw"></div>
+        </div>
+      </div>
+      <div class="toast" id="toast" role="status"></div>
+      <div class="sheet" id="sheet" hidden></div>
+    </div></div>
+<script src="js/data.js"></script>
+<script src="js/save.js"></script>
+<script src="js/room.js"></script>
+<script src="js/claw.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
