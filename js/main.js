@@ -42,7 +42,9 @@ function planDay(){
   for (let i = pool.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   // 節日的小事（js/season.js）：那幾天多排一件，放在最前面
   const fest = typeof festEvents === 'function' ? festEvents(today).slice(0, 1) : [];
-  S.day = { date: today, ids: [...fest, ...pool.slice(0, EVENTS_PER_DAY)].map(e => e.id), done: [], tap: {} };
+  // 下雨天的小事（js/sky.js）：那天多排一件
+  const rain = typeof skyEvents === 'function' ? skyEvents(today) : [];
+  S.day = { date: today, ids: [...fest, ...rain, ...pool.slice(0, EVENTS_PER_DAY)].map(e => e.id), done: [], tap: {} };
   save();
 }
 const evById = id => EVENTS.find(e => e.id === id);
@@ -88,7 +90,7 @@ function doEvent(id){
   S.day.done.push(id);
   albumCard(id);
   if (typeof mailCount === 'function') mailCount(e);   // 信箱：一起做完幾件（js/mail.js）
-  if (e.when && typeof festDone === 'function') festDone(e);
+  if (e.when && e.when !== 'rain' && typeof festDone === 'function') festDone(e);
   S.coins += EVENT_COINS;
   if (typeof giftAfter === 'function') giftAfter(e);   // 有時候娃娃會送東西
   renderHud(); renderEvBadge(); markDolls(); save();
@@ -135,6 +137,8 @@ function onDollTap(it){
     return;
   }
   if (ev){ openEvents(ev.id); return; }
+  const wet = typeof skyLine === 'function' ? skyLine(it.id) : '';   // 下雨天偶爾說一句跟雨有關的
+  if (wet){ say(it, wet); return; }
   const lines = LINES[it.id];
   let i = Math.floor(Math.random() * lines.length);
   if (i === lastLine[it.id]) i = (i + 1) % lines.length;

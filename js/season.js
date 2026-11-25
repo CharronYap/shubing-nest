@@ -187,7 +187,7 @@ function seasonToast(msgs){
 /* ---------- 節日的小事：main.js 的 planDay 每天最多多排一件 ---------- */
 function festEvents(t = todayStr()){
   return EVENTS.filter(e => {
-    if (!e.when || !e.d.every(d => DOLL_N[d])) return false;
+    if (!e.when || e.when === 'rain' || !e.d.every(d => DOLL_N[d])) return false;   // rain 是下雨天的小事（js/sky.js）
     const y = seasonOn(FEST_WHEN[e.when], t);
     return y && !seasonHas(`ev-${e.id}-${y}`);
   });

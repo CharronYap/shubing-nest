@@ -767,3 +767,13 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 @keyframes spNod{0%,100%{transform:scale(.92) rotate(0)}50%{transform:scale(.92) rotate(7deg)}}
 @keyframes spPuff{0%,100%{transform:scale(.92)}50%{transform:scale(1.04)}}
 @media (prefers-reduced-motion:reduce){.doll[class*="sp-"] .body,.doll.sp-hammock::after{animation:none!important}}
+/* 天色和天氣 */
+.screen.dawn{background:linear-gradient(#ffb7a6 0%,#ffd9b8 55%,#fff0de 100%)}
+.screen.dusk{background:linear-gradient(#ff9466 0%,#ffbd8a 50%,#ffe2bd 100%)}
+.screen.rainy{background:linear-gradient(#93a8ba 0%,#b9c8d4 55%,#dbe4ea 100%)}
+.screen.dawn .room:not(.off) .nightov{opacity:1;background:rgba(255,206,184,.3)}
+.screen.dusk .room:not(.off) .nightov{opacity:1;background:rgba(255,186,140,.34)}
+.screen.rainy .room:not(.off) .nightov{opacity:1;background:rgba(178,192,208,.32)}
+.wrain{animation:wrain .5s linear infinite}
+@keyframes wrain{from{transform:translate(1px,-4px)}to{transform:translate(-1px,4px)}}
+@media (prefers-reduced-motion:reduce){.wrain{animation:none}}

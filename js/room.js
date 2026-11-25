@@ -226,9 +226,10 @@ $('#setb').addEventListener('click',()=>{
 /* ---------- 房子、窗戶、夜晚 ---------- */
 function isNight(){if(VISIT&&typeof VISIT.night==='boolean')return VISIT.night;const h=new Date().getHours();return h>=19||h<5;}   // 看明信片時照拍的那一刻（js/card.js）
 function winSVG(night){
+  const sky=typeof skyWin==='function'?skyWin():null;   // 天色和天氣（js/sky.js）
   return `<svg viewBox="0 0 80 62"><rect x="3" y="3" width="74" height="56" rx="14" fill="#fff" stroke="#e9dff2" stroke-width="2"/>
-  <rect x="9" y="9" width="62" height="44" rx="9" fill="${night?'#2f3478':'#aee0ff'}"/>
-  ${night?'<circle cx="54" cy="22" r="8" fill="#fff3b0"/><circle cx="58" cy="19" r="7" fill="#2f3478"/><g fill="#fff"><circle cx="20" cy="18" r="1.3"/><circle cx="32" cy="30" r="1"/><circle cx="24" cy="40" r="1.2"/><circle cx="46" cy="42" r="1"/></g>'
+  <rect x="9" y="9" width="62" height="44" rx="9" fill="${sky?sky.bg:night?'#2f3478':'#aee0ff'}"/>
+  ${sky?sky.inner:night?'<circle cx="54" cy="22" r="8" fill="#fff3b0"/><circle cx="58" cy="19" r="7" fill="#2f3478"/><g fill="#fff"><circle cx="20" cy="18" r="1.3"/><circle cx="32" cy="30" r="1"/><circle cx="24" cy="40" r="1.2"/><circle cx="46" cy="42" r="1"/></g>'
   :'<circle cx="58" cy="20" r="6" fill="#ffd75e"/><path d="M16 40c-5 0-6-7-1-8 1-6 9-7 12-3 5-2 11 2 10 7 4 1 3 6-1 6z" fill="#fff"/>'}
   ${typeof winSeason==='function'?winSeason(night):''}
   <path d="M40 9v44M9 31h62" stroke="#fff" stroke-width="4"/>
@@ -239,6 +240,7 @@ function paintRoom(){
   $('#wall').className='wall w-'+cur().wall;$('#floor').className='floor f-'+cur().floor;
   $('#win').innerHTML=winSVG(night);
   screen.classList.toggle('night',night);
+  if(typeof skyPaint==='function')skyPaint();
   paintLight();
   layout();
 }
@@ -265,7 +267,7 @@ function layout(){
   if(Math.abs(ratio-RATIO)>.001||Math.abs(wall-WALL)>.001){RATIO=ratio;WALL=wall;if(items.length)render();}
 }
 new ResizeObserver(layout).observe(area);
-setInterval(()=>{if(isNight()!==screen.classList.contains('night'))paintRoom();},60000);
+setInterval(()=>{if(isNight()!==screen.classList.contains('night')||(typeof skyKey==='function'&&screen.dataset.sky!==skyKey()))paintRoom();if(typeof skyRainWater==='function')skyRainWater();},60000);
 
 /* 換房間 */
 function renderNav(){
