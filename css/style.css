@@ -730,7 +730,9 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .er-it .ck svg{width:12px;height:12px}
 .er-it>.ic .ck{width:28px;height:28px}
 /* 火腿的小店 */
-.shopb{top:54px}
+.shopb{top:10px}
+.bookb{top:54px}
+.visiting .bookb{top:10px}
 .visiting .shopb{display:none}
 .sp-box{display:grid;gap:10px;padding:2px;max-height:calc(100dvh - 200px);overflow-y:auto}
 .sp-pg{margin:0}
@@ -743,3 +745,25 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .sp-it .btn svg{width:16px;height:16px}
 .sp-it.own .tile{opacity:.5}
 .pc-left svg{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
+/* 家具第一批：奶油壁紙、專屬家具的特別反應 */
+.w-cream{background:radial-gradient(circle at 10px 10px,#fff 0 2.6px,transparent 3.3px) 0 0/26px 26px,linear-gradient(#fff3d6,#ffe9bd)}
+.doll.sit[class*="sp-"] .body{transform-origin:50% 100%}
+.doll.sp-hammock .body{animation:spSway 3.6s ease-in-out infinite}
+.doll.sp-hammock::after{content:"z";position:absolute;left:72%;top:-6%;font-size:15px;font-weight:900;color:#9d8fe0;animation:spZ 2.8s ease-in-out infinite;pointer-events:none}
+.doll.sp-beanbag .body{animation:spFlat 4s ease-in-out infinite}
+.doll.sp-sliprack .body{animation:spWag .7s ease-in-out infinite}
+.doll.sp-trampoline .body{animation:spJump .9s cubic-bezier(.3,0,.5,1) infinite}
+.doll.sp-snackcab .body{animation:spGuard 2.4s ease-in-out infinite}
+.doll.sp-cavetent .body{animation:spPeek 3.2s ease-in-out infinite}
+.doll.sp-writedesk .body{animation:spNod 1.6s ease-in-out infinite}
+.doll.sp-podium .body{animation:spPuff 2.2s ease-in-out infinite}
+@keyframes spSway{0%,100%{transform:scale(.92) rotate(-5deg)}50%{transform:scale(.92) rotate(5deg)}}
+@keyframes spZ{0%{opacity:0;transform:translate(0,4px) scale(.7)}40%{opacity:1}100%{opacity:0;transform:translate(8px,-12px) scale(1.1)}}
+@keyframes spFlat{0%,100%{transform:scale(.96,.86)}50%{transform:scale(1.04,.78)}}
+@keyframes spWag{0%,100%{transform:scale(.92) rotate(-4deg)}50%{transform:scale(.92) rotate(4deg)}}
+@keyframes spJump{0%,100%{transform:scale(.98,.84)}50%{transform:translateY(-62%) scale(.9,1)}}
+@keyframes spGuard{0%,100%{transform:scale(.92) translateX(-9%)}50%{transform:scale(.92) translateX(9%)}}
+@keyframes spPeek{0%,100%{transform:scale(.8) translateY(34%)}45%,60%{transform:scale(.8) translateY(0)}}
+@keyframes spNod{0%,100%{transform:scale(.92) rotate(0)}50%{transform:scale(.92) rotate(7deg)}}
+@keyframes spPuff{0%,100%{transform:scale(.92)}50%{transform:scale(1.04)}}
+@media (prefers-reduced-motion:reduce){.doll[class*="sp-"] .body,.doll.sp-hammock::after{animation:none!important}}

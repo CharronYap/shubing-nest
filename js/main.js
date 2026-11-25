@@ -161,6 +161,7 @@ $('#optClaw').addEventListener('click', e => {
 function afterPrize(){
   if (CLAW_ORDER.some(s => CLAW_UNLOCK[s] === S.wins && S.wins > 0)) toast('有新的爪子了');
   renderOpt();
+  if (typeof setCheck === 'function') setCheck();   // 湊齊家具系列的獎品（js/furnfx.js）
   // 夾到新娃娃後，如果今天還沒排滿，補一件跟牠有關的小事
   if (S.day.ids.length < EVENTS_PER_DAY){
     const more = EVENTS.filter(e => !e.when && !S.day.ids.includes(e.id) && e.d.every(d => DOLL_N[d]) && (typeof yardHas === 'function' ? yardHas(e.yard) : !e.yard));

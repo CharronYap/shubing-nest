@@ -50,8 +50,9 @@ $('#coinPill').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key
    }
    規則發布前 earn 只存在這台裝置（js/cloud.js 存檔被擋時會先拿掉再寫）。 */
 const EARN_GAME_TOP = 3, EARN_WORK_MAX = 3, EARN_WORK_PAY = 2, EARN_HEART_MAX = 5;
-const EARN_SETS = {cloud: CLOUD_SET};          // 家具系列：湊齊一個 10 枚（之後新的系列加在這裡）
-const EARN_SET_NAME = {cloud: '雲朵系列'};
+// 家具系列：湊齊一個 10 枚。雲朵系列，加上 js/furn2.js 裡有獎品的系列
+const EARN_SETS = {cloud: CLOUD_SET}, EARN_SET_NAME = {cloud: '雲朵系列'};
+if (typeof FURN_SERIES !== 'undefined') Object.entries(FURN_SERIES).forEach(([k, s]) => { if (s.gift){ EARN_SETS[k] = s.ids; EARN_SET_NAME[k] = s.name; } });
 function earnData(){
   const e = S.earn = S.earn || {}, t = todayStr();
   if (e.d !== t){ e.d = t; e.g = 0; }

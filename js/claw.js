@@ -401,8 +401,8 @@ function rollCap(){
   const look = typeof lookRoll === 'function' && lookRoll();   // 衣櫃的帽子、衣服（js/wardrobe.js）
   if (look) return look;
   const pool = [
-    ...Object.keys(FURN).filter(id=>!FURN_OWN[id]&&!FURN[id].season).map(id=>({kind:'furn', id})),
-    ...WALLS.filter(id=>!WALL_OWN[id]).map(id=>({kind:'wall', id})),
+    ...Object.keys(FURN).filter(id=>!FURN_OWN[id]&&!FURN[id].season&&!FURN[id].gift).map(id=>({kind:'furn', id})),   // 季節的、湊齊才送的夾不到
+    ...WALLS.filter(id=>!WALL_OWN[id]&&!(typeof GIFT_WALL!=='undefined'&&GIFT_WALL[id])).map(id=>({kind:'wall', id})),
   ];
   if (pool.length) return pickOne(pool);
   return {kind:'wish', id:pickOne(Object.keys(WISH))};

@@ -66,6 +66,10 @@ async function paintWall(ctx, s, W, wh, kind){
     fill(tile(ctx, s, 30, 26, t => dot(t, 8, 9, 1.8, '#fff6c4')));
     fill(tile(ctx, s, 34, 30, t => dot(t, 20, 20, 1.4, '#fff')));
   }
+  else if (kind === 'cream'){
+    fill(grad(ctx, 0, wh, '#fff3d6', '#ffe9bd'));
+    fill(tile(ctx, s, 26, 26, t => dot(t, 10, 10, 2.8, '#fff')));
+  }
   else fill('#ffe3ef');
 }
 function paintFloor(ctx, s, W, H, wh, kind){

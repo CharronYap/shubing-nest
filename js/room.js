@@ -187,12 +187,12 @@ $('#items').addEventListener('click',e=>{
     if(w==='yard'){yardRecall(id);if(typeof yardPaint==='function')yardPaint();}
     else if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
     const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();}
-  else if(t.dataset.furn){const id=t.dataset.furn;if(!FURN_OWN[id]){toast('娃娃機夾得到');return;}
+  else if(t.dataset.furn){const id=t.dataset.furn;if(!FURN_OWN[id]){toast(FURN[id].gift?'湊齊娃娃的專屬家具送你':'娃娃機夾得到，小店也買得到');return;}
     const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);return;}
     const w=whereFurn(id);if(w){removeItem(home[w].items.find(i=>i.kind==='furn'&&i.id===id).uid,home[w].items);}
     const f=FURN[id];const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
     if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();}
-  else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast('娃娃機夾得到');return;}cur().wall=t.dataset.wall;paintRoom();renderTray();}
+  else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast((typeof GIFT_WALL!=='undefined'&&GIFT_WALL[t.dataset.wall])||'娃娃機夾得到，小店也買得到');return;}cur().wall=t.dataset.wall;paintRoom();renderTray();}
   else if(t.dataset.floor){if(!FLOOR_OWN[t.dataset.floor]){toast('湊齊雲朵系列送你');return;}cur().floor=t.dataset.floor;paintRoom();renderTray();}
 });
 document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;renderTray();}));
