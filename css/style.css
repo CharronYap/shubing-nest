@@ -402,6 +402,14 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .dcard .pic img{filter:brightness(.9) saturate(.9)}
 .dcard h3{color:#6a5ccc}
 .al-dr li{color:#5d4fb8}
+/* 相簿：跟誰比較好 */
+.al-pal{display:flex;flex-wrap:wrap;gap:8px}
+.al-pal>span{display:flex;align-items:center;gap:6px;padding:5px 10px 5px 5px;border-radius:999px;background:#fff5fa;box-shadow:0 0 0 2px #ffe0ee inset}
+.al-pal img{width:30px;height:30px;object-fit:contain}
+.al-pal b{font-size:13px}
+.al-pal i{display:flex;gap:1px}
+.al-pal svg{width:13px;height:13px;fill:#f3dbe6}
+.al-pal svg.on{fill:#ff6fb0}
 
 /* ---------- 玩偶衣櫃（js/wardrobe.js）：帽子、衣服疊在娃娃圖上，位置都用 % ---------- */
 .dz{position:relative;display:block;width:100%;aspect-ratio:1}

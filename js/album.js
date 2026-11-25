@@ -40,6 +40,7 @@ function albumPage(d){
     <div class="al-sec">回憶</div>
     ${done.length ? done.map(e => `<div class="al-cd"><span class="fa">${e.d.map(x => `<img src="${SPR[x]}" alt="">`).join('')}</span><p>${e.end}</p><small>${md(a.cards[e.id])}</small></div>`).join('')
       : '<p class="al-em">每天的小事做完，會留在這裡。</p>'}
+    ${typeof palRows === 'function' ? palRows(d) : ''}
     ${dreamRows(d)}
     ${typeof giftRows === 'function' ? giftRows(d) : ''}
     <div class="al-ft">說過的話 ${heard}/${lines.length}・回憶 ${done.length}/${evs.length}${dreamSeen(d) ? `・夢 ${dreamSeen(d)}/${DREAMS[d].length}` : ''}</div>`;
