@@ -11,6 +11,7 @@ function setPage(p){
   $('#clawPage').hidden = p !== 'claw';
   $('#nav').hidden = p !== 'room';
   $('#pity').hidden = p !== 'claw';
+  $('#albBtn').hidden = p !== 'room';   // 相簿只在房間裡開
   const sw = $('#swap');
   sw.innerHTML = p === 'room' ? CLAW_ICON : HOUSE;
   sw.setAttribute('aria-label', p === 'room' ? '去娃娃機' : '回房間');
@@ -82,6 +83,7 @@ function doEvent(id){
   }
   if (e.need) S.wish[e.need]--;
   S.day.done.push(id);
+  albumCard(id);
   S.coins += EVENT_COINS;
   renderHud(); renderEvBadge(); markDolls(); save();
   toast(`+${EVENT_COINS} 枚幣`);
@@ -129,6 +131,7 @@ function onDollTap(it){
   let i = Math.floor(Math.random() * lines.length);
   if (i === lastLine[it.id]) i = (i + 1) % lines.length;
   lastLine[it.id] = i;
+  albumHear(it.id, i);
   say(it, lines[i]);
 }
 

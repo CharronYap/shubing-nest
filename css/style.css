@@ -301,6 +301,15 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
   .pity{gap:2px}
   .pity i{width:7px;height:7px}
 }
+/* 上面多了相簿按鈕，320 寬的手機再縮一點 */
+@container (max-width:340px){
+  .top,.topr{gap:3px}
+  .top{padding-left:8px;padding-right:8px}
+  .top>.ib,.topr>.ib{width:34px;height:34px}
+  .topr>.ib.sm{width:30px;height:30px}
+  .rnav button{width:30px}
+  .top .coin{padding-right:6px}
+}
 @container (max-width:318px){
   .top,.topr{gap:3px}
   .top{padding-left:6px}
@@ -315,4 +324,37 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
   #pity{padding:0 5px}
   .pity i{width:6px;height:6px}
   .top .coin{padding-right:5px}
+  .top,.topr{gap:2px}
+  .topr>.ib.sm{width:26px;height:26px}
+  .top .coin svg{width:18px;height:18px}
 }
+
+/* ===== 娃娃相簿（js/album.js） ===== */
+.al-tabs{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;margin-bottom:12px}
+.al-tabs button{aspect-ratio:1;border:2px solid #f3e7ef;border-radius:12px;background:#fff;padding:2px;cursor:pointer;display:grid;place-items:center}
+.al-tabs button img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.al-tabs button.on{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink)}
+.al-tabs button.no{background:#f6f2f4}
+.al-tabs button.no img{filter:brightness(0);opacity:.16}
+.al-pg{touch-action:pan-y}
+.al-top{display:flex;align-items:center;gap:12px;background:#fff6fa;border-radius:18px;padding:10px 12px}
+.al-ph{flex:none;width:92px;height:92px;object-fit:contain}
+.al-nm{display:block;font-size:20px;font-weight:900}
+.al-tr{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.al-tr span{padding:2px 9px;border-radius:999px;background:#fff;color:var(--pink2);font-size:12px;font-weight:800;box-shadow:0 0 0 1.5px #ffd0e4}
+.al-top small{font-size:12px;color:var(--soft)}
+.al-sec{margin:14px 2px 6px;font-size:13px;font-weight:900;color:var(--pink)}
+.al-ln{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.al-ln li{padding:6px 11px;border-radius:14px 14px 14px 4px;background:#fff;box-shadow:0 0 0 1.5px var(--line);font-size:13px;line-height:1.4}
+.al-ln li.no{color:#cdb6c2;background:#faf6f8;box-shadow:none}
+.al-cd{display:flex;align-items:center;gap:8px;padding:8px;border-radius:14px;background:#fffaf0;box-shadow:0 0 0 1.5px #ffe6b0;margin-bottom:6px}
+.al-cd .fa{display:flex;flex:none}
+.al-cd .fa img{width:30px;height:30px;object-fit:contain}
+.al-cd .fa img+img{margin-left:-11px}
+.al-cd p{flex:1;margin:0;font-size:13px;line-height:1.45}
+.al-cd small{flex:none;font-size:11px;color:var(--soft)}
+.al-em{margin:4px 2px;font-size:13px;color:var(--soft)}
+.al-ft{margin-top:12px;text-align:center;font-size:12px;font-weight:800;color:var(--soft)}
+.al-no{display:grid;place-items:center;padding:26px 0 30px;color:var(--soft);font-weight:800;font-size:14px}
+.al-no img{width:120px;height:120px;object-fit:contain;filter:brightness(0);opacity:.14}
+.al-no p{margin:10px 0 0}

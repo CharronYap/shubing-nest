@@ -1,8 +1,9 @@
 /* 薯餅的小窩：資料（娃娃、個性、每天的小事、家具） */
 const SPR = {sloth:'img/sloth.png',egg:'img/egg.png',dog:'img/dog.png',moodeng:'img/moodeng.png',nyanko:'img/nyanko.png',dino:'img/dino.png',snoopy:'img/snoopy.png',piggy:'img/piggy.png'};
 const DOLLS = ['sloth','egg','dog','moodeng','nyanko','dino','snoopy','piggy'];
-// 名字只在程式和 README 裡用，畫面上不顯示
+// 名字和個性：房間裡不顯示，相簿（js/album.js）每頁會寫
 const DOLL_NAME = {sloth:'薯餅',egg:'蛋黃哥',dog:'皮蛋',moodeng:'彈跳豬',nyanko:'貓咪老師',dino:'龍龍',snoopy:'史努比',piggy:'火腿'};
+const DOLL_TRAIT = {sloth:['愛發呆','好脾氣'],egg:['懶','厭世'],dog:['黏人','愛藏東西'],moodeng:['脾氣大','愛鬧'],nyanko:['貪吃','嘴硬心軟'],dino:['調皮','活潑'],snoopy:['愛幻想','愛演'],piggy:['愛吐槽','萬事通']};
 
 /* 點一下娃娃會說的話（照個性寫） */
 const LINES = {

@@ -22,6 +22,7 @@ function newGame(){
     wish:{snack:0,bubble:0},
     clawStyle:'egg',
     day:{date:'',ids:[],done:[],tap:{}},
+    album:{met:{},heard:{},cards:{}},   // 相簿：娃娃哪天來、聽過哪幾句（位元）、哪件小事哪天做完
     home:{
       living:mk('dots','check',['shelf 14 66','tv 48 63','plant 84 62','sofa 66 82','table 34 90','sloth >sofa 0','piggy 86 94']),
       bed:mk('stripe','wood',['rug 50 89','bed 32 76','lamp 88 72','dog >bed 1','egg 68 91']),

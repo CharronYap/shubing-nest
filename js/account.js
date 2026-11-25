@@ -101,6 +101,14 @@ function mergeSave(remote, guest) {
     m[k] = m[k] || {};
     for (const [id, n] of Object.entries(guest[k] || {})) m[k][id] = Math.max(m[k][id] || 0, n || 0);
   }
+  // 相簿：兩邊都留，來的日子和做完的日子取比較早的，聽過的話合在一起
+  const ga = guest.album || {}, ma = m.album = m.album || {};
+  for (const k of ['met', 'cards']) {
+    ma[k] = ma[k] || {};
+    for (const [id, d] of Object.entries(ga[k] || {})) if (!ma[k][id] || d < ma[k][id]) ma[k][id] = d;
+  }
+  ma.heard = ma.heard || {};
+  for (const [id, b] of Object.entries(ga.heard || {})) ma.heard[id] = (ma.heard[id] || 0) | b;
   m.coins = Math.max(m.coins || 0, guest.coins || 0);
   m.wins = Math.max(m.wins || 0, guest.wins || 0);
   m.t = Date.now();
