@@ -2,7 +2,7 @@ rules_version = '2';
 // 薯餅的小窩的 Firestore 規則（Firebase 專案 shubing-nest）。
 // 2026-11-26 新增 nestRooms（去朋友家）和 nestRooms/{uid}/hearts（留愛心）兩段。
 // 2026-11-26 第四版：小窩存檔多收 season（季節）、mail（信箱）、yard（門外小島）三個欄位；新增 nestGifts（送娃娃）一段。
-// 上面兩行的改動都還沒發布，一次整份換掉發布就好；其他段落跟已發布的一樣。
+// 上面兩行的改動已經在 2026-11-26 整份發布，這個檔案跟主控台上的一樣。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
