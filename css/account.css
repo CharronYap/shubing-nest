@@ -56,6 +56,15 @@
 .ac-list .nm{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ac-list .cd{flex:none;font-size:12.5px;letter-spacing:1px;color:var(--soft)}
 .ac-list .ac-empty{display:block;color:var(--soft);font-size:13.5px;line-height:1.5}
+/* 好友那一列可以點，去朋友家（visit.js） */
+.ac-list li:has(.ac-fv){padding:0}
+.ac-fv{display:flex;align-items:center;gap:8px;width:100%;padding:9px 2px;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ac-fv svg{flex:none;width:20px;height:20px;color:var(--pink2)}
+.ac-fv .nm{flex:1;min-width:0}
+.ac-fv:active{background:#fff3f8}
+.ac-fv:focus-visible{outline:3px solid var(--pink);outline-offset:-3px;border-radius:10px}
+.ac-hearts{margin:-4px 0 10px;font-size:14px;color:var(--soft)}
+.ac-hearts b{color:var(--pink2);font-size:16px}
 .acct button:focus-visible,.cover .cv-acct:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
 @keyframes acIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.ac-card{animation:none}}

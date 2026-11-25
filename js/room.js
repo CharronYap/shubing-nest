@@ -14,7 +14,9 @@ const ICON = {
 };
 const RIDS=['living','bed','bath'];
 let roomId='living', items=[];
-const cur=()=>home[roomId];
+// 去朋友家的時候（visit.js）：VISIT = {name, home, look}，房間畫朋友的，不能拖、不存檔
+let VISIT=null;
+const cur=()=>(VISIT?VISIT.home:home)[roomId];
 /* ---------- 牆和地板 ----------
    存檔裡的 y 是「牆和地板各自裡面的位置」：0～52 在牆上（0 頂端、52 牆腳），52～100 在地板上（52 牆腳、100 最前面）。
    收納架收起來時牆的高度不變，多出來的高度全給地板，所以要換算成畫面上的 %：roomY() 存檔→畫面，roomV() 畫面→存檔。
@@ -43,9 +45,9 @@ function elFor(it){
   let el=room.querySelector(`.it[data-u="${it.uid}"]`);
   if(!el){
     el=document.createElement('div');el.className='it';el.dataset.u=it.uid;
-    if(it.kind==='doll'){el.classList.add('doll');el.innerHTML=`<span class="body">${dollPic(it.id)}</span>`;}
+    if(it.kind==='doll'){el.classList.add('doll');el.innerHTML=`<span class="body">${dollPic(it.id,VISIT?(VISIT.look[it.id]||{}):undefined)}</span>`;}
     else el.innerHTML=furnSVG(it.id);
-    el.addEventListener('pointerdown',e=>startDrag(e,it.uid));
+    el.addEventListener('pointerdown',e=>{if(VISIT)visitTap(it);else startDrag(e,it.uid);});
     room.appendChild(el);
     if(!quiet){el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),500);}
   }
@@ -64,7 +66,7 @@ function render(){
     }
   });
   renderGlow();
-  renderTray();renderSet();afterRender();
+  if(!VISIT){renderTray();renderSet();afterRender();}else if(typeof paintSleep==='function')paintSleep();
 }
 function renderGlow(){
   room.querySelectorAll('.glow').forEach(g=>g.remove());
@@ -236,7 +238,7 @@ function paintLight(){
   room.classList.toggle('off',!on);
   b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'關燈':'開燈');
 }
-$('#lsw').addEventListener('click',()=>{cur().light=!lightOn();paintLight();save();});
+$('#lsw').addEventListener('click',()=>{if(VISIT)return;cur().light=!lightOn();paintLight();save();});
 // 房間直接鋪滿房間頁的空間；太扁或太長時才留邊
 function fitStage(W,H){const ratio=Math.max(.5,Math.min(1,W/H));const w=Math.min(W,H*ratio);return [w,w/ratio,ratio];}
 function layout(){
@@ -272,7 +274,7 @@ function slide(dir,swap){
 }
 function load(){
   items=cur().items;quiet=true;
-  room.querySelectorAll('.it').forEach(e=>e.remove());
+  room.querySelectorAll('.it,.drop,.say').forEach(e=>e.remove());
   $('#sheet').hidden=true;
   paintRoom();render();renderNav();quiet=false;
 }

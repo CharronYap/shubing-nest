@@ -101,6 +101,7 @@ $('#setb').addEventListener('click', () => { evOpen = false; });
 
 /* ---------- 房間裡的娃娃：有小事的頭上冒泡泡，點了會說話 ---------- */
 function markDolls(){
+  if (VISIT) return;
   const who = new Set(doable().map(e => e.d[0]));
   room.querySelectorAll('.doll').forEach(el => {
     const it = items.find(i => String(i.uid) === el.dataset.u);

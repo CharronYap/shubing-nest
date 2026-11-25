@@ -253,10 +253,11 @@ function openAccount() {
     <div class="ac-fr">
       <div class="ac-sub">好友</div>
       <p class="ac-code">我的好友碼 <b>${esc(cloud.friendCode(me.uid))}</b></p>
+      <p class="ac-hearts" hidden></p>
       <form class="ac-add" novalidate><input name="c" maxlength="6" autocapitalize="characters" autocomplete="off" placeholder="輸入朋友的好友碼" aria-label="朋友的好友碼"><button class="ac-b sm" type="submit">加好友</button></form>
       <p class="ac-err" role="alert"></p>
       <ul class="ac-list"><li class="ac-empty">讀取中…</li></ul>
-      <p class="ac-note">把好友碼給朋友，對方輸入後就會出現在這裡。</p>
+      <p class="ac-note">把好友碼給朋友，對方輸入後就會出現在這裡。點朋友的名字，可以去他家看看。</p>
     </div>
     <button class="ac-link out" data-a="out">登出</button>`);
   paintStatus();
@@ -277,7 +278,41 @@ function openAccount() {
     f.querySelector('button').disabled = false;
   };
   loadFriends();
+  loadHearts();
 }
+
+/* 今天收到幾顆愛心：只顯示數字，不顯示誰送的；0 顆或讀不到（規則還沒發布）就不出現 */
+const nestDay = () => Math.floor((Date.now() + 288e5) / 864e5);   // 台灣時間的第幾天
+async function loadHearts() {
+  try {
+    const n = await cloud.heartsToday(nestDay());
+    const el = box.querySelector('.ac-hearts');
+    if (!el || !n) return;
+    el.innerHTML = `今天收到 <b>${n}</b> 顆愛心`;
+    el.hidden = false;
+  } catch (e) { console.info('[account] 讀不到今天的愛心', e && e.code); }
+}
+
+/* 去朋友家：讀對方的公開房間（nestRooms/{uid}），讀不到就說一聲，不報錯 */
+let visiting = false;
+async function goVisit(p) {
+  if (visiting) return;
+  visiting = true;
+  try {
+    let data;
+    try { data = await cloud.room(p.uid); }
+    catch (e) { console.info('[account] 讀不到朋友的房間', e && e.code); say('朋友的房間現在還看不到，晚點再試'); return; }
+    if (!data || !data.home) { say(`${p.name}的房間還沒放上來，等對方打開一次小窩就看得到`); return; }
+    const day = nestDay();
+    let sent = null;
+    try { sent = await cloud.sentHeart(p.uid, day); } catch (e) { sent = null; }
+    close();
+    $('#cover').hidden = true;
+    music.start?.();
+    visitOpen({ name: p.name, data, sent, send: () => cloud.sendHeart(p.uid, day) });
+  } finally { visiting = false; }
+}
+
 async function loadFriends() {
   const list = box.querySelector('.ac-list');
   if (!list) return;
@@ -291,8 +326,9 @@ async function loadFriends() {
     const el = box.querySelector('.ac-list');
     if (!el) return;
     el.innerHTML = friends.length
-      ? friends.map(p => `<li><span class="nm">${esc(p.name)}</span><span class="cd">${esc(p.code)}</span></li>`).join('')
+      ? friends.map((p, i) => `<li><button class="ac-fv" data-fi="${i}" aria-label="去${esc(p.name)}家">${HOUSE}<span class="nm">${esc(p.name)}</span><span class="cd">${esc(p.code)}</span></button></li>`).join('')
       : '<li class="ac-empty">還沒有好友。把好友碼給朋友，或輸入朋友的好友碼。</li>';
+    el.onclick = e => { const b = e.target.closest('.ac-fv'); if (b && friends[b.dataset.fi]) goVisit(friends[b.dataset.fi]); };
   } catch (e) {
     console.warn('[account]', e);
     const fr = box.querySelector('.ac-fr'); if (fr) fr.hidden = true;

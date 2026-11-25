@@ -443,3 +443,18 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .wd-buy .btn[disabled]{filter:grayscale(.6);opacity:.6;cursor:default}
 .pcard .pic .lk-pic{width:112px;height:112px;display:grid;place-items:center}
 .pcard .pic .lk-pic>img{width:96px;height:96px;object-fit:contain}
+
+/* 去朋友家（visit.js）：只能看，自己的收納架、幣、小事、相簿先收起來，下面換成訪客列 */
+.visiting #tray,.visiting #swap,.visiting #albBtn,.visiting .top .coin,.visiting #evBtn,.visiting .anote,.visiting .drop{display:none!important}
+.visiting #lsw{pointer-events:none}
+.visiting .it:not(.doll){cursor:default}
+.vbar{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.vb-hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 4px}
+.vb-hd b{font-size:16px;font-weight:900;color:var(--pink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vb-hd small{font-size:12px;color:#a58aa0;flex:none}
+.vb-row{display:flex;gap:8px}
+.vb-row .btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px}
+.vb-row .btn svg{width:20px;height:20px;flex:none}
+.vb-home{flex:none}
+.vb-heart{flex:1}
+.vb-heart[disabled]{filter:grayscale(.5);opacity:.7;cursor:default}
