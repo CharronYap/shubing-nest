@@ -18,7 +18,7 @@ function earnList(){
   const coins = m ? m.l.filter(o => o.a && !o.g && o.a.startsWith('coin-')).reduce((n, o) => n + (+o.a.slice(5) || 0), 0) : 0;
   if (coins) L.push({ic: MAIL_ICON, t: '信箱裡有幣還沒收', s: `${coins} 枚`, go: () => { setPage('room'); openMail(); }});
   if (!S.day.free) L.push({ic: CLAW_ICON, t: '今天第一次夾娃娃', s: '不用幣', go: () => { $('#sheet').hidden = true; setPage('claw'); }});
-  if (typeof earnMore === 'function') earnMore(L);   // 第二步的小遊戲、打工、收成接在這裡
+  if (typeof earnMore === 'function') earnMore(L);   // 第二步的小遊戲、店員、收成接在這裡
   return L;
 }
 let erList = [];
@@ -42,7 +42,7 @@ $('#coinPill').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key
 /* ================= 第二步：可以一直賺的方式 =================
    存檔：S.earn = {
      d:'今天', g:今天玩了幾局小遊戲,
-     work:[{d:娃娃, t:'上次領錢的日子'}],        最多 3 隻在打工
+     work:[{d:娃娃, t:'上次領錢的日子'}],        等著送人的娃娃自動當店員（照 DOLL_N 算出來，不用手動派），最多算 3 隻
      hv:{第幾塊地:'上次收成的日子'}, bag:{flower, fruit},   小島收成，拿去小店換幣
      hc:{d:第幾天, n:今天朋友的愛心換了幾枚},
      ms:[領過的里程碑],
@@ -56,8 +56,9 @@ if (typeof FURN_SERIES !== 'undefined') Object.entries(FURN_SERIES).forEach(([k,
 function earnData(){
   const e = S.earn = S.earn || {}, t = todayStr();
   if (e.d !== t){ e.d = t; e.g = 0; }
-  // 送掉之後只剩一隻的，自動不打工了（自己的那一隻永遠在家）
-  e.work = (Array.isArray(e.work) ? e.work : []).filter(w => w && DOLLS.includes(w.d) && (DOLL_N[w.d] || 0) >= 2).slice(0, EARN_WORK_MAX);
+  // 店員名單照 DOLL_N 算：有留著一隻要送人的（DOLL_N = 2）就是店員，送掉了就不是。原本就在名單上的，領錢的日子照舊
+  const was = Array.isArray(e.work) ? e.work : [];
+  e.work = DOLLS.filter(d => (DOLL_N[d] || 0) >= 2).slice(0, EARN_WORK_MAX).map(d => was.find(w => w && w.d === d) || {d, t});
   e.hv = e.hv || {}; e.bag = Object.assign({flower: 0, fruit: 0}, e.bag || {}); e.ms = Array.isArray(e.ms) ? e.ms : [];
   return e;
 }
@@ -74,7 +75,34 @@ function earnGameNote(){
   return left > 0 ? `今天前 ${EARN_GAME_TOP} 局照成績給 3～5 枚，還有 ${left} 局。之後每局 1 枚，想玩幾局都可以。` : `今天前 ${EARN_GAME_TOP} 局玩過了，現在每局 1 枚，想玩幾局都可以。`;
 }
 
-/* ---------- 多的娃娃去打工 ---------- */
+/* ---------- 娃娃一種一隻，多的留著送人、順便當店員（2026-11-26 改） ----------
+   DOLL_N：1 = 家裡有，2 = 家裡有＋一隻留著要送人的。不會超過 2。
+   留著的那隻自動站在娃娃機旁邊當店員，每隻一天帶回 2 枚，最多算 3 隻；送出去就不是店員了。 */
+const SPARE_COIN = 3;
+// 拿到一隻娃娃（夾到、朋友送來、送出去又收回）。回傳 'new' 第一隻、'spare' 留著送人、'coin' 已經留著一隻了，換成幣
+function dollGain(d){
+  const n = DOLL_N[d] || 0;
+  if (n >= 2){ S.coins += SPARE_COIN; renderHud(); return 'coin'; }
+  DOLL_N[d] = n + 1; albumMet(d);
+  return n ? 'spare' : 'new';
+}
+// 舊存檔同一種超過兩隻的：多的一次換成幣
+function dollCap(){
+  let extra = 0;
+  DOLLS.forEach(d => { const n = DOLL_N[d] || 0; if (n > 2){ extra += n - 2; DOLL_N[d] = 2; } });
+  if (!extra) return 0;
+  S.coins += extra * SPARE_COIN; renderHud(); save();
+  if (typeof renderTray === 'function') renderTray();
+  return extra * SPARE_COIN;
+}
+// 把留著的那隻送給朋友：直接開送娃娃、選好這一隻
+function spareGive(d){
+  if (VISIT) return;
+  if (typeof ngOpenPick !== 'function' || !ngNet()){ toast('登入、加了好友之後才能送。牠會先在娃娃機當店員'); return; }
+  setPage('room');
+  ngPick = {doll: d, to: null, m: null, msg: ''};
+  ngOpenPick();
+}
 // 每隻一天帶回 2 枚：隔天第一次打開時領昨天的（好幾天沒來也只領一次，不會累積、也不會被扣）
 function earnWorkPay(){
   const e = earnData(), t = todayStr();
@@ -85,22 +113,32 @@ function earnWorkPay(){
   S.coins += n; renderHud(); save();
   return n;
 }
-function earnWorkToggle(d){
-  const e = earnData(), i = e.work.findIndex(w => w.d === d);
-  if (i >= 0){ e.work.splice(i, 1); toast(`${DOLL_NAME[d]}下班回家了`); }
-  else if ((DOLL_N[d] || 0) < 2) return;
-  else if (e.work.length >= EARN_WORK_MAX){ toast(`最多 ${EARN_WORK_MAX} 隻在打工`); return; }
-  else { e.work.push({d, t: todayStr()}); toast(`多的那隻${DOLL_NAME[d]}去娃娃機當店員了，明天帶幣回來`); }
-  save(); earnClerks();
-}
-// 娃娃機旁邊站著的店員
+// 娃娃機旁邊站著的店員：點一下可以送給朋友
 function earnClerks(){
   let el = $('#clerks');
-  if (!el){ el = document.createElement('div'); el.id = 'clerks'; el.className = 'wk-row'; $('#clawPage').appendChild(el); }
-  const w = earnData().work;
-  el.hidden = !w.length;
-  el.innerHTML = w.length ? `<small>店員</small>${w.map(x => `<img src="${SPR[x.d]}" alt="${DOLL_NAME[x.d]}">`).join('')}` : '';
+  if (!el){
+    el = document.createElement('div'); el.id = 'clerks'; el.className = 'wk-row'; $('#clawPage').appendChild(el);
+    el.addEventListener('click', e => { const b = e.target.closest('[data-clerk]'); if (b) clerkOpen(b.dataset.clerk); });
+  }
+  earnData();
+  const sp = DOLLS.filter(d => (DOLL_N[d] || 0) >= 2);
+  if (el.dataset.k === sp.join()) return;   // 沒變就不重畫
+  el.dataset.k = sp.join();
+  el.hidden = !sp.length;
+  el.innerHTML = sp.length ? `<small>店員</small>${sp.map(d => `<button data-clerk="${d}" aria-label="店員${DOLL_NAME[d]}，點一下可以送給朋友"><img src="${SPR[d]}" alt=""></button>`).join('')}` : '';
 }
+function clerkOpen(d){
+  if (VISIT || (DOLL_N[d] || 0) < 2) return;
+  const paid = earnData().work.some(w => w.d === d);
+  openSheet(`<div class="hd"><img class="st-hdimg" src="${SPR[d]}" alt=""><span>店員${DOLL_NAME[d]}</span></div>
+    <div class="er-box"><p class="er-hi">家裡已經有一隻${DOLL_NAME[d]}，這隻在等你把牠送給朋友。等的時候牠在娃娃機當店員${paid ? `，每天帶回 ${EARN_WORK_PAY} 枚` : `（店員的幣最多算 ${EARN_WORK_MAX} 隻，牠先站著陪大家）`}。</p></div>
+    <div class="ml-ft"><button class="btn" data-clerkx="1">讓牠繼續顧店</button><button class="btn y" data-clerkg="${d}">送給朋友</button></div>`);
+  evOpen = false; alOpen = false;
+}
+$('#sheet').addEventListener('click', e => {
+  if (e.target.closest('[data-clerkx]')){ $('#sheet').hidden = true; return; }
+  const b = e.target.closest('[data-clerkg]'); if (b) spareGive(b.dataset.clerkg);
+});
 
 /* ---------- 小島收成：花圃每天摘一次花，樹每兩天掉一顆果子。不算自己一天 3 次 ---------- */
 const EARN_FLOWER = '<svg viewBox="0 0 40 40"><path d="M20 36V22" stroke="#4f9a3c" stroke-width="3" stroke-linecap="round"/><g fill="#ffb3d3" stroke="#e0609d" stroke-width="2"><circle cx="20" cy="9" r="5"/><circle cx="12" cy="15" r="5"/><circle cx="28" cy="15" r="5"/><circle cx="15" cy="23" r="5"/><circle cx="25" cy="23" r="5"/></g><circle cx="20" cy="16.5" r="4.4" fill="#ffd75e" stroke="#d99a1c" stroke-width="1.8"/></svg>';
@@ -181,18 +219,24 @@ function earnMore(L){
   L.push({ic: `<img src="${SPR.nyanko}" alt="">`, t: '電視小遊戲', s: e.g < EARN_GAME_TOP ? `今天前 ${EARN_GAME_TOP} 局 3～5 枚，還有 ${EARN_GAME_TOP - e.g} 局` : '每局 1 枚，想玩幾局都可以', btn: '玩', go: gameMenu});
   if (S.yard && S.yard.p.some((p, i) => earnHvCan(i))) L.push({ic: EARN_FLOWER, t: '小島有花或果子可以收', s: '收了拿去小店，一個 1 枚', go: () => { $('#sheet').hidden = true; setPage('room'); goRoom('yard'); }});
   if (earnBagN()) L.push({ic: EARN_FRUIT, t: `手上有 ${earnBagN()} 個花和果子`, s: '拿去火腿的小店換幣', btn: '去小店', go: () => { if (typeof shopOpen === 'function') shopOpen(); }});
-  DOLLS.filter(d => (DOLL_N[d] || 0) >= 2).forEach(d => {
-    const on = e.work.some(w => w.d === d);
-    L.push({ic: `<img src="${SPR[d]}" alt="">`, t: on ? `${DOLL_NAME[d]}在娃娃機打工` : `多的那隻${DOLL_NAME[d]}可以去打工`, s: `每天帶回 ${EARN_WORK_PAY} 枚，隨時可以叫回來`, btn: on ? '叫回來' : '去打工', go: () => { earnWorkToggle(d); earnOpen(false); }});
-  });
+  // 等著送人的娃娃自動當店員，不用手動派
+  if (e.work.length) L.push({ic: `<img src="${SPR[e.work[0].d]}" alt="">`, t: '等著送人的娃娃在娃娃機當店員', s: `每隻一天 ${EARN_WORK_PAY} 枚，現在 ${e.work.length} 隻。點店員可以送給朋友`, btn: '去看', go: () => { $('#sheet').hidden = true; setPage('claw'); }});
+  else L.push({ic: CLAW_ICON, t: '夾到已經有的娃娃，可以留著送朋友', s: `等的時候牠會在娃娃機當店員，每隻一天 ${EARN_WORK_PAY} 枚`});
   const ms = earnMsList(), left = ms.filter(m => !e.ms.includes(m.k));
   if (left.length) L.push({ic: CK, t: `里程碑還有 ${left.length} 個`, s: `下一個：${left[0].t}（${left[0].n} 枚）`, btn: '看全部', go: earnMsOpen});
 }
 $('#sheet').addEventListener('click', e => { if (e.target.closest('[data-erb]')) earnOpen(false); });
 
-// 打開小窩：打工的幣、補發里程碑（跟每天領幣的提示錯開，才看得到）
-setTimeout(() => { if (VISIT) return; const n = earnWorkPay(); if (n) toast(`打工的娃娃帶回 ${n} 枚幣`); earnClerks(); }, 2400);
+// 打開小窩：舊存檔多的娃娃換成幣、店員的幣、補發里程碑（跟每天領幣的提示錯開，才看得到）
+setTimeout(() => {
+  if (VISIT) return;
+  const c = dollCap(), n = earnWorkPay();
+  if (c) toast(`每一種娃娃現在家裡一隻、再留一隻送朋友。多的換成了 ${c} 枚幣`);
+  else if (n) toast(`店員帶回 ${n} 枚幣`);
+  if (c && n) setTimeout(() => toast(`店員帶回 ${n} 枚幣`), 3200);
+  earnClerks();
+}, 2400);
 setTimeout(earnMsCheck, 4400);
-setInterval(() => { if (!document.hidden && !VISIT){ if (earnWorkPay()) earnClerks(); earnMsCheck(); } }, 6000);
+setInterval(() => { if (!document.hidden && !VISIT){ dollCap(); earnWorkPay(); earnClerks(); earnMsCheck(); } }, 6000);
 addEventListener('nestnet', earnHearts);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) earnHearts(); });

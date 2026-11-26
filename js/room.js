@@ -160,7 +160,7 @@ function renderTray(){
   const box=$('#items');let h='';
   if(tab==='doll'){
     DOLLS.forEach(id=>{const n=DOLL_N[id]||0;const w=whereDoll(id);const here=w===roomId;const away=w&&!here;
-      h+=`<button class="tile ${n?'':'lock'} ${here?'placed':''} ${away?'away':''}" data-doll="${id}" aria-label="娃娃"><img src="${SPR[id]}" alt="">${n?`<span class="n">×${n}</span>`:''}${here?CK:''}${away?`<span class="rm">${ICON[w]}</span>`:''}</button>`;});
+      h+=`<button class="tile ${n?'':'lock'} ${here?'placed':''} ${away?'away':''}" data-doll="${id}" aria-label="娃娃"><img src="${SPR[id]}" alt="">${here?CK:''}${away?`<span class="rm">${ICON[w]}</span>`:''}</button>`;});
   } else if(tab==='furn'){
     // 已經有的排前面、還沒有的（鎖頭）排後面；剛拿到還沒擺過的標「新」
     const nw=newFurnList();

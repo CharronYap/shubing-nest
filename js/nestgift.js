@@ -1,4 +1,5 @@
-/* 送娃娃（第四版）：同一隻有兩隻以上，可以送一隻給好友。入口在信箱。
+/* 送娃娃（第四版）：夾到家裡已經有的娃娃，那一隻可以留著送給好友（DOLL_N = 2，見 js/earn.js dollGain）。入口在信箱、娃娃機的店員、獎品卡。
+   朋友收到自己已經有的：他沒有留著的就留著當店員，已經留著一隻了就換成 3 枚幣，信裡會寫。
    不懲罰、不催人：送出去的娃娃會一直在朋友門口等，不會過期、不會自己退回；朋友多久沒領都不會怎樣。
    朋友讓牠進門之前，寄的人隨時可以收回。
    雲端：nestGifts/{id} = {from, fromName, to, toName, doll, line, t, msg}（js/cloud.js，規則在 firestore.rules）
@@ -48,7 +49,9 @@ async function ngRefresh(redraw){
 
 /* ---------- 信箱裡的區塊 ---------- */
 function ngInCard(g){
-  const w = ngName(g.fromName), x = {d: g.doll, type: 'gift', body: mailFill(MAIL_TPL[g.doll].gift[0], {w, m: g.line, x: ngX(g)})};
+  const w = ngName(g.fromName), have = DOLL_N[g.doll] || 0;
+  // 家裡已經有這一隻：開門之前先講清楚會怎麼樣
+  const x = {d: g.doll, type: 'gift', body: mailFill(MAIL_TPL[g.doll].gift[0], {w, m: g.line, x: ngX(g)}) + (have ? '\n' + mailGiftNote(g.doll, have >= 2 ? 2 : 1, true) : '')};
   return `<div class="ml ng-in unread open">
     <div class="ml-hd"><img src="${SPR[g.doll]}" alt=""><span><b>${DOLL_NAME[g.doll]}從${w}家來了</b><small>${w}・${md(ngDay(g.t))}</small></span></div>
     <div class="ml-bd">${mailBodyHTML(x)}<div class="ml-ft"><button class="btn y" data-ng="in" data-id="${g.id}">讓牠進來</button></div></div></div>`;
@@ -74,8 +77,8 @@ async function ngClaim(id){
     if (!ngOk(g)){ ngIn = ngIn.filter(x => x.id !== id); toast('牠已經回家了，朋友收回去了'); return; }
     const m = ngMail();
     if (!m.gin.includes(id)){
-      const w = ngName(g.fromName), t = todayStr(), k = `${g.doll}.gift.0#w=${w};m=${Math.max(0, Math.min(5, g.line | 0))}${ngX(g) ? ';x=' + ngX(g) : ''}`;
-      DOLL_N[g.doll] = (DOLL_N[g.doll] || 0) + 1; albumMet(g.doll);
+      const got = dollGain(g.doll);   // 'new' 第一隻、'spare' 留著當店員、'coin' 換成幣
+      const w = ngName(g.fromName), t = todayStr(), k = `${g.doll}.gift.0#w=${w};m=${Math.max(0, Math.min(5, g.line | 0))}${got === 'spare' ? ';e=1' : got === 'coin' ? ';e=2' : ''}${ngX(g) ? ';x=' + ngX(g) : ''}`;
       m.gin.push(id); if (m.gin.length > 60) m.gin.splice(0, m.gin.length - 60);
       // 變成一封看過的信，相簿「寫給你的信」會留下「從○○家來的」；不算在一天一封裡
       m.l.unshift({k, t, r: 1, a: null, g: 0});
@@ -83,7 +86,8 @@ async function ngClaim(id){
       ar.push(`${t}|${k}`); if (ar.length > MAIL_ARCH) ar.splice(0, ar.length - MAIL_ARCH);
       save();
       try { await net.push(); } catch (e) {}
-      toast(`${DOLL_NAME[g.doll]}進來了`);
+      toast(got === 'spare' ? `${DOLL_NAME[g.doll]}進來了。家裡已經有一隻，這隻先在娃娃機當店員` : got === 'coin' ? `家裡的${DOLL_NAME[g.doll]}夠了，這隻換成 ${SPARE_COIN} 枚幣` : `${DOLL_NAME[g.doll]}進來了`);
+      if (typeof earnClerks === 'function') earnClerks();
     }
     ngIn = ngIn.filter(x => x.id !== id);
     await net.delGift(id).catch(e => console.info('[nestgift] 先不刪，下次打開信箱再刪', e && e.code));
@@ -100,10 +104,11 @@ async function ngBack(id){
     const g = await net.gift(id);
     if (!ngOk(g)){ ngOut = ngOut.filter(x => x.id !== id); toast('朋友已經讓牠進門了'); return; }
     await net.delGift(id);
-    DOLL_N[g.doll] = (DOLL_N[g.doll] || 0) + 1;
+    const got = dollGain(g.doll);   // 等牠的時候又夾到一隻留著：回來的這隻換成幣
     ngOut = ngOut.filter(x => x.id !== id);
     save(); if (typeof render === 'function') render();
-    toast(`${DOLL_NAME[g.doll]}回來了`);
+    toast(got === 'coin' ? `${DOLL_NAME[g.doll]}回來了。已經留著一隻，這隻換成 ${SPARE_COIN} 枚幣` : `${DOLL_NAME[g.doll]}回來了，先在娃娃機當店員`);
+    if (typeof earnClerks === 'function') earnClerks();
   } catch (e) { toast(ngErr(e)); }
   finally { ngBusy = false; if (ngSheetOpen('.ml-box')) openMail(true); }
 }
@@ -122,7 +127,7 @@ function ngPaint(loading){
   let stop = '';
   if (ngOut.length >= NG_MAX_OUT) stop = `已經有 ${NG_MAX_OUT} 隻在朋友門口等了。等牠們進門，或收回一隻之後再送。`;
   else if (today >= NG_MAX_DAY) stop = `今天送了 ${NG_MAX_DAY} 次，明天再送。`;
-  else if (!can.length) stop = '同一隻有兩隻以上才能送。再夾到一樣的，就可以分一隻給朋友。';
+  else if (!can.length) stop = '現在沒有可以送的娃娃。夾到家裡已經有的娃娃時，那一隻就可以留著送給朋友。';
   else if (!loading && !ngFriends.length) stop = '還沒有好友。在帳號那裡輸入朋友的好友碼，加了之後就能送。';
   if (p.doll && !can.includes(p.doll)) p.doll = null;
   // 自己打的字要對方加過你才送得出去（firestore.rules）；還沒加的只能選寫好的句子
@@ -132,7 +137,8 @@ function ngPaint(loading){
   openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>送娃娃給朋友</span><small>今天還能送 ${Math.max(0, NG_MAX_DAY - today)} 次</small></div>
     <div class="ng-box">${stop ? `<p class="al-em">${stop}</p>` : `
       <div class="al-sec">送哪一隻</div>
-      <div class="ng-dolls">${can.map(d => `<button class="tile ${p.doll === d ? 'on' : ''}" data-ngd="${d}" aria-label="${DOLL_NAME[d]}" aria-pressed="${p.doll === d}"><img src="${SPR[d]}" alt=""><span class="n">×${DOLL_N[d]}</span></button>`).join('')}</div>
+      <div class="ng-dolls">${can.map(d => `<button class="tile ${p.doll === d ? 'on' : ''}" data-ngd="${d}" aria-label="${DOLL_NAME[d]}" aria-pressed="${p.doll === d}"><img src="${SPR[d]}" alt=""></button>`).join('')}</div>
+      <small class="bk-note">送的是留著等送人的那一隻，家裡原本的那隻不會動。</small>
       <div class="al-sec">送給誰</div>
       <div class="ng-chips">${loading ? '<p class="al-em">找好友中……</p>' : ngFriends.map(f => `<button class="ng-chip ${p.to === f.uid ? 'on' : ''}" data-ngf="${f.uid}" aria-pressed="${p.to === f.uid}">${ngName(f.name)}</button>`).join('')}</div>
       <div class="al-sec">想跟朋友說的話</div>
@@ -156,7 +162,7 @@ async function ngSend(){
   try {
     const id = await net.sendGift({to: p.to, toName: w, doll: p.doll, line, fromName: ngName(net.me.name), msg});
     // 寫進 nestGifts 成功了才減
-    DOLL_N[p.doll]--; ngMail().gout.n++;
+    DOLL_N[p.doll]--; ngMail().gout.n++; if (typeof earnClerks === 'function') earnClerks();
     ngOut.unshift({id, from: net.me.uid, to: p.to, toName: w, doll: p.doll, line, t: Date.now(), ...(msg ? {msg} : {})});
     save(); if (typeof render === 'function') render();
     toast(`${DOLL_NAME[p.doll]}出發去${w}家了`);

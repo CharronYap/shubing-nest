@@ -421,6 +421,7 @@ function rollCap(){
 /* ---------- 夾到了：卡片只放東西的圖 ---------- */
 function showPrize(t){
   let pic, bonus = false, gotFurn = null;   // gotFurn：夾到的是家具，卡片上標哪一間、給「去擺」
+  let got = '';                             // 夾到娃娃：'new' 第一隻、'spare' 家裡已經有（留著送人）、'coin' 已經留著一隻（換成幣）。見 js/earn.js dollGain()
   if (t === 'cap'){
     const r = rollCap();
     if (r.kind === 'furn'){
@@ -430,18 +431,21 @@ function showPrize(t){
     else if (r.kind === 'wall'){ WALL_OWN[r.id] = 1; pic = `<span class="sw w-${r.id}"></span>`; }
     else { S.wish[r.id] = (S.wish[r.id]||0) + 1; pic = WISH[r.id].svg; renderEvBadge(); markDolls(); }
   } else {
-    DOLL_N[t] = (DOLL_N[t]||0) + 1; albumMet(t); pic = `<img alt="" src="${SPR[t]}">`;
+    got = dollGain(t); pic = `<img alt="" src="${SPR[t]}">`;
   }
   save();
   const o = document.createElement('div'); o.className = 'over';
   o.innerHTML = `<div class="pcard" role="dialog" aria-label="夾到了"><div class="pic">${pic}</div>
     ${bonus ? '<div class="bonus"><span class="cl"></span><span class="sw f-cloud"></span></div>' : ''}
     ${gotFurn && typeof furnGo === 'function' ? `<p class="pz-nm"><b>${furnName(gotFurn)}</b>${furnRoomTag(gotFurn)}</p>` : ''}
-    <div class="pz-row"><button class="btn y ok" aria-label="收下">${CKS}</button>${gotFurn && typeof furnGo === 'function' ? '<button class="btn pz-go">去擺</button>' : ''}</div></div>`;
+    ${got === 'spare' ? `<p class="pz-nm pz-sp"><b>家裡已經有${DOLL_NAME[t]}了，這隻可以送給朋友</b><small>先留著的話，牠會在娃娃機當店員，每天帶回 ${EARN_WORK_PAY} 枚</small></p>` : ''}
+    ${got === 'coin' ? `<p class="pz-nm pz-sp"><b>多的${DOLL_NAME[t]}換成 ${SPARE_COIN} 枚幣</b><small>家裡一隻、留著送人的一隻都有了</small></p>` : ''}
+    <div class="pz-row">${got === 'spare' ? '<button class="btn y pz-give">送給朋友</button><button class="btn ok pz-keep">先留著</button>' : `<button class="btn y ok" aria-label="收下">${CKS}</button>`}${gotFurn && typeof furnGo === 'function' ? '<button class="btn pz-go">去擺</button>' : ''}</div></div>`;
   screen.appendChild(o);
   const ok = o.querySelector('.ok'); ok.focus({preventScroll:true});
   ok.onclick = () => { o.remove(); refill(); renderTray(); renderSet(); afterPrize(); save(); };
   const go = o.querySelector('.pz-go'); if (go) go.onclick = () => { ok.onclick(); furnGo(gotFurn); };
+  const give = o.querySelector('.pz-give'); if (give) give.onclick = () => { ok.onclick(); spareGive(t); };
 }
 
 /* ---------- 開機 ---------- */

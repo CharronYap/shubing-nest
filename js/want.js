@@ -1,6 +1,6 @@
 /* 願望清單（第五版）：相簿裡還沒來的娃娃，可以點星星放進願望清單，最多 3 隻。
    - 朋友來家裡時，下面那條有一塊小木牌「想要：○○、○○」。
-   - 朋友剛好同一隻有兩隻以上，木牌旁邊出現「送牠過去」，按了回自己家、直接走送娃娃（js/nestgift.js）。
+   - 朋友剛好留著一隻要送人的（DOLL_N = 2），木牌旁邊出現「送牠過去」，按了回自己家、直接走送娃娃（js/nestgift.js）。
    - 夾到或收到之後自動從清單拿掉。這版只放娃娃。
    不懲罰、不催人：清單放多久都可以，沒有人送也不會怎樣。
    存檔：S.album.want = [娃娃]；公開資料 nestRooms/{自己}.want（存檔裡的 wish 是點心和泡泡球，是另一件事） */
@@ -17,7 +17,7 @@ function wantList(){
 function wantBtn(d){
   const l = wantList(), on = l.includes(d), full = !on && l.length >= WANT_MAX;
   return `<button class="btn sm want-b ${on ? 'on' : ''}" data-want="${d}" aria-pressed="${on}">${WANT_STAR}<span>${on ? '在願望清單裡' : '放進願望清單'}</span></button>
-    <small class="want-h">${on ? '朋友來家裡時，木牌上會寫你想要牠。再點一下拿掉。' : full ? `願望清單最多 ${WANT_MAX} 隻，先拿掉一隻再放。` : '放進去之後，朋友來家裡時看得到，有多的可以送你。'}</small>`;
+    <small class="want-h">${on ? '朋友來家裡時，木牌上會寫你想要牠。再點一下拿掉。' : full ? `願望清單最多 ${WANT_MAX} 隻，先拿掉一隻再放。` : '放進去之後，朋友來家裡時看得到，他剛好留著一隻的話可以送你。'}</small>`;
 }
 $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('[data-want]'); if (!b) return;
