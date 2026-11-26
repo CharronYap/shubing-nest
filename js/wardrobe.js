@@ -66,6 +66,7 @@ function hatHiddenBy(outfit, hat){
   return ((LOOKS.ACCESSORY_PLACE[hat] && LOOKS.ACCESSORY_PLACE[hat].anchor) || 'top') === 'top';
 }
 // 帽子的位置：照蛋蛋島 js/main.js avatarHat() 的算法，外框換成小窩的圖
+// data-a（對齊頭頂還是臉）、data-u（帽子中心離圖正中間多遠）、data-fw（臉寬）：娃娃轉身時 js/spin.js 用這三個算帽子該挪到哪
 function hatImg(name, d){
   const svg = name && name !== 'none' ? LOOKS.ACCESSORY_SVG[name] : '';
   const face = LOOKS.TOY_FACE[d], b = NEST_BOX[d];
@@ -77,7 +78,7 @@ function hatImg(name, d){
   const ax = b.x0 + face.x * bw + place.dx * fw + tune.offsetX * bw;
   const ay = b.y0 + (face[place.anchor] != null ? face[place.anchor] : face.top) * bh - place.ay * ah + tune.offsetY * bh;
   const rot = tune.rot ? `transform:rotate(${tune.rot}deg);` : '';
-  return `<img class="dz-hat" alt="" src="${svgSrc(svg)}" style="left:${pc(ax - aw / 2)};top:${pc(ay)};width:${pc(aw)};height:${pc(ah)};${rot}">`;
+  return `<img class="dz-hat" alt="" data-a="${place.anchor}" data-u="${(ax - .5).toFixed(3)}" data-fw="${fw.toFixed(3)}" src="${svgSrc(svg)}" style="left:${pc(ax - aw / 2)};top:${pc(ay)};width:${pc(aw)};height:${pc(ah)};${rot}">`;
 }
 // 衣服：蛋蛋島疊在整張照片上（左移 6%），這裡把蛋蛋島圖的外框對到小窩圖的外框
 function outfitImg(id, layer, d){

@@ -974,3 +974,20 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .sk-box .sk-n,.sk-box .sk-q{color:var(--soft)}
 .sk-box .sk-o{font-weight:800;color:#c77d00}
 @media (prefers-reduced-motion:reduce){.skit-bang{animation:none}}
+
+/* ---------- 娃娃轉得動（js/spin.js） ---------- */
+.doll .body{position:relative}
+.sp-base{visibility:hidden}
+.sp3{position:absolute;left:0;top:0;width:100%;aspect-ratio:1;background-repeat:no-repeat;background-size:600% 400%;pointer-events:none}
+.dz>.dz-out{transition:opacity .12s linear}
+/* 沒有 3D 的四隻：左右翻面 */
+.doll .body>img,.doll .body>.dz{transition:scale .2s ease-out}
+.doll.flipx .body>img,.doll.flipx .body>.dz{scale:-1 1}
+.spin-snap .doll .body>img,.spin-snap .doll .body>.dz,.spin-snap .dz>.dz-out{transition:none!important}
+/* 相簿：可以用手指轉的那張 */
+.al-ph.spin-on{position:relative;width:116px;height:116px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none;border-radius:16px;outline-offset:2px}
+.al-ph.spin-on:active{cursor:grabbing}
+.al-ph.spin-on .dz{height:100%}
+.spin-tip{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;font-weight:800;color:#b0668a;background:#fff;border:1.5px solid #f6c9dc;border-radius:99px;padding:1px 7px;pointer-events:none;transition:opacity .4s}
+.al-ph.spun .spin-tip{opacity:0}
+@media (prefers-reduced-motion:reduce){.doll .body>img,.doll .body>.dz,.dz>.dz-out,.spin-tip{transition:none}}
