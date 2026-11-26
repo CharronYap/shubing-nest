@@ -8,6 +8,8 @@
    - 娃娃機那一頁：回房間的鈕、幣、音樂的位置跟房間頁一樣；小店、信箱、訪客簿、相簿、相機、地圖鈕在那一頁藏起來。
    - 回封面：不登出、不清東西，只是回到封面，再按開始回到剛剛那一間。
    做法：按鈕還是原本各個檔案做出來的那幾顆（事件都在上面），這裡只是把它們搬進新的容器裡。 */
+// 以前的版面調整模式（?layout=1）已經整個拿掉，沒有任何地方再讀它的設定；這台裝置如果還留著舊設定，順手清掉
+try { localStorage.removeItem('shubingNest.layout'); } catch (e) {}
 const HUD_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.400" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.500L12 4.500l8 7"/><path d="M6.500 10.500V19.500h11V10.500"/><path d="M10 19.500v-5h4v5"/></svg>';
 (function(){
   const top = $('.top'), topr = top.querySelector('.topr');
