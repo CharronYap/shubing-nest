@@ -250,3 +250,57 @@
 .look-paper .cover .cv-sofa .cv-lg{background:var(--p-wood2)}
 .look-paper .cover .cv-go>span{border-radius:22px;background:var(--p-sun);box-shadow:0 7px 0 color-mix(in srgb,var(--p-sun) 60%,var(--p-ink)),0 16px 18px var(--p-shadow)}
 .look-paper .cover .cv-go svg{fill:var(--p-ink)}
+
+/* =====================================================================
+   補漏（2026-11-26）：把沒開過看的面板各開一次（今天的小事、衣櫃、獎品卡、小遊戲、訪客簿、明信片、帳號），
+   用程式掃出還留著的粉紅和白框，一樣一樣換成色票。
+   ===================================================================== */
+.look-paper .ev .nd{color:var(--p-a1d)}
+.look-paper .ev .nd.have{color:var(--soft)}
+/* 衣櫃：娃娃那一塊、兩個分頁、試穿中的那一格、下面那條買不買 */
+.look-paper .wd-top{background:var(--p-card);border-radius:12px;box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .wd-tabs button{border:0;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .wd-tabs button.on{background:var(--p-a1);color:var(--p-paper);box-shadow:0 2px 0 var(--p-a1d)}
+.look-paper .wd-it.try{background:color-mix(in srgb,var(--p-sun) 24%,var(--p-card));box-shadow:0 0 0 3px var(--p-sun)}
+.look-paper .wd-buy{background:var(--p-paper);border-radius:10px;box-shadow:0 0 0 2px var(--p-sun),0 4px 0 var(--p-edge)}
+/* 小遊戲：關閉鈕、接點心的場地、翻牌的牌 */
+.look-paper .gm-card{font-family:var(--p-hand)}
+.look-paper .gm-x,.look-paper .bk-del{border-radius:8px;background:var(--p-paperd);color:var(--p-ink)}
+.look-paper .gc-field{border-radius:10px;background:linear-gradient(var(--p-sky),var(--p-wall))}
+.look-paper .gf-c{border:0;border-radius:8px;background:var(--p-a2);box-shadow:0 3px 0 var(--p-a2d)}
+.look-paper .gf-c.on{background:var(--p-card);box-shadow:0 3px 0 var(--p-edge)}
+.look-paper .gf-c.ok{background:color-mix(in srgb,var(--p-sun) 30%,var(--p-card));box-shadow:0 0 0 3px var(--p-sun)}
+.look-paper .gm-coin{color:var(--p-a1d)}
+/* 訪客簿：留言的那一塊、貼紙、輸入框、翻頁 */
+.look-paper .bk-form{background:color-mix(in srgb,var(--p-sun) 16%,var(--p-card));border:0;border-radius:10px;box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .bk-st button{border:0;border-radius:10px;background:var(--p-card);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .bk-st button.on{background:var(--p-card);box-shadow:0 0 0 3px var(--p-a1)}
+.look-paper .bk-in{border:0;border-radius:8px;background:var(--p-card);color:var(--p-ink);box-shadow:inset 0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .bk-it.new{background:color-mix(in srgb,var(--p-sun) 22%,var(--p-card))}
+.look-paper .bk-s{border:0;border-radius:10px;background:var(--p-paper);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .bk-pg button{border:0;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge)}
+/* 明信片：打開時下面那張寫字的紙、信箱裡的郵票 */
+.look-paper .pc-back{border:0;border-radius:10px;background:var(--p-paper);background-image:repeating-linear-gradient(transparent 0 25px,var(--p-edge) 25px 26px);box-shadow:0 3px 0 var(--p-edge);color:var(--p-ink)}
+.look-paper .pc-st{background:var(--p-card);border-color:var(--p-a2);color:var(--p-a2)}
+.look-paper .ml.pc,.look-paper .ml.pc.unread{border-color:transparent}
+/* 帳號視窗：好友那一段的分隔線、清單、加回去和移除 */
+.look-paper .ac-fr{border-top-color:var(--p-edge)}
+.look-paper .ac-list li{border-bottom-color:var(--p-edge)}
+.look-paper .ac-fv:active{background:var(--p-paperd)}
+.look-paper .ac-fa{border:0;border-radius:8px;background:var(--p-a1);color:var(--p-paper);box-shadow:0 2px 0 var(--p-a1d);font-family:var(--p-hand)}
+.look-paper .ac-fa.rm{background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .ac-fa.rm[data-sure]{background:var(--p-a1d);color:var(--p-paper);box-shadow:none}
+.look-paper .ac-err,.look-paper .ac-st.failed{color:var(--p-a1d)}
+/* 相簿、小屋地圖、小窩指南裡零星的白底和粉紅 */
+.look-paper .al-tabs button.no,.look-paper .al-ln li.no{background:var(--p-paperd);color:var(--soft);box-shadow:none}
+.look-paper .al-tr span{box-shadow:none}
+.look-paper .al-dress{background:var(--p-paperd);color:var(--p-ink);border-radius:8px;box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .hm-c{background:var(--p-paper)}
+.look-paper .hm-nm{background:color-mix(in srgb,var(--p-paper) 88%,transparent);color:var(--p-ink)}
+.look-paper .hm-y .hm-nm{background:none}
+.look-paper .hm-out{background:linear-gradient(var(--p-sky),var(--p-paper))}
+.look-paper .gd-it .ic .sw{border:0;box-shadow:0 0 0 1px var(--p-edge)}
+.look-paper .gd-it .gd-lk{color:var(--p-a1d)}
+/* 愛心小圖（js/room.js 的 HEART）：原本是粉紅配白邊，換成色票的珊瑚色配紙色；翻牌背面那顆用紙色 */
+.look-paper .screen svg path[fill="#ff6fb0"],.look-paper .screen svg path[fill="#ffb3d3"]{fill:var(--p-a1);stroke:var(--p-paper)}
+.look-paper .gf-c .bk svg path{fill:var(--p-paper);stroke:none}
