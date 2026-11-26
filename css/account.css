@@ -76,3 +76,9 @@
 .ac-fa.rm[data-sure]{background:#ffe9e9;border-color:#ffb3b3;color:#c0392b}
 .ac-fa[disabled]{opacity:.5;cursor:default}
 .ac-list .ac-fnote{font-size:12px;border-bottom:0;padding-top:8px}
+
+/* 雲端存檔連續失敗：封面的帳號鈕變紅點，遊戲裡「回封面」的鈕上也亮一個點 */
+.cover .cv-acct .st.failed{background:#ff4d4d;box-shadow:0 0 0 3px rgba(255,77,77,.25)}
+.ac-st.failed{color:#c0392b;font-weight:800}
+#homeBtn.warn{position:relative}
+#homeBtn.warn::after{content:"!";position:absolute;right:-3px;top:-3px;width:16px;height:16px;border-radius:50%;background:#ff4d4d;color:#fff;font-size:11px;font-weight:900;line-height:16px;text-align:center;box-shadow:0 0 0 2px #fff}

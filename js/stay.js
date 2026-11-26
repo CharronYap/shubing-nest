@@ -116,11 +116,18 @@ async function stayHome(diary){
   } else toast(`${DOLL_NAME[o.d]}回來了`);
   save();
   if (!VISIT){ if (RIDS.includes(roomId)) load(); mailBadge(); }
-  if (net && doc) net.stayEnd(net.me.uid).catch(e => sQuiet('stay', e));
+  // 日記和娃娃都回到自己的存檔了：等存檔上了雲端才結束雲端那一筆
+  if (net && doc) sAfterSave(() => net.stayEnd(net.me.uid));
 }
 // 打開小窩、回到這個分頁時看一次：時間到了就回家；還沒到但朋友已經送牠回家，也回來（一樣有日記）
 let stChecking = false;
+let stayLeft = false;
 async function stayCheck(){
+  // 沒有娃娃在外面，雲端卻還留著一筆（上次回家後還沒來得及結束）：補結束，不然牠會一直顯示在朋友家
+  if (!stayOut() && !stayLeft && !VISIT){
+    const net0 = sNet();
+    if (net0){ stayLeft = true; net0.stayMine().then(doc => { if (doc && !stayOut()) sAfterSave(() => net0.stayEnd(net0.me.uid)); }).catch(e => sQuiet('stay', e)); }
+  }
   const o = stayOut(); if (!o || stChecking || VISIT) return;
   stChecking = true;
   try {

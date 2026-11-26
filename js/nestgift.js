@@ -38,7 +38,7 @@ async function ngRefresh(redraw){
     const [a, b] = await Promise.all([net.giftsTo(), net.giftsFrom()]);
     const gin = ngMail().gin;
     // 領過了但上次沒刪掉的，這次補刪
-    a.filter(g => gin.includes(g.id)).forEach(g => net.delGift(g.id).catch(() => {}));
+    a.filter(g => gin.includes(g.id)).forEach(g => sAfterSave(() => net.delGift(g.id)));   // 等存檔上了雲端才刪
     ngIn = a.filter(g => ngOk(g) && !gin.includes(g.id)).sort((x, y) => x.t - y.t);
     ngOut = b.filter(ngOk).sort((x, y) => y.t - x.t);
     ngLoaded = true;
@@ -85,13 +85,14 @@ async function ngClaim(id){
       const ar = m.arch[g.doll] = m.arch[g.doll] || [];
       ar.push(`${t}|${k}`); if (ar.length > MAIL_ARCH) ar.splice(0, ar.length - MAIL_ARCH);
       save();
-      try { await net.push(); } catch (e) {}
+      net.push().catch(() => {});
       toast(got === 'spare' ? `${DOLL_NAME[g.doll]}進來了。家裡已經有一隻，這隻先在娃娃機當店員` : got === 'coin' ? `家裡的${DOLL_NAME[g.doll]}夠了，這隻換成 ${SPARE_COIN} 枚幣` : `${DOLL_NAME[g.doll]}進來了`);
       if (typeof earnClerks === 'function') earnClerks();
       if (typeof memoAdd === 'function') memoAdd('giftIn', g.from, g.fromName, {id: 'gi' + id, d: g.doll});
     }
     ngIn = ngIn.filter(x => x.id !== id);
-    await net.delGift(id).catch(e => console.info('[nestgift] 先不刪，下次打開信箱再刪', e && e.code));
+    // 娃娃已經進自己的存檔了：等那份存檔上了雲端，才刪朋友寄來的那一筆（沒存成功就先留著，下次再刪）
+    sAfterSave(() => net.delGift(id));
     if (typeof render === 'function') render();
   } catch (e) { toast(ngErr(e)); }
   finally { ngBusy = false; mailBadge(); if (ngSheetOpen('.ml-box')) openMail(true); }

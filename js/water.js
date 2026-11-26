@@ -109,7 +109,7 @@ async function waterApply(){
       y.wn.n++; gone.push(w.id); changed = true;
     }
     if (changed){ save(); if (yardOn) yardPaint(); }
-    gone.forEach(id => net.waterDel(id).catch(e => sQuiet('water', e)));
+    gone.forEach(id => sAfterSave(() => net.waterDel(id)));   // 等存檔上了雲端才刪
   } catch (e) { sQuiet('water', e); }
   finally { waterBusy = false; }
 }

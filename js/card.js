@@ -84,7 +84,8 @@ async function cardRefresh(redraw){
       m.pcd.push(c.id); if (m.pcd.length > 40) m.pcd.splice(0, m.pcd.length - 40);
       changed = true;
     }
-    net.cardDel(c.id).catch(e => sQuiet('card', e));   // 抄好了（或格式不對）就刪雲端那筆，刪失敗下次再刪
+    // 抄好了：等自己的存檔上了雲端才刪雲端那筆（js/social.js sAfterSave）；格式不對的直接刪
+    if (m.pcd.includes(c.id)) sAfterSave(() => net.cardDel(c.id)); else net.cardDel(c.id).catch(e => sQuiet('card', e));
   });
   if (m.pc.length > CARD_KEEP){ m.pc.length = CARD_KEEP; changed = true; }
   if (changed){ save(); mailBadge(); if (redraw && !$('#sheet').hidden && $('#sheet .ml-box')) openMail(true); }

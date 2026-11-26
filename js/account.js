@@ -17,6 +17,8 @@ const MSG_KEY = 'shubingNest.msg';
 const btn = document.getElementById('coverAcct');
 const box = document.getElementById('acct');
 let cloud = null, me = null, state = 'guest', pushT = 0, pushing = null, friends = null;
+let failN = 0, failWhy = '', failTold = false, retryT = 0;   // 雲端存檔連續失敗幾次、原因、有沒有跟玩家講過
+const afterSaved = [];                                        // 等「存檔真的寫上雲端」才做的事（刪朋友寄來的那一筆）
 
 const USER_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.2" r="4.4"/><path d="M3.8 20.2c.9-4.2 4.2-6.6 8.2-6.6s7.3 2.4 8.2 6.6c.1.6-.3 1.1-.9 1.1H4.7c-.6 0-1-.5-.9-1.1z"/></svg>';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -27,38 +29,127 @@ function paintBtn() {
   if (!btn) return;
   const name = me ? me.name : '登入';
   btn.innerHTML = `${USER_ICON}<span>${esc(name)}</span>${me ? `<i class="st ${state}"></i>` : ''}`;
-  btn.setAttribute('aria-label', me ? `雲端帳號：${me.name}` : '登入雲端帳號');
+  btn.setAttribute('aria-label', me ? `雲端帳號：${me.name}${state === 'failed' ? '，雲端存檔沒有成功' : ''}` : '登入雲端帳號');
+  // 遊戲裡看不到封面那顆鈕：存檔連續失敗時，「回封面」的鈕上也亮一個點
+  const hb = document.getElementById('homeBtn');
+  if (hb) hb.classList.toggle('warn', !!me && failN >= 2);
 }
 const STATE_TEXT = {
   syncing: '存檔中…',
   synced: '已經存到雲端',
   offline: '離線中，連上網路會自動存到雲端',
   blocked: '雲端存檔還沒開好，進度先存在這台裝置',
+  failed: '雲端存檔沒有成功，進度先存在這台裝置。先不要登出，也不要清除瀏覽器資料，等它存上去。',
 };
 
 /* ---------- 存檔：上傳、下載、換帳號 ---------- */
+/* 存檔送出前檢查一次（2026-11-26 加）：Firestore 不收「陣列裡面直接放陣列」，規則也只收固定的幾個欄位和型別。
+   有一個地方不合格，整份存檔就寫不上去，而且以前只在 console 留一行，玩家看不出來。
+   這裡能修的先修（數字變整數、不認得的最上層欄位先不傳、小禮物的舊形狀），修不了的印出是哪個路徑。回傳問題清單 */
+const NEST_KEYS = ['v', 't', 'coins', 'misses', 'wins', 'opened', 'lastDaily', 'seed', 'dollN', 'furnOwn', 'wallOwn', 'floorOwn', 'wish',
+  'clawStyle', 'day', 'home', 'uid', 'album', 'away', 'look', 'closet', 'season', 'mail', 'yard', 'earn'];
+function checkSave(d) {
+  const bad = [];
+  // 規則的白名單和型別（firestore.rules 的 okNest）
+  Object.keys(d).forEach(k => { if (!NEST_KEYS.includes(k)) { bad.push(`最上層多了規則不收的欄位「${k}」（這次先不傳）`); delete d[k]; } });
+  const int = (k, need) => { if (!(k in d)) { if (need) bad.push(`少了 ${k}`); return; } if (typeof d[k] !== 'number' || !isFinite(d[k])) { bad.push(`${k} 不是數字（${JSON.stringify(d[k])}）`); d[k] = 0; } else if (!Number.isInteger(d[k])) { bad.push(`${k} 不是整數（${d[k]}，已四捨五入）`); d[k] = Math.round(d[k]); } };
+  int('v', true); int('t', true); int('coins', true); ['misses', 'wins', 'uid', 'seed'].forEach(k => int(k));
+  if (typeof d.coins === 'number' && (d.coins < 0 || d.coins > 1000000)) { bad.push(`coins 超出範圍（${d.coins}）`); d.coins = Math.max(0, Math.min(1000000, d.coins)); }
+  if ('opened' in d && typeof d.opened !== 'boolean') { bad.push('opened 不是布林'); d.opened = !!d.opened; }
+  ['lastDaily', 'clawStyle'].forEach(k => { if (k in d && typeof d[k] !== 'string') { bad.push(`${k} 不是文字`); d[k] = String(d[k] ?? ''); } });
+  const size = x => (Array.isArray(x) ? x.length : x && typeof x === 'object' ? Object.keys(x).length : -1);
+  ['dollN', 'furnOwn', 'wallOwn', 'floorOwn'].forEach(k => { if (size(d[k]) < 0 || Array.isArray(d[k])) bad.push(`${k} 不是物件`); else if (size(d[k]) > 200) bad.push(`${k} 超過 200 項`); });
+  ['album', 'away', 'look', 'closet', 'season', 'mail', 'yard', 'earn', 'wish'].forEach(k => { if (k in d && (size(d[k]) < 0 || size(d[k]) > 200)) bad.push(`${k} 不是物件或超過 200 項（${size(d[k])}）`); });
+  if ('day' in d && (size(d.day) < 0 || Array.isArray(d.day) || size(d.day) > 10)) bad.push(`day 超過 10 項（${size(d.day)}）`);
+  if (!d.home || typeof d.home !== 'object') bad.push('少了 home');
+  else Object.keys(d.home).forEach(r => {
+    const rm = d.home[r];
+    if (!['living', 'bed', 'bath', 'kitchen', 'attic'].includes(r)) { bad.push(`home 多了規則不收的房間「${r}」`); return; }
+    if (!rm || typeof rm !== 'object') { bad.push(`home.${r} 不是物件`); return; }
+    Object.keys(rm).forEach(k => { if (!['wall', 'floor', 'items', 'light'].includes(k)) bad.push(`home.${r} 多了規則不收的欄位「${k}」`); });
+    if (!Array.isArray(rm.items) || rm.items.length > 300) bad.push(`home.${r}.items 不是清單或超過 300 件`);
+  });
+  // Firestore 本身不收的：陣列裡面直接放陣列、空的或 __x__ 的欄位名字
+  const walk = (x, path, inArr) => {
+    if (Array.isArray(x)) {
+      if (inArr) { bad.push(`陣列裡面直接放陣列：${path}`); return; }
+      x.forEach((v, i) => walk(v, `${path}[${i}]`, true));
+    } else if (x && typeof x === 'object') {
+      Object.keys(x).forEach(k => { if (k === '' || /^__.*__$/.test(k)) bad.push(`欄位名字雲端不收：${path}.${JSON.stringify(k)}`); walk(x[k], path ? `${path}.${k}` : k, false); });
+    }
+  };
+  // 小禮物的舊形狀（js/gift.js 打開時會轉，這裡再保險一次）
+  const g = d.album && d.album.gifts;
+  if (g && typeof g === 'object') Object.keys(g).forEach(k => { if (Array.isArray(g[k])) g[k] = g[k].map(x => (Array.isArray(x) ? { t: String(x[0] || ''), s: String(x[1] || ''), k: String(x[2] || 'snack') } : x)); });
+  walk(d, '', false);
+  let bytes = 0; try { bytes = JSON.stringify(d).length; } catch (e) {}
+  if (bytes > 900000) bad.push(`存檔太大（約 ${Math.round(bytes / 1024)} KB，上限 1024 KB）`);
+  return bad;
+}
 // 上傳的那份：拿掉只有這台裝置要用的 base
 function packSave() {
   const d = JSON.parse(JSON.stringify(S));
   delete d.base;
   d.t = d.t || Date.now();
   d.uid = uid;
+  const bad = checkSave(d);
+  if (bad.length) console.error('[account] 這份存檔有雲端不收的地方：\n- ' + bad.join('\n- '));
+  packSave.bad = bad;
   return d;
 }
+// 等自己的存檔真的寫上雲端之後才做 fn（js/social.js 的 sAfterSave 用）。現在就是存好的狀態就馬上做
+function whenSaved(fn) {
+  if (!me) return;
+  if (state === 'synced' && !pushing && !pushT && S.t <= (S.base || 0)) { try { fn(); } catch (e) { console.info('[account]', e); } return; }
+  if (afterSaved.length < 200) afterSaved.push(fn);
+  if (!pushing && !pushT) schedulePush();
+}
+function flushSaved() {
+  if (S.t > (S.base || 0)) return;     // 存上去之後又有新的改動：等下一次
+  afterSaved.splice(0).forEach(fn => { try { fn(); } catch (e) { console.info('[account]', e); } });
+}
 // 用另一份存檔（雲端的、合併好的），或換到另一個帳號：寫好、重新整理
-function useSave(data, acct, msg) {
+// base：這份存檔是從雲端哪一版來的。不給就當它等於自己（完全同步）；合併過、還要再傳上去的給雲端那一版的時間
+function useSave(data, acct, msg, base) {
   lockSave();
   try {
     if (acct) localStorage.setItem(ACCT_KEY, acct); else localStorage.removeItem(ACCT_KEY);
-    if (data) { data.base = data.t; localStorage.setItem(saveKeyFor(acct), JSON.stringify(data)); }
+    if (data) { data.base = base === undefined ? data.t : base; localStorage.setItem(saveKeyFor(acct), JSON.stringify(data)); }
     if (msg) sessionStorage.setItem(MSG_KEY, msg);
   } catch (e) {}
   location.reload();
 }
 function setState(s) { state = s; paintBtn(); if (!box.hidden && me) paintStatus(); }
+// 寫不上去：真的沒網路才說離線；其他都算「存檔沒成功」，要讓玩家看得到，過一陣子自己再試
 function failState(e) {
-  console.warn('[account]', e);
-  setState(e && e.code === 'permission-denied' ? 'blocked' : 'offline');
+  console.warn('[account] 雲端存檔沒有成功', e);
+  const code = (e && e.code) || '', offline = code === 'unavailable' || (typeof navigator !== 'undefined' && navigator.onLine === false);
+  failN++;
+  const bad = packSave.bad || [];
+  failWhy = offline ? '' : (bad.length ? bad[0] : code === 'permission-denied' ? '雲端的規則不收這份存檔' : String((e && e.message) || code || '不知道原因').slice(0, 120));
+  setState(offline ? 'offline' : failN >= 2 ? 'failed' : code === 'permission-denied' ? 'blocked' : 'offline');
+  if (!offline && failN >= 2 && !failTold) { failTold = true; say('雲端存檔沒有成功，進度先存在這台裝置。回封面點帳號可以看原因'); }
+  // 自己再試：15 秒、30 秒、60 秒……最久兩分鐘一次
+  clearTimeout(retryT);
+  if (me) retryT = setTimeout(() => { if (me && S.t > (S.base || 0)) push(); }, Math.min(120000, 15000 * Math.pow(2, Math.min(4, failN - 1))));
+}
+function okState() { failN = 0; failWhy = ''; failTold = false; clearTimeout(retryT); setState('synced'); }
+
+/* 這台有還沒傳上去的進度，雲端那份又不是從這台寫的（別台裝置改過）：不能整份換掉。
+   以前是直接拿雲端的蓋過來，這台剛領到的明信片、娃娃、過夜的信就不見了，而那幾筆在雲端已經被刪掉，找不回來。
+   現在以雲端那份為底，把這台有的東西併進去（mergeSave），再傳上去 */
+function mergeBack(remote, local) {
+  const m = mergeSave(remote, local);
+  m.t = Date.now();
+  return m;
+}
+// 換到某個帳號之前：這台如果留著那個帳號「還沒傳上去」的進度，用它（或跟雲端的合併），不要被雲端那份舊的蓋掉
+function withLocal(remote, acct) {
+  let L = null;
+  try { L = JSON.parse(localStorage.getItem(saveKeyFor(acct)) || 'null'); } catch (e) {}
+  if (!L || L.v !== 1 || !L.home || !(L.t > (L.base || 0))) return { data: remote, base: undefined };
+  if (!remote || L.base === remote.t) return { data: L, base: L.base || 0 };       // 雲端還是這台上次同步的那一版：這台的比較新，直接用
+  return { data: mergeBack(remote, L), base: remote.t };
 }
 
 // 寫上雲端。寫之前先看一下雲端那份：別台裝置後來改過，就換成那份（不拿舊的蓋掉新的）
@@ -70,16 +161,23 @@ async function push() {
     setState('syncing');
     try {
       const remote = await cloud.load();
-      if (remote && S.base && remote.t !== S.base) { useSave(remote, who, '另一台裝置改過，換成最新的進度'); return; }
+      if (remote && S.base && remote.t !== S.base) {
+        // 別台裝置改過。這台也有還沒傳的進度：合併（以雲端為底，這台領到的東西留著），重新整理後再傳
+        if (S.t > S.base) { writeLocal(); useSave(mergeBack(remote, JSON.parse(JSON.stringify(S))), who, '另一台裝置也改過，兩邊的進度合在一起了', remote.t); }
+        else useSave(remote, who, '另一台裝置改過，換成最新的進度');
+        return;
+      }
       const d = packSave();
       await cloud.save(d, who);
       S.base = d.t; writeLocal();
-      setState('synced');
+      okState();
+      flushSaved();
       pushRoom();
     } catch (e) { failState(e); }
   })();
   try { await pushing; } finally { pushing = null; }
   if (me && S.t > (S.base || 0) && state === 'synced') schedulePush();
+  else if (me && afterSaved.length && state === 'synced') flushSaved();
 }
 // 公開房間（朋友來家裡看的那份）：只有擺設、燈、娃娃穿什麼。跟上次一樣就不寫。
 // 規則還沒發布時會被擋，不影響存檔，也不出聲
@@ -108,7 +206,12 @@ async function syncStart() {
   setState('syncing');
   let remote;
   try { remote = await cloud.load(); } catch (e) { failState(e); window.onNestSave = schedulePush; return; }
-  if (remote && remote.t !== S.base) { useSave(remote, me.uid); return; }
+  if (remote && remote.t !== S.base) {
+    // 雲端那份不是這台上次同步的那一版。這台如果有還沒傳上去的進度，合併，不要整份換掉
+    if (S.base && S.t > S.base) useSave(mergeBack(remote, JSON.parse(JSON.stringify(S))), me.uid, '另一台裝置也改過，兩邊的進度合在一起了', remote.t);
+    else useSave(remote, me.uid);
+    return;
+  }
   window.onNestSave = schedulePush;
   if (!remote || S.t > (S.base || 0)) push(); else setState('synced');
 }
@@ -151,7 +254,26 @@ function mergeSave(remote, guest) {
     mm.l = [...(mm.l || []), ...(gm.l || []).filter(o => !seen.has(o.t + o.k))].sort((a, b) => a.t < b.t ? 1 : -1).slice(0, 30);
     mm.last = [mm.last || '', gm.last || ''].sort().pop();
     mm.att = [mm.att || '', gm.att || ''].sort().pop();
+    // 從雲端領走的東西：收到的明信片、領過的編號（明信片、送來的娃娃）。兩邊都留，同一筆只留一份
+    const pcs = new Set((mm.pc || []).map(c => c && c.id));
+    mm.pc = [...(mm.pc || []), ...(gm.pc || []).filter(c => c && !pcs.has(c.id))].sort((a, b) => (a.t < b.t ? 1 : -1)).slice(0, 30);
+    for (const k of ['pcd', 'gin']) { const u = [...new Set([...(mm[k] || []), ...(gm[k] || [])])]; if (u.length) mm[k] = u.slice(-60); }
   }
+  // 紀念冊、娃娃送的小禮物、過夜去過哪、看過的小劇場、處理過的躲貓貓結果：兩邊都留
+  const memoIds = new Set((ma.memo || []).map(e => e && e.id));
+  const memo = [...(ma.memo || []), ...(ga.memo || []).filter(e => e && !memoIds.has(e.id))].sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : (b.ts || 0) - (a.ts || 0))).slice(0, 100);
+  if (memo.length) ma.memo = memo;
+  for (const k of ['gifts', 'trips']) {
+    const src = ga[k] || {}; if (!Object.keys(src).length) continue;
+    ma[k] = ma[k] || {};
+    for (const [d, l] of Object.entries(src)) {
+      const seen = new Set((ma[k][d] || []).map(x => JSON.stringify(x)));
+      ma[k][d] = [...(ma[k][d] || []), ...(Array.isArray(l) ? l : []).filter(x => !seen.has(JSON.stringify(x)))].slice(-12);
+    }
+  }
+  if (ga.skit && ga.skit.s) { ma.skit = ma.skit || {}; ma.skit.s = Object.assign({}, ga.skit.s, ma.skit.s || {}); }
+  if (Array.isArray(ga.hideGot)) ma.hideGot = [...new Set([...(ma.hideGot || []), ...ga.hideGot])].slice(-30);
+  if (ga.tour && !ma.tour) ma.tour = ga.tour;
   // 門外小島：用帳號裡的那份，帳號裡還沒有才用這台的；種子數量取比較多的
   if (guest.yard) {
     if (!m.yard) m.yard = guest.yard;
@@ -173,6 +295,9 @@ async function afterLogin(u) {
     me = null; paintBtn();
     return e && e.code === 'permission-denied' ? '帳號登入了，但雲端存檔還沒開好（管理員還沒發布規則），先用訪客玩' : '連不上雲端，晚點再試';
   }
+  // 這台如果留著這個帳號「還沒傳上去」的進度（之前存檔一直失敗、後來登出或登入過期）：用它，不要被雲端那份舊的蓋掉
+  const kept = withLocal(remote, u.uid);
+  if (kept.base !== undefined) { useSave(kept.data, u.uid, `歡迎回來，${u.name}。這台還沒存上雲端的進度都還在`, kept.base); return; }
   if (acctUid()) { useSave(remote, u.uid); return; }          // 原本就是另一個帳號：直接換過去
   if (!remote) {
     // 帳號裡還沒有小窩：這台的進度直接搬上去
@@ -209,8 +334,11 @@ function askMerge(remote, u) {
 async function signOut() {
   box.querySelectorAll('button').forEach(b => b.disabled = true);
   if (pushT || S.t > (S.base || 0)) await Promise.race([push(), new Promise(r => setTimeout(r, 4000))]);
+  // 還是沒存上去：這個帳號的進度留在這台裝置（不會刪），下次在這台登入同一個帳號會接回來
+  const left = S.t > (S.base || 0);
+  if (left) writeLocal();
   await cloud.signOut().catch(() => {});
-  useSave(null, '', '登出了，現在用這台裝置的訪客存檔');
+  useSave(null, '', left ? '登出了。剛剛的進度還沒存上雲端，留在這台裝置，下次在這台登入會接回來' : '登出了，現在用這台裝置的訪客存檔');
 }
 
 /* ---------- 帳號視窗 ---------- */
@@ -272,7 +400,7 @@ function openLogin(mode = 'in', msg = '') {
 
 function paintStatus() {
   const s = box.querySelector('.ac-st');
-  if (s) { s.className = `ac-st ${state}`; s.textContent = STATE_TEXT[state] || ''; }
+  if (s) { s.className = `ac-st ${state}`; s.textContent = (STATE_TEXT[state] || '') + (state === 'failed' && failWhy ? `（原因：${failWhy}）` : ''); }
 }
 function openAccount() {
   open(`<div class="ac-hd">${USER_ICON}<b>${esc(me.name)}</b></div>
@@ -396,6 +524,9 @@ window.nestNet = {
   gift: id => cloud.gift(id),
   delGift: id => cloud.delGift(id),
   push: () => push(),
+  whenSaved: fn => whenSaved(fn),   // 等自己的存檔寫上雲端才做（js/social.js sAfterSave）
+  // 查問題用：在瀏覽器的 console 打 nestNet.check()，列出這份存檔有哪些地方雲端不收（空的清單 = 沒問題），和現在的同步狀態
+  check: () => { packSave(); return { bad: (packSave.bad || []).slice(), state, failN, failWhy, unsaved: S.t > (S.base || 0), waiting: afterSaved.length }; },
   room: uid => cloud.room(uid),
   heartsToday: () => cloud.heartsToday(nestDay()),   // 愛心換幣（js/earn.js）
   idToken: () => cloud.idToken(),   // AI 寫信（js/mailai.js）

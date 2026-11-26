@@ -119,7 +119,7 @@ async function hideFetch(){
         } else if (typeof memoAdd === 'function') memoAdd('hideMiss', w.from, name, {id: 'hm' + w.id, d, day: w.day, in: 1});
         save();
       }
-      net.foundDel(w.id).catch(e => sQuiet('hide', e));
+      sAfterSave(() => net.foundDel(w.id));   // 等存檔上了雲端才刪
     }
   } catch (e) { sQuiet('hide', e); }   // 讀不到（斷線、規則被換回舊版）：安靜
   finally { hideBusy = false; }

@@ -35,5 +35,12 @@ const sNet = () => (window.nestNet && window.nestNet.me ? window.nestNet : null)
 // 規則還沒發布、斷線：只在 console 留一行，畫面不出聲
 const sQuiet = (tag, e) => console.info(`[${tag}]`, e && (e.code || e.message || e));
 const sErr = e => (e && e.code === 'permission-denied' ? '雲端還沒開好這個功能，晚點再試' : '連不上雲端，晚點再試');
+// 「領了才刪」：明信片、送來的娃娃、過夜回家、澆水、躲貓貓的結果，都是先抄進自己的存檔，再刪雲端那一筆。
+// 一定要等自己的存檔真的寫上雲端才刪：存檔沒寫成功就刪掉的話，換一台裝置、重新登入時那樣東西就永遠不見了。
+// 沒刪到的下次打開會再讀到一次，各自用「領過的編號」擋掉，不會重複領。
+function sAfterSave(fn){
+  const net = sNet(), run = () => { try { const r = fn(); if (r && r.catch) r.catch(e => sQuiet('del', e)); } catch (e) { sQuiet('del', e); } };
+  if (net && typeof net.whenSaved === 'function') net.whenSaved(run); else run();
+}
 // 去朋友家時，下面那條多出來的按鈕：後面的檔案各自加（visit.js 的 visitOpen 會叫）
 const visitExtras = [];
