@@ -587,15 +587,15 @@ let mlOpenIx = -1;
 function openMail(keep){
   const m = mailInit();
   if (!keep) mlOpenIx = -1;
-  const unread = m.l.filter(o => !o.r).length, todo = m.l.filter(o => o.a && !o.g).length;
-  const ngBtn = typeof ngSendBtn === 'function' ? ngSendBtn() : '';
-  const ngw = typeof ngWaiting === 'function' ? ngWaiting() : 0;
-  openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>信箱</span>${unread || ngw ? `<small>${[unread ? `${unread} 封沒看` : '', ngw ? `${ngw} 隻在門口` : ''].filter(Boolean).join('・')}</small>` : ''}</div>
-    <div class="ml-box">${typeof ngSection === 'function' ? ngSection() : ''}${typeof cardSection === 'function' ? cardSection() : ''}${m.l.length ? m.l.map((o, j) => mailCard(o, j, j === mlOpenIx)).join('') : (m.pc || []).length ? '' : '<p class="al-em">還沒有信。娃娃們偶爾會寫信給你，不用特別等。</p>'}</div>
-    ${todo || unread || ngBtn ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}${ngBtn}</div>` : ''}`);
+  // 信箱只列娃娃寫的信和薯餅的更新信；朋友的明信片、送來的娃娃、過夜的日記在朋友面板（js/friend.js）
+  const mine = m.l.filter(o => !mailIsPal(o));
+  const unread = mine.filter(o => !o.r).length, todo = mine.filter(o => o.a && !o.g).length;
+  const palOn = typeof frOpen === 'function' && typeof sNet === 'function' && !!sNet(), pal = palOn && typeof frUnread === 'function' ? frUnread() : 0;
+  openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>信箱</span>${unread ? `<small>${unread} 封沒看</small>` : ''}</div>
+    <div class="ml-box">${mine.length ? m.l.map((o, j) => (mailIsPal(o) ? '' : mailCard(o, j, j === mlOpenIx))).join('') : '<p class="al-em">還沒有信。娃娃們偶爾會寫信給你，不用特別等。</p>'}
+    ${palOn ? `<p class="bk-note ml-pal">朋友寄來的明信片、送來的娃娃、過夜的日記，都收在朋友那裡。${pal ? `現在有 ${pal} 件沒看。` : ''}</p>` : ''}</div>
+    ${todo || unread || palOn ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}${palOn ? '<button class="btn" data-mall="pal">看朋友那邊</button>' : ''}</div>` : ''}`);
   evOpen = false; alOpen = false;
-  if (!keep && typeof ngRefresh === 'function') ngRefresh(true);
-  if (!keep && typeof cardRefresh === 'function') cardRefresh(true);
 }
 // 附件的圖和名字：點心盒、泡泡球，或小島的種子（seed-種類）
 const mailAtt = a => (a.startsWith('coin-') ? {name: `${+a.slice(5) || 0} 枚幣`, svg: COIN} : (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a]);
@@ -620,18 +620,23 @@ $('#sheet').addEventListener('click', e => {
     const o = m.l[+b.dataset.take]; mailTake(o); save(); renderEvBadge();
     toast(`收下${mailAtt(o.a).name}`); openMail(true);
   } else if (b.dataset.mall === 'take'){
-    const got = m.l.filter(o => o.a && !o.g); got.forEach(mailTake); save(); renderEvBadge();
+    const got = m.l.filter(o => o.a && !o.g && !mailIsPal(o)); got.forEach(mailTake); save(); renderEvBadge();
     toast(`收下 ${got.length} 個附件`); openMail(true);
   } else if (b.dataset.mall === 'read'){
-    m.l.forEach(o => o.r = 1); save(); mailBadge(); openMail(true);
+    m.l.forEach(o => { if (!mailIsPal(o)) o.r = 1; }); save(); mailBadge(); openMail(true);
+  } else if (b.dataset.mall === 'pal'){
+    frOpen('in');
   }
 });
 
 /* ---------- 房間右上角的信封 ---------- */
+// 朋友那邊來的（從朋友家來的娃娃的信、過夜的日記）：收在朋友面板（js/friend.js），信箱不列、紅點也不算
+const mailIsPal = o => /^[a-z]+\.(gift|trip)\./.test((o && o.k) || '');
 function mailBadge(){
   const b = $('#mailBtn'); if (!b) return;
-  // 沒看的信 + 朋友送來、還在門口等的娃娃
-  const n = (S.mail ? S.mail.l.filter(o => !o.r).length : 0) + (typeof ngWaiting === 'function' ? ngWaiting() : 0) + (typeof cardUnread === 'function' ? cardUnread() : 0);
+  // 沒看的信。朋友的東西（明信片、送來的娃娃、日記）算在朋友鈕上，這裡不算，免得兩邊都亮
+  const n = S.mail ? S.mail.l.filter(o => !o.r && !mailIsPal(o)).length : 0;
+  if (typeof frBadge === 'function') frBadge();
   b.querySelector('.bd').textContent = n; b.querySelector('.bd').hidden = !n;
   b.classList.toggle('wig', !!n && !REDUCE);
   b.setAttribute('aria-label', n ? `信箱，${n} 封沒看` : '信箱');

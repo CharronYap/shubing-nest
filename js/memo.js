@@ -121,6 +121,10 @@ function memoWrap(){
   after('stayGuests', list => (list || []).forEach(g => { if (g && typeof g.id === 'string' && DOLLS.includes(g.doll)) memoAdd('guest', g.from || g.id, g.fromName, {id: 'sg' + g.id + (g.day | 0), d: g.doll, day: g.day, in: 1}); }));
 }
 memoWrap();
+// window.nestNet 是 js/account.js（module，比較晚跑）放上去的；一放上去就包。
+// 不能等 nestnet 事件才包：明信片、澆水那幾個檔案的 nestnet 比這裡早掛，會先去讀雲端，那一次就記不到
+{ const t = setInterval(() => { if (window.nestNet){ memoWrap(); clearInterval(t); } }, 40); setTimeout(() => clearInterval(t), 60000); }
+addEventListener('nestnet', memoWrap, true);
 addEventListener('nestnet', () => { memoWrap(); memoStart(); });
 
 /* ---------- 今天誰來過 ---------- */
@@ -147,10 +151,10 @@ async function whoShow(){
   o.innerHTML = `<div class="pcard who" role="dialog" aria-label="今天誰來過"><h3>今天誰來過</h3>
     ${by.map(p => `<p class="who-l"><b>${txSlot(p.n)}</b>來過：${p.s.join('、')}</p>`).join('')}
     ${hearts ? `<p class="who-l">${HEART()}收到 ${hearts} 顆愛心</p>` : ''}
-    <div class="pz-row"><button class="btn y ok" aria-label="知道了">${CKS}</button>${by.length ? '<button class="btn who-mm">看紀念冊</button>' : ''}</div></div>`;
+    <div class="pz-row"><button class="btn y ok" aria-label="知道了">${CKS}</button>${by.length ? '<button class="btn who-mm">看朋友那邊</button>' : ''}</div></div>`;
   screen.appendChild(o);
   o.querySelector('.ok').onclick = () => o.remove();
-  const mm = o.querySelector('.who-mm'); if (mm) mm.onclick = () => { o.remove(); memoOpen(by[0].u); };
+  const mm = o.querySelector('.who-mm'); if (mm) mm.onclick = () => { o.remove(); if (typeof frOpen === 'function'){ frWho = by[0].u; frOpen('in'); } else memoOpen(by[0].u); };
 }
 // 登入好了：讀一次自己的訪客簿（其他的各自的檔案會讀），過幾秒看有沒有人來過
 let memoStarted = false;

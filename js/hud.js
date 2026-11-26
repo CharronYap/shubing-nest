@@ -1,6 +1,7 @@
 /* 上面的按鈕版面（2026-11-26 使用者指定的排法，所有人的預設）
    第一排（最上面那條）：左 回封面｜中 地圖鈕（現在這間的圖示和名字，左右各一個箭頭）｜右 幣、相機
-   第二排（浮在房間上方）：左 娃娃機、小店（一組）｜右 信箱、訪客簿、今天的小事（一組）
+   第二排（浮在房間上方）：左 娃娃機、小店（一組）｜右 信箱、朋友、今天的小事（一組）
+     （2026-11-26 改：原本獨立的訪客簿鈕收進朋友面板 js/friend.js；去朋友家時那顆還在，開的是朋友的訪客簿）
    第三排：左 相簿｜右 音樂
    - 地圖鈕：點中間開小屋地圖（js/rooms.js），點箭頭換到上一間、下一間（照房間的順序，小島排最後，頭尾相接）。
      原本那排要左右捲的房間圖示拿掉了：電腦上用滑鼠拖不動。換房間靠箭頭、小屋地圖、房間兩邊的門口，都不用橫向捲。
@@ -27,7 +28,7 @@ const HUD_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
   const wrap = mk('div', 'hudwrap'), hud = mk('div', 'hud'); hud.id = 'hud';
   const r2 = mk('div', 'hud-row'), r3 = mk('div', 'hud-row');
   const gL = mk('div', 'hud-g hud-l'), gR = mk('div', 'hud-g hud-r'), aL = mk('div', 'hud-g hud-a'), aR = mk('div', 'hud-g hud-m');
-  [['#swap', gL], ['#shopBtn', gL], ['#mailBtn', gR], ['#bookBtn', gR], ['#evBtn', gR], ['#albBtn', aL], ['#musicBtn', aR]].forEach(([sel, box]) => { const e = $(sel); if (e) box.appendChild(e); });
+  [['#swap', gL], ['#shopBtn', gL], ['#mailBtn', gR], ['#palBtn', gR], ['#evBtn', gR], ['#bookBtn', gR], ['#albBtn', aL], ['#musicBtn', aR]].forEach(([sel, box]) => { const e = $(sel); if (e) box.appendChild(e); });
   r2.append(gL, gR); r3.append(aL, aR); hud.append(r2, r3); wrap.appendChild(hud);
   top.parentNode.insertBefore(wrap, top.nextSibling);
 })();

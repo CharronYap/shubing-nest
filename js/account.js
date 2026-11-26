@@ -525,6 +525,8 @@ window.nestNet = {
   delGift: id => cloud.delGift(id),
   push: () => push(),
   whenSaved: fn => whenSaved(fn),   // 等自己的存檔寫上雲端才做（js/social.js sAfterSave）
+  // 朋友面板的「去他家」（js/friend.js）
+  visit: async uid => { const l = friends || await fetchFriends(); const p = l.find(f => f.uid === uid); if (p) return goVisit(p); },
   // 查問題用：在瀏覽器的 console 打 nestNet.check()，列出這份存檔有哪些地方雲端不收（空的清單 = 沒問題），和現在的同步狀態
   check: () => { packSave(); return { bad: (packSave.bad || []).slice(), state, failN, failWhy, unsaved: S.t > (S.base || 0), waiting: afterSaved.length }; },
   room: uid => cloud.room(uid),

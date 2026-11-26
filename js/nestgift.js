@@ -148,7 +148,7 @@ function ngPaint(loading){
       ${ngCanType() ? `<input class="tx-in ng-in" type="text" maxlength="${NG_LEN}" placeholder="或是自己寫一句" aria-label="自己寫一句，${NG_LEN} 字以內">
       <small class="bk-note">自己寫了就用自己寫的；沒寫就用上面選的那一句。</small>` : '<small class="bk-note">這位朋友還沒加你為好友，先用上面寫好的句子；等他加你之後就能自己寫。</small>'}`}
     </div>
-    <div class="ml-ft"><button class="btn" data-ng="mail">回信箱</button>${stop ? '' : `<button class="btn y" data-ng="send" ${ready ? '' : 'disabled'}>送出</button>`}</div>`);
+    <div class="ml-ft"><button class="btn" data-ng="mail">回朋友</button>${stop ? '' : `<button class="btn y" data-ng="send" ${ready ? '' : 'disabled'}>送出</button>`}</div>`);
   // 打字時不整個重畫（游標會跑掉），只更新「送出」能不能按
   const inp = $('#sheet .ng-in'), go = $('#sheet [data-ng="send"]');
   if (inp){ inp.value = p.msg || ''; inp.oninput = () => { p.msg = inp.value; if (go) go.disabled = !(!loading && p.doll && p.to && said()); }; }
@@ -169,7 +169,7 @@ async function ngSend(){
     save(); if (typeof render === 'function') render();
     toast(`${DOLL_NAME[p.doll]}出發去${w}家了`);
     ngPick = null;
-    openMail(true);
+    if (typeof frOpen === 'function') frOpen('out'); else openMail(true);
   } catch (e) {
     // 雲端規則還沒收 msg 這一欄時，自己寫的送不出去：說一聲，娃娃不會被扣
     if (msg && e && e.code === 'permission-denied'){ console.info('[nestgift] msg 還送不出去', e.code); toast('自己寫的話現在還送不出去，把字清掉、用上面選的就可以送'); }
@@ -183,7 +183,7 @@ $('#sheet').addEventListener('click', e => {
   if (b.dataset.ng === 'in') ngClaim(b.dataset.id);
   else if (b.dataset.ng === 'back') ngBack(b.dataset.id);
   else if (b.dataset.ng === 'pick') ngOpenPick();
-  else if (b.dataset.ng === 'mail') openMail(true);
+  else if (b.dataset.ng === 'mail'){ if (typeof frOpen === 'function') frOpen(); else openMail(true); }
   else if (b.dataset.ng === 'send') ngSend();
   else if (!$('#sheet .ng-box') || !ngPick) return;
   else if (b.dataset.ngd){ ngPick.doll = b.dataset.ngd; ngPaint(false); }
