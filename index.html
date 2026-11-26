@@ -110,6 +110,8 @@ r.classList.add('look-paper');var h=new Date().getHours();if(h>=19||h<5)r.classL
 <script src="js/rooms.js"></script>
 <script src="js/paper.js"></script>
 <script src="js/yard.js"></script>
+<!-- 旅行的資料（裡面有土產的家具定義）要在 main.js 第一次畫房間之前載入：2026-11-27 放在後面時，客廳擺了土產的人一打開就畫不出來、娃娃機和每天的幣都跟著沒跑 -->
+<script src="js/traveldata.js"></script>
 <script src="js/claw.js"></script>
 <script src="js/main.js"></script>
 <script src="js/album.js"></script>
@@ -141,7 +143,6 @@ r.classList.add('look-paper');var h=new Date().getHours();if(h>=19||h<5)r.classL
 <script src="js/hide.js"></script>
 <script src="js/seen.js"></script>
 <script src="js/friend.js"></script>
-<script src="js/traveldata.js"></script>
 <script src="js/travel.js"></script>
 <script src="js/hud.js"></script>
 <script src="js/guide.js"></script>

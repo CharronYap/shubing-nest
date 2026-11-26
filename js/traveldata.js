@@ -42,7 +42,8 @@ const TV_SOUV = {
   woodtag:  {name: '木牌', from: 'onsen', vb: [28, 38], w: 7, svg: () => '<path d="M14 9V3" stroke="#ff8a66" stroke-width="2" stroke-linecap="round"/>' + tvSh('<path d="M6 12l8-6 8 6v20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/>', '#c98a5a') + '<circle cx="14" cy="13" r="1.800" fill="#623f30"/><path d="M10 26c1.500-2 3-2 4 0s2.500 2 4 0M10 21c1.500-2 3-2 4 0s2.500 2 4 0" fill="none" stroke="#fbf6ea" stroke-width="1.500" stroke-linecap="round"/>'},
 };
 const tvSouvId = k => 'tvs_' + k;
-// 放進家具表：每一間都能擺、小店和娃娃機都不會出現（gift）。room 不屬於任何一間，收納架由 js/travel.js 另外列
+// 放進家具表：每一間都能擺、小店和娃娃機都不會出現（gift）。
+// 這個檔一定要排在 js/main.js 前面載入（index.html）：main.js 一開始就會畫房間，那時候家具表裡要已經有土產。room 不屬於任何一間，收納架由 js/travel.js 另外列
 Object.keys(TV_SOUV).forEach(k => { const s = TV_SOUV[k]; FURN[tvSouvId(k)] = {room: 'tv', name: s.name, gift: 1, souv: 1, vb: s.vb, w: s.w, svg: s.svg}; });
 
 /* ---------- 明信片的圖：300×200，每個地方 3 張 ---------- */

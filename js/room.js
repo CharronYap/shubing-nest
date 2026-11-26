@@ -33,7 +33,8 @@ function roomV(y){const w=WALL*100;return y<=w?y/w*WALL_V:WALL_V+(y-w)/(100-w)*(
 function depth(y){return .8+.2*Math.max(0,Math.min(1,(y-52)/42));}
 function sizeOf(it){
   if(it.kind==='doll'){const s=depth(it.y)*(it.sit?.92:1);const w=22*s;return [w,w*RATIO];}
-  const f=FURN[it.id];const s=f.wall?1:depth(it.y);const w=f.w*s;return [w,w*(f.vb[1]/f.vb[0])*RATIO];
+  const f=FURN[it.id];if(!f)return [0,0];   // 這一版不認得的家具：當作沒有大小，不丟例外
+  const s=f.wall?1:depth(it.y);const w=f.w*s;return [w,w*(f.vb[1]/f.vb[0])*RATIO];
 }
 // 座位可以在家具旁邊（sx 小於 0 或大於 1，例如拖鞋架、點心櫃），家具靠邊擺時不讓座位跑出房間
 function seatPos(f,k){const [w,h]=sizeOf(f);const [sx,sy]=FURN[f.id].seats[k];return [Math.max(7,Math.min(93,f.x+(sx-.5)*w)),roomV(roomY(f.y)-(1-sy)*h)];}
@@ -45,6 +46,23 @@ function zOf(it){
 }
 
 let quiet=false;
+/* 存檔裡有這一版不認得的家具或娃娃（比較新的版本擺的，或定義沒載到）：先從房間裡拿開，不畫，
+   免得一樣東西讓整個畫面畫不出來、後面的娃娃機和每天的幣都跟著沒跑（2026-11-27 的事故）。
+   那一筆不會不見：存檔的時候照樣寫回去（房間的 toJSON），之後這一版認得了就會回來。js/main.js 開始時叫一次。 */
+function roomQuarantine(){
+  const rooms=[...Object.keys(home).map(r=>home[r]),home.yard].filter((r,i,a)=>r&&Array.isArray(r.items)&&a.indexOf(r)===i);
+  let n=0;
+  rooms.forEach(rm=>{
+    const ok=i=>!!i&&(i.kind==='furn'?!!FURN[i.id]:i.kind==='doll'&&!!SPR[i.id]);
+    const lost=rm.items.filter(i=>i&&!ok(i));
+    if(rm.items.every(ok))return;
+    const keep=rm.items.filter(ok);rm.items.length=0;rm.items.push(...keep);   // 陣列本身不換，別的地方拿著它的還是同一個
+    if(lost.length)Object.defineProperty(rm,'toJSON',{configurable:true,enumerable:false,value(){const o={};Object.keys(this).forEach(k=>{o[k]=this[k];});o.items=[...this.items,...lost];return o;}});
+    n+=lost.length;
+  });
+  if(n)console.info('[room] 有 '+n+' 樣這一版不認得的東西，先不畫（存檔裡留著）');
+  return n;
+}
 function elFor(it){
   let el=room.querySelector(`.it[data-u="${it.uid}"]`);
   if(!el){
@@ -62,6 +80,7 @@ function render(){
   const alive=new Set(items.map(i=>String(i.uid)));
   room.querySelectorAll('.it').forEach(e=>{if(!alive.has(e.dataset.u))e.remove();});
   items.forEach(it=>{
+    if(it.kind==='furn'?!FURN[it.id]:!SPR[it.id])return;   // 不認得的跳過不畫（平常 roomQuarantine 已經先拿開了，這裡再保險一次）
     const el=elFor(it);const [w]=sizeOf(it);
     el.style.left=it.x+'%';el.style.top=roomY(it.y)+'%';el.style.width=w+'%';el.style.zIndex=zOf(it);
     if(it.kind==='doll'){

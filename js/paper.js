@@ -27,6 +27,9 @@ if (PAPER_ON) (() => {
   // 清晨偏白天一點、帶一點暖；傍晚偏晚上一點、天空帶一點橘
   const blend = (t, warmSky) => { const o = {}; Object.keys(TONES.day).forEach(k => o[k] = mix(TONES.night[k], TONES.day[k], t)); o.sky = mix(o.sky, warmSky, .28); return o; };
   const C = {};
+  // 紙纖維那張小圖：用完整的網址。css 裡寫的是相對路徑（相對於 css 檔），但這個變數被 js 產生的 <style> 用到時會從網頁那一層算，
+  // 網站放在子資料夾（GitHub Pages 的 /shubing-nest/）就會找錯地方（2026-11-27 線上 404）
+  const FIBER = 'url("' + new URL('img/paper/fiber.png', document.baseURI).href + '")';
   let phase = '';
   const curPhase = () => (typeof skyPhase === 'function' ? skyPhase() : (typeof isNight === 'function' && isNight() ? 'night' : 'day'));
   function tone(){
@@ -38,6 +41,7 @@ if (PAPER_ON) (() => {
     C.wood3 = mix(C.wood, C.paper, .22); C.leafd = mix(C.leaf, C.ink, .22); C.leafl = mix(C.leaf, C.paper, .22); C.paperd = mix(C.paper, C.ink, .14);
     const st = screen.style;
     Object.keys(C).forEach(k => { if (typeof C[k] === 'string') st.setProperty('--p-' + k, C[k]); });
+    st.setProperty('--p-fiber', FIBER);
     // 畫面外面那一圈（電腦上看得到）的底色也跟著天色
     document.documentElement.style.setProperty('--bg', C.dark ? mix(C.wall2, C.ink, .4) : mix(C.wall, C.paper, .45));
     const changed = p !== phase; phase = p;

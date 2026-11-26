@@ -178,11 +178,14 @@ function afterPrize(){
 }
 
 /* ---------- 開始 ---------- */
-planDay();
-load();
-grantCoins();
-renderEvBadge();
-setPage('room');
-initClaw();
+// 每一步各自包起來：一步出錯不能擋住後面（2026-11-27：畫房間丟例外，娃娃機和每天的幣都沒跑）
+const startStep = (name, fn) => { try { fn(); } catch (e) { console.error('[start] ' + name + ' 出錯，後面照常跑', e); } };
+startStep('不認得的東西', () => { if (typeof roomQuarantine === 'function') roomQuarantine(); });
+startStep('今天的小事', planDay);
+startStep('畫房間', load);
+startStep('每天的幣', grantCoins);
+startStep('小事的數字', renderEvBadge);
+startStep('切到房間', () => setPage('room'));
+startStep('娃娃機', initClaw);
 // 開著過了午夜：換新的一天
 setInterval(() => { if (S.day.date !== todayStr()){ planDay(); grantCoins(); renderEvBadge(); markDolls(); } }, 60000);
