@@ -1,5 +1,5 @@
 /* 新風格試做：紙雕立體・夜燈（js/paper.js）。網址加 ?look=paper 才會有 .screen.ppon 這個 class，沒加的話這個檔的樣式一條都不會套上去。
-   .screen.ppon = 新風格、而且現在在房間那一頁的客廳。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
+   .screen.ppon = 新風格、而且現在在房間那一頁（五間房間都算；小島、娃娃機不算）。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
    字：LXGW WenKai TC（SIL OFL 1.1，授權文字在 fonts/OFL-LXGW-WenKai-TC.txt）。放的是只含遊戲用得到的字的子集（約 425 KB，Medium 字重），
    不連外部的字型服務。只有新風格的畫面用到這個字，瀏覽器才會去載它；沒加 ?look=paper 的人不會下載。
    遊戲的文字改了之後要重做子集，不然新的字會退回系統字：做法在 ~/Desktop/GitHub收藏/薯餅小窩/工具/字型子集/說明.md。
@@ -26,8 +26,8 @@
 .screen.ppon .wall::after{bottom:-4px;height:8px;background:var(--p-wood2);box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 26%,transparent)}
 .screen.ppon .floor{background:linear-gradient(color-mix(in srgb,var(--p-floor) 56%,transparent),color-mix(in srgb,var(--p-floor) 56%,transparent)),var(--p-fiber),var(--p-floor)!important;background-size:auto,192px 192px,auto!important;background-blend-mode:normal,multiply,normal!important}
 .screen.ppon .floor::before{background:linear-gradient(color-mix(in srgb,var(--p-ink) 26%,transparent),transparent 26%)}
-/* 地毯：地板上再疊一張橢圓的紙 */
-.screen.ppon .floor::after{content:"";position:absolute;left:7%;right:7%;top:24%;height:50%;border-radius:50%;background:var(--p-rug);
+/* 地毯：地板上再疊一張橢圓的紙（只有客廳有） */
+.screen.ppon .room[data-rid="living"] .floor::after{content:"";position:absolute;left:7%;right:7%;top:24%;height:50%;border-radius:50%;background:var(--p-rug);
   box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 24%,transparent),inset 0 0 0 9px var(--p-rug),inset 0 0 0 10.5px color-mix(in srgb,var(--p-paper) 38%,transparent)}
 
 /* ---------- 窗戶、門口、開關 ---------- */
@@ -109,3 +109,13 @@
 .screen.ppon .mailb svg rect{fill:none;stroke:var(--p-ink);stroke-width:2.6}
 .screen.ppon .mailb svg path{stroke:var(--p-ink);fill:none;stroke-width:2.6}
 .screen.ppon .mailb svg path:last-child{fill:var(--p-a1);stroke:none}
+
+/* ---------- 閣樓：斜屋頂的樑、圓天窗（原本的樣式在 css/style.css） ---------- */
+.screen.ppon .room[data-rid="attic"] .wall::before{inset:0;height:auto;box-shadow:none;
+  background:linear-gradient(to bottom right,var(--p-wood) 0 20%,var(--p-wood2) 20% 21.5%,transparent 22%),linear-gradient(to bottom left,var(--p-wood) 0 20%,var(--p-wood2) 20% 21.5%,transparent 22%)}
+.screen.ppon .room[data-rid="attic"] .win{width:26%;top:calc(var(--wh,52%)*.2)}
+.screen.ppon .room[data-rid="attic"] .win::after{border-color:var(--p-wood);box-shadow:0 0 0 2px var(--p-wood2),0 3px 0 2px color-mix(in srgb,var(--p-ink) 24%,transparent)}
+.screen.ppon .room[data-rid="bath"] .win{width:24%;top:calc(var(--wh,52%)*.07)}
+/* 固定的構造也有一層影子 */
+.screen.ppon .fx:not(.fx-tiles):not(.fx-pass) svg{filter:drop-shadow(0 2.5px 1.5px color-mix(in srgb,var(--p-ink) 28%,transparent))}
+.screen.ppon .shoot{background:linear-gradient(90deg,transparent,var(--p-sun))}

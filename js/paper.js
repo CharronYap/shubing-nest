@@ -1,6 +1,8 @@
 /* 新風格試做：紙雕立體・夜燈（2026-11-26）。網址加 ?look=paper 才會生效，沒加的話這個檔什麼都不做。
-   這一版只換「客廳」這一個畫面：牆、地板、窗戶和窗外、門口、客廳的家具、上面的按鈕、收納架、對話框和提示。
-   其他房間、娃娃機、面板還是原本的樣子（等使用者看過客廳再往下換）。不改存檔、不改規則、不動玩法。
+   第一版只換客廳（使用者看過說「可以，繼續換」）。現在五間房間都是新風格：牆、地板、窗戶和窗外、門口、每一間固定的構造、所有家具、
+   上面的按鈕、收納架、對話框和提示。門外小島、娃娃機那一頁、封面還是原本的樣子。不改存檔、不改規則、不動玩法。
+   家具：客廳最早那 7 件是手畫的（PF）；其他的用 paperize() 自動轉：拿掉描邊和亮面的反光、顏色換成色票裡最接近的那一個、
+   每一塊下面加一塊往下錯開的影子。之後新增的家具不用另外畫，會自動轉。
    畫法（照 樣張/小窩風格樣板.html 的 B 款）：
    - 每一樣東西是色紙剪出來的色塊，沒有描邊；每一層下面有一塊往下錯開的深色影子，越前面錯得越多。
    - 窗戶是割開的洞：看得到後面的天空、遠山，洞的上緣和左緣有牆的厚度的影子；晚上周圍有一圈暖光。
@@ -29,6 +31,9 @@ if (PAPER_ON) (() => {
     const p = curPhase();
     Object.assign(C, p === 'night' ? TONES.night : p === 'day' ? TONES.day : p === 'dawn' ? blend(.62, '#ffd9c0') : blend(.4, '#ff9d7a'));
     C.dark = p === 'night' || p === 'dusk';
+    // 每一間的牆和地板往一個顏色偏一點（臥室偏暖、浴室偏青、廚房偏黃、閣樓偏木頭），客廳照色票
+    const tint = {bed: [C.a1, .07, .09, C.wood, .16], bath: [C.a2, .2, .28, C.a2, .24], kitchen: [C.sun, .13, .19, C.wood, .2], attic: [C.wood, .2, .28, C.wood, .36]}[typeof roomId === 'string' ? roomId : ''];
+    if (tint){ C.wall = mix(C.wall, tint[0], tint[1]); C.wall2 = mix(C.wall2, tint[0], tint[2]); C.floor = mix(C.floor, tint[3], tint[4]); }
     // 衍生的深淺
     C.a1d = mix(C.a1, C.ink, .2); C.a1l = mix(C.a1, C.paper, .22); C.a2d = mix(C.a2, C.ink, .22); C.a2l = mix(C.a2, C.paper, .25);
     C.wood3 = mix(C.wood, C.paper, .22); C.leafd = mix(C.leaf, C.ink, .22); C.leafl = mix(C.leaf, C.paper, .22); C.paperd = mix(C.paper, C.ink, .14);
@@ -80,8 +85,107 @@ if (PAPER_ON) (() => {
       + [[12, 8.6], [27, 13.6], [42, 16.6], [56, 17.6], [70, 16.6], [85, 13.6], [100, 8.6]].map(([x, y], i) =>
         L(path(`M${x - 6} ${y}h12l-6 13z`), [C.a1, C.leaf, C.a2, C.sun][i % 4], .6)).join(''),
   };
-  const PAPER_FURN = Object.keys(PF);
-  PAPER_FURN.forEach(id => { if (typeof FURN !== 'undefined' && FURN[id]) FURN[id].svg = PF[id]; });
+  /* ---------- 其他家具、每一間固定的構造：自動轉成紙雕的畫法 ---------- */
+  // 一個顏色換成色票裡最接近的：先看是白、灰還是有顏色，有顏色的照色相分到木頭、主色、黃、綠、青、紫幾家，再照深淺挑
+  function pick(c){
+    if (typeof c !== 'string') return c;
+    let h = c.trim().toLowerCase();
+    if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(h)) return c;
+    if (h.length === 4) h = '#' + [1, 2, 3].map(i => h[i] + h[i]).join('');
+    const [r, g, b] = hex(h).map(v => v / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    let hue = 0;
+    if (d){ hue = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hue = (hue * 60 + 360) % 360; }
+    if (l > .93 && sat < .5) return C.paper;
+    if (sat < .14) return l > .72 ? C.paperd : l > .42 ? mix(C.paper, C.ink, .45) : mix(C.ink, C.paper, .22);
+    const lv = (lo, mid, hi) => (l > .78 ? hi : l > .5 ? mid : lo);
+    if (hue < 14 || hue >= 318) return lv(C.a1d, C.a1, C.a1l);                                   // 紅、粉紅 → 主色
+    if (hue < 42) return sat < .62 || l < .55 ? lv(C.wood2, C.wood, C.wood3) : lv(C.a1d, mix(C.a1, C.sun, .35), mix(C.sun, C.a1l, .4));   // 咖啡、橘
+    if (hue < 68) return lv(mix(C.sun, C.wood, .45), C.sun, mix(C.sun, C.paper, .45));           // 黃
+    if (hue < 170) return lv(C.leafd, C.leaf, C.leafl);                                          // 綠
+    if (hue < 252) return lv(C.a2d, C.a2, C.a2l);                                                // 青、藍
+    return lv(mix(C.rug, C.ink, .3), C.rug, mix(C.rug, C.paper, .4));                            // 紫
+  }
+  // 線（紋路、縫線）：比同一家的色塊深一點，疊在色塊上才看得到；白線照舊是紙色
+  const line = c => { const v = pick(c); return v === C.paper ? v : mix(v, C.ink, .22); };
+  const PZ = new Map(), SER = new XMLSerializer();
+  const isWhite = v => /^#(fff|ffffff)$/i.test((v || '').trim());
+  // 處理一個元素：回傳 false 表示這個元素整個拿掉（亮面的反光）
+  function pz(el, inh){
+    if (el.nodeType !== 1) return true;
+    const tag = el.nodeName.toLowerCase();
+    if (tag === 'defs' || tag === 'clippath'){ return true; }
+    const fill = el.getAttribute('fill'), stroke = el.getAttribute('stroke'), op = el.getAttribute('opacity');
+    // 半透明的白色塊、白色線：原本用來做亮面的反光，紙沒有反光
+    if (op !== null && +op < 1 && (isWhite(fill) || (isWhite(stroke) && (!fill || fill === 'none')))) return false;
+    const effFill = fill !== null ? fill : inh.fill;
+    if (tag === 'g'){
+      if (fill !== null && fill !== 'none') el.setAttribute('fill', pick(fill));
+      if (stroke !== null){ if (effFill && effFill !== 'none') ['stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap'].forEach(a => el.removeAttribute(a)); else el.setAttribute('stroke', line(stroke)); }
+      const next = {fill: effFill, stroke: el.getAttribute('stroke') !== null ? el.getAttribute('stroke') : inh.stroke};
+      [...el.children].forEach(ch => { if (pz(ch, next) === false) ch.remove(); });
+      return true;
+    }
+    const filled = effFill && effFill !== 'none';
+    if (filled){
+      if (fill !== null) el.setAttribute('fill', pick(fill));
+      // 色塊不要描邊。只有「沒有面積的線」（例如一條直線）還是要靠線才看得到
+      const d = tag === 'path' ? el.getAttribute('d') || '' : '';
+      const isLine = tag === 'path' && fill === null && !/[zZ]/.test(d) && stroke !== null;
+      if (isLine) el.setAttribute('stroke', line(stroke));
+      else ['stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap', 'stroke-dasharray'].forEach(a => el.removeAttribute(a));
+    } else {
+      if (stroke !== null) el.setAttribute('stroke', line(stroke));
+      // 沒寫 fill 也沒寫線的 path：瀏覽器會用黑色填，換成墨色
+      if (fill === null && stroke === null && !inh.stroke && !inh.fill && tag !== 'text') el.setAttribute('fill', C.ink);
+    }
+    if (tag === 'text' && fill !== null) el.setAttribute('fill', pick(fill));
+    [...el.children].forEach(ch => { if (pz(ch, {fill: effFill, stroke: stroke !== null ? stroke : inh.stroke}) === false) ch.remove(); });
+    return true;
+  }
+  // 影子：把一塊複製一份、全部塗成墨色、往下錯開一點放在它下面。會動的（有 class 的）不加，不然影子不會跟著動
+  function shadowOf(el){
+    const tag = el.nodeName.toLowerCase();
+    if (el.nodeType !== 1 || tag === 'defs' || tag === 'clippath' || tag === 'text' || el.getAttribute('class')) return null;
+    const f = el.getAttribute('fill');
+    const hasArea = tag === 'g' ? !!el.querySelector('[fill]:not([fill="none"])') || (f && f !== 'none') : f && f !== 'none';
+    if (!hasArea) return null;
+    const c = el.cloneNode(true);
+    [c, ...c.querySelectorAll('*')].forEach(n => {
+      if (n.getAttribute('fill') && n.getAttribute('fill') !== 'none') n.setAttribute('fill', C.ink);
+      if (n.getAttribute('stroke')) n.setAttribute('stroke', C.ink);
+      n.removeAttribute('id'); n.removeAttribute('opacity');
+    });
+    const g = el.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('opacity', '.2'); g.setAttribute('transform', 'translate(0 1.15)');
+    g.appendChild(c);
+    return g;
+  }
+  const noNs = t => t.replace(/ xmlns="http:\/\/www\.w3\.org\/2000\/svg"/g, '');
+  // inner：<svg> 裡面的東西（家具）。full：整個 <svg …>…</svg>（固定的構造）
+  function paperize(markup, key, full){
+    const k = key + '|' + phase;
+    if (PZ.has(k)) return PZ.get(k);
+    let out = markup;
+    try {
+      const doc = new DOMParser().parseFromString(full ? markup.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ') : `<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`, 'image/svg+xml');
+      const root = doc.documentElement;
+      if (root && root.nodeName.toLowerCase() === 'svg' && !doc.querySelector('parsererror')){
+        [...root.children].forEach(ch => { if (pz(ch, {fill: null, stroke: null}) === false) ch.remove(); });
+        [...root.children].forEach(ch => { const sdw = shadowOf(ch); if (sdw) root.insertBefore(sdw, ch); });
+        out = full ? noNs(SER.serializeToString(root)).replace('<svg ', '<svg ') : [...root.childNodes].map(n => noNs(SER.serializeToString(n))).join('');
+      }
+    } catch (e) { console.info('[paper] 這一件轉不了，先用原本的畫法', key, e); }
+    PZ.set(k, out);
+    if (PZ.size > 600) PZ.delete(PZ.keys().next().value);
+    return out;
+  }
+  const PAPER_FURN = Object.keys(PF);      // 手畫的那幾件
+  if (typeof FURN !== 'undefined') Object.keys(FURN).forEach(id => {
+    if (PF[id]){ FURN[id].svg = PF[id]; return; }
+    const orig = FURN[id].svg; if (typeof orig !== 'function') return;
+    FURN[id].svg = () => paperize(orig(), 'f-' + id, false);
+  });
 
   /* ---------- 窗戶：割開的洞 ---------- */
   function winPaper(){
@@ -98,7 +202,7 @@ if (PAPER_ON) (() => {
         ${w === 'sun' ? cloud(24, 21, 1) : cloud(22, 19, 1.15) + cloud(50, 25, .95)}
         ${sh(path('M6 44Q24 28 40 39T74 34V52H6Z'), .8)}${path('M6 44Q24 28 40 39T74 34V52H6Z')(C.hill2)}
         ${sh(path('M6 48Q28 37 46 46T74 43V52H6Z'), .8)}${path('M6 48Q28 37 46 46T74 43V52H6Z')(C.hill)}
-        ${rain}
+        ${rain}${typeof winSeason === 'function' && !(VISIT && VISIT.card) ? paperize(winSeason(phase === 'night'), 'win-season-' + todayStr().slice(5, 7), false) : ''}
         <path d="M8 8h64v3.6H11.6V50H8z" fill="${C.ink}" opacity=".26"/></g>
       ${rect(39.1, 8, 1.8, 42)(C.wood)}${rect(8, 28.1, 64, 1.8)(C.wood)}
       ${L(rect(0, 54, 80, 6, 2.5), C.wood2, 1.2)}
@@ -123,12 +227,14 @@ if (PAPER_ON) (() => {
     <g transform="translate(${side === 'l' ? 6.5 : 12.5} 22.5) scale(.625)" fill="${C.ink}" style="color:${C.ink}">${(ICON[r] || '').replace(/<\/?svg[^>]*>/g, '')}</g></svg>`;
   const lswPaper = () => `<svg viewBox="0 0 24 32">${L(rect(2, 2, 20, 28, 4), C.paper, 1)}${rect(7.5, 6.5, 9, 19, 3)(C.paperd)}<rect class="nub" x="9" y="7.6" width="6" height="8" rx="2.4" fill="${C.a1}"/></svg>`;
 
-  const inLiving = () => roomId === 'living';
-  // room.js 的 winSVG、rooms.js 的 FIX：在客廳換成紙雕的畫法，其他房間照舊
+  const inLiving = () => typeof RIDS !== 'undefined' && RIDS.includes(roomId);   // 名字是第一版留下來的：現在五間房間都算
+  // room.js 的 winSVG、rooms.js 的 FIX：換成紙雕的畫法
   { const prev = winSVG; winSVG = function(night){ return inLiving() ? winPaper() : prev(night); }; }
   { const d0 = FIX.yardDoor, p0 = FIX.pass;
     FIX.yardDoor = () => (inLiving() ? doorPaper() : d0());
-    FIX.pass = (r, side) => (inLiving() ? passPaper(r, side) : p0(r, side)); }
+    FIX.pass = (r, side) => (inLiving() ? passPaper(r, side) : p0(r, side));
+    // 其他幾間固定的構造（臥室的小夜燈、浴室的磁磚、廚房的流理台和掛勾）：自動轉
+    Object.keys(FIX).forEach(k => { if (k === 'yardDoor' || k === 'pass') return; const o = FIX[k]; FIX[k] = (...a) => paperize(o(...a), 'fix-' + k + '-' + a.join('-'), true); }); }
   const lsw = $('#lsw'), lsw0 = lsw ? lsw.innerHTML : '';
   // 每次畫房間：先定色調、標上「現在是不是新風格的客廳」，再照原本的流程畫
   { const prev = paintRoom; paintRoom = function(){
@@ -140,7 +246,7 @@ if (PAPER_ON) (() => {
     }; }
   // 天色換了：家具的顏色是寫在圖裡的，重畫一次（房間裡的和收納架上的）
   function refurnish(){
-    room.querySelectorAll('.it:not(.doll)').forEach(el => { const it = items.find(i => String(i.uid) === el.dataset.u); if (it && PAPER_FURN.includes(it.id)) el.innerHTML = furnSVG(it.id); });
+    room.querySelectorAll('.it:not(.doll)').forEach(el => { const it = items.find(i => String(i.uid) === el.dataset.u); if (it && FURN[it.id]) el.innerHTML = furnSVG(it.id); });
     if (typeof renderTray === 'function' && typeof tab !== 'undefined') try { renderTray(); } catch (e) {}
   }
   // 只有「房間那一頁的客廳」才算（小島、娃娃機不算）：合成一個 class，樣式都掛在 .ppon 下面
