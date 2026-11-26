@@ -12,3 +12,14 @@ export const FIREBASE_CONFIG = {
   messagingSenderId: '926725223450',
   appId: '1:926725223450:web:08f2783fb732bd5eeb4da3',
 };
+
+// 薯餅蛋蛋島的專案 plush-crush（從蛋蛋島 repo 的 js/cloud-config.js 抄來的，一樣不是密碼）。
+// 只用來放兩個遊戲共用的錢包 wallets/{uid}（js/wallet.js、docs/WALLET.md）。換成 null 就不連蛋蛋島，小窩的幣自己算。
+export const EGG_FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyABsrmZwxABSHZfaSka-8n7eTsW64uxqz8',
+  authDomain: 'plush-crush.firebaseapp.com',
+  projectId: 'plush-crush',
+  storageBucket: 'plush-crush.firebasestorage.app',
+  messagingSenderId: '740207706798',
+  appId: '1:740207706798:web:b9dd64dd74250aff3ce33f',
+};

@@ -1,12 +1,14 @@
 /* 雲端帳號：登入、把這台的進度帶上雲端、換裝置接著玩、好友碼
  *
  * Firebase 專案是小窩自己的 shubing-nest（帳號和好友不跟蛋蛋島共用），小窩的存檔放在 nestSaves/{uid}。
+ * 只有幣跟蛋蛋島共用（js/wallet.js、docs/WALLET.md）：登入時用同一組名字和密碼順便登入蛋蛋島，錢包放在蛋蛋島的專案。
  * 沒登入也能玩，存在這台裝置（訪客存檔）。登入後每個帳號在這台裝置有一份自己的存檔（save.js 的 saveKeyFor），
  * 有改動就等 1.5 秒合成一次寫上雲端。
  *
  * 換帳號、拿雲端的存檔來用時，會把存檔寫好再重新整理一次頁面，畫面上的東西就全部換成新的那份。
  */
-import { FIREBASE_CONFIG } from './cloud-config.js';
+import { FIREBASE_CONFIG, EGG_FIREBASE_CONFIG } from './cloud-config.js';
+import { createWallet } from './wallet.js';
 
 const params = new URLSearchParams(location.search);
 // 測試：?emu=1 連本機的 Firebase 模擬器，永遠用假專案，不碰真的存檔（docs/CLOUD.md）
@@ -19,6 +21,72 @@ const box = document.getElementById('acct');
 let cloud = null, me = null, state = 'guest', pushT = 0, pushing = null, friends = null;
 let failN = 0, failWhy = '', failTold = false, retryT = 0;   // 雲端存檔連續失敗幾次、原因、有沒有跟玩家講過
 const afterSaved = [];                                        // 等「存檔真的寫上雲端」才做的事（刪朋友寄來的那一筆）
+
+/* ---------- 跟蛋蛋島共用的錢包（js/wallet.js、docs/WALLET.md） ----------
+   登入小窩時用同一組名字和密碼順便登入蛋蛋島；已經登入的，在帳號視窗打一次蛋蛋島的密碼。
+   EGG_LINK：這個小窩帳號連的是哪個蛋蛋島帳號（記在這台裝置）。蛋蛋島那邊登入的不是它，就不碰錢包。 */
+const EGG_CFG = EMU ? null : EGG_FIREBASE_CONFIG;
+const EGG_LINK = u => 'shubingNest.egg.' + u;
+let wallet = null, walletOn = false, wState = '', wT = 0, wBusy = null;
+let wLooks = null;   // 上次對帳時錢包裡的帽子和衣服；小窩多了它沒有的（剛買、剛夾到）就再對一次
+// 小窩擁有、可以跟蛋蛋島共用的帽子和衣服（不戴、原本的樣子不算）
+const myLooks = () => (Array.isArray(S.closet) ? S.closet : []).filter(k => /^(hat|outfit)\./.test(k) && k !== 'hat.none' && k !== 'outfit.none');
+const looksDirty = () => !wLooks || myLooks().some(k => !wLooks.has(k));
+const eggLinked = () => { try { return !!(me && wallet && wallet.user && localStorage.getItem(EGG_LINK(me.uid)) === wallet.user.uid); } catch (e) { return false; } };
+// 用名字和密碼連蛋蛋島（登入小窩時、帳號視窗按「連起來」時）。回傳 true = 連上了
+async function walletLink(name, password, nestUid) {
+  if (!wallet) return false;
+  try {
+    const eu = await Promise.race([wallet.link(name, password), new Promise((_, no) => setTimeout(() => no(Object.assign(new Error('timeout'), { code: 'wallet/timeout' })), 10000))]);
+    localStorage.setItem(EGG_LINK(nestUid), eu.uid);
+    return true;
+  } catch (e) { console.info('[wallet] 沒連上蛋蛋島', e && e.code); walletLink.err = e; return false; }
+}
+// 對一次帳：這段時間在小窩賺的減花的放進錢包，再把 S.coins 換成錢包的數字（中間又有變動的保留）
+async function walletSync() {
+  if (!walletOn || !me || wBusy || saveLock) return;
+  clearTimeout(wT); wT = 0;
+  const eu = wallet.user && wallet.user.uid; if (!eu || !eggLinked()) { walletOn = false; return; }
+  const E0 = S.earn || {}, first = !(Number.isInteger(E0.wb) && E0.wu === eu);
+  const c0 = S.coins, who = me.uid;
+  wBusy = (async () => {
+    try {
+      const r = await wallet.syncNest(who, c0, first ? null : E0.wb, eu, myLooks());
+      if (!me || me.uid !== who || saveLock) return;
+      const E = S.earn = S.earn || {};
+      S.coins = Math.max(0, Math.min(1000000, r.coins + (S.coins - c0)));
+      E.wb = r.coins; E.wu = eu;
+      // 蛋蛋島那邊有、小窩還沒有的帽子和衣服：直接放進衣櫃（小窩不認得的，例如蛋蛋島的特效、底座，本來就不在錢包裡）
+      wLooks = new Set(r.looks || []);
+      S.closet = Array.isArray(S.closet) ? S.closet : [];
+      const got = (r.looks || []).filter(k => typeof LOOK_ITEMS !== 'undefined' && LOOK_ITEMS[k] && !S.closet.includes(k));
+      got.forEach(k => S.closet.push(k));
+      wState = 'ok';
+      save();
+      try { renderHud(); } catch (e) {}
+      if (got.length && !document.querySelector('#sheet').hidden && document.querySelector('#sheet .wd-pg') && typeof openWardrobe === 'function') openWardrobe();
+      if (first) say(`跟蛋蛋島連上了，兩邊的幣合在一起，現在有 ${S.coins} 枚${got.length ? `，衣櫃多了 ${got.length} 件` : ''}`);
+      else if (got.length) say(`從蛋蛋島帶來 ${got.length} 件衣服和配件，衣櫃裡有了`);
+    } catch (e) {
+      // 規則還沒在 plush-crush 主控台發布：這次開著的時候先不試了，幣照舊自己算
+      if (e && e.code === 'permission-denied') { wState = 'denied'; walletOn = false; }
+      else wState = 'offline';
+      console.info('[wallet] 錢包沒有對上', e && (e.code || e.message));
+    }
+  })();
+  try { await wBusy; } finally { wBusy = null; }
+  if (!box.hidden && box.querySelector('.ac-wl')) paintWallet();
+  if (walletOn && S.earn && (S.coins !== S.earn.wb || (wLooks && looksDirty()))) walletSoon();
+}
+function walletSoon() { clearTimeout(wT); wT = setTimeout(walletSync, 2000); }
+// 存檔寫好時（save.js 的 onNestSave）：幣有變就排一次對帳
+function onSaved() { schedulePush(); if (walletOn && !wBusy && S.earn && (S.coins !== S.earn.wb || looksDirty())) walletSoon(); }
+async function walletStart() {
+  if (!wallet || !me) return;
+  try { await wallet.ready; } catch (e) { return; }
+  if (eggLinked()) { walletOn = true; walletSync(); }
+  else if (wallet.user) wallet.signOut();        // 蛋蛋島那邊登入的是別人（換過小窩帳號）：登出，不碰別人的錢包
+}
 
 const USER_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.2" r="4.4"/><path d="M3.8 20.2c.9-4.2 4.2-6.6 8.2-6.6s7.3 2.4 8.2 6.6c.1.6-.3 1.1-.9 1.1H4.7c-.6 0-1-.5-.9-1.1z"/></svg>';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -205,14 +273,14 @@ function schedulePush() { clearTimeout(pushT); pushT = setTimeout(push, 1500); }
 async function syncStart() {
   setState('syncing');
   let remote;
-  try { remote = await cloud.load(); } catch (e) { failState(e); window.onNestSave = schedulePush; return; }
+  try { remote = await cloud.load(); } catch (e) { failState(e); window.onNestSave = onSaved; return; }
   if (remote && remote.t !== S.base) {
     // 雲端那份不是這台上次同步的那一版。這台如果有還沒傳上去的進度，合併，不要整份換掉
     if (S.base && S.t > S.base) useSave(mergeBack(remote, JSON.parse(JSON.stringify(S))), me.uid, '另一台裝置也改過，兩邊的進度合在一起了', remote.t);
     else useSave(remote, me.uid);
     return;
   }
-  window.onNestSave = schedulePush;
+  window.onNestSave = onSaved;
   if (!remote || S.t > (S.base || 0)) push(); else setState('synced');
 }
 
@@ -279,6 +347,8 @@ function mergeSave(remote, guest) {
     if (!m.yard) m.yard = guest.yard;
     else { const ms = m.yard.seeds = m.yard.seeds || {}; for (const [k, n] of Object.entries(guest.yard.seeds || {})) ms[k] = Math.max(ms[k] || 0, n || 0); }
   }
+  // 幣取比較多的。拿的是這台的，跟錢包對帳用的 base（earn.wb）也要用這台的，不然這段差額會重複算進蛋蛋島的錢包
+  if ((guest.coins || 0) > (m.coins || 0) && guest.earn && Number.isInteger(guest.earn.wb) && m.earn) { m.earn.wb = guest.earn.wb; m.earn.wu = guest.earn.wu; }
   m.coins = Math.max(m.coins || 0, guest.coins || 0);
   m.wins = Math.max(m.wins || 0, guest.wins || 0);
   m.t = Date.now();
@@ -338,6 +408,7 @@ async function signOut() {
   const left = S.t > (S.base || 0);
   if (left) writeLocal();
   await cloud.signOut().catch(() => {});
+  if (wallet) await wallet.signOut();
   useSave(null, '', left ? '登出了。剛剛的進度還沒存上雲端，留在這台裝置，下次在這台登入會接回來' : '登出了，現在用這台裝置的訪客存檔');
 }
 
@@ -392,6 +463,8 @@ function openLogin(mode = 'in', msg = '') {
     let u;
     try { u = await (up ? cloud.signUpWithName(n, p) : cloud.signInWithName(n, p)); }
     catch (e2) { openLogin(mode, loginError(e2)); box.querySelector('[name=n]').value = n; return; }
+    // 蛋蛋島用的是同一組名字和密碼的話，順便連上共用的錢包（連不上也照樣登入小窩，之後可以在帳號視窗再連）
+    if (wallet) { f.querySelector('button').textContent = '連蛋蛋島…'; await walletLink(n, p, u.uid); }
     const m = await afterLogin(u);
     if (m) openLogin('in', m);
   };
@@ -414,8 +487,10 @@ function openAccount() {
       <ul class="ac-list"><li class="ac-empty">讀取中…</li></ul>
       <p class="ac-note">把好友碼給朋友，對方輸入後就會出現在這裡。點朋友的名字，可以去他家看看。</p>
     </div>
+    ${wallet ? '<div class="ac-fr ac-wl"></div>' : ''}
     <button class="ac-link out" data-a="out">登出</button>`);
   paintStatus();
+  paintWallet();
   box.querySelector('[data-a=out]').onclick = signOut;
   const f = box.querySelector('.ac-add'), err = box.querySelector('.ac-fr .ac-err');
   f.onsubmit = async e => {
@@ -434,6 +509,33 @@ function openAccount() {
   };
   loadFriends();
   loadHearts();
+}
+
+/* 帳號視窗裡「跟蛋蛋島共用的幣」那一塊 */
+function paintWallet() {
+  const el = box.querySelector('.ac-wl'); if (!el || !me) return;
+  const linked = eggLinked();
+  const txt = !linked ? '蛋蛋島用同一組名字和密碼的話，連一次，兩邊的幣就是同一個錢包（1 比 1），在哪邊賺、在哪邊花都算同一堆。'
+    : wState === 'denied' ? '已經連上蛋蛋島，但蛋蛋島那邊的雲端還沒開好（規則還沒發布），幣先各算各的。'
+    : wState === 'offline' ? '已經連上蛋蛋島。現在連不上雲端，幣先記在這台，連上會自動合在一起。'
+    : '已經跟蛋蛋島連上了，兩邊的幣是同一個錢包。';
+  el.innerHTML = `<div class="ac-sub">跟蛋蛋島共用的幣</div><p class="ac-p">${txt}</p>
+    ${linked ? '' : `<form class="ac-form ac-wlf" novalidate>
+      <label>蛋蛋島的名字<input name="wn" autocomplete="username" maxlength="24" value="${esc(me.name)}"></label>
+      <label>蛋蛋島的密碼<input name="wp" type="password" autocomplete="current-password" placeholder="至少 6 個字"></label>
+      <p class="ac-err" role="alert"></p>
+      <button class="ac-b sm" type="submit">連起來</button></form>`}`;
+  const f = el.querySelector('form'); if (!f) return;
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const err = f.querySelector('.ac-err'), n = f.wn.value, p = f.wp.value;
+    if (p.length < 6) { err.textContent = '密碼至少要 6 個字'; return; }
+    f.querySelectorAll('input,button').forEach(x => x.disabled = true);
+    if (await walletLink(n, p, me.uid)) { walletOn = true; wState = ''; await walletSync(); paintWallet(); return; }
+    f.querySelectorAll('input,button').forEach(x => x.disabled = false);
+    const c = (walletLink.err && walletLink.err.code) || '';
+    err.textContent = c === 'wallet/timeout' ? '蛋蛋島那邊沒有回應，晚點再試' : /referer|referrer|api-key|unauthorized/.test(c) ? '蛋蛋島那邊還不讓小窩的網址登入（看 docs/WALLET.md）' : loginError(walletLink.err);
+  };
 }
 
 /* 今天收到幾顆愛心：只顯示數字，不顯示誰送的；0 顆或讀不到（規則還沒發布）就不出現 */
@@ -528,7 +630,7 @@ window.nestNet = {
   // 朋友面板的「去他家」（js/friend.js）
   visit: async uid => { const l = friends || await fetchFriends(); const p = l.find(f => f.uid === uid); if (p) return goVisit(p); },
   // 查問題用：在瀏覽器的 console 打 nestNet.check()，列出這份存檔有哪些地方雲端不收（空的清單 = 沒問題），和現在的同步狀態
-  check: () => { packSave(); return { bad: (packSave.bad || []).slice(), state, failN, failWhy, unsaved: S.t > (S.base || 0), waiting: afterSaved.length }; },
+  check: () => { packSave(); return { bad: (packSave.bad || []).slice(), state, failN, failWhy, unsaved: S.t > (S.base || 0), waiting: afterSaved.length, wallet: { linked: eggLinked(), on: walletOn, state: wState, base: S.earn && S.earn.wb } }; },
   room: uid => cloud.room(uid),
   heartsToday: () => cloud.heartsToday(nestDay()),   // 愛心換幣（js/earn.js）
   idToken: () => cloud.idToken(),   // AI 寫信（js/mailai.js）
@@ -555,6 +657,7 @@ async function start() {
     cloud = mod.createCloud(CFG, { emulator: EMU });
     await cloud.ready;
   } catch (e) { console.warn('[account] 雲端載不起來，照樣可以玩，存在這台裝置', e); cloud = null; btn.hidden = true; return; }
+  if (EGG_CFG) { try { wallet = createWallet(EGG_CFG); } catch (e) { wallet = null; } }
   const acct = acctUid(), u = cloud.user;
   if (acct && !u) { useSave(null, '', '登入過期了，現在用訪客存檔'); return; }   // 在別的地方登出、或登入被清掉
   if (u && acct !== u.uid) { const m = await afterLogin(u); if (m) say(m); return; }   // 有登入但這台還沒用這個帳號的存檔
@@ -562,6 +665,10 @@ async function start() {
   if (me) {
     await syncStart();
     dispatchEvent(new Event('nestnet'));
+    walletStart();
+    // 回到這個分頁、每兩分鐘：看一下錢包（蛋蛋島那邊可能賺了或花了）
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && walletOn) walletSync(); });
+    setInterval(() => { if (!document.hidden && walletOn) walletSync(); }, 120000);
     addEventListener('online', () => { if (me && state !== 'synced') push(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden && me && (pushT || S.t > (S.base || 0))) push(); });
   }

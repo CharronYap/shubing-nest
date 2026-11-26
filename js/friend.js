@@ -27,10 +27,11 @@ function frBadge(){
   b.classList.toggle('wig', !!n && !REDUCE);
   b.setAttribute('aria-label', n ? `朋友，${n} 件沒看` : '朋友');
 }
-// 信箱裡朋友的東西（從朋友家來的娃娃的信、過夜的日記）：找最新的那一封
-function frLetter(type, d){
+// 信箱裡朋友的東西（從朋友家來的娃娃的信、過夜的日記）：找最新的那一封。w：朋友的名字（同一隻去過好幾個朋友家時分得開）
+function frLetter(type, d, w){
   const l = (S.mail && S.mail.l) || [];
-  return l.find(o => { try { const p = mailParse(o.k); return p.type === type && p.d === d; } catch (e) { return false; } }) || null;
+  const find = byW => l.find(o => { try { const p = mailParse(o.k); return p.type === type && p.d === d && (!byW || (p.p.w || '') === byW); } catch (e) { return false; } }) || null;
+  return (w && typeof ngName === 'function' && find(ngName(w))) || find('');
 }
 function frLetterOpen(o){
   if (!o) return;
@@ -46,6 +47,9 @@ async function frOpen(tab){
   if (VISIT) return;
   if (tab) frTab = tab;
   frNewSince = frSeenAt();
+  // 先翻到有新東西的那個朋友（不然朋友多的時候，新來的紙條、日記在別頁，看起來像沒有）
+  const fresh = frMemo().filter(e => FR_IN.includes(e.k) && (e.ts || 0) > frNewSince).sort((a, b) => b.ts - a.ts)[0];
+  if (fresh) { frWho = fresh.u; frTab = 'in'; }
   frPaint();
   const net = sNet(); if (!net) return;
   S.album.frSeen = Date.now(); save(); frBadge();
@@ -86,9 +90,12 @@ function frPaint(){
     if (frHearts) rows += `<div class="fr-it"><small>今天</small><span class="ic">${HEART()}</span><p>收到 ${frHearts} 顆愛心</p></div>`;
     rows += memo.filter(e => FR_IN.includes(e.k)).map(e => {
       const card = e.k === 'cardIn' && e.c && (S.mail.pc || []).some(c => c.id === e.c);
-      const letter = (e.k === 'stayBack' && frLetter('trip', e.d)) || (e.k === 'giftIn' && frLetter('gift', e.d));
-      const tap = card ? `data-frcard="${e.c}"` : letter ? `data-frletter="${e.k === 'stayBack' ? 'trip' : 'gift'}.${e.d}"` : e.k === 'bookIn' ? 'data-fr="book"' : '';
-      return `<div class="fr-it ${tap ? 'tap' : ''}" ${tap} ${tap ? 'role="button" tabindex="0"' : ''}><small>${md(e.t)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(e)}${dot(e)}${card ? '<u>看明信片</u>' : letter ? '<u>打開看</u>' : ''}</p></div>`;
+      const letter = (e.k === 'stayBack' && frLetter('trip', e.d, e.n)) || (e.k === 'giftIn' && frLetter('gift', e.d, e.n));
+      const tap = card ? `data-frcard="${e.c}"` : letter ? `data-frletter="${e.k === 'stayBack' ? 'trip' : 'gift'}.${e.d}" data-frw="${e.u}"` : e.k === 'bookIn' ? 'data-fr="book"' : '';
+      // 過夜帶回來的紙條：直接寫在這一行（這一版以前記的沒有 m，從那封日記讀）
+      let ee = e;
+      if (e.k === 'stayBack' && !e.m && letter){ try { const x = mailParse(letter.k).p.x; if (x) ee = {...e, m: mailDec(x)}; } catch (er) {} }
+      return `<div class="fr-it ${tap ? 'tap' : ''}" ${tap} ${tap ? 'role="button" tabindex="0"' : ''}><small>${md(e.t)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(ee)}${dot(e)}${card ? '<u>看明信片</u>' : letter ? '<u>打開看</u>' : ''}</p></div>`;
     }).join('');
     // 信箱裡還有、紀念冊卻沒記到的明信片（這一版之前收到的）：照寄的人的名字列在這裡
     const known = new Set(frMemo().filter(e => e.k === 'cardIn').map(e => e.c));
@@ -129,7 +136,7 @@ $('#sheet').addEventListener('click', async e => {
   const c = e.target.closest('[data-frcard]');
   if (c){ const i = (S.mail.pc || []).findIndex(x => x.id === c.dataset.frcard); if (i >= 0) cardOpen(i); return; }
   const lt = e.target.closest('[data-frletter]');
-  if (lt){ const [type, d] = lt.dataset.frletter.split('.'); frLetterOpen(frLetter(type, d)); return; }
+  if (lt){ const [type, d] = lt.dataset.frletter.split('.'), f = (frList || []).find(p => p.uid === lt.dataset.frw); frLetterOpen(frLetter(type, d, f && f.name)); return; }
   const b = e.target.closest('[data-fr]'); if (!b) return;
   const a = b.dataset.fr, net = sNet(), f = (frList || []).find(p => p.uid === frWho);
   if (a === 'acct'){ $('#sheet').hidden = true; const cb = $('#coverAcct'); if (cb) cb.click(); return; }
