@@ -420,11 +420,11 @@ function rollCap(){
 
 /* ---------- 夾到了：卡片只放東西的圖 ---------- */
 function showPrize(t){
-  let pic, bonus = false;
+  let pic, bonus = false, gotFurn = null;   // gotFurn：夾到的是家具，卡片上標哪一間、給「去擺」
   if (t === 'cap'){
     const r = rollCap();
     if (r.kind === 'furn'){
-      FURN_OWN[r.id] = 1; pic = furnSVG(r.id);
+      FURN_OWN[r.id] = 1; pic = furnSVG(r.id); gotFurn = r.id; if (typeof newFurnAdd === 'function') newFurnAdd(r.id);
       if (!FLOOR_OWN.cloud && CLOUD_SET.every(i=>FURN_OWN[i])){ FLOOR_OWN.cloud = 1; bonus = true; }
     } else if (r.kind === 'look'){ lookGet(r.id); pic = `<span class="lk-pic">${lookIcon(r.id)}</span>`; }
     else if (r.kind === 'wall'){ WALL_OWN[r.id] = 1; pic = `<span class="sw w-${r.id}"></span>`; }
@@ -436,10 +436,12 @@ function showPrize(t){
   const o = document.createElement('div'); o.className = 'over';
   o.innerHTML = `<div class="pcard" role="dialog" aria-label="夾到了"><div class="pic">${pic}</div>
     ${bonus ? '<div class="bonus"><span class="cl"></span><span class="sw f-cloud"></span></div>' : ''}
-    <button class="btn y ok" aria-label="收下">${CKS}</button></div>`;
+    ${gotFurn && typeof furnGo === 'function' ? `<p class="pz-nm"><b>${furnName(gotFurn)}</b>${furnRoomTag(gotFurn)}</p>` : ''}
+    <div class="pz-row"><button class="btn y ok" aria-label="收下">${CKS}</button>${gotFurn && typeof furnGo === 'function' ? '<button class="btn pz-go">去擺</button>' : ''}</div></div>`;
   screen.appendChild(o);
   const ok = o.querySelector('.ok'); ok.focus({preventScroll:true});
   ok.onclick = () => { o.remove(); refill(); renderTray(); renderSet(); afterPrize(); save(); };
+  const go = o.querySelector('.pz-go'); if (go) go.onclick = () => { ok.onclick(); furnGo(gotFurn); };
 }
 
 /* ---------- 開機 ---------- */

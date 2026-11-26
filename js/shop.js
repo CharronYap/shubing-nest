@@ -48,8 +48,11 @@ function shopOpen(keep){
   const list = [...keys, ...st.items].map(shopParse).filter(shopValid);
   const cards = list.map((x, i) => {
     const own = shopOwned(x), p = shopPrice(x);
-    return `<div class="sp-it ${own ? 'own' : ''}"><span class="tile">${shopPic(x)}</span><b>${shopName(x)}</b>
-      ${own ? '<small>有了</small>' : `<button class="btn y sm" data-sp="${i}" aria-label="買${shopName(x)}，${p} 枚幣">${COIN}${p}</button>`}</div>`;
+    // 家具標出是哪一間用的；已經有的可以點「去擺」，直接帶到那一間的收納架
+    const tag = x.kind === 'furn' ? furnRoomTag(x.id) : x.kind === 'key' ? '' : '<span class="rm-tag">每一間都能換</span>';
+    const have = x.kind === 'furn' ? `<button class="btn sm sp-go" data-spgo="${x.id}" aria-label="有了，去擺${shopName(x)}">有了・去擺</button>` : '<small>有了</small>';
+    return `<div class="sp-it ${own ? 'own' : ''}"><span class="tile">${shopPic(x)}</span><b>${shopName(x)}</b>${tag}
+      ${own ? have : `<button class="btn y sm" data-sp="${i}" aria-label="買${shopName(x)}，${p} 枚幣">${COIN}${p}</button>`}</div>`;
   }).join('');
   const bag = earnBagN();
   openSheet(`<div class="hd">${SHOP_ICON}<span>火腿的小店</span><small class="pc-left">${COIN}${S.coins}</small></div>
@@ -65,17 +68,18 @@ function shopBuy(i){
   const p = shopPrice(x);
   if (S.coins < p){ toast(`還差 ${p - S.coins} 枚幣`); return; }
   S.coins -= p;
-  if (x.kind === 'furn') FURN_OWN[x.id] = 1; else if (x.kind === 'wall') WALL_OWN[x.id] = 1; else if (x.kind === 'floor') FLOOR_OWN[x.id] = 1;
+  if (x.kind === 'furn'){ FURN_OWN[x.id] = 1; newFurnAdd(x.id); } else if (x.kind === 'wall') WALL_OWN[x.id] = 1; else if (x.kind === 'floor') FLOOR_OWN[x.id] = 1;
   else if (typeof shopKeyBuy === 'function') shopKeyBuy(x.id);
   const st = shopStock(); st.bought.push(`${x.kind[0]}:${x.id}`);
   if (typeof setCheck === 'function') setCheck();   // 湊齊系列的獎品（js/furn2.js）
   renderHud(); save();
   if (x.kind === 'key') return;   // 新房間：js/rooms.js 會關掉小店、帶你過去
   render();
-  toast(`買了${shopName(x)}，在收納架裡`);
+  toast(x.kind === 'furn' ? `買了${shopName(x)}，按「去擺」帶你過去` : `買了${shopName(x)}，在收納架的牆和地板那一頁`);
   shopOpen(true);
 }
 $('#sheet').addEventListener('click', e => {
+  const g = e.target.closest('[data-spgo]'); if (g){ furnGo(g.dataset.spgo); return; }
   const b = e.target.closest('[data-sp]'); if (!b) return;
   if (b.dataset.sp === 'sell'){ const n = earnSellBag(); if (n) toast(`換了 ${n} 枚幣`); shopOpen(true); }
   else shopBuy(+b.dataset.sp);

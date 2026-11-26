@@ -22,7 +22,7 @@ function setCheck(quiet){
     if (!s.gift || !s.ids.every(id => FURN_OWN[id])) return;
     const own = s.gift.kind === 'furn' ? FURN_OWN : s.gift.kind === 'wall' ? WALL_OWN : FLOOR_OWN;
     if (own[s.gift.id]) return;
-    own[s.gift.id] = 1; got = s;
+    own[s.gift.id] = 1; got = s; if (s.gift.kind === 'furn' && typeof newFurnAdd === 'function') newFurnAdd(s.gift.id);
   });
   if (got){ save(); if (!VISIT) renderTray(); if (!quiet) setTimeout(() => toast(`湊齊${got.name}，送你${got.gift.name}`), 600); }
   return !!got;

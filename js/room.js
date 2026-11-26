@@ -162,13 +162,15 @@ function renderTray(){
     DOLLS.forEach(id=>{const n=DOLL_N[id]||0;const w=whereDoll(id);const here=w===roomId;const away=w&&!here;
       h+=`<button class="tile ${n?'':'lock'} ${here?'placed':''} ${away?'away':''}" data-doll="${id}" aria-label="娃娃"><img src="${SPR[id]}" alt="">${n?`<span class="n">×${n}</span>`:''}${here?CK:''}${away?`<span class="rm">${ICON[w]}</span>`:''}</button>`;});
   } else if(tab==='furn'){
-    ROOM_FURN[roomId].forEach(id=>{const own=FURN_OWN[id];const placed=items.some(i=>i.kind==='furn'&&i.id===id);
-      h+=`<button class="tile ${own?'':'lock'} ${placed?'placed':''}" data-furn="${id}" aria-label="家具">${furnSVG(id)}${own?'':LOCK}${placed?CK:''}</button>`;});
+    // 已經有的排前面、還沒有的（鎖頭）排後面；剛拿到還沒擺過的標「新」
+    const nw=newFurnList();
+    ROOM_FURN[roomId].slice().sort((a,b)=>(FURN_OWN[b]?1:0)-(FURN_OWN[a]?1:0)).forEach(id=>{const own=FURN_OWN[id];const placed=items.some(i=>i.kind==='furn'&&i.id===id);
+      h+=`<button class="tile ${own?'':'lock'} ${placed?'placed':''}" data-furn="${id}" aria-label="${furnName(id)}${own?(nw.includes(id)?'，新的':''):'，還沒有'}">${furnSVG(id)}${own?'':LOCK}${placed?CK:''}${own&&!placed&&nw.includes(id)?'<span class="nw">新</span>':''}</button>`;});
     // 季節家具（js/season.js）：有了才列出來，每個房間都看得到；擺在別的房間就標房間，點了搬過來
     const sf=(typeof SEASON_FURN!=='undefined'?SEASON_FURN:[]).filter(id=>FURN_OWN[id]);
     if(sf.length)h+=`<span class="grp">${SEASON_ICON}</span>`;
     sf.forEach(id=>{const w=whereFurn(id),here=w===roomId,away=w&&!here;
-      h+=`<button class="tile ${here?'placed':''} ${away?'away':''}" data-furn="${id}" aria-label="${FURN[id].name}">${furnSVG(id)}${here?CK:''}${away?`<span class="rm">${ICON[w]}</span>`:''}</button>`;});
+      h+=`<button class="tile ${here?'placed':''} ${away?'away':''}" data-furn="${id}" aria-label="${FURN[id].name}">${furnSVG(id)}${here?CK:''}${away?`<span class="rm">${ICON[w]}</span>`:''}${!w&&nw.includes(id)?'<span class="nw">新</span>':''}</button>`;});
   } else {
     const wi='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="11" rx="2.5"/></svg>', fl='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 20l4-8h12l4 8z"/></svg>';
     h+=`<span class="grp">${wi}</span>`;
@@ -177,6 +179,45 @@ function renderTray(){
     FLOORS.forEach(id=>{const own=FLOOR_OWN[id];h+=`<button class="tile ${own?'':'lock'} ${cur().floor===id?'cur':''}" data-floor="${id}" aria-label="地板"><span class="sw f-${id}"></span>${own?'':LOCK}</button>`;});
   }
   box.innerHTML=h;
+}
+/* ---------- 剛拿到的家具：標「新」、帶你去擺 ----------
+   「新」只記在這台裝置（localStorage），不進存檔：拿到時記一筆，擺過一次就拿掉 */
+const NEWF_KEY='shubingNest.newFurn';
+function newFurnList(){
+  let l=[];try{l=JSON.parse(localStorage.getItem(NEWF_KEY)||'[]');}catch(e){}
+  if(!Array.isArray(l))l=[];
+  const keep=l.filter(id=>FURN[id]&&FURN_OWN[id]&&!whereFurn(id));   // 擺出來了、或不認得的，就不算新
+  if(keep.length!==l.length){try{localStorage.setItem(NEWF_KEY,JSON.stringify(keep));}catch(e){}}
+  return keep;
+}
+function newFurnAdd(id){const l=newFurnList();if(!l.includes(id)){l.push(id);try{localStorage.setItem(NEWF_KEY,JSON.stringify(l.slice(-40)));}catch(e){}}}
+const furnName=id=>FURN[id]?(FURN[id].name||(typeof FURN_NAME!=='undefined'&&FURN_NAME[id])||'家具'):'家具';
+// 這件家具是哪一間用的：房間切換鈕同一個圖示加房間名。季節家具每一間都能擺
+function furnRoomTag(id){
+  const f=FURN[id];if(!f)return '';
+  if(f.season)return '<span class="rm-tag">每一間都能擺</span>';
+  const n=(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室'})[f.room]||'';
+  return `<span class="rm-tag">${ICON[f.room]||''}${n}</span>`;
+}
+// 去擺：切到那一間、打開收納架的家具分頁、捲到那一件並閃一下
+function furnGo(id){
+  const f=FURN[id];if(!f||VISIT)return;
+  const r=f.season?roomId:f.room;
+  if(!home[r]){toast(`這件是${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[r])||'別間'}用的，要先在小店買那一間`);return;}
+  $('#sheet').hidden=true;
+  if(typeof setPage==='function')setPage('room');
+  const show=()=>{
+    setTray(false);tab='furn';renderTray();if(typeof layout==='function')layout();
+    const t=$('#items').querySelector(`[data-furn="${id}"]`);if(!t)return;
+    const box=$('#items');box.scrollTop=Math.max(0,t.offsetTop-box.offsetTop-box.clientHeight/2+t.offsetHeight/2);
+    t.classList.remove('flashme');void t.offsetWidth;t.classList.add('flashme');setTimeout(()=>t.classList.remove('flashme'),2200);
+  };
+  const cur0=goingTo??roomId, inYard=typeof yardOn!=='undefined'&&yardOn;
+  if(r===cur0&&!inYard){show();return;}
+  goRoom(r);
+  // 等房間真的換好再打開收納架：換房間有滑動的動畫，換好時會整個重畫，太早捲過去會被重畫蓋掉
+  const wait=n=>{if((roomId===r&&goingTo===null&&!(typeof yardOn!=='undefined'&&yardOn))||n>50)setTimeout(show,60);else setTimeout(()=>wait(n+1),80);};
+  wait(0);
 }
 function freeSpot(it){
   const cand=[[50,92],[34,94],[66,94],[20,90],[80,90],[50,80],[30,82],[70,82]];
