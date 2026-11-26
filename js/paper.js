@@ -10,7 +10,7 @@
    - 娃娃的照片不重畫，當貼紙貼上去，腳下一塊橢圓的影子（不用濾鏡，娃娃在動的時候不會卡）。
    - 顏色直接寫進圖裡（不是用 CSS 變數），這樣拍照把家具轉成圖的時候顏色還在；天色換了就把家具重畫一次。
    字用 LXGW WenKai TC 的子集（fonts/，在 css/paper.css 宣告），只有新風格的畫面會載。
-   色票：晚上「夜燈」、白天「夜燈的白天」，清晨和傍晚取兩組中間。壁紙和地板在新風格下先固定用色票，不看玩家選的那一款。
+   色票：晚上「夜燈」、白天「夜燈的白天」，清晨和傍晚取兩組中間。壁紙和地板：每一款對應一張色紙加一層很淡的花紋（見 PWALL、PFLOOR）。
    放在 rooms.js 後面、main.js 前面載入：main.js 第一次畫房間之前，這裡要先把畫法換掉。 */
 const PAPER_ON = (() => { try { return new URLSearchParams(location.search).get('look') === 'paper'; } catch (e) { return false; } })();
 if (PAPER_ON) (() => {
@@ -31,17 +31,72 @@ if (PAPER_ON) (() => {
     const p = curPhase();
     Object.assign(C, p === 'night' ? TONES.night : p === 'day' ? TONES.day : p === 'dawn' ? blend(.62, '#ffd9c0') : blend(.4, '#ff9d7a'));
     C.dark = p === 'night' || p === 'dusk';
-    // 每一間的牆和地板往一個顏色偏一點（臥室偏暖、浴室偏青、廚房偏黃、閣樓偏木頭），客廳照色票
-    const tint = {bed: [C.a1, .07, .09, C.wood, .16], bath: [C.a2, .2, .28, C.a2, .24], kitchen: [C.sun, .13, .19, C.wood, .2], attic: [C.wood, .2, .28, C.wood, .36]}[typeof roomId === 'string' ? roomId : ''];
-    if (tint){ C.wall = mix(C.wall, tint[0], tint[1]); C.wall2 = mix(C.wall2, tint[0], tint[2]); C.floor = mix(C.floor, tint[3], tint[4]); }
     // 衍生的深淺
     C.a1d = mix(C.a1, C.ink, .2); C.a1l = mix(C.a1, C.paper, .22); C.a2d = mix(C.a2, C.ink, .22); C.a2l = mix(C.a2, C.paper, .25);
     C.wood3 = mix(C.wood, C.paper, .22); C.leafd = mix(C.leaf, C.ink, .22); C.leafl = mix(C.leaf, C.paper, .22); C.paperd = mix(C.paper, C.ink, .14);
     const st = screen.style;
     Object.keys(C).forEach(k => { if (typeof C[k] === 'string') st.setProperty('--p-' + k, C[k]); });
     const changed = p !== phase; phase = p;
+    if (changed) deco();
     return changed;
   }
+  /* ---------- 壁紙和地板：每一款對應一張色紙，加一層很淡的剪紙花紋（2026-11-26 使用者同意的做法） ----------
+     玩家夾到、買到的每一款要認得出來，所以顏色和花紋都留；但花紋只比底色深（晚上是淺）一點點，近看才看得出來，遠看是一張素色的紙。
+     每一款：[往色票的哪個顏色偏, 牆上半偏多少, 牆下半偏多少, 花紋]；地板：[往哪個顏色偏, 偏多少, 花紋]。null = 就是色票的牆色、地板色。
+     預設那幾款（客廳圓點＋格子、臥室條紋＋木頭、浴室磁磚＋薄荷）的數字是照改之前每一間的樣子定的。
+     房間、收納架的小色塊、小店、小屋地圖、去朋友家、明信片、拍照都用這一份。之後新增款式在這裡加一行，沒寫到的用色票的牆色、不加花紋。 */
+  const PWALL = {
+    dots: [null, 0, 0, 'dots'], stripe: ['a1', .07, .09, 'stripe'], tile: ['a2', .2, .28, 'grid'], sky: ['sky', .34, .4, 'cloud'], star: ['rug', .3, .36, 'star'],
+    cream: ['sun', .13, .19, 'dots'], wave: ['sea', .22, .28, 'scallop'], peach: ['a1', .15, .19, 'check'], lav: ['rug', .2, .26, 'stripe'], mintdot: ['leaf', .15, .2, 'dots'], forest: ['leaf', .24, .3, 'scallop'],
+  };
+  const PFLOOR = {
+    check: [null, 0, 'check'], wood: ['wood', .16, 'plank'], mint: ['a2', .24, 'check'], cloud: ['paper', .3, 'cloud'], grass: ['leaf', .36, 'dots'], space: ['sea', .5, 'star'],
+    honey: ['sun', .3, 'check'], pinkwood: ['a1', .22, 'plank'], stone: ['paperd', .3, 'check'], sand: ['sand', .5, 'dots'],
+  };
+  // 花紋：一小塊可以平鋪的圖，只有形狀；顏色和濃淡在外面定
+  const PTILE = {
+    dots: [28, 28, '<circle cx="7" cy="7" r="3.2"/><circle cx="21" cy="21" r="3.2"/>'],
+    stripe: [28, 8, '<rect width="14" height="8"/>'],
+    grid: [24, 24, '<rect width="24" height="1.6"/><rect width="1.6" height="24"/>'],
+    check: [32, 32, '<rect width="16" height="16"/><rect x="16" y="16" width="16" height="16"/>'],
+    star: [46, 40, '<path d="M11 6l1.600 3.300 3.600.500-2.600 2.500.600 3.600L11 14.200l-3.200 1.700.600-3.600-2.600-2.500 3.600-.500z"/><circle cx="34" cy="28" r="1.700"/><circle cx="30" cy="8" r="1.100"/>'],
+    cloud: [72, 44, '<ellipse cx="20" cy="15" rx="13" ry="5.500"/><ellipse cx="28" cy="11" rx="8" ry="6"/><ellipse cx="54" cy="35" rx="11" ry="4.600"/>'],
+    scallop: [30, 16, '<path d="M0 16a15 15 0 0 1 30 0h-3a12 12 0 0 0-24 0z"/>'],
+    plank: [72, 22, '<rect y="20.400" width="72" height="1.600"/><rect x="24" width="1.600" height="11"/><rect x="58" y="11" width="1.600" height="11"/>'],
+  };
+  const DECO_IMG = {};   // 拍照用：花紋先載成圖
+  const patURL = name => {
+    const t = PTILE[name]; if (!t) return '';
+    const [r, g, b] = hex(C.dark ? C.paper : C.ink), op = C.dark ? .03 : .045;   // 很淡：近看才看得出來，晚上更淡
+    return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${t[0]}" height="${t[1]}"><g fill="rgb(${r},${g},${b})" fill-opacity="${op}">${t[2]}</g></svg>`)}")`;
+  };
+  const wallOf = k => { const d = PWALL[k] || [null, 0, 0, '']; return {c: d[0] ? mix(C.wall, C[d[0]], d[1]) : C.wall, c2: d[0] ? mix(C.wall2, C[d[0]], d[2]) : C.wall2, pat: d[3]}; };
+  const floorOf = k => { const d = PFLOOR[k] || [null, 0, '']; return {c: d[0] ? mix(C.floor, C[d[0]], d[1]) : C.floor, pat: d[2]}; };
+  // 照現在的天色產生一份樣式。牆和地板本身、收納架和小店的小色塊（.sw）、小屋地圖的小格子都用它
+  function deco(){
+    if (!C.wall) return;
+    const veil = c => { const [r, g, b] = hex(c); return `linear-gradient(rgba(${r},${g},${b},.56),rgba(${r},${g},${b},.56))`; };
+    const bg = (c, pat, tex) => `background:${pat ? patURL(pat) + ',' : ''}${tex ? veil(c) + ',var(--p-fiber),' : ''}${c}!important;background-size:${pat ? 'auto,' : ''}${tex ? 'auto,192px 192px,' : ''}auto!important;background-blend-mode:${pat ? 'normal,' : ''}${tex ? 'normal,multiply,' : ''}normal!important`;
+    const css = [];
+    const walls = typeof WALLS !== 'undefined' ? WALLS : Object.keys(PWALL), floors = typeof FLOORS !== 'undefined' ? FLOORS : Object.keys(PFLOOR);
+    walls.forEach(k => {
+      const w = wallOf(k);
+      css.push(`.screen.ppon .wall.w-${k}{${bg(w.c, w.pat, true)}}`);
+      css.push(`.screen.ppon .wall.w-${k}::before{background:${veil(w.c2)},var(--p-fiber),${w.c2};background-size:auto,192px 192px,auto;background-blend-mode:normal,multiply,normal}`);
+      css.push(`.look-paper .sw.w-${k},.look-paper .hm-c .hm-wall.w-${k}{${bg(w.c, w.pat, false)}}`);
+      if (w.pat){ const im = new Image(); im.src = patURL(w.pat).slice(5, -2); DECO_IMG['w-' + k] = im; }
+    });
+    floors.forEach(k => {
+      const f = floorOf(k);
+      css.push(`.screen.ppon .floor.f-${k}{${bg(f.c, f.pat, true)}}`);
+      css.push(`.look-paper .sw.f-${k},.look-paper .hm-c .hm-floor.f-${k}{${bg(f.c, f.pat, false)}}`);
+      if (f.pat){ const im = new Image(); im.src = patURL(f.pat).slice(5, -2); DECO_IMG['f-' + k] = im; }
+    });
+    let st = document.getElementById('pp-deco');
+    if (!st){ st = document.createElement('style'); st.id = 'pp-deco'; document.head.appendChild(st); }
+    st.textContent = css.join('\n');
+  }
+
   /* ---------- 畫圖的小工具：f 是「給顏色、回傳形狀」的函式；L 會先畫一塊往下錯開的影子，再畫本體 ---------- */
   const sh = (f, d = 1) => `<g opacity="${(.17 + .05 * d).toFixed(2)}" transform="translate(0 ${(1.15 * d).toFixed(2)})">${f(C.ink)}</g>`;
   const L = (f, col, d = 1) => sh(f, d) + f(col);
@@ -335,13 +390,17 @@ if (PAPER_ON) (() => {
   // 拍照、明信片（js/photo.js 比這個檔晚載入，等全部載完再換）：牆和地板照新風格畫，不看玩家選的壁紙。紙紋理在照片裡不畫
   addEventListener('DOMContentLoaded', () => {
     const a = (c, o) => { const [r, g, b] = hex(c); return `rgba(${r},${g},${b},${o})`; };
-    if (typeof paintWall === 'function') paintWall = async function(ctx, s, W, wh){
-      ctx.fillStyle = C.wall; ctx.fillRect(0, 0, W, wh);
-      if (roomId !== 'attic'){ ctx.fillStyle = a(C.ink, .2); ctx.fillRect(0, wh * .69 - 2, W, 2); ctx.fillStyle = C.wall2; ctx.fillRect(0, wh * .69, W, wh * .31); }
+    const patFill = (ctx, key, x, y, w, h) => { const im = DECO_IMG[key]; if (!im || !im.complete || !im.naturalWidth) return; try { ctx.fillStyle = ctx.createPattern(im, 'repeat'); ctx.fillRect(x, y, w, h); } catch (e) {} };
+    if (typeof paintWall === 'function') paintWall = async function(ctx, s, W, wh, kind){
+      const w = wallOf(kind);
+      ctx.fillStyle = w.c; ctx.fillRect(0, 0, W, wh);
+      patFill(ctx, 'w-' + kind, 0, 0, W, wh);
+      if (roomId !== 'attic'){ ctx.fillStyle = a(C.ink, .2); ctx.fillRect(0, wh * .69 - 2, W, 2); ctx.fillStyle = w.c2; ctx.fillRect(0, wh * .69, W, wh * .31); }
     };
-    if (typeof paintFloor === 'function') paintFloor = function(ctx, s, W, H, wh){
-      const fh = H - wh;
-      ctx.fillStyle = C.floor; ctx.fillRect(0, wh, W, fh);
+    if (typeof paintFloor === 'function') paintFloor = function(ctx, s, W, H, wh, kind){
+      const fh = H - wh, f = floorOf(kind);
+      ctx.fillStyle = f.c; ctx.fillRect(0, wh, W, fh);
+      patFill(ctx, 'f-' + kind, 0, wh, W, fh);
       const g = ctx.createLinearGradient(0, wh, 0, wh + fh * .26); g.addColorStop(0, a(C.ink, .26)); g.addColorStop(1, a(C.ink, 0));
       ctx.fillStyle = g; ctx.fillRect(0, wh, W, fh * .26);
       if (roomId === 'living'){

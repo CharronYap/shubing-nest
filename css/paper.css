@@ -189,6 +189,8 @@
 .look-paper .hm-house{background:var(--p-wood3);box-shadow:inset 0 0 0 3px var(--p-wood);border-radius:10px}
 .look-paper .hm-c .hm-wall{background:var(--p-wall)!important}
 .look-paper .hm-c .hm-floor{background:var(--p-floor)!important;border-top-color:var(--p-wood2)}
+/* 每一款壁紙地板的顏色和花紋由 js/paper.js 的 deco() 產生（<style id="pp-deco">），會蓋過上面這兩條和牆、地板的底色 */
+.look-paper .sw{border-radius:6px;border-color:transparent;box-shadow:0 0 0 1px var(--p-edge)}
 .look-paper .hm-c.lock .hm-wall{background:color-mix(in srgb,var(--p-ink) 60%,var(--p-paper))!important}
 .look-paper .hm-c.off::after{background:color-mix(in srgb,var(--p-ink) 50%,transparent)}
 .look-paper .al-tr span,.look-paper .spin-tip{border-color:transparent;background:var(--p-paperd);color:var(--p-ink);border-radius:6px}
