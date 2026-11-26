@@ -104,11 +104,11 @@ function bookPaint(){
       const can = b.owner || e.from === net.me.uid;
       return `<div class="bk-it ${b.fresh && b.fresh.includes(e.id) ? 'new' : ''}"><span class="bk-s">${bookStickerHTML(e.sticker)}</span>
         <div class="bk-tx"><b>${txSlot(sText(e.fromName, 24) || '朋友')}</b><small>${dayMd(e.day | 0)}</small>${e.msg ? `<p>${txSlot(sText(e.msg, BOOK_LEN))}</p>` : ''}</div>
-        ${can ? `<button class="bk-del" data-bkd="${e.id.replace(/[^\w-]/g, '')}" aria-label="刪掉這一則"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>` : ''}</div>`;
+        ${can ? `<button class="bk-del" data-bkd="${e.id.replace(/[^\w-]/g, '')}" aria-label="丟掉這一則（要按兩次）"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>` : ''}</div>`;
     }).join('');
     const pager = pages > 1 ? `<div class="bk-pg"><button data-bkp="-1" aria-label="上一頁" ${b.page ? '' : 'disabled'}>‹</button><span>${b.page + 1} / ${pages}</span><button data-bkp="1" aria-label="下一頁" ${b.page < pages - 1 ? '' : 'disabled'}>›</button></div>` : '';
     const empty = b.owner ? '<p class="al-em">還沒有人留言。朋友來家裡時，可以在這裡貼一張貼紙、寫一句話。</p>' : '<p class="al-em">還沒有人留言，你是第一個。</p>';
-    body = form + (n ? rows + pager : empty) + (b.owner ? '<p class="bk-note">訪客簿的字，來你家的朋友都看得到。不想留的那一則可以按叉叉刪掉。</p>' : '');
+    body = form + (n ? rows + pager : empty) + (b.owner ? '<p class="bk-note">訪客簿的字，來你家的朋友都看得到。不想留的那一則可以按叉叉丟掉（要按兩次）。</p>' : '');
   }
   openSheet(`<div class="hd">${BOOK_ICON}<span>${b.owner ? '訪客簿' : txSlot(b.name) + '的訪客簿'}</span></div><div class="bk-box">${body}</div>`);
   const inp = $('#sheet .bk-in');
@@ -136,7 +136,7 @@ async function bookDel(id){
     await net.bookDel(b.uid, e.id);
     b.list = b.list.filter(x => x !== e);
     if (b.mine && b.mine.id === e.id) b.mine = null;
-    toast('刪掉了');
+    toast('這一則丟掉了');
   } catch (err) { sQuiet('book', err); toast(sErr(err)); }
   b.busy = false;
   if (bk === b && $('#sheet .bk-box')) bookPaint();
@@ -146,7 +146,11 @@ $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.bks){ bk.sticker = b.dataset.bks; bookPaint(); }
   else if (b.dataset.bk === 'add') bookAdd();
-  else if (b.dataset.bkd) bookDel(b.dataset.bkd);
+  else if (b.dataset.bkd){
+    // 刪留言：按兩次才真的刪（第一次只是問，三秒沒按就變回叉叉）
+    if (!b.dataset.sure){ const old = b.innerHTML; b.dataset.sure = '1'; b.classList.add('sure'); b.textContent = '丟掉？'; setTimeout(() => { if (b.isConnected && b.dataset.sure){ delete b.dataset.sure; b.classList.remove('sure'); b.innerHTML = old; } }, 3000); return; }
+    bookDel(b.dataset.bkd);
+  }
   else if (b.dataset.bkp){ bk.page += +b.dataset.bkp; bookPaint(); }
 });
 

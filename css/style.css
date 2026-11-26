@@ -1243,3 +1243,18 @@ span.yd-kind{cursor:default}
 .items .tile{overflow:hidden}
 /* 2026-11-27：封面不放娃娃機的鈕（問號靠到最右邊）；娃娃機那一頁不放回封面的鈕，只留回房間那一顆 */
 .pg-claw #homeBtn{display:none!important}
+
+/* =====================================================================
+   打開朋友寄來的明信片（js/card.js，2026-11-27 重排）：上面一行標題，房間縮小畫成一張有白邊的卡片，放在暗掉的背景中間
+   ===================================================================== */
+.screen.incard{background:#2b2742}
+.incard .top,.incard .lsw,.incard .fx-pass,.incard .cam{visibility:hidden}
+.incard .stage{transform:scale(.8);transform-origin:50% 44%;border-radius:3px;box-shadow:0 0 0 12px #fffdf8,0 0 0 13px rgba(0,0,0,.12),0 20px 34px rgba(0,0,0,.5)}
+.pc-top{position:absolute;left:0;right:0;top:calc(14px + var(--sat,0px));z-index:40;display:flex;flex-direction:column;align-items:center;gap:1px;padding:0 16px;text-align:center;color:#fffdf8;pointer-events:none}
+.pc-top b{font-size:17px;font-weight:900;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-top small{font-size:12.500px;opacity:.75}
+.pc-none{margin:0;padding:4px 0 2px;font-size:13px;text-align:center;color:var(--soft);opacity:.8}
+.pc-row .btn{flex:1}
+.pc-row .pc-del{flex:none;padding-left:10px;padding-right:10px;background:none;box-shadow:none;border-color:transparent;color:var(--soft);font-size:12.500px;font-weight:700}
+.pc-row .pc-del[data-sure]{flex:1.6;color:#c0392b;background:#ffecec}
+.bk-del.sure{width:auto;padding:0 8px;border-radius:13px;font:inherit;font-size:12px;font-weight:800;color:#c0392b;background:#ffecec}

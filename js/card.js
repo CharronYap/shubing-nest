@@ -95,7 +95,7 @@ function cardSection(){
   const pc = (S.mail && S.mail.pc) || [];
   return pc.map((c, i) => `<div class="ml pc ${c.r ? '' : 'unread'}">
     <div class="ml-hd"><span class="pc-st">${CARD_ICON}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${md(c.t)}</small>${c.msg ? `<i>${txSlot(c.msg)}</i>` : ''}</span></div>
-    <div class="ml-ft"><button class="btn y sm" data-pc="open" data-i="${i}">看明信片</button><button class="btn sm" data-pc="del" data-i="${i}">收掉</button></div></div>`).join('');
+    <div class="ml-ft"><button class="btn y sm" data-pc="open" data-i="${i}">看明信片</button><button class="btn sm" data-pc="del" data-i="${i}">丟掉</button></div></div>`).join('');
 }
 function cardOpen(i){
   const c = cardMail().pc[i]; if (!c || VISIT) return;
@@ -110,19 +110,25 @@ function cardOpen(i){
   setPage('room');
   roomId = rid;
   load();
+  // 這一頁要一眼看得出是「朋友寄來的一張明信片」（2026-11-27 使用者說看不懂）：
+  // 最上面一行標題；房間縮小、畫成有白邊的卡片放在暗掉的背景中間（css 的 .incard）；
+  // 背面有寫字才畫橫線紙，沒寫就一行淡淡的小字；三顆鈕：丟掉這張（最淡、要按兩次）｜存到手機｜看完了
+  let top = document.getElementById('pcTop');
+  if (!top){ top = document.createElement('div'); top.id = 'pcTop'; top.className = 'pc-top'; screen.appendChild(top); }
+  top.innerHTML = `<b>${txSlot(c.w)}寄來的明信片</b><small>${md(c.t)}</small>`;
   const bar = $('#vbar');
-  bar.innerHTML = `<div class="pc-back"><p class="pc-msg">${c.msg ? txSlot(c.msg) : ''}</p><div class="pc-from"><b>${txSlot(c.w)}</b><small>${md(c.t)}</small></div></div>
-    <div class="vb-row"><button class="btn vb-home">收起來</button><button class="btn pc-del">收掉這張</button><button class="btn y pc-save">存成圖片</button></div>`;
+  bar.innerHTML = `${c.msg ? `<div class="pc-back"><p class="pc-msg">${txSlot(c.msg)}</p></div>` : '<p class="pc-none">這張沒有寫字。</p>'}
+    <div class="vb-row pc-row"><button class="btn pc-del">丟掉這張</button><button class="btn pc-save">存到手機</button><button class="btn y vb-home">看完了</button></div>`;
   bar.querySelector('.vb-home').onclick = cardClose;
-  // 收掉：按兩次才真的收（第一次只是問），收了就沒有了
+  // 丟掉：按兩次才真的丟（第一次只是問，三秒沒按就變回來），丟了就沒有了
   const del = bar.querySelector('.pc-del');
   del.onclick = () => {
-    if (!del.dataset.sure){ del.dataset.sure = '1'; del.textContent = '確定收掉'; setTimeout(() => { if (del.isConnected){ delete del.dataset.sure; del.textContent = '收掉這張'; } }, 4000); return; }
+    if (!del.dataset.sure){ del.dataset.sure = '1'; del.textContent = '真的要丟掉嗎？再按一次'; setTimeout(() => { if (del.isConnected){ delete del.dataset.sure; del.textContent = '丟掉這張'; } }, 3000); return; }
     const m = cardMail(), k = m.pc.indexOf(c);
     if (k >= 0) m.pc.splice(k, 1);
     save(); mailBadge();
     cardClose();
-    toast('這張明信片收掉了');
+    toast('這張明信片丟掉了');
   };
   bar.querySelector('.pc-save').onclick = async () => {
     let shot = null;
@@ -135,6 +141,7 @@ function cardClose(){
   if (!cardView) return;
   cardView = null;
   screen.classList.remove('incard');
+  const top = document.getElementById('pcTop'); if (top) top.remove();
   visitClose();
   // 收到的明信片現在收在朋友面板（js/friend.js）
   if (typeof frOpen === 'function' && typeof sNet === 'function' && sNet()) frOpen('in'); else openMail();

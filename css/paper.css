@@ -360,3 +360,9 @@
 .look-paper .tray-more{border:0;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
 .look-paper .tray-more i{color:var(--p-a1d)}
 .look-paper .tile .how{background:color-mix(in srgb,var(--p-paper) 90%,transparent);color:var(--p-ink);border-radius:4px}
+/* 明信片那一頁、訪客簿的「丟掉？」 */
+.look-paper .screen.incard{background:color-mix(in srgb,var(--p-ink) 82%,var(--p-wall2))}
+.look-paper .incard .stage{box-shadow:0 0 0 12px var(--p-paper),0 6px 0 12px color-mix(in srgb,var(--p-ink) 40%,transparent),0 22px 30px rgba(0,0,0,.45)}
+.look-paper .pc-top{color:var(--p-paper);font-family:var(--p-hand)}
+.look-paper .pc-row .pc-del{background:none;box-shadow:none;color:color-mix(in srgb,var(--p-ink) 55%,var(--p-paper))}
+.look-paper .pc-row .pc-del[data-sure],.look-paper .bk-del.sure{background:var(--p-a1d);color:var(--p-paper);box-shadow:none;border-radius:8px}
