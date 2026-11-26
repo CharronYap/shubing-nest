@@ -33,7 +33,8 @@ function sizeOf(it){
   if(it.kind==='doll'){const s=depth(it.y)*(it.sit?.92:1);const w=22*s;return [w,w*RATIO];}
   const f=FURN[it.id];const s=f.wall?1:depth(it.y);const w=f.w*s;return [w,w*(f.vb[1]/f.vb[0])*RATIO];
 }
-function seatPos(f,k){const [w,h]=sizeOf(f);const [sx,sy]=FURN[f.id].seats[k];return [f.x+(sx-.5)*w,roomV(roomY(f.y)-(1-sy)*h)];}
+// 座位可以在家具旁邊（sx 小於 0 或大於 1，例如拖鞋架、點心櫃），家具靠邊擺時不讓座位跑出房間
+function seatPos(f,k){const [w,h]=sizeOf(f);const [sx,sy]=FURN[f.id].seats[k];return [Math.max(7,Math.min(93,f.x+(sx-.5)*w)),roomV(roomY(f.y)-(1-sy)*h)];}
 function syncSeated(){items.forEach(d=>{if(d.kind==='doll'&&d.sit){const f=items.find(o=>o.uid===d.sit);if(!f){d.sit=null;return;}const [x,y]=seatPos(f,d.seat);d.x=x;d.y=y+.5;}});}
 function zOf(it){
   if(it.kind==='furn'){const f=FURN[it.id];if(f.floor)return 6;if(f.wall)return 8;return 20+Math.round(it.y*3);}
@@ -99,11 +100,15 @@ function onMove(e){
   if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6)return;
   if(!drag.moved){drag.moved=true;el.classList.add('drag');tray.classList.add('ghost');if(it.kind==='doll'){room.classList.add('dragdoll');showSeats(it);}if(it.sit)it.sit=null;}
   const [px,py]=pt(e);const [x0,x1,y0,y1]=limits(it);
-  it.x=Math.max(x0,Math.min(x1,px+drag.dx));it.y=Math.max(y0,Math.min(y1,roomV(py+drag.dy)));
+  // fx、fy：手指實際拖到的位置（娃娃腳的位置），還沒被夾回地板
+  const fx=px+drag.dx,fy=roomV(py+drag.dy);
+  it.x=Math.max(x0,Math.min(x1,fx));it.y=Math.max(y0,Math.min(y1,fy));
   if(it.kind==='doll'){
-    let best=null,bd=9;
-    room.querySelectorAll('.seat').forEach(s=>{const d=Math.hypot(+s.dataset.x-it.x,(+s.dataset.y-it.y)*.85);if(d<bd){bd=d;best=s;}s.classList.remove('hot');});
-    if(best)best.classList.add('hot');drag.seatHot=best;
+    // 找最近的座位要用手指的位置，不能用夾過的：高的家具（書櫃頂）靠牆擺時，座位在地板範圍上面，夾過就永遠搆不到
+    let best=null,bd=10;
+    room.querySelectorAll('.seat').forEach(s=>{const d=Math.hypot(+s.dataset.x-fx,(+s.dataset.y-fy)*.85);if(d<bd){bd=d;best=s;}s.classList.remove('hot');});
+    if(best){best.classList.add('hot');it.x=+best.dataset.x;it.y=+best.dataset.y+.5;}   // 有座位亮起來：直接貼上去預覽，放開就坐上去
+    drag.seatHot=best;
   }
   tray.classList.toggle('over',overTray(e));
   render();el.style.zIndex=500;
