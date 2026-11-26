@@ -320,8 +320,9 @@ setInterval(()=>{if(isNight()!==screen.classList.contains('night')||(typeof skyK
 function renderNav(){
   const yd=typeof yardOn!=='undefined'&&yardOn;
   const ids=VISIT&&!VISIT.yard?RIDS:[...RIDS,'yard'];
-  $('#nav').innerHTML=`<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'})[r]}">${ICON[r]}</button>`).join('')}</div>`;
-  const rn=$('#nav .rnav'),on=$('#nav .on');if(rn&&on&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=on.offsetLeft-rn.clientWidth/2+on.offsetWidth/2;   // 房間多的時候，讓現在這間留在看得到的地方
+  // 現在這一間的那顆變寬、圖示旁邊寫名字（.nm 只有 .on 才顯示）；其他間只有圖示
+  $('#nav').innerHTML=`<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'})[r]}">${ICON[r]}<span class="nm">${ROOM_SHORT[r]||''}</span></button>`).join('')}</div>`;
+  const rn=$('#nav .rnav'),on=$('#nav .on');if(rn&&on&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=on.offsetLeft-rn.offsetLeft-rn.clientWidth/2+on.offsetWidth/2;   // 房間多的時候，讓現在這間留在看得到的地方
 }
 function slide(dir,swap){
   if(REDUCE){swap();return;}
@@ -345,9 +346,19 @@ function load(){
 // goingTo：正在切過去、還沒換好的房間。連點時用它判斷，不然點回原房間會被略過
 let goingTo=null;
 function goRoom(r){
-  if(r==='yard'){if(typeof yardOpen==='function'&&!yardOn)yardOpen();return;}
-  if(typeof yardOn!=='undefined'&&yardOn){yardClose();if(r===(goingTo??roomId)){renderNavTo(r);return;}}
-  const from=goingTo??roomId;if(r===from)return;const d=RIDS.indexOf(r)>RIDS.indexOf(from)?1:-1;goingTo=r;slide(d,()=>{roomId=r;goingTo=null;load();});renderNavTo(r);}
-function renderNavTo(r){document.querySelectorAll('.rnav button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);if(on&&b.scrollIntoView)b.scrollIntoView({block:'nearest',inline:'nearest'});});}
+  if(r==='yard'){if(typeof yardOpen==='function'&&!yardOn){yardOpen();if(yardOn)roomSign('yard');}return;}
+  if(typeof yardOn!=='undefined'&&yardOn){yardClose();if(r===(goingTo??roomId)){renderNavTo(r);roomSign(r);return;}}
+  const from=goingTo??roomId;if(r===from)return;const d=RIDS.indexOf(r)>RIDS.indexOf(from)?1:-1;goingTo=r;slide(d,()=>{roomId=r;goingTo=null;load();});renderNavTo(r);roomSign(r);}
+function renderNavTo(r){const rn=$('#nav .rnav');document.querySelectorAll('.rnav button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);if(on&&rn&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=b.offsetLeft-rn.offsetLeft-rn.clientWidth/2+b.offsetWidth/2;});}
+// 切換鈕上寫的短名字，和換房間時上方中間跳出來的小牌子（一秒後淡掉）
+const ROOM_SHORT={living:'客廳',bed:'臥室',bath:'浴室',kitchen:'廚房',attic:'閣樓',yard:'小島'};
+let signT=0;
+function roomSign(r){
+  let el=$('#rsign');
+  if(!el){el=document.createElement('div');el.id='rsign';el.className='rsign';el.setAttribute('aria-hidden','true');screen.appendChild(el);}
+  el.innerHTML=`${ICON[r]||''}<span>${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[r])||ROOM_SHORT[r]||''}</span>`;
+  el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
+  clearTimeout(signT);signT=setTimeout(()=>el.classList.remove('on'),1100);
+}
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-r]');if(b)goRoom(b.dataset.r);});
 let toastT;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),1400);}

@@ -782,7 +782,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 @keyframes wrain{from{transform:translate(1px,-4px)}to{transform:translate(-1px,4px)}}
 @media (prefers-reduced-motion:reduce){.wrain{animation:none}}
 /* 新房間：房間鈕超過四顆可以左右滑；閣樓的斜屋頂、圓天窗、流星 */
-.rnav:has(>:nth-child(5)){max-width:132px;overflow-x:auto;scrollbar-width:none;justify-content:flex-start;scroll-snap-type:x proximity}
+.rnav:has(>:nth-child(5)){scroll-snap-type:x proximity}
 .rnav:has(>:nth-child(5))::-webkit-scrollbar{display:none}
 .rnav:has(>:nth-child(5)) button{flex:none;scroll-snap-align:center}
 .room[data-rid="attic"] .wall::before{content:"";position:absolute;inset:0;pointer-events:none;
@@ -830,3 +830,17 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 @keyframes flashme{0%,100%{box-shadow:0 0 0 0 rgba(255,111,176,0)}50%{box-shadow:0 0 0 4px var(--pink)}}
 @media (prefers-reduced-motion:reduce){.tile.flashme{animation:none;box-shadow:0 0 0 3px var(--pink)}}
 .sp-it{align-content:start}
+/* 看得出自己在哪一間（1）：切換鈕上現在這一間寫名字，換房間時跳一張小牌子 */
+/* 切換鈕拿上方按鈕列剩下的寬度，放不下就自己左右捲，不會把幣和右邊的按鈕擠出去 */
+.top>#nav{flex:1 1 0;min-width:0;display:flex}
+.rnav{flex:0 1 auto;min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none;justify-content:flex-start}
+.rnav::-webkit-scrollbar{display:none}
+.rnav button{flex:none}
+.rnav button .nm{display:none;font-size:12px;font-weight:900;white-space:nowrap;line-height:1}
+.rnav button.on{width:auto!important;display:flex;align-items:center;gap:3px;padding:0 9px 0 6px}
+.rnav button.on .nm{display:inline}
+.rsign{position:absolute;left:50%;top:calc(104px + var(--sat,0px));transform:translate(-50%,-8px);z-index:610;display:flex;align-items:center;gap:6px;padding:7px 16px 7px 12px;border-radius:999px;
+  background:#fff;border:3px solid #fff;box-shadow:0 0 0 2px #ffd3e6,0 4px 0 #ead9e2;color:var(--pink2);font-size:16px;font-weight:900;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s}
+.rsign svg{width:20px;height:20px;color:var(--pink)}
+.rsign.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.rsign{transition:none}}
