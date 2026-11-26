@@ -285,6 +285,7 @@ function paintRoom(){
   const night=isNight();
   $('#wall').className='wall w-'+cur().wall;$('#floor').className='floor f-'+cur().floor;
   room.dataset.rid=roomId;   // 閣樓的斜屋頂、圓天窗看這個（css）
+  if(typeof fixPaint==='function')fixPaint();   // 每一間固定的樣子和通往隔壁的門口（js/rooms.js）
   $('#win').innerHTML=winSVG(night);
   screen.classList.toggle('night',night);
   if(typeof skyPaint==='function')skyPaint();

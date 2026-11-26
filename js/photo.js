@@ -189,6 +189,8 @@ async function photoShoot(){
     paintFloor(ctx, s, W, H, wh, r.floor);
     const winEl = $('#win svg');
     if (winEl){ const b = boxIn(winEl, R), im = await svgImg(winEl, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }
+    // 房間固定的構造（門、磁磚、流理台、通往隔壁的門口…，js/rooms.js 的 .fx）：照片要跟畫面一樣
+    for (const fx of room.querySelectorAll('.fx svg')){ const b = boxIn(fx, R), im = await svgImg(fx, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }
   }
 
   // 家具、娃娃、地上的小東西：照前後順序（z-index）畫

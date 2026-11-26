@@ -878,3 +878,16 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .hm-isle{position:absolute;left:50%;top:6px;width:46%;height:52%;transform:translateX(-50%);background:#bfe6a0;border:2px solid #9fd17f;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 .hm-y .hm-dolls{bottom:22px}
 .hm-y .hm-nm{background:none}
+/* 看得出自己在哪一間（3）：每一間固定的樣子、通往隔壁的門口 */
+.fx{position:absolute;transform:translateX(-50%);z-index:5;margin:0;padding:0;border:0;background:none;display:block;-webkit-tap-highlight-color:transparent}
+.fx svg{display:block;width:100%;height:auto;pointer-events:none}
+button.fx{cursor:pointer}
+button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-radius:8px}
+.fx-tiles svg{height:100%}
+.fx-pass.l{transform:none}
+.fx-pass.r{transform:translateX(-100%)}
+.fx-pass::after{content:"";position:absolute;inset:-6px -4px}
+.room[data-rid="living"] .win{width:34%}
+.room[data-rid="bed"] .win{width:23%}
+.room[data-rid="bath"] .win{width:19%;top:calc(var(--wh,52%)*.07)}
+.room.dragdoll .fx{opacity:.5}
