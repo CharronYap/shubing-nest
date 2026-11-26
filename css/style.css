@@ -1215,3 +1215,11 @@ span.yd-kind{cursor:default}
 .phimg{-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
 .ph-hold{margin:0;font-size:14px;line-height:1.55;font-weight:800;text-align:center;color:var(--pink2)}
 .phcard.hold .phimg{transform:none}
+/* 全家旅行：客廳的大紙條 */
+.tv-fam{width:26%;min-width:92px;font-size:12.500px;padding:10px 6px;transform:translate(-50%,-100%) rotate(-3deg)}
+/* 旅行相簿：最上面一排合照（左右滑） */
+.tv-pics{display:grid;grid-auto-flow:column;grid-auto-columns:42%;gap:8px;overflow-x:auto;padding:2px 2px 6px;scroll-snap-type:x proximity;min-height:min-content;flex:none}
+.tv-pics .tv-th{scroll-snap-align:start;min-width:0}
+/* 面板本身會上下捲、裡面這一排又會左右捲：每一列照內容的高度，不要被壓扁 */
+.tv-album{grid-auto-rows:max-content}
+.tv-box>.tv-pics{overflow-y:hidden}
