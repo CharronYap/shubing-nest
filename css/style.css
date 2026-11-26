@@ -953,3 +953,24 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 /* 來串門子的娃娃（js/roam2.js） */
 .rv{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .al-fight{margin:6px 2px 0;padding:8px 10px;border-radius:12px;background:#fff3e6;font-size:13px;line-height:1.5;color:#8a5a22}
+/* 小劇場（js/skit.js） */
+.skit-bang{position:absolute;left:50%;top:-30%;transform:translateX(-50%);min-width:22px;height:22px;border-radius:11px;background:#ffb400;color:#fff;font-style:normal;font-size:14px;font-weight:900;line-height:22px;text-align:center;box-shadow:0 0 0 2px #fff,0 3px 0 #d98e00;pointer-events:none;animation:skitBang 1.2s ease-in-out infinite;z-index:2}
+@keyframes skitBang{0%,100%{translate:0 0}50%{translate:0 -4px}}
+.skit-bar{position:absolute;left:10px;right:10px;top:108px;z-index:470;display:flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 0 0 2px #ffe9a8,0 3px 0 #ead9e2;font-size:13px}
+.skit-bar b{flex:none;font-weight:900;color:#c77d00;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skit-bar .cap{flex:1;min-width:0;color:var(--soft);font-weight:700;line-height:1.35}
+.skit-bar .btn{flex:none;padding:4px 10px;font-size:12px}
+.skit-q{position:absolute;left:10px;right:10px;bottom:12px;z-index:480;display:grid;gap:6px;padding:10px;border-radius:16px;background:#fff;box-shadow:0 0 0 2px #ffd3e6,0 6px 16px rgba(80,40,70,.2)}
+.skit-q p{margin:0 2px 2px;font-size:14px;font-weight:900;color:var(--pink2)}
+.skit-q .btn{width:100%;padding:8px 12px;font-size:14px}
+.skit-on .doll.has-ev::after{display:none}
+.al-sk{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:12px;background:#fffbea;margin-top:6px}
+.al-sk b{font-size:13px;font-weight:900;color:#c77d00}
+.al-sk p{margin:2px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink)}
+.al-sk .btn{flex:none}
+.sk-box{display:grid;gap:4px;max-height:calc(100dvh - 240px);overflow-y:auto;font-size:13.5px;line-height:1.5}
+.sk-box p{margin:0}
+.sk-box b{color:var(--pink2)}
+.sk-box .sk-n,.sk-box .sk-q{color:var(--soft)}
+.sk-box .sk-o{font-weight:800;color:#c77d00}
+@media (prefers-reduced-motion:reduce){.skit-bang{animation:none}}

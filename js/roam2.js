@@ -27,7 +27,7 @@ function roamMeet(it, st){
   return true;
 }
 function roamTogether(a, b){
-  if (!items.includes(a) || !items.includes(b)) return;
+  if (!items.includes(a) || !items.includes(b) || roamPaused()) return;   // 走到一半玩家開了面板、或小劇場開演了：這次就不互動
   const k = palKey(a.id, b.id), sa = roamSt(a), sb = roamSt(b);
   sa.next = sb.next = Date.now() + 7000;
   if (fightOf(a.id, b.id)){ roamSay(a, FIGHT_LINE[a.id]); setTimeout(() => { if (items.includes(b)) roamSay(b, FIGHT_LINE[b.id]); }, 2000); return; }
