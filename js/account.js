@@ -84,8 +84,62 @@ function onSaved() { schedulePush(); if (walletOn && !wBusy && S.earn && (S.coin
 async function walletStart() {
   if (!wallet || !me) return;
   try { await wallet.ready; } catch (e) { return; }
-  if (eggLinked()) { walletOn = true; walletSync(); }
-  else if (wallet.user) wallet.signOut();        // 蛋蛋島那邊登入的是別人（換過小窩帳號）：登出，不碰別人的錢包
+  if (eggLinked()) { walletOn = true; walletSync(); return; }
+  if (wallet.user) wallet.signOut();             // 蛋蛋島那邊登入的是別人（換過小窩帳號）：登出，不碰別人的錢包
+  setTimeout(walletAsk, 3000);
+}
+// 用名字和密碼連起來、對一次帳。成功回傳 ''，不成功回傳要給玩家看的一句話（帳號視窗、房間裡的小卡片共用）
+async function walletTry(name, password) {
+  if (String(password || '').length < 6) return '密碼至少要 6 個字';
+  if (!(await walletLink(name, password, me.uid))) {
+    const c = (walletLink.err && walletLink.err.code) || '';
+    return c === 'wallet/timeout' ? '蛋蛋島那邊沒有回應，晚點再試'
+      : /referer|referrer|api-key|unauthorized/.test(c) ? '蛋蛋島那邊還不讓小窩的網址登入（看 docs/WALLET.md）' : loginError(walletLink.err);
+  }
+  walletOn = true; wState = '';
+  await walletSync();
+  try { localStorage.setItem(EGG_ASK(me.uid), '1'); } catch (e) {}
+  return '';
+}
+/* 登入了、還沒連蛋蛋島：進房間時跳一張小卡片要蛋蛋島的密碼（2026-11-26，使用者連上線後兩邊數字不一樣，
+   原因是還沒到帳號視窗去連；改成直接在房間裡問）。這台、這個帳號只問一次：連好了或按「之後再說」就不再跳，帳號視窗裡照樣可以連。
+   封面、面板、別的卡片、薯餅帶路開著時先等一下 */
+const EGG_ASK = u => 'shubingNest.eggAsk.' + u;
+function walletAsk() {
+  if (!wallet || !me || eggLinked()) return;
+  try { if (localStorage.getItem(EGG_ASK(me.uid))) return; } catch (e) { return; }
+  const scr = document.getElementById('screen'), cover = document.getElementById('cover'), sheet = document.getElementById('sheet');
+  if (!scr) return;
+  if (document.hidden || (cover && !cover.hidden) || (sheet && !sheet.hidden) || scr.querySelector('.over') || document.getElementById('tour') || !box.hidden
+    || (typeof page !== 'undefined' && page !== 'room')) { setTimeout(walletAsk, 4000); return; }
+  const o = document.createElement('div'); o.className = 'over';
+  o.innerHTML = `<div class="pcard who wl-ask" role="dialog" aria-label="跟蛋蛋島共用幣和衣服">
+    <h3>跟蛋蛋島共用</h3>
+    <p class="who-l">有在玩薯餅蛋蛋島的話，打一次蛋蛋島的密碼，兩邊的幣、帽子和衣服就合在一起，在哪邊賺、在哪邊買都算。</p>
+    <form class="ac-form" novalidate>
+      <label>蛋蛋島的名字<input name="wn" autocomplete="username" maxlength="24" value="${esc(me.name)}"></label>
+      <label>蛋蛋島的密碼<input name="wp" type="password" autocomplete="current-password" placeholder="至少 6 個字"></label>
+      <p class="ac-err" role="alert"></p>
+      <div class="pz-row wl-row"><button class="btn y" type="submit">連起來</button><button class="btn" type="button" data-wl="later">之後再說</button></div>
+    </form>
+    <small class="st-where">之後也可以在封面左上角的帳號裡連。</small></div>`;
+  scr.appendChild(o);
+  const f = o.querySelector('form'), err = o.querySelector('.ac-err');
+  o.querySelector('[data-wl=later]').onclick = () => { try { localStorage.setItem(EGG_ASK(me.uid), '1'); } catch (e) {} o.remove(); };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    f.querySelectorAll('input,button').forEach(x => x.disabled = true);
+    err.textContent = '連線中…';
+    const m = await walletTry(f.wn.value, f.wp.value);
+    if (!m) {
+      o.remove();
+      if (wState === 'denied') say('連上蛋蛋島了，但蛋蛋島那邊的雲端還沒開好，幣先各算各的');
+      return;
+    }
+    err.textContent = m;
+    f.querySelectorAll('input,button').forEach(x => x.disabled = false);
+  };
+  setTimeout(() => { try { f.wp.focus({ preventScroll: true }); } catch (e) {} }, 60);
 }
 
 const USER_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.2" r="4.4"/><path d="M3.8 20.2c.9-4.2 4.2-6.6 8.2-6.6s7.3 2.4 8.2 6.6c.1.6-.3 1.1-.9 1.1H4.7c-.6 0-1-.5-.9-1.1z"/></svg>';
@@ -528,13 +582,12 @@ function paintWallet() {
   const f = el.querySelector('form'); if (!f) return;
   f.onsubmit = async e => {
     e.preventDefault();
-    const err = f.querySelector('.ac-err'), n = f.wn.value, p = f.wp.value;
-    if (p.length < 6) { err.textContent = '密碼至少要 6 個字'; return; }
+    const err = f.querySelector('.ac-err');
     f.querySelectorAll('input,button').forEach(x => x.disabled = true);
-    if (await walletLink(n, p, me.uid)) { walletOn = true; wState = ''; await walletSync(); paintWallet(); return; }
+    const m = await walletTry(f.wn.value, f.wp.value);
+    if (!m) { paintWallet(); return; }
     f.querySelectorAll('input,button').forEach(x => x.disabled = false);
-    const c = (walletLink.err && walletLink.err.code) || '';
-    err.textContent = c === 'wallet/timeout' ? '蛋蛋島那邊沒有回應，晚點再試' : /referer|referrer|api-key|unauthorized/.test(c) ? '蛋蛋島那邊還不讓小窩的網址登入（看 docs/WALLET.md）' : loginError(walletLink.err);
+    err.textContent = m;
   };
 }
 
