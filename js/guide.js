@@ -22,8 +22,9 @@ const gdTab = t => { gdRoom(roomId === 'yard' ? 'living' : null); tab = t; if (t
 
 const GUIDE = [
   // ---- 房間和佈置
-  {c: 'room', ic: ICON.living, t: '擺娃娃和家具', s: '下面的收納架有四頁：娃娃、家具、牆地、紀念。點一下擺進房間，拖回架子就是收起來。還沒有的收在每一頁最下面。', go: () => gdTab('furn')},
+  {c: 'room', ic: ICON.living, t: '擺娃娃和家具', s: '下面的收納架有四頁：娃娃、家具、牆地、紀念。點一下擺進房間，拖回架子就是收起來。上面那條把手可以往上拖開大、往下拖收起來。', go: () => gdTab('furn')},
   {c: 'room', ic: MAP_ICON, t: '小屋地圖', s: '上面中間那顆。看得到每一間有誰，點一間就過去。', go: () => mapOpen()},
+  {c: 'room', ic: ICON.living, t: '家具系列', s: '同一個系列的家具湊齊了會送東西。收納架家具那一頁最上面看得到還差幾件。', go: () => { if (typeof seriesOpen === 'function') seriesOpen(); }},
   {c: 'room', ic: '<span class="sw w-dots"></span>', t: '壁紙和地板', s: '收納架第三個分頁，點一下就換。', go: () => gdTab('deco')},
   {c: 'room', ic: gdDoll('sloth'), t: '開燈和關燈', s: '牆上的開關。關了燈，房間暗下來，燈會亮。', go: () => gdRoom(roomId === 'yard' ? 'living' : null)},
   {c: 'room', ic: ICON.yard, t: '門外小島', s: '客廳的門走出去。可以帶娃娃去、擺戶外的家具；種花、搖樹、招待小客人，都是點一下。', go: () => gdRoom('yard')},

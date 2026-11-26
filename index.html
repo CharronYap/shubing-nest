@@ -68,7 +68,8 @@ document.write(h)})();
           <button class="tab" data-tab="deco" aria-label="牆和地板"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="15" height="7" rx="2.5"/><path d="M18 6.5h2.5v6H11v3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="9" y="15" width="4" height="7" rx="1.5"/></svg><small>牆地</small></button>
           <button class="tab" data-tab="keep" aria-label="紀念品"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.600 5.400 5.900.800-4.300 4.100 1.100 5.900L12 16.400 6.700 19.200l1.100-5.900L3.500 9.200l5.900-.800z"/></svg><small>紀念</small></button>
           <span class="sp"></span>
-          <button class="setb" id="setb" aria-label="雲朵系列"><span class="cl"></span><span class="dots" id="setdots"></span></button>
+          <!-- 雲朵系列那顆（五個點）拿掉了：2026-11-27 使用者說看不懂。系列進度改成家具那一頁最上面的一行字。元素留著是因為程式還會找它 -->
+          <button class="setb" id="setb" aria-label="雲朵系列" hidden tabindex="-1"><span class="cl"></span><span class="dots" id="setdots"></span></button>
           <span class="tab back"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v12M6 12l6 6 6-6"/></svg>收回</span>
         </div>
         <div class="items" id="items"></div>

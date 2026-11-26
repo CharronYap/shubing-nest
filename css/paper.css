@@ -93,8 +93,8 @@
 .screen.ppon .tile .nw{background:var(--p-a1);color:var(--p-paper);border-radius:5px;font-family:var(--p-hand)}
 .screen.ppon .tile .lk{border-radius:4px;background:var(--p-paper);color:var(--p-edge);box-shadow:none}
 /* 收起來的收納架：一顆主色的紙片 */
-.screen.ppon .tray.min{border:0;border-radius:16px;background:var(--p-a1);box-shadow:0 4px 0 var(--p-a1d),0 8px 10px var(--p-shadow)}
-.screen.ppon .tray.min .trayopen{color:var(--p-paper);border-radius:16px}
+/* 抽屜全開時的影子 */
+.screen.ppon .tray.full{box-shadow:0 -4px 0 var(--p-edge),0 -10px 18px var(--p-shadow)}
 
 /* ---------- 對話框、提示：貼上去的小紙條，手寫字 ---------- */
 .screen.ppon .say{background:var(--p-paper);color:var(--p-ink);border-radius:6px;font-family:var(--p-hand);font-size:14.5px;font-weight:400;padding:4px 10px 5px;box-shadow:0 2px 0 var(--p-edge),0 5px 6px var(--p-shadow)}
@@ -366,3 +366,5 @@
 .look-paper .pc-top{color:var(--p-paper);font-family:var(--p-hand)}
 .look-paper .pc-row .pc-del{background:none;box-shadow:none;color:color-mix(in srgb,var(--p-ink) 55%,var(--p-paper))}
 .look-paper .pc-row .pc-del[data-sure],.look-paper .bk-del.sure{background:var(--p-a1d);color:var(--p-paper);box-shadow:none;border-radius:8px}
+.look-paper .tray-set{background:color-mix(in srgb,var(--p-sun) 20%,var(--p-card));border-radius:8px;box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .tray-set i,.look-paper .tray-setall{color:var(--p-a1d);font-family:var(--p-hand)}

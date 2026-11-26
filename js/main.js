@@ -187,5 +187,6 @@ startStep('每天的幣', grantCoins);
 startStep('小事的數字', renderEvBadge);
 startStep('切到房間', () => setPage('room'));
 startStep('娃娃機', initClaw);
+startStep('收納架的高度', () => { let st = 'h'; try { const v = localStorage.getItem(TRAY_KEY); st = v === '1' ? 'c' : v === 'c' || v === 'f' ? v : 'h'; } catch (e) {} trayTo(st, true); });
 // 開著過了午夜：換新的一天
 setInterval(() => { if (S.day.date !== todayStr()){ planDay(); grantCoins(); renderEvBadge(); markDolls(); } }, 60000);

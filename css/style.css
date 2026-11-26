@@ -95,6 +95,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .tab svg{width:20px;height:20px}
 .tab.on{background:var(--pink);border-color:var(--pink);color:#fff}
 .tabs .sp{flex:1}
+.setb[hidden]{display:none}
 .tabs .back{width:auto;padding:0 10px;font:inherit;font-size:12px;font-weight:800;gap:4px;display:none;align-items:center}
 .tray.over .tabs .back{display:flex;border-color:var(--pink);color:var(--pink2)}
 .tray.over .setb{display:none}
@@ -102,23 +103,24 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .grip{display:block;width:100%;height:20px;border:0;background:none;padding:7px 0 0;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
 .grip i{display:block;width:44px;height:5px;margin:0 auto;border-radius:3px;background:#ecd6e3}
 .grip:focus-visible{outline:3px solid var(--pink);outline-offset:-3px;border-radius:12px}
-/* 收起來：縮成房間右下角的圓按鈕；拖東西時變淡、點不到，底下的娃娃看得見 */
+/* 收納架是可以上下拖的抽屜：收起（.min，只剩把手和分頁列）／一半（預設，兩排）／全開（.full，浮在房間上面）。js/room.js 的 trayTo */
 #roomPage{position:relative}
 .trayopen{display:none}
-.tray.min{position:absolute;right:14px;bottom:14px;margin:0;width:56px;height:56px;border-radius:50%;border:3px solid #fff;
-  background:linear-gradient(#ff9ccb,var(--pink));box-shadow:0 4px 0 var(--pink2),0 6px 14px rgba(150,60,110,.22);transition:opacity .2s}
-.tray.min .tabs,.tray.min .grip{display:none}
-.tray.min .trayopen{display:grid;place-items:center;width:100%;height:100%;border:0;border-radius:50%;background:none;color:#fff;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.trayopen svg{width:28px;height:28px}
-.trayopen:focus-visible{outline:3px solid var(--pink2);outline-offset:3px}
-.tray.min.ghost{opacity:.22;pointer-events:none}
+.tray.min .items{display:none}
+.tray.min{padding-bottom:8px}
+.tray.ghost{opacity:.5}
+.tray.full{position:absolute;left:0;right:0;bottom:0;top:var(--tray-top,150px);margin:0 8px 10px;display:flex;flex-direction:column;z-index:60;box-shadow:0 -6px 18px rgba(60,30,60,.22),0 4px 0 #ecdff2}
+.tray.full .items{flex:1;min-height:0;max-height:none}
+#traySpace{flex:none}
+.grip{height:24px}
+.grip i{width:52px;height:6px}
 .setb{display:flex;align-items:center;gap:5px;background:#fff;border:2px solid #e6dcf7;border-radius:999px;height:32px;padding:0 9px 0 5px;cursor:pointer;font:inherit;flex:none}
 .setb .cl{width:28px;height:15px;background:var(--cloud) center/100% 100% no-repeat}
 .setb .dots{display:flex;gap:3px}
 .setb .dots i{width:7px;height:7px;border-radius:50%;background:#e8e1f8}
 .setb .dots i.on{background:var(--lav2)}
-.items{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px 10px 12px;max-height:160px;overflow:auto}
-.tray.min .items{display:none}
+/* 一半的高度剛好兩排（--tray-two 由 js 照格子的大小算）；裡面自己捲，不帶著整頁動；最後一排下面留一點空白 */
+.items{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px 10px 22px;max-height:var(--tray-two,200px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start}
 .tile{position:relative;aspect-ratio:1;border-radius:16px;border:2px solid #f3e7ef;background:linear-gradient(#fff,#fbf6ff);display:grid;place-items:center;cursor:pointer;padding:6px;min-width:0}
 .tile>svg,.tile>img,.tile>.sw{width:86%;height:86%;object-fit:contain;pointer-events:none}
 .tile .sw{border-radius:10px;border:2px solid #fff;box-shadow:0 0 0 1px #eee}
@@ -1258,3 +1260,10 @@ span.yd-kind{cursor:default}
 .pc-row .pc-del{flex:none;padding-left:10px;padding-right:10px;background:none;box-shadow:none;border-color:transparent;color:var(--soft);font-size:12.500px;font-weight:700}
 .pc-row .pc-del[data-sure]{flex:1.6;color:#c0392b;background:#ffecec}
 .bk-del.sure{width:auto;padding:0 8px;border-radius:13px;font:inherit;font-size:12px;font-weight:800;color:#c0392b;background:#ffecec}
+/* 家具系列的進度：家具那一頁最上面的一行字 */
+.tray-set{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;padding:7px 12px;border:0;border-radius:12px;background:#fff8e6;font:inherit;font-size:12.500px;color:inherit;text-align:left;cursor:pointer}
+.tray-set b{font-weight:900;white-space:nowrap}
+.tray-set span{flex:1;min-width:0;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tray-set i{font-style:normal;font-size:11.500px;font-weight:800;color:var(--pink2);white-space:nowrap}
+.tray-setall{grid-column:1/-1;justify-self:end;border:0;background:none;font:inherit;font-size:12px;font-weight:800;color:var(--pink2);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:2px 6px}
+.yd-grid>span.tile{aspect-ratio:1;cursor:default}

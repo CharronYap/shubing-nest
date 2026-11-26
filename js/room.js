@@ -103,7 +103,7 @@ function renderGlow(){
 let drag=null;
 // 畫面上的 %（y 還沒換算成存檔的位置）
 function pt(e){const r=room.getBoundingClientRect();return [(e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100];}
-function overTray(e){if(tray.hidden||tray.classList.contains('min'))return false;const r=tray.getBoundingClientRect();return e.clientY>r.top-6&&e.clientX>r.left&&e.clientX<r.right;}
+function overTray(e){if(tray.hidden)return false;const r=tray.getBoundingClientRect();return e.clientY>r.top-6&&e.clientX>r.left&&e.clientX<r.right;}
 function startDrag(e,u){
   const it=items.find(i=>i.uid===u);if(!it)return;
   e.preventDefault();
@@ -195,6 +195,24 @@ function trayHow(kind,id){
   if(f.gift){const sr=typeof FURN_SERIES!=='undefined'?Object.values(FURN_SERIES).find(x=>x.gift&&x.gift.kind==='furn'&&x.gift.id===id):null;return ['湊齊系列',sr?`湊齊${sr.name}送你`:'湊齊一個系列送你'];}
   return ['娃娃機・小店','娃娃機夾得到，小店也買得到'];
 }
+/* 家具系列的進度（原本是右上角一顆「雲朵＋五個點」，使用者看不懂，2026-11-27 改成字）：
+   家具那一頁最上面，還沒湊齊的系列各一行「雲朵系列 3/5，湊齊送雲朵地板」，點了展開看缺哪幾件（缺的是剪影，寫怎麼拿）。
+   全部的系列另外有一頁（seriesOpen，小窩指南和那一行旁邊都進得去）。 */
+function seriesAll(){
+  const L=[{k:'cloud',name:'雲朵系列',ids:CLOUD_SET,gift:'雲朵地板'}];
+  if(typeof FURN_SERIES!=='undefined')Object.entries(FURN_SERIES).forEach(([k,s])=>L.push({k,name:s.name,ids:s.ids,gift:s.gift?s.gift.name:''}));
+  return L.filter(s=>Array.isArray(s.ids)&&s.ids.length&&s.ids.every(id=>FURN[id]));
+}
+const seriesHave=s=>s.ids.filter(id=>FURN_OWN[id]).length;
+const seriesTile=id=>FURN_OWN[id]?`<span class="tile">${furnSVG(id)}</span>`:`<span class="tile lock" aria-label="${furnName(id)}，還沒有">${furnSVG(id)}<small class="how">${trayHow('furn',id)[0]}</small></span>`;
+const traySetOpen={};
+function seriesOpen(){
+  openSheet(`<div class="hd">${ICON.living}<span>家具系列</span></div>
+    <div class="yd-box">${seriesAll().map(s=>{const n=seriesHave(s),done=n===s.ids.length;
+      return `<div class="al-sec">${s.name}<small>${n} / ${s.ids.length}${s.gift?(done?`・湊齊了，送過${s.gift}`:`・湊齊送${s.gift}`):''}</small></div><div class="yd-grid">${s.ids.map(seriesTile).join('')}</div>`;}).join('')}
+      <p class="bk-note">灰色的是還沒有的，下面的小字是怎麼拿。娃娃機夾得到的，火腿的小店每天也會賣幾樣。</p></div>`);
+  evOpen=false;alOpen=false;
+}
 const trayGrp=(t,ic)=>`<span class="grp">${ic||''}${t}</span>`;
 // 最下面那一排：還沒有的 N 樣（點了展開）
 function trayLocked(list,tile){
@@ -217,6 +235,12 @@ function renderTray(){
     const tile=id=>`<button class="tile ${placed(id)?'placed':''}" data-furn="${id}" aria-label="${furnName(id)}${nw.includes(id)&&!placed(id)?'，新的':''}">${furnSVG(id)}${placed(id)?CK:''}${!placed(id)&&nw.includes(id)?'<span class="nw">新</span>':''}</button>`;
     const order=l=>l.map((id,i)=>[id,i]).sort((a,b)=>{const ra=placed(a[0])?2:nw.includes(a[0])?0:1,rb=placed(b[0])?2:nw.includes(b[0])?0:1;return ra-rb||a[1]-b[1];}).map(x=>x[0]);
     const own=ids.filter(id=>FURN_OWN[id]);
+    // 跟這一間有關、還沒湊齊的系列：一行字，點了展開看缺哪幾件
+    seriesAll().filter(s=>s.ids.some(id=>ids.includes(id))&&seriesHave(s)<s.ids.length).forEach(s=>{
+      const open=!!traySetOpen[s.k];
+      h+=`<button class="tray-set ${open?'on':''}" data-trayset="${s.k}" aria-expanded="${open}"><b>${s.name} ${seriesHave(s)}/${s.ids.length}</b>${s.gift?`<span>湊齊送${s.gift}</span>`:''}<i>${open?'收起來':'缺哪幾件'}</i></button>`;
+      if(open)h+=s.ids.filter(id=>!FURN_OWN[id]).map(seriesTile).join('')+`<button class="tray-setall" data-trayset="all">看全部的系列</button>`;
+    });
     [['可以坐的躺的',id=>!!FURN[id].seats],['擺著的',id=>!FURN[id].seats&&!FURN[id].wall&&!FURN[id].floor],['牆上和地上的',id=>!FURN[id].seats&&(FURN[id].wall||FURN[id].floor)]].forEach(([name,is])=>{
       const l=order(own.filter(is));if(l.length)h+=trayGrp(name)+l.map(tile).join('');});
     if(!own.length)h+='<p class="al-em tray-em">這一間的家具還沒有。娃娃機夾得到，火腿的小店也有賣。</p>';
@@ -239,6 +263,7 @@ function renderTray(){
     h+=trayLocked([...lw,...lf],([k,id])=>`<button class="tile lock" data-${k}="${id}" aria-label="${k==='wall'?'壁紙':'地板'}，還沒有，${trayHow(k,id)[1]}"><span class="sw ${k==='wall'?'w':'f'}-${id}"></span><small class="how">${trayHow(k,id)[0]}</small></button>`);
   }
   box.innerHTML=h;
+  if(typeof trayFit==='function'&&trayState!=='c')trayFit();
 }
 /* ---------- 剛拿到的家具：標「新」、帶你去擺 ----------
    「新」只記在這台裝置（localStorage），不進存檔：拿到時記一筆，擺過一次就拿掉 */
@@ -286,6 +311,8 @@ function freeSpot(it){
 }
 $('#items').addEventListener('click',e=>{
   if(e.target.closest('[data-traymore]')){trayMore[tab]=!trayMore[tab];renderTray();return;}
+  const ts=e.target.closest('[data-trayset]');if(ts){if(ts.dataset.trayset==='all')seriesOpen();else{traySetOpen[ts.dataset.trayset]=!traySetOpen[ts.dataset.trayset];renderTray();}return;}
+  const n0=items.length;setTimeout(()=>{if(trayState==='f'&&items.length>n0)trayTo('h',true);},0);   // 全開時擺了東西進房間：抽屜降到一半，讓出房間
   const t=e.target.closest('.tile');if(!t)return;
   if(t.dataset.doll){const id=t.dataset.doll;if(!DOLL_N[id]){toast('還沒來，'+trayHow('doll',id)[1]);return;}
     const w=whereDoll(id);
@@ -302,22 +329,62 @@ $('#items').addEventListener('click',e=>{
   else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast(trayHow('wall',t.dataset.wall)[1]);return;}cur().wall=t.dataset.wall;paintRoom();renderTray();}
   else if(t.dataset.floor){if(!FLOOR_OWN[t.dataset.floor]){toast(trayHow('floor',t.dataset.floor)[1]);return;}cur().floor=t.dataset.floor;paintRoom();renderTray();}
 });
-document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;renderTray();}));
-/* 收起來：縮成房間右下角的圓按鈕，房間一直延伸到底。收著還是打開記在這台裝置（個人設定，不上雲端） */
+document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;renderTray();if(trayState==='c')trayTo('h');}));
+/* 收納架是一個可以上下拖的抽屜，三段高度（2026-11-27，使用者的 iPhone 上第二排被切掉、很難用）：
+   - 收起（c）：只剩把手和分頁列。
+   - 一半（h，預設）：完整露出兩排。
+   - 全開（f）：往上蓋到上面那幾排按鈕下面，裡面自己上下捲，一次看得到很多格。
+   拖把手在三段之間換（放開時照拖的方向和距離決定），點把手輪流切；點分頁時如果是收著的就打開到一半。
+   記住上次的高度，只記在這台裝置（個人設定，不上雲端）。
+   全開時是浮在房間上面的（不擠房間）：抽屜原本佔的位置用 #traySpace 墊著，房間的大小跟「一半」時一樣，不會跟著跳。
+   全開時點一格把東西擺進房間，抽屜會自己降到一半讓出房間。 */
 const TRAY_KEY='shubingNest.trayMin';
-function setTray(min){
-  tray.classList.toggle('min',min);
-  $('#trayOpen').setAttribute('aria-expanded',!min);
-  try{localStorage.setItem(TRAY_KEY,min?'1':'0');}catch(e){}
+let trayState='h';
+const traySpace=document.createElement('div');traySpace.id='traySpace';traySpace.hidden=true;tray.after(traySpace);
+// 「一半」的高度：剛好兩排格子（照現在格子的大小算），加上上面一行小標題的位置
+function trayFit(){
+  const box=$('#items'),t=box.querySelector('.tile'),g=box.querySelector('.grp');
+  const th=t?t.offsetHeight:Math.round((box.clientWidth-20-24)/4)||80;
+  box.style.setProperty('--tray-two',(th*2+8+(g?g.offsetHeight+8:0)+22)+'px');
 }
-try{if(localStorage.getItem(TRAY_KEY)==='1')setTray(true);}catch(e){}
-$('#trayOpen').addEventListener('click',()=>setTray(false));
-// 上緣的拉把：點一下收起，或往下滑
+function trayTo(st,keep){
+  if(!['c','h','f'].includes(st))st='h';
+  const was=trayState;
+  if(st==='f'&&was!=='f'){
+    // 先量「一半」時抽屜佔多高，墊在原位；再量上面那幾排按鈕的下緣，全開就蓋到那裡
+    tray.classList.remove('min','full');trayFit();
+    const cs=getComputedStyle(tray);
+    traySpace.style.height=(tray.offsetHeight+parseFloat(cs.marginTop)+parseFloat(cs.marginBottom))+'px';
+    const page=tray.offsetParent||tray.parentNode,pr=page.getBoundingClientRect(),hud=document.getElementById('hud'),top=document.querySelector('.top');
+    const edge=Math.max(hud?hud.getBoundingClientRect().bottom:0,top?top.getBoundingClientRect().bottom:0);
+    tray.style.setProperty('--tray-top',Math.max(60,Math.round(edge-pr.top+8))+'px');
+  }
+  trayState=st;
+  tray.classList.toggle('min',st==='c');tray.classList.toggle('full',st==='f');
+  traySpace.hidden=st!=='f';
+  tray.dataset.st=st;
+  const gp=$('#grip');if(gp)gp.setAttribute('aria-label',st==='c'?'收納架收著，點一下打開':st==='h'?'收納架開一半，點一下全開':'收納架全開，點一下收起');
+  if(st!=='c')trayFit();
+  if(!keep)try{localStorage.setItem(TRAY_KEY,st);}catch(e){}
+  if(typeof layout==='function'&&typeof RATIO!=='undefined')try{layout();}catch(e){}
+}
+// 舊的叫法還有人用：setTray(true) 收起、setTray(false) 打開（已經開著就不動）
+function setTray(min){if(min)trayTo('c');else if(trayState==='c')trayTo('h');}
+// 把手：往上拖開大一段、往下拖收一段（拖得遠就跳兩段），沒什麼動就當作點一下、輪流切
 let gripY=null;
-$('#grip').addEventListener('pointerdown',e=>{gripY=e.clientY;$('#grip').setPointerCapture(e.pointerId);});
-$('#grip').addEventListener('pointerup',e=>{if(gripY===null)return;const dy=e.clientY-gripY;gripY=null;if(dy>-10)setTray(true);});
+$('#grip').addEventListener('pointerdown',e=>{gripY=e.clientY;try{$('#grip').setPointerCapture(e.pointerId);}catch(x){}});
+$('#grip').addEventListener('pointerup',e=>{
+  if(gripY===null)return;const dy=e.clientY-gripY;gripY=null;
+  const order=['c','h','f'],i=order.indexOf(trayState);
+  if(Math.abs(dy)<12)trayTo(order[(i+1)%3]);
+  else trayTo(order[Math.max(0,Math.min(2,i+(dy<0?1:-1)*(Math.abs(dy)>200?2:1)))]);
+});
 $('#grip').addEventListener('pointercancel',()=>{gripY=null;});
-$('#grip').addEventListener('click',e=>{if(!e.detail)setTray(true);});   // 鍵盤按的
+$('#grip').addEventListener('click',e=>{if(!e.detail){const order=['c','h','f'];trayTo(order[(order.indexOf(trayState)+1)%3]);}});   // 鍵盤按的
+$('#trayOpen').addEventListener('click',()=>trayTo('h'));
+const trayRefit=()=>{if(trayState==='f'){trayState='h';trayTo('f',true);}else if(trayState==='h')trayFit();};
+addEventListener('resize',trayRefit);
+addEventListener('load',()=>setTimeout(trayRefit,60));   // 上面那幾排按鈕是後面的檔案才排好的，全部載完再量一次
 
 /* ---------- 雲朵系列 ---------- */
 const SET=CLOUD_SET;
