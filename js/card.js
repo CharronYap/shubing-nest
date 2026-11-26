@@ -112,8 +112,18 @@ function cardOpen(i){
   load();
   const bar = $('#vbar');
   bar.innerHTML = `<div class="pc-back"><p class="pc-msg">${c.msg ? txSlot(c.msg) : ''}</p><div class="pc-from"><b>${txSlot(c.w)}</b><small>${md(c.t)}</small></div></div>
-    <div class="vb-row"><button class="btn vb-home">收起來</button><button class="btn y pc-save">存成圖片</button></div>`;
+    <div class="vb-row"><button class="btn vb-home">收起來</button><button class="btn pc-del">收掉這張</button><button class="btn y pc-save">存成圖片</button></div>`;
   bar.querySelector('.vb-home').onclick = cardClose;
+  // 收掉：按兩次才真的收（第一次只是問），收了就沒有了
+  const del = bar.querySelector('.pc-del');
+  del.onclick = () => {
+    if (!del.dataset.sure){ del.dataset.sure = '1'; del.textContent = '確定收掉'; setTimeout(() => { if (del.isConnected){ delete del.dataset.sure; del.textContent = '收掉這張'; } }, 4000); return; }
+    const m = cardMail(), k = m.pc.indexOf(c);
+    if (k >= 0) m.pc.splice(k, 1);
+    save(); mailBadge();
+    cardClose();
+    toast('這張明信片收掉了');
+  };
   bar.querySelector('.pc-save').onclick = async () => {
     let shot = null;
     try { shot = await photoShoot(); } catch (e) { sQuiet('card', e); }
@@ -126,7 +136,8 @@ function cardClose(){
   cardView = null;
   screen.classList.remove('incard');
   visitClose();
-  openMail();
+  // 收到的明信片現在收在朋友面板（js/friend.js）
+  if (typeof frOpen === 'function' && typeof sNet === 'function' && sNet()) frOpen('in'); else openMail();
 }
 $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;

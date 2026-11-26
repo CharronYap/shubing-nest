@@ -232,14 +232,15 @@ async function photoShoot(){
   const by = PH.pad + PH.ph, font = (w, z) => `${w} ${z}px "GenSenRounded","PingFang TC","Noto Sans TC",sans-serif`;
   const d = new Date();
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
-  ctx.fillStyle = '#e14f93'; ctx.font = font(900, 42); ctx.fillText('薯餅的小窩', PH.pad + 6, by + 66);
-  ctx.fillStyle = '#a8708c'; ctx.font = font(800, 26); ctx.fillText(`${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`, PH.pad + 8, by + 110);
+  const pt = window.PAPER ? window.PAPER.tone() : null;   // 新風格（js/paper.js）：標題用主色深一階、小字用墨色
+  ctx.fillStyle = pt ? pt.a1d : '#e14f93'; ctx.font = font(900, 42); ctx.fillText('薯餅的小窩', PH.pad + 6, by + 66);
+  ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 26); ctx.fillText(`${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`, PH.pad + 8, by + 110);
   let quip = '';
   if (inShot.has('piggy')){
     quip = PIGGY_QUIPS[Math.floor(Math.random() * PIGGY_QUIPS.length)];
     ctx.save(); ctx.translate(PH.W - PH.pad - 8, by + 78); ctx.rotate(-3 * Math.PI / 180);
-    ctx.textAlign = 'right'; ctx.fillStyle = '#6b2d4a'; ctx.font = font(900, 30); ctx.fillText(`「${quip}」`, 0, 0);
-    ctx.fillStyle = '#a8708c'; ctx.font = font(800, 22); ctx.fillText('火腿', -10, 38);
+    ctx.textAlign = 'right'; ctx.fillStyle = pt ? '#23264a' : '#6b2d4a'; ctx.font = font(900, 30); ctx.fillText(`「${quip}」`, 0, 0);
+    ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22); ctx.fillText('火腿', -10, 38);
     ctx.restore();
   }
   return {canvas: c, dolls: [...inShot]};
