@@ -891,38 +891,47 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .room[data-rid="bed"] .win{width:23%}
 .room[data-rid="bath"] .win{width:19%;top:calc(var(--wh,52%)*.07)}
 .room.dragdoll .fx{opacity:.5}
-/* 版面調整（js/layout.js）：有存過設定才會套 .lay／.lf，沒有的話下面這些都不作用 */
-.top.lay{flex-wrap:wrap;gap:var(--tg,6px);row-gap:6px}
-.top.lay #nav,.top.lay .topr{display:contents}
-.top.lay #nav[hidden]{display:none}
-/* 房間切換（自動寬度）：拿那一排剩下的寬度，最多到剛好放得下全部的房間；放不下就自己捲，不會把別顆擠到下一排 */
-.top.lay .rnav{flex:1 1 0;min-width:0;max-width:max-content}
-.lay-br{flex-basis:100%;height:0;margin:0;padding:0}
-.lay-br[hidden]{display:none}
-.screen:not(.more-open) .lay-br2{display:none}
-.screen:not(.more-open) .top.lay .in-more,.screen:not(.more-open) .lf.in-more{display:none!important}
-.top.noname .rnav button.on{width:28px!important;padding:0;display:grid}
-.top.noname .rnav button.on .nm{display:none}
-.lf:not(.tray),.tray.min.lf{left:var(--l-l,auto)!important;right:var(--l-r,auto)!important;top:var(--l-t,auto)!important;bottom:var(--l-b,auto)!important;transform:scale(var(--l-s,1))!important;transform-origin:var(--l-o,50% 50%)}
-/* 調整模式（網址加 ?layout=1） */
-.laymode .rbtn[hidden]{display:grid!important}
-.laymode [data-lay]{cursor:pointer}
-.laymode .in-more{outline:2px dashed #b9aab2;outline-offset:2px}
-.lay-sel{outline:3px solid #4a9fd0!important;outline-offset:3px;border-radius:12px}
-.lay-panel{position:absolute;left:8px;right:8px;bottom:calc(8px + var(--sab,0px));z-index:950;max-height:54%;overflow-y:auto;overscroll-behavior:contain;background:#fff;border-radius:18px;box-shadow:0 0 0 2px #cfe6f7,0 8px 24px rgba(60,40,70,.28);padding:10px 12px;display:grid;gap:8px;font-size:13px}
-.lay-panel.min{left:auto;padding:6px;max-height:none}
-.lay-hd{display:flex;align-items:center;justify-content:space-between}
-.lay-hd b{font-size:15px;font-weight:900;color:#2f7fb0}
-.lay-hint{margin:0;color:var(--soft);line-height:1.5}
-.lay-sec{font-size:12px;font-weight:900;color:var(--soft);border-top:2px dashed var(--line);padding-top:8px}
-.lay-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.lay-row>span,.lay-row>b{flex:none;min-width:56px;font-weight:800}
-.lay-row>b{color:var(--pink2);font-weight:900}
-.lay-row input[type=range]{flex:1;min-width:110px}
-.lay-row output{flex:none;width:44px;text-align:right;font-weight:800;color:var(--soft)}
-.lay-row .btn.sm{padding:5px 10px}
-.lay-seg{display:flex;flex-wrap:wrap;gap:4px}
-.lay-seg button{border:2px solid var(--line);border-radius:999px;background:#fff;padding:5px 10px;font:inherit;font-size:12.5px;font-weight:800;color:inherit;cursor:pointer}
-.lay-seg button.on{border-color:#4a9fd0;background:#eaf5ff;color:#2f7fb0}
-.lay-ft{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.lay-out{width:100%;box-sizing:border-box;height:84px;border:2px solid var(--line);border-radius:10px;padding:6px;font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--ink);resize:none;-webkit-user-select:text;user-select:text}
+/* 上面的按鈕版面（js/hud.js）：第一排 回封面｜地圖鈕｜幣、相機；第二排 娃娃機＋小店｜信箱＋訪客簿＋小事；第三排 相簿｜音樂 */
+.top{gap:6px}
+.top>#nav{flex:1 1 0;min-width:0;display:flex;justify-content:center;gap:0}
+.top>.pity{flex:1 1 0;justify-content:center;min-width:0;min-height:38px}   /* 跟地圖鈕一樣高，換頁時整排不會上下跳 */
+.topr{flex:none;gap:6px}
+.mapc{display:flex;align-items:center;gap:2px;min-width:0;max-width:100%;background:#fff;border:3px solid #fff;border-radius:999px;box-shadow:0 3px 0 #ead9e2;padding:1px}
+.mc-a{flex:none;width:28px;height:30px;border:0;border-radius:999px;background:none;color:var(--pink);font:inherit;font-size:22px;font-weight:900;line-height:1;padding:0 0 3px;cursor:pointer;display:grid;place-items:center}
+.mc-a:active{background:#fff0f7}
+/* .rmap 是給 js/rooms.js 認的（點了開小屋地圖），它原本的圓鈕樣式在這裡蓋掉 */
+.mapc .mc-m.rmap{flex:0 1 auto;min-width:0;width:auto;height:30px;display:flex;align-items:center;gap:5px;border:0;border-radius:999px;box-shadow:none;background:var(--pink);color:#fff;font:inherit;font-size:14px;font-weight:900;padding:0 12px 0 9px;cursor:pointer}
+.mc-m svg{flex:none;width:19px;height:19px}
+.mc-m .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-m:active{transform:translateY(1px)}
+.mc-a:focus-visible,.mc-m:focus-visible{outline:3px solid var(--pink2);outline-offset:2px}
+.top .cam,.hud .cam,.hud .rbtn{position:relative;left:auto;right:auto;top:auto;bottom:auto;flex:none}
+.top .cam{width:34px;height:34px}
+/* 第二、三排 */
+.hudwrap{position:relative;height:0;z-index:40}
+.hud{position:absolute;left:0;right:0;top:4px;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0 10px;pointer-events:none}
+.pg-claw .hudwrap{height:auto}
+.pg-claw .hud{position:static;padding-top:4px;padding-bottom:2px}
+.hud-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.hud-g{display:flex;align-items:center;gap:5px;padding:4px;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 2px 0 rgba(234,217,226,.9);pointer-events:auto}
+.hud-g>*{flex:none}
+.hud-g .ib,.hud-g .cam,.hud-g .rbtn{width:36px;height:36px;margin:0}
+.hud-g .ib.sm{width:36px;height:36px}
+.hud-g .cam,.hud-g .rbtn{box-shadow:0 2px 0 #ead9e2}
+.hud-g .mailb svg{width:22px;height:22px}
+/* 一組裡沒有東西看得到時，整個底也不要留著 */
+.hud-g:not(:has(> :not([hidden]))){display:none}
+.visiting .hud-l,.visiting .hud-a,.visiting #homeBtn{display:none!important}
+.pg-claw #shopBtn,.pg-claw #mailBtn,.pg-claw #bookBtn,.pg-claw .hud-a{display:none!important}
+.pg-claw #camBtn{visibility:hidden}   /* 位置留著，幣才不會跟著移 */
+.pg-claw .rsign{display:none}
+.hud-r,.hud-m{margin-left:auto}   /* 左邊那組不在時，右邊這組還是靠右 */
+.inyard #camBtn{visibility:hidden}
+.incard .hudwrap,.incard #homeBtn{display:none!important}
+@container (max-width:340px){
+  .top{gap:4px}.topr{gap:4px}
+  .mc-a{width:24px}.mapc .mc-m.rmap{padding:0 9px 0 7px;font-size:13px}
+  .hud{padding:0 8px}.hud-g .ib,.hud-g .cam,.hud-g .rbtn,.hud-g .ib.sm{width:34px;height:34px}
+}
+/* 「你不在的時候」的便條原本貼在房間最上面，會蓋到第二、三排的按鈕，往下挪 */
+.anote{top:108px}
