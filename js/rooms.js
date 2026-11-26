@@ -51,3 +51,55 @@ setInterval(() => {
   s.style.left = (20 + Math.random() * 50) + '%'; s.style.top = (6 + Math.random() * 20) + '%';
   w.appendChild(s); setTimeout(() => s.remove(), 1300);
 }, 7000);
+
+/* ---------- 小屋地圖（看得出自己在哪一間 2） ----------
+   切換鈕最左邊的小房子：打開整棟雲上小屋的剖面圖。最上面是閣樓，二樓是臥室和浴室，一樓是客廳和廚房，門外是小島。
+   - 每一格看得到那一間現在的壁紙和地板、有沒有開燈、哪幾隻娃娃在裡面（小頭像）
+   - 還沒開的房間畫成關燈，掛一把鑰匙和價錢，點了去小店
+   - 現在在的那一格有亮框和「你在這裡」；點任何一格就過去
+   - 去朋友家時畫的是朋友的家 */
+const MAP_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11.500L12 4l9 7.500V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M12 4v17M3 13.500h18" stroke="#fff" stroke-width="1.600"/></svg>';
+const MAP_KEY = '<svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="5" fill="#ffd75e" stroke="#d99a00" stroke-width="1.800"/><circle cx="8" cy="9" r="1.800" fill="#fff8e0"/><path d="M12 13l8 8M17 18l2-2" fill="none" stroke="#d99a00" stroke-width="2.400" stroke-linecap="round"/></svg>';
+function mapCell(r){
+  const H = VISIT ? VISIT.home : home, here = (typeof yardOn !== 'undefined' && yardOn ? 'yard' : roomId) === r;
+  const nm = `<span class="hm-nm">${ICON[r] || ''}${ROOM_LABEL[r]}</span>`, tag = here ? '<span class="hm-here">你在這裡</span>' : '';
+  if (r === 'yard'){
+    const has = VISIT ? !!VISIT.yard : true;
+    const st = !VISIT && S.yard && S.yard.stay ? Object.keys(S.yard.stay).filter(d => SPR[d]) : [];
+    return `<button class="hm-c hm-y ${here ? 'cur' : ''} ${has ? '' : 'none'}" data-hm="yard" ${has ? '' : 'disabled'} aria-label="門外小島${here ? '，你在這裡' : ''}"><span class="hm-isle"></span>
+      <span class="hm-dolls">${st.map(d => `<img src="${SPR[d]}" alt="${DOLL_NAME[d]}">`).join('')}</span>${nm}${tag}</button>`;
+  }
+  const rm = H[r];
+  if (!rm){
+    const k = ROOM_KEY[r];
+    return VISIT
+      ? `<button class="hm-c lock none" disabled aria-label="${ROOM_LABEL[r]}，這裡看不到"><span class="hm-wall"></span>${nm}</button>`
+      : `<button class="hm-c lock" data-hm="${r}" aria-label="${ROOM_LABEL[r]}還沒開，${k.key} ${k.price} 枚幣"><span class="hm-wall"></span><span class="hm-key">${MAP_KEY}<b>${COIN}${k.price}</b></span>${nm}</button>`;
+  }
+  const dolls = rm.items.filter(i => i.kind === 'doll' && SPR[i.id]).slice(0, 6);
+  return `<button class="hm-c ${here ? 'cur' : ''} ${rm.light === false ? 'off' : ''}" data-hm="${r}" aria-label="${ROOM_LABEL[r]}${here ? '，你在這裡' : ''}，${dolls.length ? dolls.map(i => DOLL_NAME[i.id]).join('、') + '在這裡' : '沒有娃娃'}">
+    <span class="hm-wall w-${rm.wall}"></span><span class="hm-floor f-${rm.floor}"></span>
+    <span class="hm-dolls">${dolls.map(i => `<img src="${SPR[i.id]}" alt="">`).join('')}</span>${nm}${tag}</button>`;
+}
+function mapOpen(){
+  if (VISIT && VISIT.card) return;
+  const who = VISIT ? `${typeof txSlot === 'function' ? txSlot(VISIT.name) : ''}的小窩` : '小屋地圖';
+  openSheet(`<div class="hd">${MAP_ICON}<span>${who}</span></div>
+    <div class="hm"><div class="hm-roof"></div>
+      <div class="hm-house"><div class="hm-row one">${mapCell('attic')}</div><div class="hm-row">${mapCell('bed')}${mapCell('bath')}</div><div class="hm-row">${mapCell('living')}${mapCell('kitchen')}</div></div>
+      <div class="hm-out">${mapCell('yard')}</div>
+      <p class="bk-note">點一間就過去。${VISIT ? '' : '還沒開的房間在火腿的小店買。'}</p></div>`);
+  evOpen = false; alOpen = false;
+}
+$('#nav').addEventListener('click', e => {
+  if (!e.target.closest('.rmap')) return;
+  if (!$('#sheet').hidden && $('#sheet .hm')){ $('#sheet').hidden = true; return; }
+  mapOpen();
+});
+$('#sheet').addEventListener('click', e => {
+  const b = e.target.closest('[data-hm]'); if (!b || !$('#sheet .hm')) return;
+  const r = b.dataset.hm;
+  if (r !== 'yard' && !(VISIT ? VISIT.home : home)[r]){ if (!VISIT && typeof shopOpen === 'function') shopOpen(); return; }
+  $('#sheet').hidden = true;
+  goRoom(r);
+});

@@ -321,7 +321,8 @@ function renderNav(){
   const yd=typeof yardOn!=='undefined'&&yardOn;
   const ids=VISIT&&!VISIT.yard?RIDS:[...RIDS,'yard'];
   // 現在這一間的那顆變寬、圖示旁邊寫名字（.nm 只有 .on 才顯示）；其他間只有圖示
-  $('#nav').innerHTML=`<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'})[r]}">${ICON[r]}<span class="nm">${ROOM_SHORT[r]||''}</span></button>`).join('')}</div>`;
+  // 最左邊的小房子：小屋地圖（js/rooms.js）
+  $('#nav').innerHTML=`${typeof mapOpen==='function'?`<button class="rmap" aria-label="小屋地圖">${typeof MAP_ICON!=='undefined'?MAP_ICON:HOUSE}</button>`:''}<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'})[r]}">${ICON[r]}<span class="nm">${ROOM_SHORT[r]||''}</span></button>`).join('')}</div>`;
   const rn=$('#nav .rnav'),on=$('#nav .on');if(rn&&on&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=on.offsetLeft-rn.offsetLeft-rn.clientWidth/2+on.offsetWidth/2;   // 房間多的時候，讓現在這間留在看得到的地方
 }
 function slide(dir,swap){
