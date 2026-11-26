@@ -1,0 +1,106 @@
+/* 新風格試做：紙雕立體・夜燈（js/paper.js）。網址加 ?look=paper 才會有 .screen.ppon 這個 class，沒加的話這個檔的樣式一條都不會套上去。
+   .screen.ppon = 新風格、而且現在在房間那一頁的客廳。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
+   字：想用 LXGW WenKai TC（還沒放進 fonts/，要先下載字型檔做子集），現在先排在最前面，沒有的裝置用系統的楷體。 */
+.screen.ppon{
+  --p-hand:"LXGW WenKai TC","Klee One","Klee","Kaiti TC","BiauKai","DFKai-SB","標楷體",serif;
+  --p-fiber:url("../img/paper/fiber.png");
+  --p-edge:color-mix(in srgb,var(--p-paper) 74%,var(--p-ink));       /* 紙片的厚度：下面那條硬邊 */
+  --p-shadow:color-mix(in srgb,var(--p-ink) 34%,transparent);
+  background:var(--p-wall2)!important;
+  font-family:var(--p-hand);
+  color:var(--p-ink);
+}
+
+/* ---------- 牆、地板 ---------- */
+/* 紋理要很淡：紋理上面再蓋一層半透明的同一個顏色 */
+.screen.ppon .wall{background:linear-gradient(color-mix(in srgb,var(--p-wall) 56%,transparent),color-mix(in srgb,var(--p-wall) 56%,transparent)),var(--p-fiber),var(--p-wall)!important;background-size:auto,192px 192px,auto!important;background-blend-mode:normal,multiply,normal!important}
+/* 牆的下半截：另一張紙疊上去 */
+.screen.ppon .wall::before{content:"";position:absolute;left:0;right:0;bottom:0;height:31%;background:linear-gradient(color-mix(in srgb,var(--p-wall2) 56%,transparent),color-mix(in srgb,var(--p-wall2) 56%,transparent)),var(--p-fiber),var(--p-wall2);background-size:auto,192px 192px,auto;background-blend-mode:normal,multiply,normal;
+  box-shadow:0 -2px 0 color-mix(in srgb,var(--p-ink) 20%,transparent),0 -5px 6px color-mix(in srgb,var(--p-ink) 12%,transparent)}
+/* 踢腳板：一條木色的紙 */
+.screen.ppon .wall::after{bottom:-4px;height:8px;background:var(--p-wood2);box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 26%,transparent)}
+.screen.ppon .floor{background:linear-gradient(color-mix(in srgb,var(--p-floor) 56%,transparent),color-mix(in srgb,var(--p-floor) 56%,transparent)),var(--p-fiber),var(--p-floor)!important;background-size:auto,192px 192px,auto!important;background-blend-mode:normal,multiply,normal!important}
+.screen.ppon .floor::before{background:linear-gradient(color-mix(in srgb,var(--p-ink) 26%,transparent),transparent 26%)}
+/* 地毯：地板上再疊一張橢圓的紙 */
+.screen.ppon .floor::after{content:"";position:absolute;left:7%;right:7%;top:24%;height:50%;border-radius:50%;background:var(--p-rug);
+  box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 24%,transparent),inset 0 0 0 9px var(--p-rug),inset 0 0 0 10.5px color-mix(in srgb,var(--p-paper) 38%,transparent)}
+
+/* ---------- 窗戶、門口、開關 ---------- */
+.screen.ppon .win{width:34%;top:calc(var(--wh,52%)*.1)}
+/* 晚上窗邊一圈暖光（漸層，不是濾鏡） */
+.screen.ppon .win::before{content:"";position:absolute;inset:-34% -30%;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--p-sun) 30%,transparent),transparent);opacity:0;z-index:-1;transition:opacity .6s}
+.screen.ppon.night .win::before{opacity:1}
+.screen.ppon .lsw{filter:none;left:17%}
+.screen.ppon .room.off .lsw .nub{fill:var(--p-paperd)}
+.screen.ppon .nightov{background:color-mix(in srgb,var(--p-ink) 55%,transparent)}
+.screen.ppon.night .room.off .nightov{background:color-mix(in srgb,var(--p-ink) 80%,transparent)}
+
+/* ---------- 家具：整件下面一層柔的影子（家具不會自己動，影子只算一次）。拖的時候用原本那個比較大的影子 ---------- */
+.screen.ppon .it:not(.doll):not(.drag)>svg{filter:drop-shadow(0 2.5px 1.5px color-mix(in srgb,var(--p-ink) 30%,transparent))}
+
+/* ---------- 娃娃：照片當貼紙，腳下一塊橢圓的影子（不用濾鏡） ---------- */
+.screen.ppon .doll .body::before{content:"";position:absolute;left:10%;right:10%;bottom:-3%;height:13%;border-radius:50%;z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--p-ink) 46%,transparent),transparent)}
+.screen.ppon .doll.sit .body::before{opacity:.6}
+
+/* ---------- 上面的按鈕：有厚度的小紙片，只有圖示 ---------- */
+.screen.ppon .ib,.screen.ppon .rbtn,.screen.ppon .top .cam,.screen.ppon .hud .cam{border:0;border-radius:11px;background:var(--p-paper);color:var(--p-ink);
+  box-shadow:0 3px 0 var(--p-edge),0 6px 7px var(--p-shadow)}
+.screen.ppon .ib:active,.screen.ppon .rbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--p-edge),0 3px 4px var(--p-shadow)}
+.screen.ppon .ib.w{background:var(--p-paper);color:var(--p-ink)}
+.screen.ppon .hud-g{background:none;box-shadow:none;padding:0;gap:7px;border-radius:0}
+.screen.ppon .hud-g .cam,.screen.ppon .hud-g .rbtn{box-shadow:0 3px 0 var(--p-edge),0 6px 7px var(--p-shadow)}
+/* 最常按的那顆（去娃娃機）用主色 */
+.screen.ppon #swap{background:var(--p-a1);color:var(--p-paper);box-shadow:0 3px 0 var(--p-a1d),0 6px 7px var(--p-shadow)}
+/* 紅點、數字 */
+.screen.ppon .bd{background:var(--p-a1);color:var(--p-paper);border:0;border-radius:6px;box-shadow:0 2px 0 var(--p-a1d);font-family:var(--p-hand)}
+/* 地圖鈕：只留圖示和左右箭頭，房間名字收起來 */
+.screen.ppon .mapc{background:var(--p-paper);border:0;border-radius:12px;padding:2px;box-shadow:0 3px 0 var(--p-edge),0 6px 7px var(--p-shadow)}
+.screen.ppon .mc-a{color:var(--p-ink);border-radius:9px}
+.screen.ppon .mc-a:active{background:var(--p-paperd)}
+.screen.ppon .mapc .mc-m.rmap{background:var(--p-a2);color:var(--p-paper);border-radius:9px;padding:0 10px}
+.screen.ppon .mc-m .nm{display:none}
+/* 幣 */
+.screen.ppon .top .coin{background:var(--p-paper);border:0;border-radius:11px;color:var(--p-ink);font-family:var(--p-hand);font-size:17px;box-shadow:0 3px 0 var(--p-edge),0 6px 7px var(--p-shadow)}
+.screen.ppon .top .coin svg circle:first-child{fill:var(--p-sun);stroke:none}
+.screen.ppon .top .coin svg circle+circle{stroke:var(--p-paper)}
+.screen.ppon .top .coin svg path{fill:var(--p-a1);stroke:none}
+/* 房間的小牌子 */
+.screen.ppon .rsign{border-radius:8px;background:var(--p-paper);color:var(--p-ink);font-family:var(--p-hand);box-shadow:0 3px 0 var(--p-edge),0 6px 8px var(--p-shadow)}
+.screen.ppon .rsign svg{color:var(--p-a2)}
+
+/* ---------- 收納架：一大張紙，上面一格一格的小紙片 ---------- */
+.screen.ppon .tray{background:linear-gradient(color-mix(in srgb,var(--p-paper) 62%,transparent),color-mix(in srgb,var(--p-paper) 62%,transparent)),var(--p-fiber),var(--p-paper);background-size:auto,192px 192px,auto;background-blend-mode:normal,multiply,normal;border-radius:16px;box-shadow:0 -2px 0 var(--p-edge),0 -6px 10px var(--p-shadow)}
+.screen.ppon .tray.over{background:var(--p-paperd);box-shadow:0 0 0 3px var(--p-a1)}
+.screen.ppon .grip i{background:var(--p-edge);border-radius:2px}
+.screen.ppon .tab{border:0;border-radius:9px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge)}
+.screen.ppon .tab.on{background:var(--p-a1);color:var(--p-paper);box-shadow:0 2px 0 var(--p-a1d)}
+.screen.ppon .setb{border:0;border-radius:9px;background:var(--p-paperd);box-shadow:0 2px 0 var(--p-edge)}
+.screen.ppon .setb .cl{filter:saturate(.35)}
+.screen.ppon .setb .dots i{background:var(--p-edge)}
+.screen.ppon .setb .dots i.on{background:var(--p-a2)}
+.screen.ppon .tile{border:0;border-radius:10px;background:color-mix(in srgb,var(--p-paper) 55%,#fff);box-shadow:0 2px 0 var(--p-edge),0 4px 5px color-mix(in srgb,var(--p-ink) 14%,transparent)}
+.screen.ppon .tile.placed{background:color-mix(in srgb,var(--p-a2) 24%,var(--p-paper))}
+.screen.ppon .tile.lock{background:var(--p-paperd);box-shadow:none}
+.screen.ppon .tile.cur{box-shadow:0 0 0 3px var(--p-a1)}
+.screen.ppon .tile .ck{background:var(--p-a2);border-radius:5px}
+.screen.ppon .tile .rm{border-radius:5px;background:var(--p-paper);color:var(--p-a2);box-shadow:0 1px 0 var(--p-edge)}
+.screen.ppon .tile .nw{background:var(--p-a1);color:var(--p-paper);border-radius:5px;font-family:var(--p-hand)}
+.screen.ppon .tile .lk{border-radius:4px;background:var(--p-paper);color:var(--p-edge);box-shadow:none}
+/* 收起來的收納架：一顆主色的紙片 */
+.screen.ppon .tray.min{border:0;border-radius:16px;background:var(--p-a1);box-shadow:0 4px 0 var(--p-a1d),0 8px 10px var(--p-shadow)}
+.screen.ppon .tray.min .trayopen{color:var(--p-paper);border-radius:16px}
+
+/* ---------- 對話框、提示：貼上去的小紙條，手寫字 ---------- */
+.screen.ppon .say{background:var(--p-paper);color:var(--p-ink);border-radius:6px;font-family:var(--p-hand);font-size:14.5px;font-weight:400;padding:4px 10px 5px;box-shadow:0 2px 0 var(--p-edge),0 5px 6px var(--p-shadow)}
+.screen.ppon .say::after{background:var(--p-paper);border-radius:1px;box-shadow:2px 2px 0 var(--p-edge)}
+.screen.ppon .toast{background:var(--p-ink);color:var(--p-paper);border-radius:6px;font-family:var(--p-hand);font-size:15px;font-weight:400;box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 70%,#000),0 6px 8px var(--p-shadow)}
+.screen.ppon.night .toast{background:var(--p-paper);color:var(--p-ink);box-shadow:0 3px 0 var(--p-edge),0 6px 8px var(--p-shadow)}
+/* 娃娃頭上的記號 */
+.screen.ppon .skit-bang{background:var(--p-sun);color:var(--p-ink);border-radius:6px;box-shadow:0 2px 0 color-mix(in srgb,var(--p-sun) 70%,var(--p-ink))}
+.screen.ppon .hide-chip{border:0;border-radius:7px;background:var(--p-paper);color:var(--p-ink);font-family:var(--p-hand);font-size:14.5px;font-weight:400;box-shadow:0 3px 0 var(--p-edge),0 6px 7px var(--p-shadow)}
+
+/* 信箱的圖示原本是粉紅色的信封：線條改成墨色，封口那一點用主色 */
+.screen.ppon .mailb svg rect{fill:none;stroke:var(--p-ink);stroke-width:2.6}
+.screen.ppon .mailb svg path{stroke:var(--p-ink);fill:none;stroke-width:2.6}
+.screen.ppon .mailb svg path:last-child{fill:var(--p-a1);stroke:none}
