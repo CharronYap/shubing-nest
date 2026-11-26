@@ -1305,3 +1305,21 @@ span.yd-kind{cursor:default}
 .items .grp-b small{font-size:10px;font-weight:700;opacity:.75}
 .items .grp-b i{width:6px;height:6px;margin-left:2px;border-right:1.800px solid currentColor;border-bottom:1.800px solid currentColor;transform:translateY(-2px) rotate(45deg);opacity:.7}
 .items .grp-b.shut i{transform:rotate(-45deg)}
+/* 出國（js/abroad.js、js/travel.js）：旅行相簿裡出國那一段的標題、護照 */
+.tv-abhd{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px 10px;margin:14px 0 2px;padding:10px 12px;border-radius:14px;background:#fff8e6}
+.tv-abhd b{font-size:15px;font-weight:900}
+.tv-abhd span{font-size:12px;color:var(--soft);line-height:1.4}
+.tv-wait{opacity:.75}
+.tv-wait .tile{filter:grayscale(.6)}
+.pp-box{display:grid;gap:10px;grid-auto-rows:max-content}
+.pp-pg{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:#fffdf8;box-shadow:0 0 0 1.5px var(--line)}
+.pp-st{width:88px;height:88px;border-radius:50%;border:2px dashed #cfc3ca;display:grid;place-items:center;align-content:center;justify-items:center;gap:1px;color:#b9aeb4}
+.pp-st small{font-size:11px;font-weight:800}
+.pp-st.on{border:3px double currentColor;box-shadow:inset 0 0 0 2px #fffdf8,inset 0 0 0 3.2px currentColor;opacity:.92}
+.pp-st.on svg{width:30px;height:30px}
+.pp-st.on b{font-size:12.500px;font-weight:900;letter-spacing:1px;line-height:1.1}
+.pp-st.on small{font-size:10px;line-height:1.1}
+.pp-tx{display:grid;gap:2px;min-width:0}
+.pp-tx b{font-size:16px;font-weight:900}
+.pp-tx small{font-size:12px;color:var(--soft)}
+.pp-tx .tv-whos{margin-top:4px}

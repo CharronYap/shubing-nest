@@ -13,6 +13,7 @@
    存檔：全部在 S.album.tv，明信片的信在 S.mail.l（k 是「娃娃.pc.0#p=地方;c=第幾張;l=哪一句」）。不加最上層欄位、不改規則。
      tv = {bag:{food,charm,tool}, inv:{用品:幾個}, tool:{道具:1}, out:[旅程], back:{娃娃:回來的時間}, cards:{地方:收到哪幾張},
            sv:{土產:拿過幾次}, cnt:{娃娃:{地方:幾次}}, log:{娃娃:['日期|地方|同行|日記第幾句']}, wel:[還沒看的回家通知], free:'沒帶行李出門的那天',
+           pp:{出國的地方:'第一次去的那天'}（護照的章）, tk:1（送過第一張機票）,
            who:{'地方:第幾張':'寄的娃娃，用 + 接'}（相簿裡的明信片照這個把娃娃貼上去）, pics:[{id,p,c,ds:'娃娃用 + 接',t:'日期'}]（每趟回家的紀念合照，留 30 張）}
      旅程 = {id, ds:[娃娃], p, t0, t1, food, charm, tool, hm:{娃娃:{r,x,y}}, pcs:[{c,at,d,l 或 u}], sent, sv:{娃娃:土產}, di:{娃娃:日記第幾句}}
      沒有陣列直接包陣列（Firestore 不收）。
@@ -33,7 +34,7 @@ function tvWhen(ms){
 }
 function tvData(){
   const t = S.album.tv = S.album.tv || {};
-  ['bag', 'inv', 'tool', 'back', 'cards', 'sv', 'cnt', 'log', 'who'].forEach(k => { if (!t[k] || typeof t[k] !== 'object' || Array.isArray(t[k])) t[k] = {}; });
+  ['bag', 'inv', 'tool', 'back', 'cards', 'sv', 'cnt', 'log', 'who', 'pp'].forEach(k => { if (!t[k] || typeof t[k] !== 'object' || Array.isArray(t[k])) t[k] = {}; });
   if (!Array.isArray(t.out)) t.out = [];
   if (!Array.isArray(t.wel)) t.wel = [];
   if (!Array.isArray(t.pics)) t.pics = [];
@@ -48,6 +49,10 @@ const tvToolList = s => String(s || '').split(',').filter(id => TV_GOODS[id] && 
 const tvOnce = id => !!(TV_GOODS[id] && TV_GOODS[id].once);   // 用一次的道具（野餐籃、機票）：算個數，出門就用掉
 const tvToolFree = id => tvOnce(id) || (!!tvData().tool[id] && !tvData().out.some(o => tvToolList(o.tool).includes(id)));
 const tvWho = o => (o.fam ? '全家' : tvNames(o.ds));
+// 出國（js/abroad.js，tier 4）：紙條和通知上寫國家
+const tvAb = p => !!(TV_PLACES[p] && TV_PLACES[p].abroad);
+const tvDest = p => (tvAb(p) ? TV_PLACES[p].country : TV_PLACES[p].name.replace('山上的', ''));
+const tvBits = b => [0, 1, 2].filter(c => (b || 0) & (1 << c)).length;
 // 家裡一隻娃娃都沒有（全家旅行中）：今天的小事等牠們回來
 const tvNobody = () => tvData().out.length > 0 && tvHomeDolls().length === 0;
 // 收納架、過夜、小島都用 whereDoll 看娃娃在哪：旅行中的回 'trip'
@@ -70,13 +75,15 @@ function tvPlan(now){
   if (typeof skyWeather === 'function' && skyWeather(tvDate(now)) === 'rain' && !tools.includes('umb')) return null;
   // 全家旅行：背包裡有野餐籃。有人還在外面就先等（要全部在家才是全家）；平常的旅行同時在外面最多 TV_MAX_OUT 隻
   const wantFam = tools.includes('basket');
+  // 出國：背包裡有機票（js/abroad.js）。去哪一國牠們自己決定，還沒收齊明信片的地方比較常去；一趟兩到三天、寄三張明信片、一定帶土產回來
+  const abL = Object.keys(TV_PLACES).filter(tvAb), abroad = tools.includes('ticket') && abL.length > 0;
   if (wantFam ? outN > 0 : outN >= TV_MAX_OUT) return null;   // 下雨天沒有傘，大家都不想出門
   const food = TV_GOODS[bag.food] ? bag.food : '', charm = TV_GOODS[bag.charm] ? bag.charm : '';
-  const tier = food === 'bento' ? 3 : food === 'sand' ? 2 : 1;
-  const p = tier === 3 ? 'onsen' : tier === 2 ? (tools.includes('torch') && (hr >= 15 || hr < 2) ? 'market' : 'beach') : 'park';
+  const tier = abroad ? 4 : food === 'bento' ? 3 : food === 'sand' ? 2 : 1;
+  const p = abroad ? tvPickW(abL, x => 1 + 2 * (3 - tvBits(t.cards[x]))) : tier === 3 ? 'onsen' : tier === 2 ? (tools.includes('torch') && (hr >= 15 || hr < 2) ? 'market' : 'beach') : 'park';
   const P = TV_PLACES[p];
   const hid = typeof hideGet === 'function' && hideGet() ? hideGet().d : '';
-  const can = homeD.filter(d => now - (t.back[d] || 0) >= TV_REST_H * 36e5 && (d !== 'egg' || food === 'bento') && d !== hid);
+  const can = homeD.filter(d => now - (t.back[d] || 0) >= TV_REST_H * 36e5 && (d !== 'egg' || food === 'bento' || abroad) && d !== hid);   // 蛋黃哥：要有便當才肯走路；搭飛機不用走，牠也去
   const famD = homeD.filter(d => d !== hid);
   // 全家：在家的全部一起去（不看誰剛回來、蛋黃哥也去）。沒放野餐籃也有很小的機會自己發生
   const fam = famD.length >= 2 && (wantFam || (outN === 0 && famD.length >= 3 && Math.random() < TV_FAM));
@@ -93,7 +100,7 @@ function tvPlan(now){
   const o = {id: 't' + Math.round(now / 1000).toString(36) + a, ds, p, t0: Math.round(now), t1: Math.round(now + dur), food, charm, tool, hm: {}, pcs: [], sent: 0, sv: {}, di: {}};
   if (fam) o.fam = 1;
   // 明信片：有帶點心 2 張、沒帶 1 張，幸運符多 1 張。還沒收過的那幾張先寄
-  const n = Math.min(3, (food ? 2 : 1) + (charm === 'luck' ? 1 : 0)), got = t.cards[p] || 0;
+  const n = abroad ? 3 : Math.min(3, (food ? 2 : 1) + (charm === 'luck' ? 1 : 0)), got = t.cards[p] || 0;
   const order = [...tvShuffle([0, 1, 2].filter(c => !(got & (1 << c)))), ...tvShuffle([0, 1, 2].filter(c => got & (1 << c)))].slice(0, n);
   const duo = ds.length === 2 ? TV_DUO[p].findIndex(x => (x[0] === ds[0] && x[1] === ds[1]) || (x[0] === ds[1] && x[1] === ds[0])) : -1;
   // 同一趟不寫重複的話：每一隻先寫這個地方的兩句（順序隨機），第三張起改寫哪裡都能用的那兩句
@@ -115,7 +122,7 @@ function tvPlan(now){
   const taken = [];
   ds.forEach(d => {
     o.di[d] = Math.floor(Math.random() * TV_DIARY[d].length);
-    if (!food && Math.random() >= .4) return;
+    if (!abroad && !food && Math.random() >= .4) return;
     const fresh = P.sv.filter(k => !t.sv[k] && !taken.includes(k)), left = P.sv.filter(k => !taken.includes(k)), pool = fresh.length ? fresh : left.length ? left : P.sv;   // 全家去的時候人比土產多，會重複（重複的回家換成幣）
     const k = pool[Math.floor(Math.random() * pool.length)]; if (k){ o.sv[d] = k; taken.push(k); }
   });
@@ -167,6 +174,7 @@ function tvPutBack(d, h){
 function tvReturn(o){
   const t = tvData(), day = tvDate(o.t1);
   t.out.splice(t.out.indexOf(o), 1);
+  if (tvAb(o.p) && !t.pp[o.p]) t.pp[o.p] = day;   // 護照：第一次去的那一天蓋一個章
   o.ds.forEach(d => {
     const other = o.fam ? 'fam' : o.ds.find(x => x !== d) || '';
     tvPutBack(d, o.hm[d]);
@@ -194,6 +202,15 @@ function tvReturn(o){
     if (typeof fightOf === 'function' && fightOf(a, b)) delete S.album.fight;
   }
 }
+/* 機票（js/abroad.js）：近的四個地方 12 張明信片收齊，薯餅送第一張（寫一封信，機票直接放進行李的用品裡）；之後火腿的小店才賣。
+   tk：送過了。以前就收齊的人，打開小窩時補送 */
+function tvTicketGift(){
+  const t = tvData(); if (t.tk || !TV_GOODS.ticket) return false;
+  if (!Object.keys(TV_PLACES).filter(p => !tvAb(p)).every(p => tvBits(t.cards[p]) === 3)) return false;
+  t.tk = 1; t.inv.ticket = (t.inv.ticket || 0) + 1;
+  if (typeof mailInit === 'function'){ const m = mailInit(), d = todayStr(); if (!m.s['news-tk1']){ m.s['news-tk1'] = d; if (!m.l.some(x => x.k === 'sloth.news.0#id=tk1')) m.l.unshift({k: 'sloth.news.0#id=tk1', t: d, r: 0, a: null, g: 0}); } }
+  return true;
+}
 // 回 {pc: 這次寄到幾張, back: 這次回來的娃娃}
 function tvSettle(now){
   const t = tvData(), res = {pc: 0, back: [], from: []};
@@ -215,6 +232,8 @@ function tvCheck(){
   if (VISIT) return;
   const t = tvData(), now = tvNow();
   let res = tvSettle(now), pcN = res.pc, back = res.back.slice(), changed = !!(res.pc || res.back.length);
+  const gift = () => { try { if (tvTicketGift()){ changed = true; setTimeout(() => toast('明信片收齊了。薯餅送你一張機票，信箱有牠的信'), 2600); } } catch (e) { console.info('[travel]', e); } };
+  gift();
   if (!tvOpened){
     tvOpened = true;
     const last = LAST_T || now;
@@ -229,6 +248,7 @@ function tvCheck(){
       }
     }
   }
+  gift();
   if (!changed) return;
   save(); tvRefresh();
   if (!back.length && pcN) toast(pcN > 1 ? `信箱有 ${pcN} 張新的明信片` : '信箱有一張新的明信片');
@@ -247,7 +267,7 @@ function tvLive(why){
   if (!packed) t.free = todayStr();
   save(); tvRefresh();
   if (!$('#sheet').hidden && $('#sheet .tv-bagbox')) tvBagOpen();
-  toast(`${tvWho(o)}${o.fam ? '一起出門了' : packed ? '背著背包出門了' : '自己出門走走了'}，${TV_PLACES[o.p].dir}`);
+  toast(`${tvWho(o)}${tvAb(o.p) ? (o.fam ? '一起拿著機票出門了' : '拿著機票出門了') : o.fam ? '一起出門了' : packed ? '背著背包出門了' : '自己出門走走了'}，${TV_PLACES[o.p].dir}`);
   return o;
 }
 
@@ -277,6 +297,9 @@ function tvMerge(m, g){
   t.wel = [...arr(t.wel), ...arr(gt.wel).filter(w => !seenW.has(wk(w)))].slice(-8);
   t.free = [t.free || '', gt.free || ''].sort().pop(); if (!t.free) delete t.free;
   t.who = Object.assign({}, obj(gt.who), obj(t.who));
+  // 護照的章：留比較早的那一天；機票送過沒有：有一邊送過就算送過（機票的張數在上面 inv 取多的）
+  t.pp = obj(t.pp); Object.entries(obj(gt.pp)).forEach(([p, d]) => { if (typeof d === 'string' && (!t.pp[p] || d < t.pp[p])) t.pp[p] = d; });
+  if (gt.tk) t.tk = 1;
   const pid = new Set(arr(t.pics).map(x => x && x.id));
   t.pics = [...arr(t.pics), ...arr(gt.pics).filter(x => x && !pid.has(x.id))].sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0)).slice(-30);
   // 旅程
@@ -382,7 +405,7 @@ function tvRoomPaint(){
     const n = document.createElement('button');
     n.className = 'tvx st-note tv-note tv-fam'; n.setAttribute('aria-label', `全家去${TV_PLACES[o.p].name}了`);
     n.style.left = '40%'; n.style.top = roomY(74) + '%'; n.style.zIndex = 60 + 74 * 3;
-    n.innerHTML = `<span>全家出門了<br>去${TV_PLACES[o.p].name.replace('山上的', '')}<br>${tvWhen(o.t1)}回來</span>`;
+    n.innerHTML = `<span>全家出門了<br>去${tvDest(o.p)}<br>${tvWhen(o.t1)}回來</span>`;
     n.onclick = () => tvNoteTap(o.ds[0]);
     room.appendChild(n);
   });
@@ -391,7 +414,7 @@ function tvRoomPaint(){
     const n = document.createElement('button');
     n.className = 'tvx st-note tv-note'; n.setAttribute('aria-label', `${DOLL_NAME[d]}去${TV_PLACES[o.p].name}了`);
     n.style.left = h.x + '%'; n.style.top = roomY(h.y) + '%'; n.style.zIndex = 60 + Math.round(h.y * 3);
-    n.innerHTML = `<span>${DOLL_NAME[d]}<br>去${TV_PLACES[o.p].name.replace('山上的', '')}了</span>`;
+    n.innerHTML = `<span>${DOLL_NAME[d]}<br>去${tvDest(o.p)}了</span>`;
     n.onclick = () => tvNoteTap(d);
     room.appendChild(n);
   }));
@@ -402,12 +425,12 @@ function tvRoomPaint(){
   afterRoomRender = function(){ if (prev) prev(); tvRoomPaint(); };
   if (typeof fixPaint === 'function'){ const fp = fixPaint; fixPaint = function(){ fp.apply(this, arguments); tvRoomPaint(); }; }
 }
-const tvOutLine = o => `${tvWho(o)}去${TV_PLACES[o.p].name}了，大概${tvWhen(o.t1)}回來`;
+const tvOutLine = o => `${tvWho(o)}去${tvAb(o.p) ? `${TV_PLACES[o.p].country}看${TV_PLACES[o.p].name}` : TV_PLACES[o.p].name}了，大概${tvWhen(o.t1)}回來`;
 function tvNoteTap(d){
   const o = tvTrip(d); if (!o) return;
   const P = TV_PLACES[o.p];
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>${tvWho(o)}去旅行了</span></div>
-    <div class="st-box"><p class="st-hi">${P.dir}走了，大概${tvWhen(o.t1)}回來。</p>
+    <div class="st-box"><p class="st-hi">${P.abroad ? `${P.dir}了，要去看${P.name}。大概${tvWhen(o.t1)}回來。` : `${P.dir}走了，大概${tvWhen(o.t1)}回來。`}</p>
       <p class="bk-note">路上會寄明信片到信箱${o.sent ? `，已經寄了 ${o.sent} 張` : ''}。不用等牠，時間到了牠自己會回家。</p></div>
     <div class="ml-ft"><button class="btn" data-tv="bag">看行李</button><button class="btn" data-tv="album">旅行相簿</button></div>`);
   evOpen = false; alOpen = false;
@@ -431,7 +454,7 @@ function tvBagOpen(){
   };
   const out = t.out.length ? `<div class="al-sec">出門的</div><ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : '';
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>行李</span></div>
-    <div class="tv-box tv-bagbox"><p class="st-hi">${tvToolList(bag.tool).includes('basket') ? (t.out.length ? '野餐籃放好了。等出門的回來，下一趟全家一起去。' : '野餐籃放好了。下一趟全家一起去。') : tvPacked() ? '放好了。誰想出門，會自己背走。' : '想放什麼就放，放好就不用管了。誰去、去哪裡，牠們自己決定。'}</p>
+    <div class="tv-box tv-bagbox"><p class="st-hi">${tvToolList(bag.tool).includes('ticket') ? (tvToolList(bag.tool).includes('basket') ? (t.out.length ? '機票和野餐籃都放好了。等出門的回來，下一趟全家一起出國。' : '機票和野餐籃都放好了。下一趟全家一起出國。') : '機票放好了。下一個出門的會搭飛機出國，兩三天才回來。') : tvToolList(bag.tool).includes('basket') ? (t.out.length ? '野餐籃放好了。等出門的回來，下一趟全家一起去。' : '野餐籃放好了。下一趟全家一起去。') : tvPacked() ? '放好了。誰想出門，會自己背走。' : '想放什麼就放，放好就不用管了。誰去、去哪裡，牠們自己決定。'}</p>
       ${TV_SLOTS.map(slot).join('')}${out}
       <p class="bk-note">沒放東西牠們也會出門，只是走不遠。點一下放進去，再點一下拿出來。</p></div>
     <div class="ml-ft"><button class="btn" data-tv="shop">去小店</button><button class="btn" data-tv="album">旅行相簿</button></div>`);
@@ -467,6 +490,7 @@ function tvShopHTML(){
   const cards = Object.keys(TV_GOODS).map(id => {
     const g = TV_GOODS[id], tool = g.slot === 'tool' && !g.once, n = tool ? (t.tool[id] ? 1 : 0) : tvHaveN(id);
     const full = tool ? n > 0 : n >= TV_INV_MAX;
+    if (id === 'ticket' && !t.tk) return `<div class="sp-it tv-git tv-wait"><span class="tile tv-gd">${g.ic}</span><b>${g.name}</b><span class="rm-tag">近的四個地方明信片收齊，薯餅送第一張</span><small>還沒開賣</small></div>`;
     return `<div class="sp-it tv-git ${tool && n ? 'own' : ''}"><span class="tile tv-gd">${g.ic}${!tool && n ? `<span class="nw">${n}</span>` : ''}</span><b>${g.name}</b><span class="rm-tag">${g.tip}</span>
       ${full ? `<small>${tool ? '有了' : '放不下了'}</small>` : `<button class="btn y sm" data-tvbuy="${id}" aria-label="買${g.name}，${g.price} 枚幣">${COIN}${g.price}</button>`}</div>`;
   }).join('');
@@ -476,6 +500,7 @@ function tvBuy(id){
   const g = TV_GOODS[id]; if (!g) return;
   const t = tvData();
   if (g.slot === 'tool' && !g.once ? t.tool[id] : tvHaveN(id) >= TV_INV_MAX) return;
+  if (id === 'ticket' && !t.tk) return;
   if (S.coins < g.price){ toast(`還差 ${g.price - S.coins} 枚幣`); return; }
   S.coins -= g.price;
   if (g.slot === 'tool' && !g.once) t.tool[id] = 1; else t.inv[id] = (t.inv[id] || 0) + 1;
@@ -493,8 +518,8 @@ function tvWelcome(){
   if (($('#cover') && !$('#cover').hidden) || !$('#sheet').hidden){ tvWelT = setTimeout(tvWelcome, 2500); return; }
   const rows = t.wel.map(w => {
     const P = TV_PLACES[w.p] || TV_PLACES.park, s = TV_SOUV[w.sv];
-    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來一個${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這次沒有帶東西回來。</small>';
-    return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${(TV_DIARY[w.d][w.di] || TV_DIARY[w.d][0]).replace(/\{p\}/g, P.name)}」</p>${got}</div></div>`;
+    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來${s.unit || '一個'}${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這次沒有帶東西回來。</small>';
+    return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.abroad ? P.country : P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${(TV_DIARY[w.d][w.di] || TV_DIARY[w.d][0]).replace(/\{p\}/g, P.name)}」</p>${got}</div></div>`;
   }).join('');
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>回家了</span></div><div class="tv-box">${rows}</div>
     <div class="ml-ft"><button class="btn y" data-tv="welok">好</button><button class="btn" data-tv="album">旅行相簿</button></div>`);
@@ -505,28 +530,47 @@ function tvWelcome(){
 /* ---------- 相簿：旅行那一本、每一隻那一頁的幾行、小屋地圖下面的一行 ---------- */
 let tvBig = null;
 function tvAlbumOpen(){
-  const t = tvData();
-  const total = Object.keys(TV_PLACES).reduce((n, p) => n + [0, 1, 2].filter(c => (t.cards[p] || 0) & (1 << c)).length, 0);
-  const pages = Object.keys(TV_PLACES).map(p => {
+  const t = tvData(), all = Object.keys(TV_PLACES);
+  const total = all.reduce((n, p) => n + tvBits(t.cards[p]), 0);
+  const page = p => {
     const P = TV_PLACES[p], got = t.cards[p] || 0;
     const cards = [0, 1, 2].map(c => (got & (1 << c)
       ? `<button class="tv-th" data-tvc="${p}:${c}" aria-label="${P.name}，${TV_CARDS[p][c].name}">${tvCardHTML(p, c, tvWhoOf(p, c))}<small>${TV_CARDS[p][c].name}</small></button>`
       : '<span class="tv-th no" aria-label="還沒收到"><i></i><small>還沒收到</small></span>')).join('');
     const svs = P.sv.map(k => (t.sv[k] ? `<span class="tv-sv"><span class="tile">${furnSVG(tvSouvId(k))}</span><small>${TV_SOUV[k].name}</small></span>` : '<span class="tv-sv no"><span class="tile"></span><small>？</small></span>')).join('');
     const who = DOLLS.filter(d => t.cnt[d] && t.cnt[d][p]).map(d => `<span class="tv-who"><img src="${SPR[d]}" alt="${DOLL_NAME[d]}">${t.cnt[d][p]}</span>`).join('');
-    return `<div class="tv-pl"><div class="al-sec">${P.name}<small>${TV_TIER_NAME[P.tier]}${P.night ? '・晚上才去' : ''}</small></div>
+    return `<div class="tv-pl"><div class="al-sec">${P.name}<small>${P.abroad ? `${P.country}・${P.city}` : TV_TIER_NAME[P.tier] + (P.night ? '・晚上才去' : '')}</small></div>
       <div class="tv-cards">${cards}</div><div class="tv-row">${svs}<span class="tv-whos">${who || '<small>還沒有人去過</small>'}</span></div></div>`;
-  }).join('');
+  };
+  const pages = all.filter(p => !tvAb(p)).map(page).join('');
+  // 出國的地方另外一段：上面一行說明和護照
+  const abL = all.filter(tvAb), stamped = abL.filter(p => t.pp[p]).length;
+  const abroad = abL.length ? `<div class="tv-abhd"><b>出國</b><span>${t.tk ? '把機票放進背包，下一趟就搭飛機。兩三天回來。' : '近的四個地方明信片收齊，薯餅會送第一張機票。'}</span><button class="btn sm" data-tv="pass">護照 ${stamped} / ${abL.length}</button></div>${abL.map(page).join('')}` : '';
   const pics = t.pics.slice().reverse().filter(x => TV_PLACES[x.p] && TV_CARDS[x.p][x.c]);
   const pk = x => String(x.ds).split('+');
   let big = '';
   if (tvBig && tvBig[0] === 'pic'){ const x = pics.find(q => q.id === tvBig[1]); if (x) big = `<div class="tv-big">${tvCardHTML(x.p, x.c, pk(x), true)}<p class="tvpc-cap">${md(x.t)}・${pk(x).length > 2 ? '大家' : tvNames(pk(x).filter(d => DOLL_NAME[d]))}在${TV_PLACES[x.p].name}</p></div>`; }
   else if (tvBig && ((t.cards[tvBig[0]] || 0) & (1 << tvBig[1]))) big = `<div class="tv-big">${tvCardHTML(tvBig[0], tvBig[1], tvWhoOf(tvBig[0], tvBig[1]))}<p class="tvpc-cap">${TV_PLACES[tvBig[0]].name}・${TV_CARDS[tvBig[0]][tvBig[1]].name}</p></div>`;
-  const picRow = pics.length ? `<div class="al-sec">合照<small>每一趟回家前拍一張，留最近 30 張</small></div><div class="tv-pics">${pics.map(x => `<button class="tv-th" data-tvpic="${x.id}" aria-label="${md(x.t)}在${TV_PLACES[x.p].name}的合照">${tvCardHTML(x.p, x.c, pk(x), true)}<small>${md(x.t)}・${TV_PLACES[x.p].name.replace('山上的', '')}</small></button>`).join('')}</div>` : '';
-  openSheet(`<div class="hd">${TV_BAG_ICON}<span>旅行</span><small class="pc-left">明信片 ${total} / 12</small></div>
-    <div class="tv-box tv-album">${t.out.length ? `<ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : ''}${big}${picRow}${pages}
+  const picRow = pics.length ? `<div class="al-sec">合照<small>每一趟回家前拍一張，留最近 30 張</small></div><div class="tv-pics">${pics.map(x => `<button class="tv-th" data-tvpic="${x.id}" aria-label="${md(x.t)}在${TV_PLACES[x.p].name}的合照">${tvCardHTML(x.p, x.c, pk(x), true)}<small>${md(x.t)}・${TV_PLACES[x.p].short || TV_PLACES[x.p].name.replace('山上的', '')}</small></button>`).join('')}</div>` : '';
+  openSheet(`<div class="hd">${TV_BAG_ICON}<span>旅行</span><small class="pc-left">明信片 ${total} / ${all.length * 3}</small></div>
+    <div class="tv-box tv-album">${t.out.length ? `<ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : ''}${big}${picRow}${pages}${abroad}
       <p class="bk-note">明信片是牠們路上寄回來的，信箱裡看得到背面寫的話。合照是回家前拍的。土產每一間都能擺。</p></div>
     <div class="ml-ft"><button class="btn" data-tv="bag">看行李</button><button class="btn" data-tv="back">回相簿</button></div>`);
+  evOpen = false; alOpen = false;
+}
+/* 護照：出國的地方一國一頁。第一次有娃娃從那裡回來，蓋一個章（章上是那個地標的小圖、國家、那一天）；還沒去過的是一個虛線的圈 */
+const TV_PP_COL = ['#d96f50', '#3f9aa5', '#d9779a', '#8a5f45', '#6f9fc0', '#4c9a78'];
+function tvPassOpen(){
+  const t = tvData(), abL = Object.keys(TV_PLACES).filter(tvAb);
+  const pages = abL.map((p, i) => {
+    const P = TV_PLACES[p], day = t.pp[p];
+    const who = DOLLS.filter(d => t.cnt[d] && t.cnt[d][p]).map(d => `<span class="tv-who"><img src="${SPR[d]}" alt="${DOLL_NAME[d]}">${t.cnt[d][p]}</span>`).join('');
+    const st = day ? `<span class="pp-st on" style="color:${TV_PP_COL[i % TV_PP_COL.length]};transform:rotate(${[-9, 6, -4, 8][i % 4]}deg)"><svg viewBox="0 0 24 24" aria-hidden="true">${P.stamp || ''}</svg><b>${P.country}</b><small>${md(day)}</small></span>` : '<span class="pp-st" aria-hidden="true"><small>還沒蓋章</small></span>';
+    return `<div class="pp-pg ${day ? 'on' : ''}">${st}<div class="pp-tx"><b>${P.country}</b><small>${P.city}・${P.name}</small>${day ? `<span class="tv-whos">${who}</span>` : '<small class="pp-no">還沒有人去過</small>'}</div></div>`;
+  }).join('');
+  openSheet(`<div class="hd">${TV_BAG_ICON}<span>護照</span><small class="pc-left">${abL.filter(p => t.pp[p]).length} / ${abL.length} 國</small></div>
+    <div class="tv-box pp-box">${pages}<p class="bk-note">有娃娃從那一國回來，就蓋一個章。章上的日期是第一次去的那一天。</p></div>
+    <div class="ml-ft"><button class="btn" data-tv="album">旅行相簿</button><button class="btn" data-tv="bag">看行李</button></div>`);
   evOpen = false; alOpen = false;
 }
 function tvRows(d){
@@ -563,6 +607,7 @@ $('#sheet').addEventListener('click', e => {
   const a = b.dataset.tv;
   if (a === 'bag') tvBagOpen();
   else if (a === 'album'){ tvBig = null; tvAlbumOpen(); }
+  else if (a === 'pass') tvPassOpen();
   else if (a === 'shop'){ if (typeof shopOpen === 'function') shopOpen(); }
   else if (a === 'back'){ if (typeof openAlbum === 'function') openAlbum(); }
   else if (a === 'welok') $('#sheet').hidden = true;
@@ -591,4 +636,5 @@ window.tvDebug = {
   skip(h){ tvSkew += (+h || 0) * 36e5; tvCheck(); return new Date(tvNow()).toString(); },
   go(){ const o = tvLive('force'); return o ? `${tvWho(o)} → ${TV_PLACES[o.p].name}` : '現在沒有人出門'; },
   state(){ return JSON.parse(JSON.stringify(tvData())); },
+  ticket(n){ const t = tvData(); t.tk = 1; t.inv.ticket = (t.inv.ticket || 0) + (+n || 1); save(); return `機票 ${t.inv.ticket} 張`; },   // 測試：直接拿機票
 };

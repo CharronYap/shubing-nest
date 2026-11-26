@@ -368,3 +368,10 @@
 .look-paper .pc-row .pc-del[data-sure],.look-paper .bk-del.sure{background:var(--p-a1d);color:var(--p-paper);box-shadow:none;border-radius:8px}
 .look-paper .tray-set{background:color-mix(in srgb,var(--p-sun) 20%,var(--p-card));border-radius:8px;box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
 .look-paper .tray-setall{border-radius:6px;background:var(--p-paper);box-shadow:0 2px 0 var(--p-edge);color:var(--p-a1d);font-family:var(--p-hand)}
+/* 出國：相簿裡出國那一段的標題、護照 */
+.look-paper .tv-abhd{background:var(--p-card);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .tv-abhd span{color:var(--p-ink);opacity:.72}
+.look-paper .pp-pg{background:var(--p-card);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .pp-st{border-color:var(--p-edge);color:var(--p-ink)}
+.look-paper .pp-st.on{box-shadow:inset 0 0 0 2px var(--p-card),inset 0 0 0 3.2px currentColor}
+.look-paper .pp-tx small{color:var(--p-ink);opacity:.7}

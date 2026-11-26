@@ -206,7 +206,7 @@ function trayHow(kind,id){
   if(kind==='wall'){const g=typeof GIFT_WALL!=='undefined'&&GIFT_WALL[id];return g?['湊齊系列',g]:['娃娃機・小店','娃娃機夾得到，小店也買得到'];}
   if(kind==='floor'){const g=typeof GIFT_FLOOR!=='undefined'&&GIFT_FLOOR[id];return g?['湊齊系列',g]:['小店','火腿的小店買得到'];}
   const f=FURN[id]||{};
-  if(f.souv){const sv=typeof TV_SOUV!=='undefined'&&TV_SOUV[id.replace(/^tvs_/,'')],pl=sv&&typeof TV_PLACES!=='undefined'&&TV_PLACES[sv.from];const n=pl?pl.name.replace('山上的',''):'旅行';return [n,`娃娃去${pl?pl.name:'旅行'}會帶回來`];}
+  if(f.souv){const sv=typeof TV_SOUV!=='undefined'&&TV_SOUV[id.replace(/^tvs_/,'')],pl=sv&&typeof TV_PLACES!=='undefined'&&TV_PLACES[sv.from];const n=pl?(pl.short||pl.name.replace('山上的','')):'旅行';return [n,`娃娃去${pl?(pl.abroad?pl.country:pl.name):'旅行'}會帶回來`];}
   if(f.season){const n=TRAY_SEASON[f.season]||'節日';return [n,`${n}的時候會出現在這裡`];}
   if(f.gift){const sr=typeof FURN_SERIES!=='undefined'?Object.values(FURN_SERIES).find(x=>x.gift&&x.gift.kind==='furn'&&x.gift.id===id):null;return ['湊齊系列',sr?`湊齊${sr.name}送你`:'湊齊一個系列送你'];}
   return ['娃娃機・小店','娃娃機夾得到，小店也買得到'];
