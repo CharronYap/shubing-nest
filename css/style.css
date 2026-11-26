@@ -1278,3 +1278,10 @@ span.yd-kind{cursor:default}
 .grip{height:20px}
 .items{grid-auto-rows:max-content}   /* 格子不夠放時要捲，不能把每一排壓扁 */
 .yd-grid>span.tile{overflow:hidden}
+/* 家具系列那一頁：每一格一樣大（正方形），圖縮進格子裡。原本細長的家具（香菇燈）圖的高度是照寬度算的，會比格子高一截 */
+.yd-grid>span.tile{grid-template:minmax(0,1fr)/minmax(0,1fr)}
+.yd-grid>span.tile>svg{width:80%;height:80%;min-height:0}
+.yd-grid>span.tile.lock>svg{height:68%;align-self:start;margin-top:6%}
+/* 收納架的格子也一樣：細長的家具圖縮進格子裡，不要超出去 */
+.items .tile{grid-template:minmax(0,1fr)/minmax(0,1fr)}
+.items .tile>svg{min-height:0}

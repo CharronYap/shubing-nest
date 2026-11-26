@@ -265,6 +265,7 @@ function stayPaint(){
     const it = {kind: 'doll', id: g.doll, x, y, uid: 'g' + g.id};
     const el = document.createElement('div');
     el.className = 'gst st-guest doll breathe';
+    el.dataset.pd = g.doll; el.dataset.pn = sText(g.fromName, 12) || '朋友'; el.dataset.pu = g.id;   // 拍照（js/photo.js）要知道這是誰家的哪一隻
     el.innerHTML = `<span class="st-tag">${txSlot(sText(g.fromName, 12) || '朋友')}家的${DOLL_NAME[g.doll]}</span><span class="body">${dollPic(g.doll, stayLook(g.look))}</span>`;
     const place = () => { el.style.left = it.x + '%'; el.style.top = roomY(it.y) + '%'; el.style.width = sizeOf(it)[0] + '%'; el.style.zIndex = zOf(it); };
     place();

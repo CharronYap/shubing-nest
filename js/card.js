@@ -18,7 +18,25 @@ const cardUnread = () => (S.mail && S.mail.pc ? S.mail.pc.filter(c => !c.r).leng
 function cardSnap(){
   const r = cur(), look = {};
   r.items.forEach(i => { if (i.kind === 'doll' && S.look && S.look[i.id]) look[i.id] = S.look[i.id]; });
-  return JSON.parse(JSON.stringify({rid: roomId, room: {wall: r.wall, floor: r.floor, items: r.items, ...(r.light === false ? {light: false} : {})}, look, night: isNight()}));
+  // 照畫面上看得到的：這一間出門去別間串門子的不放（js/roam2.js 的 rvOut）
+  const its = r.items.filter(i => !(i.kind === 'doll' && typeof rvOut === 'function' && rvOut(i)));
+  const snap = JSON.parse(JSON.stringify({rid: roomId, room: {wall: r.wall, floor: r.floor, items: its, ...(r.light === false ? {light: false} : {})}, look, night: isNight()}));
+  let u = Math.max(0, ...snap.room.items.map(i => +i.uid || 0)) + 1000;
+  // 從別間來串門子的（js/roam2.js）：是自己的娃娃，衣服照自己的
+  if (typeof RV !== 'undefined' && !VISIT) Object.values(RV).forEach(v => {
+    if (v.to !== roomId || !SPR[v.id]) return;
+    snap.room.items.push({uid: u++, kind: 'doll', id: v.id, x: Math.round(v.x), y: Math.round(v.y), sit: null, seat: 0});
+    if (S.look && S.look[v.id]) snap.look[v.id] = JSON.parse(JSON.stringify(S.look[v.id]));
+  });
+  // 來過夜的客人（js/stay.js，只會在客廳）：當成一隻娃娃放進去，位置照現在畫面上的、衣服帶在那一筆上（look），
+  // 收到的人打開就看得到自己的娃娃在你家。格式還是「一間房間的東西」，規則不用改
+  if (typeof stGuests !== 'undefined' && roomId === 'living' && !VISIT){
+    room.querySelectorAll('.gst.st-guest').forEach(el => {
+      const g = stGuests.find(x => String(x.id) === el.dataset.pu); if (!g || !SPR[g.doll]) return;
+      snap.room.items.push({uid: u++, kind: 'doll', id: g.doll, x: Math.round(parseFloat(el.style.left) || +g.x || 50), y: Math.round(+g.y || 85), sit: null, seat: 0, look: stayLook(g.look), gn: sText(g.fromName, 12) || ''});
+    });
+  }
+  return snap;
 }
 
 /* ---------- 寄 ---------- */

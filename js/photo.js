@@ -237,15 +237,20 @@ async function photoShoot(){
 
   // 家具、娃娃、地上的小東西：照前後順序（z-index）畫
   const fx = {pose: true, jump: Math.random() < .5};
-  const els = [...room.querySelectorAll('.it,.drop')].filter(e => e.offsetParent !== null)
+  // 這一間看得到的娃娃都要入鏡（2026-11-27 使用者說朋友帶來過夜的玩偶拍不到）：自己的、朋友家來過夜的客人（.gst.st-guest，穿著牠出門時的衣服）、
+  // 從隔壁房間來串門子的（.rv）。客人頭上的名牌、紙條不畫。前後順序照畫面上的
+  const els = [...room.querySelectorAll('.it,.drop,.gst.st-guest,.rv')].filter(e => e.offsetParent !== null)
     .map((e, i) => ({e, i, z: +getComputedStyle(e).zIndex || 0})).sort((a, b) => a.z - b.z || a.i - b.i);
-  const inShot = new Set();
+  const inShot = new Set(), guests = [];
   for (const {e} of els){
-    const it = items.find(o => String(o.uid) === e.dataset.u);
-    if (e.classList.contains('doll') && it){
-      drawDoll(ctx, e, R, it, fx); chk('娃娃 ' + it.id);
+    const it = items.find(o => String(o.uid) === e.dataset.u), other = !it && e.dataset.pd && SPR[e.dataset.pd] ? {id: e.dataset.pd} : null;
+    if (e.classList.contains('doll') && (it || other)){
+      const who = it || other, guest = e.classList.contains('st-guest');
+      drawDoll(ctx, e, R, who, guest ? {} : fx); chk('娃娃 ' + who.id);   // 客人不擺特別的姿勢，照牠站著的樣子
       const b = boxIn(e, R);
-      if (b.x + b.w * .5 > cx && b.x + b.w * .5 < cx + cw && b.y + b.h * .5 > cy && b.y + b.h * .5 < cy + ch) inShot.add(it.id);
+      if (b.x + b.w * .5 > cx && b.x + b.w * .5 < cx + cw && b.y + b.h * .5 > cy && b.y + b.h * .5 < cy + ch){
+        if (guest) guests.push({d: who.id, n: e.dataset.pn || '朋友', u: e.dataset.pu || ''}); else inShot.add(who.id);
+      }
     } else {
       if (trip) continue;   // 出遊：家具和地上的東西不畫
       const svg = e.querySelector('svg'); if (!svg) continue;
@@ -272,12 +277,13 @@ async function photoShoot(){
   // 照片四周一條細線，像相紙
   ctx.strokeStyle = 'rgba(107,45,74,.08)'; ctx.lineWidth = 2; ctx.strokeRect(PH.pad, PH.pad, PH.pw, PH.ph);
   // 下面的白邊：薯餅的小窩、房間、日期；火腿在的話右邊留一句
+  const up = guests.length ? 12 : 0;   // 有朋友家的娃娃入鏡時下面多一行，上面兩行往上讓一點
   const by = PH.pad + PH.ph, font = (w, z) => `${w} ${z}px "GenSenRounded","PingFang TC","Noto Sans TC",sans-serif`;
   const d = new Date();
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   const pt = window.PAPER ? window.PAPER.tone() : null;   // 新風格（js/paper.js）：標題用主色深一階、小字用墨色
-  ctx.fillStyle = pt ? pt.a1d : '#e14f93'; ctx.font = font(900, 42); ctx.fillText('薯餅的小窩', PH.pad + 6, by + 66);
-  ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 26); ctx.fillText(`${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`, PH.pad + 8, by + 110);
+  ctx.fillStyle = pt ? pt.a1d : '#e14f93'; ctx.font = font(900, 42); ctx.fillText('薯餅的小窩', PH.pad + 6, by + 66 - up);
+  ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 26); ctx.fillText(`${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`, PH.pad + 8, by + 110 - up);
   let quip = '';
   if (inShot.has('piggy')){
     quip = PIGGY_QUIPS[Math.floor(Math.random() * PIGGY_QUIPS.length)];
@@ -286,24 +292,32 @@ async function photoShoot(){
     ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22); ctx.fillText('火腿', -10, 38);
     ctx.restore();
   }
+  // 有朋友家的娃娃入鏡：白邊多一行小字
+  if (guests.length){ ctx.textAlign = 'left'; ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22); ctx.fillText('和' + guests.slice(0, 2).map(g => `${g.n}家的${DOLL_NAME[g.d]}`).join('、') + (guests.length > 2 ? `和另外 ${guests.length - 2} 隻` : ''), PH.pad + 8, by + 131, 560); }
   chk('字');
-  return {canvas: c, dolls: [...inShot], skipped: photoBad.slice(), dirty};
+  return {canvas: c, dolls: [...inShot], guests, skipped: photoBad.slice(), dirty};
 }
 
 /* 相簿：一起拍了照 */
-function photoRecord(dolls){
-  const a = S.album, t = todayStr();
+// S.album.photos = {娃娃:['日期' 或 '日期|朋友的名字|朋友家的哪一隻']}（一隻留 12 筆）
+function photoRecord(dolls, guests){
+  const a = S.album, t = todayStr(), gs = guests || [];
   a.photos = a.photos || {};
   dolls.forEach(d => {
     const l = a.photos[d] = a.photos[d] || [];
-    if (l[l.length - 1] !== t){ l.push(t); if (l.length > 12) l.splice(0, l.length - 12); }
+    // 有朋友家的娃娃一起入鏡：記「和○○家的□□一起拍了照」（同一天同一位只記一次）；沒有就照舊只記日期
+    const rows = gs.length ? gs.map(g => `${t}|${g.n}|${g.d}`) : [t];
+    rows.forEach(r => { if (!l.includes(r)){ if (gs.length){ const k = l.indexOf(t); if (k >= 0) l.splice(k, 1); } l.push(r); } });
+    if (l.length > 12) l.splice(0, l.length - 12);
   });
+  // 兩個人的紀念冊也記一筆（js/memo.js）
+  if (typeof memoAdd === 'function') gs.forEach(g => { if (g.u) memoAdd('photoWith', g.u, g.n, {id: 'pw' + t + g.u + g.d, d: g.d}); });
   save();
 }
 function photoRows(d){
   const l = ((S.album.photos || {})[d]) || [];
   if (!l.length) return '';
-  return `<div class="al-sec">一起拍的照</div><ul class="al-ln al-ph-ln">${l.slice().reverse().map(t => { const [, m, dd] = t.split('-'); return `<li>${+m}月${+dd}日一起拍了照</li>`; }).join('')}</ul>`;
+  return `<div class="al-sec">一起拍的照</div><ul class="al-ln al-ph-ln">${l.slice().reverse().map(t => { const [day, n, gd] = String(t).split('|'), [, m, dd] = day.split('-'); return `<li>${+m}月${+dd}日${n && DOLL_NAME[gd] ? `和${txSlot(n)}家的${DOLL_NAME[gd]}` : ''}一起拍了照</li>`; }).join('')}</ul>`;
 }
 
 /* ---------- 按鈕、閃光、預覽 ---------- */
@@ -387,7 +401,7 @@ async function photoTake(){
   photoBusy = false;
   if (!shot){ toast(err ? '沒拍成：' + err.slice(0, 60) : '沒拍成，再試一次'); return; }
   const snap = typeof cardSnap === 'function' && typeof sNet === 'function' && sNet() && !(typeof tripBg === 'function' && tripBg()) ? cardSnap() : null;   // 寄明信片用（js/card.js）
-  if (await photoPreview(shot, {again: true, snap})) photoRecord(shot.dolls);
+  if (await photoPreview(shot, {again: true, snap})) photoRecord(shot.dolls, shot.guests);
 }
 
 (function(){

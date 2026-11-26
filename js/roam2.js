@@ -127,6 +127,7 @@ function rvEl(uid, v){
   let el = room.querySelector(`.rv[data-rv="${uid}"]`);
   if (el) return el;
   el = document.createElement('div'); el.className = 'rv doll breathe'; el.dataset.rv = uid;
+  el.dataset.pd = v.id;   // 拍照（js/photo.js）要知道這是哪一隻
   el.innerHTML = `<span class="body">${dollPic(v.id)}</span>`;
   el.addEventListener('click', () => {
     const L = ROAM_LINES[v.id]; say({kind: 'doll', id: v.id, x: v.x, y: v.y}, L[Math.floor(Math.random() * L.length)]);

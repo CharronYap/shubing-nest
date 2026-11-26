@@ -13,7 +13,7 @@
 const MEMO_MAX = 100;
 const MEMO_ICON = {
   friend: HEART(), cardOut: CARD_ICON, cardIn: CARD_ICON, giftOut: MAIL_ICON, giftIn: MAIL_ICON,
-  stayOut: STAY_MOON, stayBack: STAY_MOON, guest: STAY_MOON, bookIn: BOOK_ICON, bookOut: BOOK_ICON,
+  stayOut: STAY_MOON, stayBack: STAY_MOON, guest: STAY_MOON, photoWith: typeof CAM_ICON !== 'undefined' ? CAM_ICON : STAY_MOON, bookIn: BOOK_ICON, bookOut: BOOK_ICON,
   hideFound: WANT_STAR, hideMiss: WANT_STAR, seekFound: WANT_STAR, waterIn: WATER_ICON, waterOut: WATER_ICON,
 };
 const memoList = () => (S.album.memo = Array.isArray(S.album.memo) ? S.album.memo : []);
@@ -48,6 +48,7 @@ function memoText(e){
     case 'stayOut': return `${d}去${w}家過夜`;
     case 'stayBack': return e.m ? `${d}從${w}家帶回一張小紙條：「${txSlot(e.m)}」` : `${d}從${w}家帶日記回來`;
     case 'guest': return `${w}家的${d}來過夜`;
+    case 'photoWith': return `和${w}家的${d}一起拍了照`;
     case 'bookIn': return e.m ? `${w}在訪客簿寫：「${txSlot(e.m)}」` : `${w}在訪客簿貼了貼紙`;
     case 'bookOut': return `在${w}的訪客簿留了話`;
     case 'hideFound': return `${w}找到躲起來的${d}`;

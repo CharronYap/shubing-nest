@@ -67,7 +67,7 @@ function elFor(it){
   let el=room.querySelector(`.it[data-u="${it.uid}"]`);
   if(!el){
     el=document.createElement('div');el.className='it';el.dataset.u=it.uid;
-    if(it.kind==='doll'){el.classList.add('doll');el.innerHTML=`<span class="body">${dollPic(it.id,VISIT?(VISIT.look[it.id]||{}):undefined)}</span>`;}
+    if(it.kind==='doll'){el.classList.add('doll');el.innerHTML=`<span class="body">${dollPic(it.id,it.look&&typeof stayLook==='function'?stayLook(it.look):VISIT?(VISIT.look[it.id]||{}):undefined)}</span>`;}
     else el.innerHTML=furnSVG(it.id);
     el.addEventListener('pointerdown',e=>{if(VISIT)visitTap(it);else startDrag(e,it.uid);});
     room.appendChild(el);
@@ -89,7 +89,7 @@ function render(){
     }
   });
   renderGlow();
-  if(!VISIT){renderTray();renderSet();afterRender();}else if(typeof paintSleep==='function')paintSleep();
+  if(!VISIT){renderTray();renderSet();afterRender();}else{if(typeof paintSleep==='function')paintSleep();if(typeof stayPaint==='function')stayPaint();}   // 去朋友家、看明信片時：自己家的客人和紙條不要留在畫面上
 }
 function renderGlow(){
   room.querySelectorAll('.glow').forEach(g=>g.remove());
