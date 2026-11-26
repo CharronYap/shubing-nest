@@ -15,11 +15,12 @@ rules_version = '2';
 //   小窩存檔 nestSaves 多收 earn（小遊戲今天幾局、誰在打工、里程碑、小店）一欄；
 //   存檔和公開房間的 home 可以多兩間：kitchen（廚房）、attic（閣樓），可有可無，檢查跟原本三間一樣。
 //   以上全部在 2026-11-26 整份發布。
-// 2026-11-26 躲貓貓（★ 還沒發布，等檢查）：
+// 2026-11-26 躲貓貓（已發布，2026-11-26 下午 4:36）：
 //   nestRooms 公開資料多 hide 一欄 = {d 哪一隻, r 哪一間, f 家具的編號, day 哪天躲的}，每個值都檢查型別和長度；
 //   新的子集合 nestRooms/{uid}/found/{日子_找的人} = {from, fromName, day, ok 有沒有找到, n 用了幾次 1～3}，
 //   寫法跟 water 一樣：只有好友能建、一人一天一筆、不能改；主人能讀全部、能刪；找的人只能讀自己那一筆。
-//   其他段落沒有動。發布前躲貓貓的讀寫會被擋，遊戲那邊安靜處理（js/hide.js、js/cloud.js saveRoom 會拿掉 hide 再寫）。
+//   其他段落沒有動。這個檔案跟主控台上的一樣。
+//   保險：規則被換回舊版時躲貓貓的讀寫會被擋，遊戲那邊安靜處理（js/hide.js、js/cloud.js saveRoom 會拿掉 hide 再寫）。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：

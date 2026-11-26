@@ -12,6 +12,7 @@
 | 送給朋友、還在門口等的娃娃 | Firestore `nestGifts/{自動編號}` |
 | 訪客簿（第五版） | Firestore `nestRooms/{uid}/book/{日子}_{寫的人}` |
 | 朋友幫忙澆的水（第五版） | Firestore `nestRooms/{uid}/water/{日子}_{澆的人}` |
+| 躲貓貓：朋友找的結果 | Firestore `nestRooms/{uid}/found/{日子}_{找的人}`；躲在哪裡放在公開房間 `nestRooms/{uid}` 的 `hide` |
 | 去朋友家過夜的娃娃（第五版） | Firestore `nestStays/{出門的人}` |
 | 明信片（第五版） | Firestore `nestCards/{自動編號}` |
 
@@ -137,3 +138,14 @@ css/account.css      帳號按鈕和視窗的樣式
 firestore.rules      整份 Firestore 規則（好友 players、存檔 nestSaves、公開房間 nestRooms 和愛心 hearts、送娃娃 nestGifts；第五版的 book、water、nestStays、nestCards）
 firebase.json        模擬器設定
 ```
+
+### 2026-11-26 躲貓貓新增（已發布）：公開房間的 hide 和 found
+
+2026-11-26 下午 4:36 整份發布，線上的內容跟這個 repo 的 `firestore.rules` 一樣。
+
+- 公開房間 `nestRooms/{uid}` 多一欄 `hide` = `{d, r, f, day}`（哪一隻、哪一間、家具的編號、哪天躲的），可有可無；`d`、`r` 是 1～12 字的文字，`f`、`day` 是整數。
+- `match /nestRooms/{uid}/found/{fid}`：朋友來找的結果，寫法跟澆水一樣。主人的朋友才能寫、不能寫在自己家，一人一天一筆、不能改；`ok` 是布林、`n` 是 1～3 的整數。主人讀得到全部、能刪；找的人只能確認自己今天那一筆在不在。
+- 一天 3 次機會只在遊戲畫面上擋，規則只檢查 `n` 的範圍。躲在哪裡放在公開資料裡，懂程式的人看得到答案，兩個人玩不防這個。
+- 兩個人的紀念冊、今天誰來過存在自己存檔的 `album` 裡，沒有改規則。
+
+這一段沒有在模擬器跑過，也還沒用兩個真帳號試過。

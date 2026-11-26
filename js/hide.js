@@ -6,7 +6,7 @@
      找到：娃娃跳出來，朋友拿 1 枚；主人下次打開看到「○○找到躲起來的薯餅了」，也拿 1 枚，那隻就出來了。
      3 次都沒找到：隔天可以再找，躲的人不用重躲。
    不懲罰、不催人：沒人來找不會怎樣，牠一直躲著等；沒找到也沒有任何損失。
-   雲端（規則 2026-11-26 寫好，還沒發布；發布前讀寫被擋都安靜，只是朋友那邊不會出現躲貓貓）：
+   雲端（規則 2026-11-26 下午 4:36 已發布。保險留著：讀寫被擋時都安靜，只是朋友那邊不會出現躲貓貓）：
      公開資料 nestRooms/{自己}.hide = {d:哪一隻, r:哪一間, f:家具的編號, day:哪天躲的}
      nestRooms/{主人}/found/{日子_找的人} = {from, fromName, day, ok:有沒有找到, n:用了幾次}（跟澆水同一種寫法）
      躲在哪裡放在公開資料裡，懂程式的人看得到答案；兩個人玩，不防這個。
@@ -121,7 +121,7 @@ async function hideFetch(){
       }
       net.foundDel(w.id).catch(e => sQuiet('hide', e));
     }
-  } catch (e) { sQuiet('hide', e); }   // 規則還沒發布：安靜
+  } catch (e) { sQuiet('hide', e); }   // 讀不到（斷線、規則被換回舊版）：安靜
   finally { hideBusy = false; }
 }
 addEventListener('nestnet', hideFetch);

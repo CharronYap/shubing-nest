@@ -212,7 +212,7 @@ export function createCloud(config, { emulator = false } = {}) {
       try { await F.setDoc(F.doc(db, 'nestRooms', user.uid), data); }
       catch (e) {
         // 保險（規則已發布，正常不會走到這裡）：第五版的 want（願望清單）、yard（小島給朋友看的樣子）舊版規則不收。還沒發布時先拿掉再寫，房間照樣放得上去
-        // 躲貓貓的 hide（2026-11-26，規則還沒發布）也一樣：被擋就先拿掉，房間照樣放得上去
+        // 躲貓貓的 hide（規則 2026-11-26 已發布）也一樣留著保險：被擋就先拿掉，房間照樣放得上去
         const extra = ['want', 'yard', 'hide'].filter(k => k in data);
         const rooms = data.home ? ['kitchen', 'attic'].filter(k => k in data.home) : [];
         if (!(e && e.code === 'permission-denied' && (extra.length || rooms.length))) throw e;
