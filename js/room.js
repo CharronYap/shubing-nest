@@ -50,6 +50,7 @@ let quiet=false;
    免得一樣東西讓整個畫面畫不出來、後面的娃娃機和每天的幣都跟著沒跑（2026-11-27 的事故）。
    那一筆不會不見：存檔的時候照樣寫回去（房間的 toJSON），之後這一版認得了就會回來。js/main.js 開始時叫一次。 */
 function roomQuarantine(){
+  try{furnDedupe();}catch(e){console.info('[room]',e);}
   const rooms=[...Object.keys(home).map(r=>home[r]),home.yard].filter((r,i,a)=>r&&Array.isArray(r.items)&&a.indexOf(r)===i);
   let n=0;
   rooms.forEach(rm=>{
@@ -179,10 +180,25 @@ function whereDoll(id){if(typeof S!=='undefined'&&S.album&&S.album.out&&S.album.
 /* 收納架（2026-11-27 重新整理，使用者說分類亂）：四個分頁 娃娃｜家具｜牆和地板｜紀念品。
    - 每一頁「已經有的」在前面；「還沒有的」收在最下面一排「還沒有的 N 樣」，預設收起來，點了才展開，展開後每一格寫怎麼拿。
    - 娃娃：在這一間的 → 在別間的（標房間）→ 出門旅行或過夜的（標背包或月亮）→ 還沒有的。
-   - 家具：只列這一間的（小島是戶外家具），分三組：可以坐的躺的、擺著的、牆上和地上的。每組裡剛拿到的（新）最前面、已經擺出來的排後面。
+   - 家具：每一間都能擺，所以列全部的（掛牆上的不放小島），分三組：可以坐的躺的、擺著的、牆上和地上的。
+     每組裡：新的 → 還沒擺的 → 擺在這一間的 → 擺在別間的（標房間，點了搬過來）；小標題寫幾件，點了收起來。
    - 紀念品：旅行的土產和節日的東西，每一間都能擺；擺在別間的標房間，點了搬過來。
    收起來還是展開不存檔，重新整理就收回去。 */
 const trayMore={doll:false,furn:false,deco:false,keep:false};
+const trayShut={};   // 家具那一頁哪幾組收起來了
+// 這一間放不放得下：掛牆上的不放小島（小島沒有牆）。已經擺在小島上的照樣列出來，才收得回去
+const furnFits=id=>!(roomId==='yard'&&FURN[id].wall&&whereFurn(id)!=='yard');
+/* 一件家具同時只在一間。兩台裝置的房間合在一起時（js/account.js 的 mergeSave 會留著這台剛買的房間）可能同一件出現在兩間：
+   留前面那一間的，後面的拿掉，坐在上面的娃娃站回地上。開始的時候跟「不認得的東西」一起檢查 */
+function furnDedupe(){
+  const seen={};let n=0;
+  RIDS.forEach(r=>{const rm=home[r];if(!rm||!Array.isArray(rm.items))return;
+    rm.items.filter(i=>i&&i.kind==='furn').forEach(i=>{if(!seen[i.id]){seen[i.id]=1;return;}
+      rm.items.forEach(d=>{if(d.sit===i.uid){d.sit=null;d.y=Math.min(95,(+d.y||85)+8);}});
+      rm.items.splice(rm.items.indexOf(i),1);n++;});});
+  if(n)console.info('[room] 有 '+n+' 件家具同時擺在兩間，留一間的');
+  return n;
+}
 const TRAY_SEASON={lny:'過年',spring:'春天',summer:'夏天',moon:'中秋',hallo:'萬聖節',winter:'冬天',anniv:'週年'};
 // 還沒有的東西怎麼拿：格子裡的短字、點了的提示
 function trayHow(kind,id){
@@ -229,21 +245,27 @@ function renderTray(){
       h+=`<button class="tile ${here?'placed':''} ${away?'away':''}" data-doll="${id}" aria-label="${DOLL_NAME[id]}${here?'，在這一間':w==='trip'?'，去旅行了':w==='out'?'，去朋友家過夜了':away?'，在'+((typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[w])||'別間'):''}"><img src="${SPR[id]}" alt="">${here?CK:''}${away?`<span class="rm">${ICON[w]||''}</span>`:''}</button>`;});
     h+=trayLocked(DOLLS.filter(id=>!DOLL_N[id]),id=>`<button class="tile lock" data-doll="${id}" aria-label="還沒來的娃娃，${trayHow('doll',id)[1]}"><img src="${SPR[id]}" alt=""><small class="how">${trayHow('doll',id)[0]}</small></button>`);
   } else if(tab==='furn'){
-    const ids=(ROOM_FURN[roomId]||[]).filter(id=>FURN[id]&&!FURN[id].season&&!FURN[id].souv);
-    const placed=id=>items.some(i=>i.kind==='furn'&&i.id===id);
-    const tile=id=>`<button class="tile ${placed(id)?'placed':''}" data-furn="${id}" aria-label="${furnName(id)}${nw.includes(id)&&!placed(id)?'，新的':''}">${furnSVG(id)}${placed(id)?CK:''}${!placed(id)&&nw.includes(id)?'<span class="nw">新</span>':''}</button>`;
-    const order=l=>l.map((id,i)=>[id,i]).sort((a,b)=>{const ra=placed(a[0])?2:nw.includes(a[0])?0:1,rb=placed(b[0])?2:nw.includes(b[0])?0:1;return ra-rb||a[1]-b[1];}).map(x=>x[0]);
+    // 家具每一間都能擺（2026-11-27）：列全部的家具，不只這一間的。一件同時只在一間，擺在別間的標那一間的小圖、點了搬過來。
+    // 掛牆上的不放小島。三組，每組裡：新的 → 還沒擺的 → 擺在這一間的 → 擺在別間的；同一種裡「這一間常用的」（原本限定這一間的）排前面
+    const ids=Object.keys(FURN).filter(id=>!FURN[id].season&&!FURN[id].souv&&furnFits(id));
+    const lab=w=>(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[w])||'別間';
+    const tile=id=>{const w=whereFurn(id),here=w===roomId,away=!!w&&!here,isNew=!w&&nw.includes(id);
+      return `<button class="tile ${here?'placed':''} ${away?'away':''}" data-furn="${id}" aria-label="${furnName(id)}${here?'，擺在這一間':away?`，擺在${lab(w)}，點了搬過來`:isNew?'，新的':''}">${furnSVG(id)}${here?CK:''}${away?`<span class="rm">${ICON[w]||''}</span>`:''}${isNew?'<span class="nw">新</span>':''}</button>`;};
+    const rank=id=>{const w=whereFurn(id);return w===roomId?2:w?3:nw.includes(id)?0:1;};
+    const order=l=>l.map((id,i)=>[id,i,rank(id),FURN[id].room===roomId?0:1]).sort((a,b)=>a[2]-b[2]||a[3]-b[3]||a[1]-b[1]).map(x=>x[0]);
     const own=ids.filter(id=>FURN_OWN[id]);
     // 系列進度只放一行：還沒湊齊、最接近湊齊的那一個（差最少件的；一樣就取已經有比較多件的）。旁邊一顆「看全部」到系列那一頁
     const near=seriesAll().filter(x=>x.gift&&seriesHave(x)<x.ids.length).sort((a,b)=>(a.ids.length-seriesHave(a))-(b.ids.length-seriesHave(b))||seriesHave(b)-seriesHave(a))[0];
     if(near)h+=`<div class="tray-set"><b>${near.name} ${seriesHave(near)}/${near.ids.length}</b><span>湊齊送${near.gift}</span><button class="tray-setall" data-trayset="all">看全部</button></div>`;
-    [['可以坐的躺的',id=>!!FURN[id].seats],['擺著的',id=>!FURN[id].seats&&!FURN[id].wall&&!FURN[id].floor],['牆上和地上的',id=>!FURN[id].seats&&(FURN[id].wall||FURN[id].floor)]].forEach(([name,is])=>{
-      const l=order(own.filter(is));if(l.length)h+=trayGrp(name)+l.map(tile).join('');});
-    if(!own.length)h+='<p class="al-em tray-em">這一間的家具還沒有。娃娃機夾得到，火腿的小店也有賣。</p>';
+    // 每一組的小標題寫幾件，點了收起來或打開（不存檔，重新整理就全部打開）
+    [['seat','可以坐的躺的',id=>!!FURN[id].seats],['put','擺著的',id=>!FURN[id].seats&&!FURN[id].wall&&!FURN[id].floor],['flat',roomId==='yard'?'鋪在地上的':'牆上和地上的',id=>!FURN[id].seats&&(FURN[id].wall||FURN[id].floor)]].forEach(([k,name,is])=>{
+      const l=order(own.filter(is));if(!l.length)return;const shut=!!trayShut[k];
+      h+=`<button class="grp grp-b ${shut?'shut':''}" data-traygrp="${k}" aria-expanded="${!shut}">${name}<small>${l.length} 件</small><i></i></button>`+(shut?'':l.map(tile).join(''));});
+    if(!own.length)h+='<p class="al-em tray-em">還沒有家具。娃娃機夾得到，火腿的小店也有賣。</p>';
     h+=trayLocked(ids.filter(id=>!FURN_OWN[id]),id=>`<button class="tile lock" data-furn="${id}" aria-label="${furnName(id)}，還沒有，${trayHow('furn',id)[1]}">${furnSVG(id)}<small class="how">${trayHow('furn',id)[0]}</small></button>`);
   } else if(tab==='keep'){
     // 紀念品：旅行的土產、節日的東西。有了才列在上面；每一間都能擺
-    const all=Object.keys(FURN).filter(id=>FURN[id].souv||FURN[id].season),own=all.filter(id=>FURN_OWN[id]);
+    const all=Object.keys(FURN).filter(id=>(FURN[id].souv||FURN[id].season)&&furnFits(id)),own=all.filter(id=>FURN_OWN[id]);
     const tile=id=>{const w=whereFurn(id),here=w===roomId,away=w&&!here;
       return `<button class="tile ${here?'placed':''} ${away?'away':''}" data-furn="${id}" aria-label="${FURN[id].name}${here?'，擺在這一間':away?'，擺在別間，點了搬過來':''}">${furnSVG(id)}${here?CK:''}${away?`<span class="rm">${ICON[w]||''}</span>`:''}${!w&&nw.includes(id)?'<span class="nw">新</span>':''}</button>`;};
     const sv=own.filter(id=>FURN[id].souv),se=own.filter(id=>FURN[id].season);
@@ -273,22 +295,19 @@ function newFurnList(){
 }
 function newFurnAdd(id){const l=newFurnList();if(!l.includes(id)){l.push(id);try{localStorage.setItem(NEWF_KEY,JSON.stringify(l.slice(-40)));}catch(e){}}}
 const furnName=id=>FURN[id]?(FURN[id].name||(typeof FURN_NAME!=='undefined'&&FURN_NAME[id])||'家具'):'家具';
-// 這件家具是哪一間用的：房間切換鈕同一個圖示加房間名。季節家具每一間都能擺
+// 小店、獎品卡家具名字下面的小字。以前寫是哪一間用的；現在每一間都能擺（2026-11-27）
 function furnRoomTag(id){
   const f=FURN[id];if(!f)return '';
-  if(f.season)return '<span class="rm-tag">每一間都能擺</span>';
-  const n=(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室'})[f.room]||'';
-  return `<span class="rm-tag">${ICON[f.room]||''}${n}</span>`;
+  return `<span class="rm-tag">${f.wall?'屋裡每一間都能掛':'每一間都能擺'}</span>`;
 }
-// 去擺：切到那一間、打開收納架的家具分頁、捲到那一件並閃一下
+// 去擺：留在現在這一間（掛牆上的在小島擺不了，帶去客廳），打開收納架的家具分頁、捲到那一件並閃一下
 function furnGo(id){
   const f=FURN[id];if(!f||VISIT)return;
-  const r=f.season?roomId:f.room;
-  if(!home[r]){toast(`這件是${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[r])||'別間'}用的，要先在小店買那一間`);return;}
+  const now=goingTo??roomId,r=now==='yard'&&f.wall?'living':now;
   $('#sheet').hidden=true;
   if(typeof setPage==='function')setPage('room');
   const show=()=>{
-    setTray(false);tab=FURN[id]&&(FURN[id].souv||FURN[id].season)?'keep':'furn';renderTray();if(typeof layout==='function')layout();
+    setTray(false);tab=FURN[id]&&(FURN[id].souv||FURN[id].season)?'keep':'furn';Object.keys(trayShut).forEach(k=>{trayShut[k]=false;});renderTray();if(typeof layout==='function')layout();
     const t=$('#items').querySelector(`[data-furn="${id}"]`);if(!t)return;
     const box=$('#items');box.scrollTop=Math.max(0,t.offsetTop-box.offsetTop-box.clientHeight/2+t.offsetHeight/2);
     t.classList.remove('flashme');void t.offsetWidth;t.classList.add('flashme');setTimeout(()=>t.classList.remove('flashme'),2200);
@@ -308,6 +327,7 @@ function freeSpot(it){
 $('#items').addEventListener('click',e=>{
   if(e.target.closest('[data-traymore]')){trayMore[tab]=!trayMore[tab];renderTray();return;}
   if(e.target.closest('[data-trayset]')){seriesOpen();return;}
+  const tg=e.target.closest('[data-traygrp]');if(tg){trayShut[tg.dataset.traygrp]=!trayShut[tg.dataset.traygrp];renderTray();return;}
   const n0=items.length;setTimeout(()=>{if(trayState==='f'&&items.length>n0)trayTo('h',true);},0);   // 全開時擺了東西進房間：抽屜降到一半，讓出房間
   const t=e.target.closest('.tile');if(!t)return;
   if(t.dataset.doll){const id=t.dataset.doll;if(!DOLL_N[id]){toast('還沒來，'+trayHow('doll',id)[1]);return;}
@@ -319,8 +339,9 @@ $('#items').addEventListener('click',e=>{
     const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();}
   else if(t.dataset.furn){const id=t.dataset.furn;if(!FURN_OWN[id]){toast(trayHow('furn',id)[1]);return;}
     const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);return;}
-    const w=whereFurn(id);if(w){removeItem(home[w].items.find(i=>i.kind==='furn'&&i.id===id).uid,home[w].items);}
-    const f=FURN[id];const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
+    const f=FURN[id];if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去小島，小島沒有牆壁');return;}
+    const w=whereFurn(id);if(w){removeItem(home[w].items.find(i=>i.kind==='furn'&&i.id===id).uid,home[w].items);toast(`從${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[w])||'別間'}搬過來了`);}
+    const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
     if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();}
   else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast(trayHow('wall',t.dataset.wall)[1]);return;}cur().wall=t.dataset.wall;paintRoom();renderTray();}
   else if(t.dataset.floor){if(!FLOOR_OWN[t.dataset.floor]){toast(trayHow('floor',t.dataset.floor)[1]);return;}cur().floor=t.dataset.floor;paintRoom();renderTray();}
@@ -396,7 +417,7 @@ addEventListener('load',()=>setTimeout(trayRefit,60));   // 上面那幾排按�
 const SET=CLOUD_SET;
 const X='<button class="x" aria-label="關閉"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
 function renderSet(){$('#setdots').innerHTML=SET.map(id=>`<i class="${FURN_OWN[id]?'on':''}"></i>`).join('');}
-function openSheet(html){const s=$('#sheet');s.innerHTML=X+html;s.hidden=false;s.querySelector('.x').onclick=()=>s.hidden=true;return s;}
+function openSheet(html){const s=$('#sheet');if(typeof trayState!=='undefined'&&trayState==='f')try{trayTo('h',true);}catch(e){}s.innerHTML=X+html;s.hidden=false;s.querySelector('.x').onclick=()=>s.hidden=true;return s;}
 $('#setb').addEventListener('click',()=>{
   openSheet(`<div class="hd"><span class="cl"></span>${SET.filter(i=>FURN_OWN[i]).length} / ${SET.length}</div>
   <div class="row">${SET.map(id=>`<div class="tile ${FURN_OWN[id]?'':'lock'}">${furnSVG(id)}${FURN_OWN[id]?'':LOCK}</div>`).join('')}</div>

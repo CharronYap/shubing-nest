@@ -1300,3 +1300,8 @@ span.yd-kind{cursor:default}
 /* 朋友的明信片：你家的娃娃也在裡面 */
 .pc-top .pc-mine{opacity:1;font-weight:800;margin-top:2px}
 .pc-top:has(.pc-mine){top:calc(7px + var(--sat,0px))}
+/* 收納架家具那一頁每一組的小標題：寫幾件，點了收起來或打開 */
+.items .grp-b{border:0;background:none;padding:3px 2px;font:inherit;font-size:10.500px;font-weight:800;color:var(--soft);cursor:pointer;text-align:left;justify-content:flex-start}
+.items .grp-b small{font-size:10px;font-weight:700;opacity:.75}
+.items .grp-b i{width:6px;height:6px;margin-left:2px;border-right:1.800px solid currentColor;border-bottom:1.800px solid currentColor;transform:translateY(-2px) rotate(45deg);opacity:.7}
+.items .grp-b.shut i{transform:rotate(-45deg)}
