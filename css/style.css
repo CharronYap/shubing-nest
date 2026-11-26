@@ -950,3 +950,6 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .roam-sw{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:8px 10px;border-radius:14px;background:#fff7fb;font-size:13px;font-weight:800}
 .roam-tg{min-width:52px;border:2px solid var(--line);border-radius:999px;background:#fff;padding:5px 12px;font:inherit;font-weight:900;color:var(--soft);cursor:pointer}
 .roam-tg.on{border-color:var(--pink);background:var(--pink);color:#fff}
+/* 來串門子的娃娃（js/roam2.js） */
+.rv{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.al-fight{margin:6px 2px 0;padding:8px 10px;border-radius:12px;background:#fff3e6;font-size:13px;line-height:1.5;color:#8a5a22}

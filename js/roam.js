@@ -17,7 +17,7 @@ try { roamOn = localStorage.getItem(ROAM_KEY) !== '0'; } catch (e) {}
 const RS = {};                 // uid → {x, y, sit, seat, busy, next, trips, rest, …}；x 是 null = 在家
 let roamHold = 0, roamTimer = 0;
 const rnd = (a, b) => a + Math.random() * (b - a);
-const roamDolls = () => items.filter(i => i.kind === 'doll' && ROAM_P[i.id]);
+let roamDolls = () => items.filter(i => i.kind === 'doll' && ROAM_P[i.id]);   // 第二步（js/roam2.js）會再包一層：出門去隔壁的不算
 const roamSt = it => (RS[it.uid] = RS[it.uid] || {x: null, y: null, sit: null, seat: 0, busy: false, next: Date.now() + rnd(4, 12) * 1000, trips: 0, rest: 0});
 const roamAway = st => !!st && (st.x !== null || st.sit !== null);
 // 這隻現在畫在哪裡（在外面晃就是晃到的位置，不然就是家）

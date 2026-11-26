@@ -76,7 +76,8 @@ function mapCell(r){
       ? `<button class="hm-c lock none" disabled aria-label="${ROOM_LABEL[r]}，這裡看不到"><span class="hm-wall"></span>${nm}</button>`
       : `<button class="hm-c lock" data-hm="${r}" aria-label="${ROOM_LABEL[r]}還沒開，${k.key} ${k.price} 枚幣"><span class="hm-wall"></span><span class="hm-key">${MAP_KEY}<b>${COIN}${k.price}</b></span>${nm}</button>`;
   }
-  const dolls = rm.items.filter(i => i.kind === 'doll' && SPR[i.id]).slice(0, 6);
+  // 現在誰在這一間：出門去隔壁的不算、來作客的算（js/roam2.js）；沒有那個檔案就照擺設
+  const dolls = (typeof roamIn === 'function' ? roamIn(r, rm) : rm.items.filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id)).slice(0, 6).map(id => ({id}));
   return `<button class="hm-c ${here ? 'cur' : ''} ${rm.light === false ? 'off' : ''}" data-hm="${r}" aria-label="${ROOM_LABEL[r]}${here ? '，你在這裡' : ''}，${dolls.length ? dolls.map(i => DOLL_NAME[i.id]).join('、') + '在這裡' : '沒有娃娃'}">
     <span class="hm-wall w-${rm.wall}"></span><span class="hm-floor f-${rm.floor}"></span>
     <span class="hm-dolls">${dolls.map(i => `<img src="${SPR[i.id]}" alt="">`).join('')}</span>${nm}${tag}</button>`;

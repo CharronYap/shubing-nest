@@ -123,7 +123,9 @@ function say(it, text){
   const [, h] = sizeOf(it);
   const b = document.createElement('div'); b.className = 'say';
   b.textContent = text;
-  b.style.left = Math.max(14, Math.min(86, it.x)) + '%';
+  // 字多的時候對話框比較寬，靠邊的娃娃說話才不會被切掉
+  const half = Math.min(42, 6 + [...String(text)].length * 1.9);
+  b.style.left = Math.max(half, Math.min(100 - half, it.x)) + '%';
   b.style.top = Math.max(6, roomY(it.y) - h - 2) + '%';
   room.appendChild(b);
   setTimeout(() => b.classList.add('out'), 1900);
