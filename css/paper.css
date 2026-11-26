@@ -1,7 +1,7 @@
-/* 新風格試做：紙雕立體・夜燈（js/paper.js）。網址加 ?look=paper 才會有 .screen.ppon 這個 class，沒加的話這個檔的樣式一條都不會套上去。
+/* 新風格：紙雕立體・夜燈（js/paper.js）。2026-11-26 起是預設；網址加 ?look=old 就沒有 .look-paper、.screen.ppon 這兩個 class，這個檔的樣式一條都不會套上去。
    .screen.ppon = 新風格、而且現在在房間那一頁（五間房間都算；小島、娃娃機不算）。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
    字：LXGW WenKai TC（SIL OFL 1.1，授權文字在 fonts/OFL-LXGW-WenKai-TC.txt）。放的是只含遊戲用得到的字的子集（約 425 KB，Medium 字重），
-   不連外部的字型服務。只有新風格的畫面用到這個字，瀏覽器才會去載它；沒加 ?look=paper 的人不會下載。
+   不連外部的字型服務。只有新風格的畫面用到這個字，瀏覽器才會去載它；加了 ?look=old 的人不會下載。
    遊戲的文字改了之後要重做子集，不然新的字會退回系統字：做法在 ~/Desktop/GitHub收藏/薯餅小窩/工具/字型子集/說明.md。
    玩家自己打的字、朋友的名字不在子集裡，退回系統的楷體或一般字。 */
 /* font-weight 寫成一段範圍：遊戲裡很多地方要粗體，這樣瀏覽器不會自己把字加粗糊掉 */
@@ -304,3 +304,25 @@
 /* 愛心小圖（js/room.js 的 HEART）：原本是粉紅配白邊，換成色票的珊瑚色配紙色；翻牌背面那顆用紙色 */
 .look-paper .screen svg path[fill="#ff6fb0"],.look-paper .screen svg path[fill="#ffb3d3"]{fill:var(--p-a1);stroke:var(--p-paper)}
 .look-paper .gf-c .bk svg path{fill:var(--p-paper);stroke:none}
+
+/* =====================================================================
+   改成預設（2026-11-26）：js/paper.js 還沒跑到之前先用的底色，免得第一眼閃一下舊的粉紅或沒有顏色。
+   數字跟 js/paper.js 的 TONES 一樣（改色票時兩邊一起改）；js 載好後會把真正的顏色寫在 #screen 上，蓋過這裡。
+   pp-n0：index.html 最前面那段程式在晚上先掛上的。
+   ===================================================================== */
+.look-paper{--bg:#eeecee}
+.look-paper.pp-n0{--bg:#232844}
+.look-paper .screen{--p-sky:#a9c8ea;--p-hill:#3f6f93;--p-hill2:#6f9fc0;--p-sun:#ffd36e;--p-cloud:#ffffff;--p-wall:#dfe3f0;--p-wall2:#c9cfe6;--p-floor:#cdb5c9;--p-wood:#8a5a45;--p-wood2:#623f30;
+  --p-a1:#ff8a66;--p-a2:#3f9aa5;--p-leaf:#4c9a78;--p-ink:#23264a;--p-paper:#fbf6ea;--p-sea:#3f86b8;--p-sand:#e9dccb;--p-rug:#b9bde0;
+  --p-a1d:color-mix(in srgb,var(--p-a1) 80%,var(--p-ink));--p-a1l:color-mix(in srgb,var(--p-a1) 78%,var(--p-paper));--p-a2d:color-mix(in srgb,var(--p-a2) 78%,var(--p-ink));--p-a2l:color-mix(in srgb,var(--p-a2) 75%,var(--p-paper));
+  --p-wood3:color-mix(in srgb,var(--p-wood) 78%,var(--p-paper));--p-paperd:color-mix(in srgb,var(--p-paper) 86%,var(--p-ink))}
+.look-paper.pp-n0 .screen{--p-sky:#1f2a4a;--p-hill:#16324a;--p-hill2:#24486a;--p-sun:#ffe9a8;--p-cloud:#3b4a78;--p-wall:#39406a;--p-wall2:#2e3458;--p-floor:#4b3f5a;
+  --p-a2:#4fb0b8;--p-ink:#12152a;--p-paper:#f7f0df;--p-sea:#25507a;--p-sand:#6f6890;--p-rug:#5b5788}
+/* 畫面外面那一圈（電腦上才看得到）：手機的外框也是一張紙 */
+.look-paper .phone{background:#fbf6ea;border-color:#fbf6ea;box-shadow:0 6px 0 color-mix(in srgb,#23264a 22%,var(--bg)),0 14px 30px rgba(18,21,42,.22)}
+/* 手機最上面狀態列後面那條淡淡的深色、收納架上「新」的小紅點 */
+@media (max-width:480px){ .look-paper .screen::before{background:linear-gradient(color-mix(in srgb,var(--p-ink) 40%,transparent),color-mix(in srgb,var(--p-ink) 8%,transparent))} }
+.look-paper .tile .nw{background:var(--p-a1);color:var(--p-paper);border-radius:5px;box-shadow:0 0 0 2px var(--p-card)}
+/* 封面的開始鍵：拿掉亮面的反光和白邊 */
+.look-paper .cover .cv-go>span::before{display:none}
+.look-paper .cover .cv-go svg{stroke:var(--p-ink);filter:none}

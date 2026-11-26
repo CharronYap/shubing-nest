@@ -1,4 +1,6 @@
-/* 新風格試做：紙雕立體・夜燈（2026-11-26）。網址加 ?look=paper 才會生效，沒加的話這個檔什麼都不做。
+/* 新風格：紙雕立體・夜燈（2026-11-26）。同一天晚上使用者看過封面、娃娃機、小島後說「現在就改」，改成預設：
+   不加參數就是新風格（從主畫面圖示開也是）；網址加 ?look=old 回到原本的樣子，這個檔就什麼都不做。選過的不記在存檔，網址有帶才算。
+   index.html 最前面有一小段程式看同一個參數，先把 .look-paper 掛上去，第一眼才不會閃一下舊的顏色。
    第一版只換客廳（使用者看過說「可以，繼續換」）。現在五間房間都是新風格：牆、地板、窗戶和窗外、門口、每一間固定的構造、所有家具、
    上面的按鈕、收納架、對話框和提示。門外小島、娃娃機那一頁、封面還是原本的樣子。不改存檔、不改規則、不動玩法。
    家具：客廳最早那 7 件是手畫的（PF）；其他的用 paperize() 自動轉：拿掉描邊和亮面的反光、顏色換成色票裡最接近的那一個、
@@ -12,7 +14,7 @@
    字用 LXGW WenKai TC 的子集（fonts/，在 css/paper.css 宣告），只有新風格的畫面會載。
    色票：晚上「夜燈」、白天「夜燈的白天」，清晨和傍晚取兩組中間。壁紙和地板：每一款對應一張色紙加一層很淡的花紋（見 PWALL、PFLOOR）。
    放在 rooms.js 後面、main.js 前面載入：main.js 第一次畫房間之前，這裡要先把畫法換掉。 */
-const PAPER_ON = (() => { try { return new URLSearchParams(location.search).get('look') === 'paper'; } catch (e) { return false; } })();
+const PAPER_ON = (() => { try { return new URLSearchParams(location.search).get('look') !== 'old'; } catch (e) { return true; } })();
 if (PAPER_ON) (() => {
   const TONES = {
     night: {sky: '#1f2a4a', hill: '#16324a', hill2: '#24486a', sun: '#ffe9a8', cloud: '#3b4a78', wall: '#39406a', wall2: '#2e3458', floor: '#4b3f5a', wood: '#8a5a45', wood2: '#623f30',
@@ -36,6 +38,8 @@ if (PAPER_ON) (() => {
     C.wood3 = mix(C.wood, C.paper, .22); C.leafd = mix(C.leaf, C.ink, .22); C.leafl = mix(C.leaf, C.paper, .22); C.paperd = mix(C.paper, C.ink, .14);
     const st = screen.style;
     Object.keys(C).forEach(k => { if (typeof C[k] === 'string') st.setProperty('--p-' + k, C[k]); });
+    // 畫面外面那一圈（電腦上看得到）的底色也跟著天色
+    document.documentElement.style.setProperty('--bg', C.dark ? mix(C.wall2, C.ink, .4) : mix(C.wall, C.paper, .45));
     const changed = p !== phase; phase = p;
     if (changed) deco();
     return changed;

@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#ffe3ef">
+<meta name="theme-color" content="#dfe3f0">
+<!-- 新風格（紙雕立體）是預設；網址加 ?look=old 回到原本的樣子，js/paper.js 看同一個參數。
+     放這麼前面：第一眼（封面）就要是對的顏色，不然會先閃一下粉紅。晚上先掛 pp-n0 用晚上的底色，等 js/paper.js 載好再照實際的天色換。 -->
+<script>(function(){var old=false,d=document,r=d.documentElement;try{old=new URLSearchParams(location.search).get('look')==='old'}catch(e){}
+var f=d.createElement('link');f.rel='preload';f.as='font';f.type='font/woff2';f.crossOrigin='';f.href=old?'fonts/gensen-rounded-heavy.woff2':'fonts/lxgw-wenkai-tc-medium-subset.woff2';d.head.appendChild(f);
+if(old){var m=d.querySelector('meta[name=theme-color]');if(m)m.content='#ffe3ef';return}
+r.classList.add('look-paper');var h=new Date().getHours();if(h>=19||h<5)r.classList.add('pp-n0')})();</script>
 <!-- 加到手機主畫面時像 app 一樣全螢幕開（沒有離線快取，每次都是抓最新版） -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
@@ -18,7 +24,6 @@
 <link rel="stylesheet" href="css/cover.css">
 <link rel="stylesheet" href="css/paper.css">
 <link rel="stylesheet" href="css/account.css">
-<link rel="preload" href="fonts/gensen-rounded-heavy.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
 <div class="phone"><div class="screen" id="screen">
