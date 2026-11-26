@@ -7,10 +7,10 @@
    四個地方都不寫店名、不放品牌和人物。全部自己畫、自己寫。
    要多一個地方：在 TV_ABROAD 加一筆（名字、國家、愛去的娃娃、土產、三張明信片、每隻的話、兩隻的對話），其他地方不用改。
    這個檔要排在 js/traveldata.js 後面、js/main.js 前面載入（土產要先進家具表）。 */
-const AB_C = {dusk1: '#b7a3cf', dusk2: '#eeb09a', dusk3: '#f7d3a6', steel: '#e6ecf2', steel2: '#b9c5d4', steel3: '#8794aa', lit: '#fff2c4', lit2: '#f4d58a', lit3: '#d9a94f',
+const AB_C = {dusk1: '#b7a3cf', dusk2: '#eeb09a', dusk3: '#f7d3a6', steel: '#e6ecf2', steel2: '#b9c5d4', steel3: '#8794aa', lit: '#fffdf6', lit2: '#f1eadb', lit3: '#cdc3b0', win: '#f4d58a',
   glass: '#63b8ac', glass2: '#3f918c', glass3: '#b4e2d6', glassd: '#3a7f86', glassd2: '#2c6068', glassd3: '#8ec9c0',
   pink: '#f7c4d4', pink2: '#f09ab8', pinkl: '#fde6ee', snow: '#fbf8f2', fuji: '#7f93c4', fuji2: '#6076ad', dawn: '#f6dfe0', dawn2: '#cfdcf0', lake: '#b9cfe6', mist: '#eef2f6',
-  iron: '#8a5f45', iron2: '#6e4a36', iron3: '#a87a58', irond: '#5c3a2a', irond2: '#7a5038', stone: '#ded2bd', stone2: '#bfb198', stone3: '#9c8f78', city: '#5d6f9e', city2: '#6e80ad'};
+  iron: '#8a5f45', iron2: '#6e4a36', iron3: '#a87a58', irond: '#5c3a2a', irond2: '#8f5f44', stone: '#ded2bd', stone2: '#bfb198', stone3: '#9c8f78', city: '#5d6f9e', city2: '#6e80ad'};
 
 /* ---------- 畫圖的小工具 ---------- */
 // 棕櫚樹（熱帶的公園）
@@ -83,7 +83,7 @@ function abEiffel(x, y0, H, flat){
   // 鐵架的交叉（很淡，幾道就好）
   if (!flat) s += `<path d="M${x - w * .44} ${y0 - H * .02}L${x - w * .3} ${y1 + 2}M${x - w * .36} ${y0 - H * .02}L${x - w * .36} ${y0 - H * .1}M${x + w * .44} ${y0 - H * .02}L${x + w * .3} ${y1 + 2}M${x - w * .22} ${y1 - 2}L${x - w * .13} ${y2 + 2}M${x + w * .22} ${y1 - 2}L${x + w * .13} ${y2 + 2}M${x - w * .09} ${y2 - H * .06}L${x + w * .07} ${y2 - H * .16}M${x + w * .09} ${y2 - H * .06}L${x - w * .07} ${y2 - H * .16}M${x - w * .055} ${y2 - H * .2}L${x + w * .045} ${y2 - H * .3}M${x + w * .055} ${y2 - H * .2}L${x - w * .045} ${y2 - H * .3}" fill="none" stroke="${lt}" stroke-width="${Math.max(.7, H * .008)}" opacity=".7"/>`;
   // 三道平台，最上面是小小的塔頂和天線
-  s += `<rect x="${x - w * .33}" y="${y1 - H * .016}" width="${w * .66}" height="${H * .032}" rx="1" fill="${pl}"/><rect x="${x - w * .185}" y="${y2 - H * .014}" width="${w * .37}" height="${H * .028}" rx="1" fill="${pl}"/><rect x="${x - w * .055}" y="${y3 - H * .012}" width="${w * .11}" height="${H * .024}" rx=".8" fill="${pl}"/>`;
+  s += `<rect x="${x - w * .34}" y="${y1 - H * .018}" width="${w * .68}" height="${H * .036}" rx="1" fill="${pl}"/><rect x="${x - w * .2}" y="${y2 - H * .017}" width="${w * .4}" height="${H * .034}" rx="1" fill="${pl}"/><rect x="${x - w * .1}" y="${y3 - H * .016}" width="${w * .2}" height="${H * .032}" rx="1" fill="${pl}"/>`;
   return s + `<rect x="${x - w * .03}" y="${y3 - H * .06}" width="${w * .06}" height="${H * .05}" fill="${c3}"/><rect x="${x - Math.max(.6, w * .01)}" y="${y0 - H}" width="${Math.max(1.2, w * .02)}" height="${H * .11}" fill="${c3}"/>`;
 }
 // 修剪過的樹（公園裡一排一排的）
@@ -108,19 +108,19 @@ const TV_ABROAD = {
         ${tvSh('<ellipse cx="180" cy="180" rx="104" ry="20"/>', TV_C.teal, 2)}<ellipse cx="172" cy="177" rx="78" ry="11" fill="${TV_C.teall}" opacity=".5"/>
         ${[[150, 14], [176, 20], [202, 14]].map(([x, h]) => `<path d="M${x} 178q-5 ${-h * .8} 0 ${-h}q5 ${h * .2} 0 ${h}z" fill="${TV_C.paper}" opacity=".9"/><ellipse cx="${x}" cy="178" rx="7" ry="2" fill="${TV_C.paper}" opacity=".7"/>`).join('')}`},
       {name: '傍晚亮起來', at: [80, 95, 24], svg: () => `<rect width="300" height="200" fill="${AB_C.dusk3}"/><rect width="300" height="56" fill="${AB_C.dusk1}"/><rect y="56" width="300" height="44" fill="${AB_C.dusk2}"/>
-        <ellipse cx="150" cy="96" rx="92" ry="80" fill="${AB_C.lit}" opacity=".22"/>
-        ${abBlocks(172, [[0, 26, 34], [26, 20, 50], [48, 28, 30], [76, 16, 40], [206, 20, 44], [226, 26, 28], [254, 22, 52], [276, 24, 36]], AB_C.city, AB_C.lit2)}
+        <ellipse cx="150" cy="96" rx="92" ry="80" fill="#fff6e4" opacity=".3"/>
+        ${abBlocks(172, [[0, 26, 34], [26, 20, 50], [48, 28, 30], [76, 16, 40], [206, 20, 44], [226, 26, 28], [254, 22, 52], [276, 24, 36]], AB_C.city, AB_C.win)}
         ${abTwin(120, 172, 92, 27, AB_C.lit, AB_C.lit2, AB_C.lit3)}${abTwin(180, 172, 92, 27, AB_C.lit, AB_C.lit2, AB_C.lit3)}${abBridge(120, 180, 172, 92, 27, AB_C.lit, AB_C.lit3)}
         ${tvSh('<path d="M92 174c0-16 116-16 116 0z"/>', AB_C.city2, 1.5)}
         ${tvSh('<path d="M0 172c70-10 230-10 300 0v28H0z"/>', TV_C.night3, 2)}
         ${tvTree(26, 190, 1, TV_C.night2, TV_C.night3)}${abPalm(70, 190, .9, TV_C.night2)}${abPalm(198, 192, 1, TV_C.night2)}${tvTree(286, 192, .9, TV_C.night2, TV_C.night3)}`},
-      {name: '從下面往上看', at: [50, 98, 19], svg: () => {
+      {name: '從下面往上看', at: [16, 98, 19], svg: () => {
         const tower = m => { const X = v => (m ? 300 - v : v); let s = `<path d="M${X(8)} 200L${X(124)} 30L${X(133)} 30L${X(114)} 200z" fill="${AB_C.steel2}"/><path d="M${X(40)} 200L${X(126.500)} 30L${X(130.500)} 30L${X(84)} 200z" fill="${AB_C.steel}"/>`;
           for (let i = 1; i < 17; i++){ const t = i / 17, y = 200 - 170 * t, a = 8 + 116 * t, b = 114 + 19 * t; s += `<path d="M${X(a)} ${y}Q${X((a + b) / 2)} ${y - 7 * (1 - t)} ${X(b)} ${y}" fill="none" stroke="${AB_C.steel3}" stroke-width="${.6 + 1.3 * (1 - t)}" opacity=".6"/>`; }
           return s + `<path d="M${X(125)} 30L${X(127.500)} 19L${X(131)} 19L${X(132)} 30z" fill="${AB_C.steel2}"/><path d="M${X(128.200)} 19L${X(130)} 5L${X(130.800)} 19z" fill="${AB_C.steel}"/><circle cx="${X(129.700)}" cy="13" r="1.700" fill="${AB_C.steel}"/>`; };
         return `<rect width="300" height="200" fill="${TV_C.sky2}"/><rect width="300" height="110" fill="${TV_C.sky}"/>${tvCloud(132, 70, .8)}${tvCloud(20, 34, .6)}${tvCloud(238, 44, .6)}
         ${tower(false)}${tower(true)}
-        <path d="M121.500 132L150 107L178.500 132" fill="none" stroke="${AB_C.steel3}" stroke-width="2.600" stroke-linecap="round"/>${tvSh('<path d="M124.500 97q25.500-5 51 0v9q-25.500-5-51 0z"/>', AB_C.steel, 1.5)}<path d="M124.500 101.500q25.500-5 51 0" fill="none" stroke="${AB_C.steel3}" stroke-width="1"/>
+        <path d="M122 128L150 104.500L178 128" fill="none" stroke="${AB_C.steel3}" stroke-width="2.600" stroke-linecap="round"/>${tvSh('<rect x="124.500" y="95" width="51" height="9.500"/>', AB_C.steel, 1.5)}<rect x="124.500" y="99.300" width="51" height="1" fill="${AB_C.steel3}"/>
         ${tvSh('<path d="M0 190c90-8 210-8 300 0v10H0z"/>', AB_C.stone, 1.5)}`; }},
     ],
     lines: {
@@ -152,7 +152,7 @@ const TV_ABROAD = {
         ${tvSh('<path d="M0 184c80-6 220-6 300 0v16H0z"/>', AB_C.stone3, 1.5)}${tvTree(62, 194, .8)}${tvTree(246, 196, .9, TV_C.leafd, TV_C.leaf)}${tvTree(284, 194, .7)}`},
       {name: '山上的傍晚', at: [30, 88, 24], svg: () => `<rect width="300" height="200" fill="${AB_C.dusk3}"/><rect width="300" height="50" fill="${AB_C.dusk1}"/><rect y="50" width="300" height="40" fill="${AB_C.dusk2}"/><circle cx="246" cy="104" r="15" fill="${TV_C.sun}" opacity=".9"/>
         ${tvSh('<path d="M0 132c50-18 110-22 170-10 50-12 90-10 130 0v40H0z"/>', AB_C.city2, 1.5)}
-        ${abBlocks(152, [[0, 20, 20], [20, 16, 30], [36, 24, 18], [60, 18, 34], [78, 22, 24], [100, 16, 38], [116, 26, 22], [142, 14, 30], [212, 18, 32], [230, 24, 20], [254, 16, 36], [270, 30, 24]], AB_C.city, AB_C.lit2)}
+        ${abBlocks(152, [[0, 20, 20], [20, 16, 30], [36, 24, 18], [60, 18, 34], [78, 22, 24], [100, 16, 38], [116, 26, 22], [142, 14, 30], [212, 18, 32], [230, 24, 20], [254, 16, 36], [270, 30, 24]], AB_C.city, AB_C.win)}
         ${ab101(184, 152, 104, AB_C.glassd, AB_C.glassd2, AB_C.glassd3)}
         ${tvSh('<path d="M0 150c60-10 240-10 300 0v50H0z"/>', TV_C.leafd, 2)}
         ${tvTree(268, 186, 1.2, '#2f6650', TV_C.leafd)}${tvTree(214, 196, .9, TV_C.leafd, TV_C.leaf)}${tvTree(8, 170, .9, '#2f6650', TV_C.leafd)}
@@ -163,7 +163,7 @@ const TV_ABROAD = {
         <rect x="-10" y="96" width="320" height="26" rx="13" fill="${TV_C.paper}" opacity=".92"/><rect x="60" y="88" width="170" height="20" rx="10" fill="${TV_C.paper}" opacity=".85"/><rect x="110" y="114" width="200" height="22" rx="11" fill="${TV_C.paper}" opacity=".9"/>
         <rect x="-10" y="134" width="330" height="44" rx="20" fill="${TV_C.paper}" opacity=".78"/><rect x="-30" y="152" width="210" height="26" rx="13" fill="${TV_C.paper}" opacity=".7"/>
         ${tvCloud(196, 74, .7)}
-        ${tvSh('<path d="M0 174c70-12 190-10 300 6v20H0z"/>', TV_C.leafl, 2)}${tvTree(270, 196, .9)}${tvPine(84, 190, .8)}${tvPine(108, 194, .6)}`},
+        ${tvSh('<path d="M0 174c70-12 190-10 300 6v20H0z"/>', TV_C.leafl, 2)}${tvTree(270, 196, .9)}${tvTree(86, 196, .8, TV_C.leafd, TV_C.leaf)}${tvTree(118, 198, .55)}`},
     ],
     lines: {
       sloth: ['樓一節一節的，像一枝很大的竹子。我數到第五節，脖子就痠了。', '爬到山上看它。山上有大石頭，我坐著看到天黑。'],
@@ -281,6 +281,7 @@ Object.keys(TV_ABROAD).forEach(p => {
 });
 TV_HOURS[4] = [48, 72];   // 一趟兩到三天
 TV_TIER_NAME[4] = '出國';
-// 機票：用一次（跟野餐籃一樣算個數）。放進背包，下一趟就是出國；再放野餐籃就是全家一起出國。一趟一張，不管幾隻
+// 機票：用一次（跟野餐籃一樣算個數）。放進背包，下一趟就是出國；再放野餐籃就是全家一起出國。一趟一張，不管幾隻。
+// 火腿的小店一開始就賣；第一張是薯餅的更新信附送的（js/mail.js 的 air1，領的時候在 js/travel.js 的 tvTicketTake）
 TV_GOODS.ticket = {slot: 'tool', once: 1, name: '機票', price: 60, tip: '下一趟出國，兩三天回來', ic: tvIc('<path d="M3 9h26v5a3 3 0 0 0 0 6v5H3v-5a3 3 0 0 0 0-6z" fill="#1b2140" opacity=".2" transform="translate(0 1.5)"/><path d="M3 9h26v5a3 3 0 0 0 0 6v5H3v-5a3 3 0 0 0 0-6z" fill="#fbf6ea"/><path d="M21 9v16" stroke="#d9c29c" stroke-width="1.400" stroke-dasharray="2 1.800"/><path d="M7 19.500l8-2.800 2.600-4 1.500.300-1.300 3.200 2.500-.900.700 1-2.600 1.800-9.400 3.200z" fill="#3f9aa5"/><rect x="23.500" y="13" width="3" height="8" rx="1" fill="#ff8a66"/>')};
 TV_SLOTS[2][2] = '可以一起帶，籃子和機票用一次';

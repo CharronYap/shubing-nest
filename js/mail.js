@@ -395,8 +395,8 @@ const MAIL_NEWS = [
   {id:'yard2n', t:'2026-11-27', b:'我跟你說喔……門外面的小島，整個換新了。\n現在從客廳的門走出去，就是小島。娃娃可以帶過去玩。\n中間有一排花圃。點空的地方就可以種花，大概半天會開。開了點一下，就收起來了。\n左邊有一棵大樹，每天會長三顆果子。點樹，果子就掉下來。\n前面的墊子上有一個盤子。放一份點心，會有小客人跑來吃，還會留東西給你。\n你不在的時候，小客人也會來喔。\n我也想搖那棵樹。我搖了喔……它還沒有動。'},
   {id:'fam1', t:'2026-11-27', b:'大家……可以一起出門了喔。\n火腿的小店多了一個野餐籃。放進門邊的背包，下一次就是全家一起去。\n全家出門的時候，客廳會留一張大紙條。上面寫去哪裡、什麼時候回來。\n牠們會寄全家福回來。回家的時候，每一隻都帶一樣小東西。\n還有喔，每次回家都會多一張合照。相簿上面的「旅行」點進去，最上面那一排就是。\n全家一起走的時候，大家都在前面等我。謝謝大家……等我。'},
   {id:'any1', t:'2026-11-27', b:'家具現在……哪一間都可以擺喔。\n床可以搬到客廳，浴缸可以放到閣樓。小島上面也可以擺。\n掛在牆上的不能帶去小島。小島沒有牆壁。\n收納架的家具那一頁，現在全部的家具都在。已經擺在別間的，上面有那一間的小圖，點一下就搬過來。\n小屋地圖上還沒開的房間，點一下就可以打開，不用再去小店找了。\n我想把沙發搬去小島曬太陽。推了一個早上……它動了一點點。'},
-  // 機票：近的四個地方明信片收齊時才寄（js/travel.js 的 tvTicketGift），機票直接放進行李
-  {id:'tk1', mig:1, t:'2026-11-27', title:'送你一張機票', b:'明信片……十二張都收齊了喔。\n我數了三次。真的是十二張。\n所以送你一張機票。我放在行李那邊了。\n把機票放進門邊的背包，下一個出門的，就會搭飛機去很遠的地方。\n去一趟要兩三天。牠會寄三張明信片回來，還會帶東西給你。\n以後火腿的小店也買得到機票。\n我也想搭飛機。可是走到機場……飛機應該已經飛走了。'},
+  // 出國（js/abroad.js）：附一張機票（附件 'ticket'，每個人一張，收下時記在 album.tv.tk）
+  {id:'air1', t:'2026-11-27', a:'ticket', b:'我跟你說喔……大家可以搭飛機了。\n信裡面有一張機票，送你的。之後火腿的小店也有賣。\n把機票放進門旁邊的背包。下一個出門的，就會飛去很遠的地方，兩三天才回來。\n現在有四個地方：雙峰塔、台北101、富士山、艾菲爾鐵塔。去哪裡牠們自己決定。\n機票加野餐籃，就是全家一起去。\n每個地方有三張明信片，還有一樣那裡才有的小東西。\n相簿的「旅行」裡多了一本護照。去過一個地方，就蓋一個章喔。\n大家都在排隊蓋章了。我還在……找我的護照。'},
   // 歡迎信：不在下面的迴圈裡寄，mailCheck 最後才寄，這樣會排在信箱最上面
   {id:'hi', hi:1, title:'歡迎來小窩', a:'coin-30', b:'你……好。我是薯餅。\n這裡是小窩喔。我跟大家一起住在這裡。\n我講話很慢，走路也很慢。你慢慢聽就好。\n信裡面有 30 枚幣，送你的。\n娃娃機夾一次要 2 枚。每天第一次……不用錢喔。\n幣不夠的話，點上面那個幣。它會跟你說可以做什麼。\n下面還有好幾封信，在講小窩有什麼好玩的。不用急，慢慢看。\n我想跟你揮手。等我一下喔……手快舉起來了。'},
 ];
@@ -616,7 +616,7 @@ function mailCard(o, j, open){
     inner = x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && !o.f
       ? `<button class="ml-leaf" data-flip="${j}" aria-label="把葉子翻過來">${MAIL_LEAF}<small>點一下翻過來</small></button>`
       : (x.pic || '') + mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
-    if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
+    if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : o.a === 'ticket' ? '附上一張' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
   }
   return `<div class="ml ${o.r ? '' : 'unread'} ${open ? 'open' : ''}">
     <button class="ml-hd" data-ml="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${from}・${md(o.t)}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
@@ -636,11 +636,12 @@ function openMail(keep){
     ${todo || unread || palOn ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}${palOn ? '<button class="btn" data-mall="pal">看朋友那邊</button>' : ''}</div>` : ''}`);
   evOpen = false; alOpen = false;
 }
-// 附件的圖和名字：點心盒、泡泡球，或小島的種子（seed-種類）
-const mailAtt = a => (a.startsWith('coin-') ? {name: `${+a.slice(5) || 0} 枚幣`, svg: COIN} : (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a]);
+// 附件的圖和名字：點心盒、泡泡球、幣（coin-幾枚）、機票（ticket），或小島的種子（seed-種類）
+const mailAtt = a => (a.startsWith('coin-') ? {name: `${+a.slice(5) || 0} 枚幣`, svg: COIN} : a === 'ticket' ? {name: '機票', svg: (typeof TV_GOODS !== 'undefined' && TV_GOODS.ticket ? TV_GOODS.ticket.ic : COIN)} : (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a]);
 function mailTake(o){
   if (!o.a || o.g) return; o.g = 1;
   if (o.a.startsWith('coin-')){ S.coins += +o.a.slice(5) || 0; renderHud(); return; }
+  if (o.a === 'ticket'){ if (typeof tvTicketTake === 'function') tvTicketTake(); return; }   // 機票放進行李的用品裡（js/travel.js）；另一台收過了就不再多一張
   if (o.a.startsWith('seed-')){ S.coins += 1; return; }   // 小島重做後沒有種子了，舊信裡的種子換成 1 枚幣
   S.wish[o.a] = (S.wish[o.a] || 0) + 1;
 }

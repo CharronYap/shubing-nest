@@ -13,7 +13,7 @@
    存檔：全部在 S.album.tv，明信片的信在 S.mail.l（k 是「娃娃.pc.0#p=地方;c=第幾張;l=哪一句」）。不加最上層欄位、不改規則。
      tv = {bag:{food,charm,tool}, inv:{用品:幾個}, tool:{道具:1}, out:[旅程], back:{娃娃:回來的時間}, cards:{地方:收到哪幾張},
            sv:{土產:拿過幾次}, cnt:{娃娃:{地方:幾次}}, log:{娃娃:['日期|地方|同行|日記第幾句']}, wel:[還沒看的回家通知], free:'沒帶行李出門的那天',
-           pp:{出國的地方:'第一次去的那天'}（護照的章）, tk:1（送過第一張機票）,
+           pp:{出國的地方:'第一次去的那天'}（護照的章）, tk:1（更新信附的那一張機票收過了）,
            who:{'地方:第幾張':'寄的娃娃，用 + 接'}（相簿裡的明信片照這個把娃娃貼上去）, pics:[{id,p,c,ds:'娃娃用 + 接',t:'日期'}]（每趟回家的紀念合照，留 30 張）}
      旅程 = {id, ds:[娃娃], p, t0, t1, food, charm, tool, hm:{娃娃:{r,x,y}}, pcs:[{c,at,d,l 或 u}], sent, sv:{娃娃:土產}, di:{娃娃:日記第幾句}}
      沒有陣列直接包陣列（Firestore 不收）。
@@ -202,13 +202,11 @@ function tvReturn(o){
     if (typeof fightOf === 'function' && fightOf(a, b)) delete S.album.fight;
   }
 }
-/* 機票（js/abroad.js）：近的四個地方 12 張明信片收齊，薯餅送第一張（寫一封信，機票直接放進行李的用品裡）；之後火腿的小店才賣。
-   tk：送過了。以前就收齊的人，打開小窩時補送 */
-function tvTicketGift(){
-  const t = tvData(); if (t.tk || !TV_GOODS.ticket) return false;
-  if (!Object.keys(TV_PLACES).filter(p => !tvAb(p)).every(p => tvBits(t.cards[p]) === 3)) return false;
+/* 機票（js/abroad.js）：火腿的小店一開始就賣。第一張是薯餅的更新信附送的（js/mail.js 的 air1，附件 'ticket'），收下時叫這裡。
+   tk：更新信那一張收過了。兩台裝置各收一次也只算一張（合併時 tk 有一邊記了就算，張數取多的） */
+function tvTicketTake(){
+  const t = tvData(); if (t.tk) return false;
   t.tk = 1; t.inv.ticket = (t.inv.ticket || 0) + 1;
-  if (typeof mailInit === 'function'){ const m = mailInit(), d = todayStr(); if (!m.s['news-tk1']){ m.s['news-tk1'] = d; if (!m.l.some(x => x.k === 'sloth.news.0#id=tk1')) m.l.unshift({k: 'sloth.news.0#id=tk1', t: d, r: 0, a: null, g: 0}); } }
   return true;
 }
 // 回 {pc: 這次寄到幾張, back: 這次回來的娃娃}
@@ -232,8 +230,7 @@ function tvCheck(){
   if (VISIT) return;
   const t = tvData(), now = tvNow();
   let res = tvSettle(now), pcN = res.pc, back = res.back.slice(), changed = !!(res.pc || res.back.length);
-  const gift = () => { try { if (tvTicketGift()){ changed = true; setTimeout(() => toast('明信片收齊了。薯餅送你一張機票，信箱有牠的信'), 2600); } } catch (e) { console.info('[travel]', e); } };
-  gift();
+
   if (!tvOpened){
     tvOpened = true;
     const last = LAST_T || now;
@@ -248,7 +245,6 @@ function tvCheck(){
       }
     }
   }
-  gift();
   if (!changed) return;
   save(); tvRefresh();
   if (!back.length && pcN) toast(pcN > 1 ? `信箱有 ${pcN} 張新的明信片` : '信箱有一張新的明信片');
@@ -297,7 +293,7 @@ function tvMerge(m, g){
   t.wel = [...arr(t.wel), ...arr(gt.wel).filter(w => !seenW.has(wk(w)))].slice(-8);
   t.free = [t.free || '', gt.free || ''].sort().pop(); if (!t.free) delete t.free;
   t.who = Object.assign({}, obj(gt.who), obj(t.who));
-  // 護照的章：留比較早的那一天；機票送過沒有：有一邊送過就算送過（機票的張數在上面 inv 取多的）
+  // 護照的章：留比較早的那一天；更新信附的那張機票：有一邊收過就算收過（機票的張數在上面 inv 取多的）
   t.pp = obj(t.pp); Object.entries(obj(gt.pp)).forEach(([p, d]) => { if (typeof d === 'string' && (!t.pp[p] || d < t.pp[p])) t.pp[p] = d; });
   if (gt.tk) t.tk = 1;
   const pid = new Set(arr(t.pics).map(x => x && x.id));
@@ -490,7 +486,6 @@ function tvShopHTML(){
   const cards = Object.keys(TV_GOODS).map(id => {
     const g = TV_GOODS[id], tool = g.slot === 'tool' && !g.once, n = tool ? (t.tool[id] ? 1 : 0) : tvHaveN(id);
     const full = tool ? n > 0 : n >= TV_INV_MAX;
-    if (id === 'ticket' && !t.tk) return `<div class="sp-it tv-git tv-wait"><span class="tile tv-gd">${g.ic}</span><b>${g.name}</b><span class="rm-tag">近的四個地方明信片收齊，薯餅送第一張</span><small>還沒開賣</small></div>`;
     return `<div class="sp-it tv-git ${tool && n ? 'own' : ''}"><span class="tile tv-gd">${g.ic}${!tool && n ? `<span class="nw">${n}</span>` : ''}</span><b>${g.name}</b><span class="rm-tag">${g.tip}</span>
       ${full ? `<small>${tool ? '有了' : '放不下了'}</small>` : `<button class="btn y sm" data-tvbuy="${id}" aria-label="買${g.name}，${g.price} 枚幣">${COIN}${g.price}</button>`}</div>`;
   }).join('');
@@ -500,7 +495,6 @@ function tvBuy(id){
   const g = TV_GOODS[id]; if (!g) return;
   const t = tvData();
   if (g.slot === 'tool' && !g.once ? t.tool[id] : tvHaveN(id) >= TV_INV_MAX) return;
-  if (id === 'ticket' && !t.tk) return;
   if (S.coins < g.price){ toast(`還差 ${g.price - S.coins} 枚幣`); return; }
   S.coins -= g.price;
   if (g.slot === 'tool' && !g.once) t.tool[id] = 1; else t.inv[id] = (t.inv[id] || 0) + 1;
@@ -545,7 +539,7 @@ function tvAlbumOpen(){
   const pages = all.filter(p => !tvAb(p)).map(page).join('');
   // 出國的地方另外一段：上面一行說明和護照
   const abL = all.filter(tvAb), stamped = abL.filter(p => t.pp[p]).length;
-  const abroad = abL.length ? `<div class="tv-abhd"><b>出國</b><span>${t.tk ? '把機票放進背包，下一趟就搭飛機。兩三天回來。' : '近的四個地方明信片收齊，薯餅會送第一張機票。'}</span><button class="btn sm" data-tv="pass">護照 ${stamped} / ${abL.length}</button></div>${abL.map(page).join('')}` : '';
+  const abroad = abL.length ? `<div class="tv-abhd"><b>出國</b><span>把機票放進背包，下一趟就搭飛機。兩三天回來。</span><button class="btn sm" data-tv="pass">護照 ${stamped} / ${abL.length}</button></div>${abL.map(page).join('')}` : '';
   const pics = t.pics.slice().reverse().filter(x => TV_PLACES[x.p] && TV_CARDS[x.p][x.c]);
   const pk = x => String(x.ds).split('+');
   let big = '';
@@ -636,5 +630,5 @@ window.tvDebug = {
   skip(h){ tvSkew += (+h || 0) * 36e5; tvCheck(); return new Date(tvNow()).toString(); },
   go(){ const o = tvLive('force'); return o ? `${tvWho(o)} → ${TV_PLACES[o.p].name}` : '現在沒有人出門'; },
   state(){ return JSON.parse(JSON.stringify(tvData())); },
-  ticket(n){ const t = tvData(); t.tk = 1; t.inv.ticket = (t.inv.ticket || 0) + (+n || 1); save(); return `機票 ${t.inv.ticket} 張`; },   // 測試：直接拿機票
+  ticket(n){ const t = tvData(); t.inv.ticket = (t.inv.ticket || 0) + (+n || 1); save(); return `機票 ${t.inv.ticket} 張`; },   // 測試：直接拿機票
 };
