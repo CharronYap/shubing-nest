@@ -1,6 +1,11 @@
 /* 新風格試做：紙雕立體・夜燈（js/paper.js）。網址加 ?look=paper 才會有 .screen.ppon 這個 class，沒加的話這個檔的樣式一條都不會套上去。
    .screen.ppon = 新風格、而且現在在房間那一頁的客廳。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
-   字：想用 LXGW WenKai TC（還沒放進 fonts/，要先下載字型檔做子集），現在先排在最前面，沒有的裝置用系統的楷體。 */
+   字：LXGW WenKai TC（SIL OFL 1.1，授權文字在 fonts/OFL-LXGW-WenKai-TC.txt）。放的是只含遊戲用得到的字的子集（約 425 KB，Medium 字重），
+   不連外部的字型服務。只有新風格的畫面用到這個字，瀏覽器才會去載它；沒加 ?look=paper 的人不會下載。
+   遊戲的文字改了之後要重做子集，不然新的字會退回系統字：做法在 ~/Desktop/GitHub收藏/薯餅小窩/工具/字型子集/說明.md。
+   玩家自己打的字、朋友的名字不在子集裡，退回系統的楷體或一般字。 */
+/* font-weight 寫成一段範圍：遊戲裡很多地方要粗體，這樣瀏覽器不會自己把字加粗糊掉 */
+@font-face{font-family:"LXGW WenKai TC";src:url("../fonts/lxgw-wenkai-tc-medium-subset.woff2") format("woff2");font-weight:400 900;font-style:normal;font-display:swap}
 .screen.ppon{
   --p-hand:"LXGW WenKai TC","Klee One","Klee","Kaiti TC","BiauKai","DFKai-SB","標楷體",serif;
   --p-fiber:url("../img/paper/fiber.png");
