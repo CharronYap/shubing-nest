@@ -68,3 +68,6 @@
 @keyframes cvPeek{0%,100%{translate:0 0}50%{translate:0 -6px}}
 @keyframes cvSquish{0%,100%{scale:1 1}50%{scale:1.03 .97}}
 @media (prefers-reduced-motion:reduce){.cover *{animation:none!important}.cover{transition:none}}
+
+/* 小窩指南的問號：娃娃機鈕的左邊 */
+.cover .cv-cb.cv-gd{right:74px;--c1:#ffe9a8;--c2:#f5b93a;--c3:#c98a12}

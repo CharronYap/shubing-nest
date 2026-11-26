@@ -1000,3 +1000,32 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .wk-row button{appearance:none;border:0;background:none;padding:0;margin:0;cursor:pointer;line-height:0;border-radius:12px}
 .wk-row button:active{transform:translateY(2px)}
 .ml-tx .ml-nt{font-size:12.5px;color:var(--soft);font-weight:700;line-height:1.5}
+
+/* ---------- 小窩指南（js/guide.js） ---------- */
+.gd-top{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:16px;background:#fff6fa}
+.gd-top img{width:40px;height:40px;object-fit:contain;flex:none}
+.gd-top p{flex:1;margin:0;font-size:13px;line-height:1.5;color:var(--soft);font-weight:700}
+.gd-it .ic{color:var(--pink2)}
+.gd-it .ic .sw{width:30px;height:30px;border-radius:9px;border:2px solid #fff;box-shadow:0 0 0 1px #eee;display:block}
+.gd-it .tx2 small{line-height:1.45}
+.gd-it.lk{background:#faf7f9;border-style:dashed}
+.gd-it.lk .ic{opacity:.55}
+.gd-it .gd-lk{color:#b0668a;font-weight:800}
+.gd-it .btn{flex:none}
+.gd-in{width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+.gd-in svg{width:18px;height:18px}
+/* 薯餅帶路的小卡：不擋住下面的東西，只有卡片本身點得到 */
+.tour{position:absolute;left:50%;top:calc(206px + var(--sat,0px));transform:translateX(-50%);z-index:600;width:min(300px,calc(100% - 28px));display:flex;gap:8px;align-items:flex-start;
+  background:#fff;border:2.5px solid #ffd27a;border-radius:18px;padding:9px 11px;box-shadow:0 8px 20px rgba(80,40,70,.18)}
+/* 娃娃機那一頁：放在機台上面、左右兩排按鈕中間的空位，不擋機台 */
+.tour.low{top:calc(72px + var(--sat,0px));width:min(238px,calc(100% - 136px));padding:7px 9px}
+.tour.low img{width:32px;height:32px}
+.tour.low p{font-size:12.5px;line-height:1.4}
+.tour img{width:42px;height:42px;object-fit:contain;flex:none}
+.tour p{margin:0;font-size:13.5px;line-height:1.5;font-weight:800;color:#6b2d4a}
+.tour-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px}
+.tour-ft span{font-size:11.5px;font-weight:800;color:var(--soft)}
+.tour-ft .btn{margin-left:auto}
+.tour-hi{outline:3.5px solid #ffb400;outline-offset:3px;border-radius:16px;animation:tourPulse 1.2s ease-in-out infinite}
+@keyframes tourPulse{50%{outline-offset:8px;outline-color:rgba(255,180,0,.45)}}
+@media (prefers-reduced-motion:reduce){.tour-hi{animation:none}}
