@@ -26,7 +26,7 @@ const TV_GOODS = {
   torch: {slot: 'tool', name: '手電筒', price: 25, tip: '晚上的地方去得了', ic: tvIc('<path d="M18 4l-12 8 5 8 13-6z" fill="#ffd36e" opacity=".5"/><path d="M11 17l6-4 9 12-6 4z" fill="#1b2140" opacity=".2" transform="translate(0 1.5)"/><path d="M11 17l6-4 9 12-6 4z" fill="#3f6f93"/><path d="M8.500 15.500l8-5.500 2 3-8 5.500z" fill="#fbf6ea"/><rect x="17.500" y="19" width="3" height="5" rx="1.500" transform="rotate(-34 19 21.500)" fill="#ff8a66"/>')},
   umb:   {slot: 'tool', name: '摺疊傘', price: 25, tip: '下雨天也肯出門', ic: tvIc('<path d="M16 15v10a3 3 0 0 0 6 0" fill="none" stroke="#8a5a45" stroke-width="2.200" stroke-linecap="round"/><path d="M3 16C4 8 10 4 16 4s12 4 13 12c-2-2-4.500-2-6.500 0-2-2-4.500-2-6.500 0-2-2-4.500-2-6.500 0-2-2-4.500-2-6.500 0z" fill="#1b2140" opacity=".2" transform="translate(0 1.5)"/><path d="M3 16C4 8 10 4 16 4s12 4 13 12c-2-2-4.500-2-6.500 0-2-2-4.500-2-6.500 0-2-2-4.500-2-6.500 0-2-2-4.500-2-6.500 0z" fill="#3f9aa5"/><path d="M16 4c-2 3-3.200 7-3.200 12 2-2 4.500-2 6.400 0C19.200 11 18 7 16 4z" fill="#7dbfc6"/>')},
 };
-const TV_SLOTS = [['food', '點心', '決定走多遠'], ['charm', '護身符', '用一次就沒了'], ['tool', '道具', '會帶回來']];
+const TV_SLOTS = [['food', '點心', '決定走多遠'], ['charm', '護身符', '用一次就沒了'], ['tool', '道具', '會帶回來，可以兩樣都帶']];
 
 /* ---------- 土產：可以擺在房間裡的小東西（每一間都能擺）。重複拿到的換成幣 ---------- */
 const TV_SOUV_COIN = 3;

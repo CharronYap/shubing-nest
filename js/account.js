@@ -396,6 +396,8 @@ function mergeSave(remote, guest) {
   if (ga.skit && ga.skit.s) { ma.skit = ma.skit || {}; ma.skit.s = Object.assign({}, ga.skit.s, ma.skit.s || {}); }
   if (Array.isArray(ga.hideGot)) ma.hideGot = [...new Set([...(ma.hideGot || []), ...ga.hideGot])].slice(-30);
   if (ga.tour && !ma.tour) ma.tour = ga.tour;
+  // 旅行：行李、明信片、土產、在外面的旅程（js/travel.js 的 tvMerge；同一隻在兩台各出門一趟，留比較早出門的那一趟）
+  if (typeof tvMerge === 'function') { try { tvMerge(m, guest); } catch (e) { console.info('[account] 旅行的進度合不起來，先用雲端那份', e); } }
   // 門外小島：用帳號裡的那份，帳號裡還沒有才用這台的；種子數量取比較多的
   if (guest.yard) {
     if (!m.yard) m.yard = guest.yard;

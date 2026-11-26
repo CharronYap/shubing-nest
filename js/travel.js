@@ -41,7 +41,9 @@ function tvData(){
 const tvTrip = d => tvData().out.find(o => o.ds.includes(d)) || null;
 const tvNames = ds => ds.map(d => DOLL_NAME[d]).join('和');
 const tvPacked = () => { const b = tvData().bag; return !!(b.food || b.charm || b.tool); };
-const tvToolFree = id => !!tvData().tool[id] && !tvData().out.some(o => o.tool === id);
+// 道具可以兩樣一起帶：bag.tool 和旅程的 tool 都是用逗號接起來的字（'torch,umb'）
+const tvToolList = s => String(s || '').split(',').filter(id => TV_GOODS[id] && TV_GOODS[id].slot === 'tool');
+const tvToolFree = id => !!tvData().tool[id] && !tvData().out.some(o => tvToolList(o.tool).includes(id));
 // 收納架、過夜、小島都用 whereDoll 看娃娃在哪：旅行中的回 'trip'
 {
   const prev = whereDoll;
@@ -58,11 +60,11 @@ function tvPlan(now){
   const outN = t.out.reduce((n, o) => n + o.ds.length, 0), homeD = tvHomeDolls();
   if (outN >= TV_MAX_OUT || homeD.length < 2) return null;
   const hr = new Date(now).getHours();
-  const tool = bag.tool && tvToolFree(bag.tool) ? bag.tool : '';
-  if (typeof skyWeather === 'function' && skyWeather(tvDate(now)) === 'rain' && tool !== 'umb') return null;   // 下雨天沒有傘，大家都不想出門
+  const tools = tvToolList(bag.tool).filter(tvToolFree), tool = tools.join(',');
+  if (typeof skyWeather === 'function' && skyWeather(tvDate(now)) === 'rain' && !tools.includes('umb')) return null;   // 下雨天沒有傘，大家都不想出門
   const food = TV_GOODS[bag.food] ? bag.food : '', charm = TV_GOODS[bag.charm] ? bag.charm : '';
   const tier = food === 'bento' ? 3 : food === 'sand' ? 2 : 1;
-  const p = tier === 3 ? 'onsen' : tier === 2 ? (tool === 'torch' && (hr >= 15 || hr < 2) ? 'market' : 'beach') : 'park';
+  const p = tier === 3 ? 'onsen' : tier === 2 ? (tools.includes('torch') && (hr >= 15 || hr < 2) ? 'market' : 'beach') : 'park';
   const P = TV_PLACES[p];
   const hid = typeof hideGet === 'function' && hideGet() ? hideGet().d : '';
   const can = homeD.filter(d => now - (t.back[d] || 0) >= TV_REST_H * 36e5 && (d !== 'egg' || food === 'bento') && d !== hid);
@@ -220,6 +222,55 @@ function tvLive(why){
   return o;
 }
 
+/* ---------- 兩台裝置的進度合在一起（js/account.js 的 mergeSave 會叫）----------
+   m：合併後的那份（以雲端為底，房間擺設是雲端的）；g：這台的。兩邊都是純資料，這裡不碰畫面也不碰 S。
+   取法：
+   - 行李用品的數量取多的、道具兩邊有的都算；收到的明信片、土產、去過幾次、日記、回來的時間：兩邊合起來，數字取大的。
+   - 在外面的旅程：兩邊的都拿來，同一趟（id 一樣）只留一份、寄到第幾張取多的；
+     同一隻娃娃在兩台各出門一趟的，留出門時間比較早的那一趟，另一趟當作沒發生（行李不補）。
+   - 已經在另一台回過家的那一趟（回來的時間記過了）不再算在外面，不然會回家兩次、土產拿兩份。
+   - 最後把房間對齊：留下來的旅程，娃娃不能還擺在房間裡；被拿掉的旅程，娃娃要回到原本的位置。 */
+function tvMerge(m, g){
+  const gt = g && g.album && g.album.tv; if (!gt || typeof gt !== 'object') return m;
+  const ma = m.album = m.album || {}, had = ma.tv && typeof ma.tv === 'object';
+  const t = ma.tv = had ? ma.tv : {};
+  const obj = x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {}), arr = x => (Array.isArray(x) ? x : []);
+  const okTrip = o => o && typeof o.id === 'string' && Array.isArray(o.ds) && o.ds.length && Array.isArray(o.pcs) && typeof o.t0 === 'number' && typeof o.t1 === 'number';
+  if (!had) t.bag = obj(gt.bag); else t.bag = obj(t.bag);
+  t.inv = obj(t.inv); Object.entries(obj(gt.inv)).forEach(([k, n]) => { t.inv[k] = Math.max(t.inv[k] || 0, n | 0); });
+  t.tool = Object.assign({}, obj(gt.tool), obj(t.tool));
+  t.cards = obj(t.cards); Object.entries(obj(gt.cards)).forEach(([k, b]) => { t.cards[k] = (t.cards[k] || 0) | (b | 0); });
+  t.sv = obj(t.sv); Object.entries(obj(gt.sv)).forEach(([k, n]) => { t.sv[k] = Math.max(t.sv[k] || 0, n | 0); });
+  t.back = obj(t.back); Object.entries(obj(gt.back)).forEach(([d, x]) => { t.back[d] = Math.max(t.back[d] || 0, +x || 0); });
+  t.cnt = obj(t.cnt); Object.entries(obj(gt.cnt)).forEach(([d, c]) => { const mc = t.cnt[d] = obj(t.cnt[d]); Object.entries(obj(c)).forEach(([p, n]) => { mc[p] = Math.max(mc[p] || 0, n | 0); }); });
+  t.log = obj(t.log); Object.entries(obj(gt.log)).forEach(([d, l]) => { t.log[d] = [...new Set([...arr(t.log[d]), ...arr(l)])].sort().slice(-12); });
+  const wk = w => JSON.stringify(w), seenW = new Set(arr(t.wel).map(wk));
+  t.wel = [...arr(t.wel), ...arr(gt.wel).filter(w => !seenW.has(wk(w)))].slice(-8);
+  t.free = [t.free || '', gt.free || ''].sort().pop(); if (!t.free) delete t.free;
+  // 旅程
+  const all = {};
+  [...arr(t.out), ...arr(gt.out)].filter(okTrip).forEach(o => { const e = all[o.id]; if (!e) all[o.id] = JSON.parse(JSON.stringify(o)); else e.sent = Math.max(e.sent | 0, o.sent | 0); });
+  const keep = [], drop = [], busy = new Set();
+  Object.values(all).sort((a, b) => a.t0 - b.t0).forEach(o => {
+    const done = o.ds.every(d => (t.back[d] || 0) >= o.t1);
+    if (done || o.ds.some(d => busy.has(d))) drop.push(o); else { keep.push(o); o.ds.forEach(d => busy.add(d)); }
+  });
+  t.out = keep;
+  // 房間對齊
+  const H = m.home || {}, rooms = Object.keys(H).filter(r => H[r] && Array.isArray(H[r].items));
+  const where = d => rooms.find(r => H[r].items.some(i => i && i.kind === 'doll' && i.id === d));
+  keep.forEach(o => o.ds.forEach(d => { const r = where(d); if (!r) return; const it = H[r].items.find(i => i.kind === 'doll' && i.id === d); H[r].items.forEach(x => { if (x.sit === it.uid) x.sit = null; }); H[r].items.splice(H[r].items.indexOf(it), 1); }));
+  let next = Math.max(m.uid || 0, g.uid || 0, ...rooms.map(r => Math.max(0, ...H[r].items.map(i => i.uid || 0)))) + 1;
+  const out = obj(ma.out).d;   // 去朋友家過夜的那一隻不在房間裡是對的
+  drop.forEach(o => o.ds.forEach(d => {
+    if (busy.has(d) || d === out || where(d) || !(m.dollN && m.dollN[d])) return;
+    const h = obj(o.hm)[d]; if (!h || !rooms.includes(h.r)) return;
+    H[h.r].items.push({uid: next++, kind: 'doll', id: d, x: typeof h.x === 'number' ? h.x : 50, y: typeof h.y === 'number' ? h.y : 90, sit: null, seat: 0});
+  }));
+  m.uid = Math.max(m.uid || 0, next);
+  return m;
+}
+
 /* ---------- 明信片的樣子 ---------- */
 // ds：貼在上面的娃娃（空的 = 只有風景，相簿的小圖用）
 function tvCardHTML(p, c, ds){
@@ -296,10 +347,11 @@ function tvBagOpen(){
     const ids = Object.keys(TV_GOODS).filter(id => TV_GOODS[id].slot === k);
     const have = ids.filter(id => (k === 'tool' ? t.tool[id] : (t.inv[id] || 0) > 0 || bag[k] === id));
     const chips = have.map(id => {
-      const g = TV_GOODS[id], on = bag[k] === id, away = k === 'tool' && !tvToolFree(id);
+      const g = TV_GOODS[id], on = k === 'tool' ? tvToolList(bag.tool).includes(id) : bag[k] === id, away = k === 'tool' && !tvToolFree(id);
       return `<button class="ng-chip tv-chip ${on ? 'on' : ''}" data-tvp="${id}" ${away ? 'disabled' : ''} aria-pressed="${on}" aria-label="${g.name}${on ? '，已經放進背包' : ''}">${g.ic}<span>${g.name}${k === 'tool' ? (away ? '（帶出門了）' : '') : ` ×${(t.inv[id] || 0) + (on ? 1 : 0)}`}</span></button>`;
     }).join('');
-    const now = bag[k] && TV_GOODS[bag[k]] ? `<small class="tv-tip">${TV_GOODS[bag[k]].tip}</small>` : '';
+    const picked = k === 'tool' ? tvToolList(bag.tool) : (TV_GOODS[bag[k]] ? [bag[k]] : []);
+    const now = picked.length ? `<small class="tv-tip">${picked.map(id => TV_GOODS[id].tip).join('、')}</small>` : '';
     return `<div class="tv-slot"><div class="al-sec">${name}<small>${tip}</small></div>${have.length ? `<div class="ng-chips">${chips}</div>${now}` : '<p class="bk-note">還沒有。火腿的小店有賣。</p>'}</div>`;
   };
   const out = t.out.length ? `<div class="al-sec">出門的</div><ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : '';
@@ -316,7 +368,8 @@ function tvPack(id){
   const t = tvData(), bag = t.bag, k = g.slot;
   if (k === 'tool'){
     if (!tvToolFree(id)) return;
-    bag[k] = bag[k] === id ? '' : id;
+    const l = tvToolList(bag.tool);
+    bag[k] = (l.includes(id) ? l.filter(x => x !== id) : [...l, id]).join(',');
   } else if (bag[k] === id){ t.inv[id] = (t.inv[id] || 0) + 1; bag[k] = ''; }
   else {
     if (!(t.inv[id] > 0)) return;

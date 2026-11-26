@@ -61,6 +61,9 @@ async function stayGo(){
     if (r){
       const it = home[r].items.find(i => i.kind === 'doll' && i.id === d);
       Object.assign(o, {from: r, x: Math.round(it.x), y: Math.round(it.y)});
+      // 坐在家具上的：存檔裡牠的位置是畫的時候才算的（平常是 0,0），這裡自己算一次，紙條才會貼在那個座位上；回來坐回同一個位子
+      const f = it.sit ? home[r].items.find(x => x.uid === it.sit && x.kind === 'furn' && FURN[x.id] && FURN[x.id].seats) : null;
+      if (f){ try { const [sx, sy] = seatPos(f, it.seat || 0); Object.assign(o, {x: Math.round(sx), y: Math.round(sy), sit: f.uid, seat: it.seat || 0}); } catch (e) { Object.assign(o, {x: Math.round(f.x), y: Math.round(f.y)}); } }
       home[r].items.forEach(x => { if (x.sit === it.uid) x.sit = null; });
       home[r].items.splice(home[r].items.indexOf(it), 1);
     }
@@ -86,6 +89,11 @@ function stayPutBack(o){
   if (!DOLL_N[o.d] || RIDS.some(r => home[r].items.some(i => i.kind === 'doll' && i.id === o.d))) return;
   const r = RIDS.includes(o.from) ? o.from : null; if (!r) return;
   const it = {uid: uid++, kind: 'doll', id: o.d, x: typeof o.x === 'number' ? o.x : 50, y: typeof o.y === 'number' ? o.y : 90, sit: null, seat: 0};
+  // 舊資料：出門前坐在家具上、位置記成 0,0 的，放到房間中間，不要貼在左上角
+  if (!o.sit && !it.x && !it.y){ it.x = 50; it.y = 90; }
+  // 原本坐著的那件家具還在、位子也還空著，就坐回去
+  const f = o.sit ? home[r].items.find(x => x.uid === o.sit && x.kind === 'furn' && FURN[x.id] && FURN[x.id].seats) : null;
+  if (f && !home[r].items.some(x => x.kind === 'doll' && x.sit === f.uid && (x.seat || 0) === (o.seat || 0))){ it.sit = f.uid; it.seat = o.seat || 0; }
   home[r].items.push(it);
 }
 function stayDue(o){
@@ -244,7 +252,8 @@ function stayPaint(){
   if (o && o.from === roomId){
     const n = document.createElement('button');
     n.className = 'gst st-note'; n.setAttribute('aria-label', `${DOLL_NAME[o.d]}去過夜了`);
-    n.style.left = (typeof o.x === 'number' ? o.x : 50) + '%'; n.style.top = roomY(typeof o.y === 'number' ? o.y : 90) + '%';
+    const old0 = !o.sit && !o.x && !o.y;   // 舊資料：坐在家具上出門、位置記成 0,0 的，紙條放房間中間
+    n.style.left = (typeof o.x === 'number' && !old0 ? o.x : 50) + '%'; n.style.top = roomY(typeof o.y === 'number' && !old0 ? o.y : 90) + '%';
     n.style.zIndex = 60 + Math.round((o.y || 90) * 3);   // 牠原本坐在家具上的話，紙條貼在家具前面
     n.innerHTML = `<span>去${txSlot(o.w)}家<br>過夜了</span>`;
     n.onclick = stayTap;
