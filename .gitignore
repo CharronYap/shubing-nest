@@ -4,3 +4,6 @@ node_modules/
 .vscode/
 .idea/
 .claude/
+# Cloudflare Worker（worker/）：本機測試用的密碼檔和暫存
+.dev.vars
+.wrangler/

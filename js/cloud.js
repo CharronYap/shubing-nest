@@ -148,6 +148,12 @@ export function createCloud(config, { emulator = false } = {}) {
       return A.createUserWithEmailAndPassword(auth, n.email, String(password || '')).then(r => toUser(r.user));
     },
     signOut() { return isReady ? A.signOut(auth) : Promise.resolve(); },
+    // 登入憑證：給 AI 寫信的 Worker 確認「這是小窩登入的玩家」（js/mailai.js）。大約一小時會換一次，Firebase 自己會更新
+    async idToken() {
+      await ready;
+      if (!auth.currentUser) throw new Error('not signed in');
+      return auth.currentUser.getIdToken();
+    },
     async load() {
       await ready;
       const s = await F.getDoc(ref());

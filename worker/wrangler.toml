@@ -1,0 +1,17 @@
+# 娃娃的信（AI 版）用的 Cloudflare Worker。怎麼放上去看 docs/AI-LETTERS.md
+name = "shubing-nest-letters"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+FIREBASE_PROJECT = "shubing-nest"
+# 哪些網址的網頁可以來要信：正式的網頁版，和在自己電腦上開的版本
+ALLOWED_ORIGINS = "https://charronyap.github.io,http://localhost:8765,http://127.0.0.1:8765"
+MODEL = "claude-haiku-5-5"
+USER_DAILY = "3"      # 一個帳號一天最多幾封（遊戲一天只會要一封，多的是留給重試和換裝置）
+GLOBAL_DAILY = "200"  # 所有人加起來一天最多幾封。花費的上限大約是這個數字 × 0.001 美元
+
+# 記「今天寫了幾封」的地方。id 要換成自己的：npx wrangler kv namespace create LIMITS
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "REPLACE_WITH_KV_ID"
