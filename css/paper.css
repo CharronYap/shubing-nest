@@ -367,4 +367,4 @@
 .look-paper .pc-row .pc-del{background:none;box-shadow:none;color:color-mix(in srgb,var(--p-ink) 55%,var(--p-paper))}
 .look-paper .pc-row .pc-del[data-sure],.look-paper .bk-del.sure{background:var(--p-a1d);color:var(--p-paper);box-shadow:none;border-radius:8px}
 .look-paper .tray-set{background:color-mix(in srgb,var(--p-sun) 20%,var(--p-card));border-radius:8px;box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
-.look-paper .tray-set i,.look-paper .tray-setall{color:var(--p-a1d);font-family:var(--p-hand)}
+.look-paper .tray-setall{border-radius:6px;background:var(--p-paper);box-shadow:0 2px 0 var(--p-edge);color:var(--p-a1d);font-family:var(--p-hand)}
