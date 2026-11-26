@@ -3,7 +3,7 @@
    index.html 最前面有一小段程式看同一個參數，先把 .look-paper 掛上去，第一眼才不會閃一下舊的顏色。
    第一版只換客廳（使用者看過說「可以，繼續換」）。現在五間房間都是新風格：牆、地板、窗戶和窗外、門口、每一間固定的構造、所有家具、
    上面的按鈕、收納架、對話框和提示。門外小島、娃娃機那一頁、封面還是原本的樣子。不改存檔、不改規則、不動玩法。
-   家具：手畫的在 PF（客廳最早那 7 件、第一批 16 件、第二批 13 件）；其他的用 paperize() 自動轉：拿掉描邊和亮面的反光、顏色換成色票裡最接近的那一個、
+   家具：手畫的在 PF（客廳最早那 7 件、第一批 16 件、第二批 13 件、第三批前半 19 件）；其他的用 paperize() 自動轉：拿掉描邊和亮面的反光、顏色換成色票裡最接近的那一個、
    每一塊下面加一塊往下錯開的影子。之後新增的家具不用另外畫，會自動轉。
    畫法（照 樣張/小窩風格樣板.html 的 B 款）：
    - 每一樣東西是色紙剪出來的色塊，沒有描邊；每一層下面有一塊往下錯開的深色影子，越前面錯得越多。
@@ -282,6 +282,97 @@ if (PAPER_ON) (() => {
       + L(rect(40, 4, 36, 28, 4), C.a1l, 1) + rect(44, 8, 28, 20, 2)(mix(C.a2, C.paper, .7)) + circ(52, 19, 6)(C.sun) + circ(64, 19, 6)(C.paper) + circ(62.500, 18, 1)(C.ink) + circ(66, 18, 1)(C.ink)
       + L(rect(82, 16, 26, 34, 4), C.rug, 1) + rect(86, 20, 18, 26, 2)(mix(C.rug, C.paper, .6)) + circ(95, 33, 7)(C.a1l) + circ(92.500, 31.500, 1.200)(C.ink) + circ(97.500, 31.500, 1.200)(C.ink)
       + L(rect(44, 38, 28, 20, 4), C.leafl, 1) + rect(48, 42, 20, 12, 2)(C.paper) + path('M58 53s-5.600-3.200-5.600-6.700c0-1.800 1.400-2.900 2.800-2.900 1 0 2 .600 2.800 1.600.800-1 1.800-1.600 2.800-1.600 1.400 0 2.800 1.100 2.800 2.900 0 3.500-5.600 6.700-5.600 6.700z')(C.a1),
+
+    /* ---- 手畫第三批的前半（2026-11-27）：森林露營 6 件、海邊 6 件、太空 6 件、客廳的魚缸。畫法跟前兩批一樣。
+       外框、坐的位置、燈會亮的位置都跟原本一樣；魚缸裡的魚和泡泡照舊會動（class fz、fzb，css 在 style.css） ---- */
+    // 森林露營
+    campfire: () => L(rect(8, 40, 44, 7, 3.5, 'rotate(-14 30 43.500)'), C.wood, .9) + circ(51, 38.300, 3.2)(C.wood3)
+      + L(rect(8, 40, 44, 7, 3.5, 'rotate(14 30 43.500)'), C.wood3, 1) + circ(9, 38.300, 3.2)(C.wood)
+      + L(path('M30 6c8 9 14 15 14 23a14 14 0 0 1-28 0c0-6 4-9 6-14 3 3 4 5 4 8 3-5 5-10 4-17z'), C.a1, 1)
+      + path('M30 22c4 5 7 8 7 12a7 7 0 0 1-14 0c0-4 4-6 7-12z')(C.sun),
+    stump: () => L(path('M6 14v20c0 4 9 6 19 6s19-2 19-6V14z'), C.wood, 1.2)
+      + rect(13, 23, 2.6, 9, 1.3)(C.wood2) + rect(33, 26, 2.6, 8, 1.3)(C.wood2)
+      + L(ell(25, 14, 19, 8), C.wood3, .7) + ell(25, 14, 11, 4.4)(mix(C.wood3, C.wood, .45)) + ell(25, 14, 6.5, 2.5)(C.wood3) + ell(25, 14, 3, 1.2)(C.wood)
+      + L(path('M41 24c2-5 7-6 9-3-1 4-5 6-9 3z'), C.leaf, .5),
+    minitent: () => L(rect(2, 64.500, 92, 4.5, 2.2), C.wood, .6)
+      + L(path('M48 6L6 66h84z'), mix(C.a1, C.sun, .45), 1.4)
+      + path('M48 6L30 66h36z')(C.wood2)
+      + path('M48 6L30 66h-9z')(mix(C.a1, C.sun, .7)) + path('M48 6l18 60h9z')(mix(C.a1, C.sun, .7))
+      + rect(47, 0, 2, 8, 1)(C.wood2) + L(path('M49 .500l9 3-9 3z'), C.a1, .4),
+    lightstring: () => strip('M4 6c30 13 74 13 104 0', C.wood2, 1.4)
+      + [[18, 15, 'sun'], [37, 20, 'a1'], [56, 22, 'a2'], [75, 20, 'leafl'], [94, 15, 'sun']].map(([x, y, k]) => rect(x - 2.5, y - 2, 5, 4, 1)(C.wood2) + L(ell(x, y + 7, 5, 6.5), C[k], .5) + ell(x - 1.4, y + 5, 1.5, 2.2)(mix(C[k], C.paper, .55))).join(''),
+    picnicmat: () => { const top = f => 22 + 76 * f, bot = f => 4 + 112 * f, xl = y => 22 - 18 * (y - 4) / 36, xr = y => 98 + 18 * (y - 4) / 36;
+      const v = [[.16, .28], [.44, .56], [.72, .84]].map(([f0, f1]) => `M${top(f0)} 4H${top(f1)}L${bot(f1)} 40H${bot(f0)}z`).join('');
+      const h = [[11, 17], [25, 32]].map(([y0, y1]) => `M${xl(y0)} ${y0}H${xr(y0)}L${xr(y1)} ${y1}H${xl(y1)}z`).join('');
+      return L(path('M22 4h76l18 36H4z'), C.paper, .8) + `<path d="${v}" fill="${C.a1}" opacity=".5"/><path d="${h}" fill="${C.a1}" opacity=".5"/>`; },
+    crate: () => L(rect(4, 6, 52, 40, 4), C.wood3, 1.3)
+      + rect(4, 17.500, 52, 2.6)(C.wood) + rect(4, 31.500, 52, 2.6)(C.wood) + rect(11, 6, 6, 40)(C.wood) + rect(43, 6, 6, 40)(C.wood)
+      + [[14, 11.500], [46, 11.500], [14, 40], [46, 40]].map(([x, y]) => circ(x, y, 1.3)(C.wood2)).join(''),
+    // 海邊
+    deckchair: () => strip('M14 58l20-34M60 58l18-22M30 58h54', C.wood, 3.2)
+      + L(path('M8 44L30 8l14 6-12 26 50 4-2 10z'), C.paper, 1.2)
+      + `<path d="M14.500 33.500l12 5.500M21 22.500l14 6M27.500 12l14 6M44 41l-1 10M58 42.500l-1 9.500M72 43.500l-1 9.500" fill="none" stroke="${C.a2}" stroke-width="4"/>`,
+    swimring: () => L(ell(32, 19, 28, 14), C.paper, 1.1)
+      + `<clipPath id="pp-ring"><ellipse cx="32" cy="19" rx="28" ry="14"/></clipPath><path clip-path="url(#pp-ring)" d="M6 8l14 10M58 8L44 18M6 30l14-9M58 30l-14-9" fill="none" stroke="${C.a1}" stroke-width="8"/>`
+      + ell(32, 17, 11, 5)(mix(C.a2, C.paper, .45)) + `<path d="M21 17a11 5 0 0 1 22 0a11 3.600 0 0 0-22 0z" fill="${C.ink}" opacity=".22"/>`,
+    shelllamp: () => L(ell(26, 44, 14, 4), C.a1l, .7)
+      + L(path('M26 42C8 40 4 22 10 12c5-8 27-8 32 0 6 10 2 28-16 30z'), mix(C.a1l, C.paper, .5), 1.2)
+      + strip('M26 40V10M26 40L14 15M26 40l12-25M26 40L9 25M26 40l17-15', C.a1l, 1.8)
+      + L(circ(26, 38, 3.6), C.sun, .4),
+    sandcastle: () => { const sl = mix(C.sun, C.paper, .5), sd = mix(C.sun, C.wood, .34), dk = mix(C.wood, C.sun, .25);
+      return L(path('M6 54c2-6 50-6 52 0z'), sd, .7)
+        + L(both(rect(12, 28, 40, 24, 3), rect(13, 24, 5, 6, 1), rect(22, 24, 5, 6, 1), rect(37, 24, 5, 6, 1), rect(46, 24, 5, 6, 1)), sl, 1)
+        + L(both(rect(8, 20, 14, 32, 3), rect(42, 20, 14, 32, 3), rect(8, 16, 4, 6, 1), rect(18, 16, 4, 6, 1), rect(42, 16, 4, 6, 1), rect(52, 16, 4, 6, 1)), mix(sl, sd, .3), 1.2)
+        + L(both(rect(24, 12, 16, 24, 3), rect(24, 8, 4, 6, 1), rect(30, 8, 4, 6, 1), rect(36, 8, 4, 6, 1)), sl, 1)
+        + path('M27 52v-9a5 5 0 0 1 10 0v9z')(dk) + circ(15, 31, 1.9)(dk) + circ(49, 31, 1.9)(dk)
+        + rect(31, 1, 1.8, 9, .9)(C.wood2) + L(path('M32.800 1.500l8 2.800-8 2.800z'), C.a1, .4); },
+    parasol: () => rect(40.500, 22, 3, 70, 1.5)(C.wood) + L(ell(42, 93, 12, 3.5), C.wood3, .7)
+      + L(path('M4 34C8 14 24 6 42 6s34 8 38 28c-6-5-13-5-19 0-6-5-13-5-19 0-6-5-13-5-19 0-6-5-13-5-19 0z'), C.paper, 1.4)
+      + path('M42 6c-7 6-10 16-10 28 6-5 13-5 19 0 0-12-3-22-9-28zM42 6C28 8 16 16 4 34c6-5 13-5 19 0 2-12 8-22 19-28zM42 6c14 2 26 10 38 28-6-5-13-5-19 0-2-12-8-22-19-28z')(mix(C.a1, C.sun, .4))
+      + circ(42, 5, 2.6)(C.a1d),
+    boatbed: () => rect(60.500, 8, 3, 34, 1.5)(C.wood) + L(path('M64 9l26 28H64z'), C.paper, .9) + L(path('M60 14L42 37h18z'), C.a2l, .8)
+      + L(path('M6 42h112c-2 16-12 26-28 26H34C18 68 8 58 6 42z'), C.a2, 1.5)
+      + path('M9.500 52h105l-2.200 5H11.700z')(C.paper)
+      + L(rect(18, 36, 88, 12, 6), C.paper, .8) + L(rect(22, 33, 26, 12, 6), C.a1l, .7),
+    // 太空
+    rocketbed: () => rect(18, 58, 4, 10, 2)(C.rug) + rect(98, 58, 4, 10, 2)(C.rug)
+      + L(path('M14 20l-10-8v48l10-8z'), C.a1, 1)
+      + L(path('M14 18h74c20 0 34 10 40 18-6 8-20 18-40 18H14z'), C.paper, 1.5)
+      + path('M94 18.500c16 2 28 10 33 17.500-5 7.500-17 15.500-33 17.500z')(C.a1) + rect(88, 18, 6, 36)(C.rug)
+      + L(circ(74, 36, 9), C.rug, .6) + circ(74, 36, 6.2)(C.sky) + circ(72, 34, 1)(C.paper) + circ(76.500, 38, .8)(C.paper)
+      + L(rect(22, 26, 36, 20, 8), C.a1l, .7),
+    planetlamp: () => L(ell(27, 86, 13, 4), C.rug, .7) + rect(25, 44, 4, 42, 2)(C.paper)
+      + L(circ(27, 24, 16), C.sun, 1.3)
+      + strip('M13 19c8 3 20 3 28 0M12 28c9 3 21 3 30 0', mix(C.sun, C.wood, .3), 2.2)
+      + `<ellipse cx="27" cy="25" rx="25" ry="6.500" fill="none" stroke="${C.a1}" stroke-width="2.600" transform="rotate(-16 27 25)"/>`,
+    moonchair: () => L(ell(34, 67, 20, 4), C.rug, .7)
+      + L(path('M44 6C22 8 8 22 8 40s14 26 34 26c8 0 14-2 18-6-14 0-26-8-26-22 0-14 4-24 10-32z'), C.sun, 1.5)
+      + L(ell(42, 50, 14, 6), C.paper, .7)
+      + circ(20, 30, 2.6)(mix(C.sun, C.wood, .3)) + circ(24, 46, 2)(mix(C.sun, C.wood, .3)) + circ(15, 41, 1.4)(mix(C.sun, C.wood, .3)),
+    telescope: () => strip('M36 44L18 78M36 44l18 34M36 44v36', C.wood, 3)
+      + `<g transform="rotate(-28 36 34)">` + L(rect(6, 26, 46, 16, 6), C.rug, 1.2) + L(rect(48, 23, 16, 22, 5), C.paper, 1) + rect(60, 25, 4, 18, 2)(C.a2l) + rect(0, 29, 9, 10, 3)(mix(C.ink, C.paper, .3)) + rect(20, 26, 4, 16)(mix(C.rug, C.paper, .4)) + `</g>`
+      + L(circ(36, 44, 4.4), C.sun, .5),
+    meteorstool: () => { const st = mix(C.rug, C.paper, .22), dk = mix(C.rug, C.ink, .22);
+      return L(path('M8 26c-4-10 6-20 20-20s24 8 20 20c-3 10-12 12-20 12S11 36 8 26z'), st, 1.2)
+        + ell(27, 12, 15, 4.5)(mix(st, C.paper, .35))
+        + ell(20, 19, 5, 3.4)(dk) + ell(35, 26, 4, 2.8)(dk) + ell(36, 14, 2.6, 1.8)(dk) + ell(16, 28, 2.2, 1.5)(dk); },
+    capsulecab: () => rect(12, 84, 4, 6, 2)(C.rug) + rect(48, 84, 4, 6, 2)(C.rug)
+      + L(rect(8, 6, 48, 80, 24), C.paper, 1.5)
+      + L(circ(32, 30, 13), C.rug, .7) + circ(32, 30, 9.5)(C.sky) + circ(28.500, 27, 1.100)(C.paper) + circ(35, 33, .9)(C.paper) + circ(35.500, 25.500, .7)(C.paper)
+      + L(rect(16, 52, 32, 24, 6), mix(C.rug, C.paper, .55), .6) + circ(32, 64, 2.4)(C.rug)
+      + circ(20, 46, 1.8)(C.a1) + circ(26.500, 46, 1.8)(C.sun) + circ(33, 46, 1.8)(C.a2),
+    // 魚缸：兩條魚（fz1、fz2）和泡泡（fzb）會動
+    fishtank: () => { const gl = mix(C.a2, C.paper, .62), wt = mix(C.a2, C.paper, .38);
+      return L(rect(10, 56, 64, 8, 3), C.wood3, .8)
+        + L(rect(6, 8, 72, 50, 10), gl, 1.4)
+        + path('M8 22c10-4 16 4 26 0s16-4 26 0 12 2 16 0v26a8 8 0 0 1-8 8H16a8 8 0 0 1-8-8z')(wt)
+        + path('M12 56c6-6 16-5 22-2 8-4 18-4 24 0 6-3 12-2 14 2z')(mix(C.sun, C.paper, .5))
+        + strip('M18 55c0-8 3-10 2-16M26 55c1-6-2-9 0-13M64 55c0-7 3-9 2-14', C.leaf, 2.4)
+        + `<g class="fz fz1">${path('M30 30c5-5 13-5 17 0-4 5-12 5-17 0z')(C.a1)}${path('M31 30l-7-4.500v9z')(C.a1)}${circ(43, 29, 1)(C.ink)}</g>`
+        + `<g class="fz fz2">${path('M60 43c-4-4-10-4-13 0 3 4 9 4 13 0z')(C.sun)}${path('M59 43l6-3.500v7z')(C.sun)}${circ(50, 42.200, .9)(C.ink)}</g>`
+        + `<g class="fzb" fill="none" stroke="${C.paper}" stroke-width="1.300"><circle cx="66" cy="34" r="2"/><circle cx="63" cy="26" r="1.400"/><circle cx="67" cy="19" r="1"/></g>`
+        + path('M13 17c3-4 8-5.500 13-5.500l.500 2.600c-4 0-8 1.300-11 4.500z')(C.paper)
+        + rect(6, 8, 72, 5, 2.5)(mix(gl, C.paper, .5)); },
   };
   /* ---------- 其他家具、每一間固定的構造：自動轉成紙雕的畫法 ---------- */
   // 一個顏色換成色票裡最接近的：先看是白、灰還是有顏色，有顏色的照色相分到木頭、主色、黃、綠、青、紫幾家，再照深淺挑
