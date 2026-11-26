@@ -271,6 +271,8 @@ function draw(){
 
 
 const SPEED = 130;
+const SLIP_MIN_X = CHUTE.x1 + 36;                    // 半路掉下去最左只能到這裡（娃娃半個身體大約 35，不會蓋到出口）
+const inChute = t => t.x < CHUTE.x1 + 6;             // 娃娃的中心在出口那一格裡
 function topToyAt(x){
   let best = null;
   for (const t of toys) if (!t.gone && !t.fall && Math.abs(t.x - x) < 26) if (!best || t.y < best.y) best = t;
@@ -290,7 +292,11 @@ function startDrop(){
   const win = target && (guaranteed || Math.random() < POW[pow].p);
   let fail = null;
   if (target && !win) fail = Math.random() < POW[pow].slip ? 'slip' : 'wiggle';
-  claw.plan = { target, win, fail, stopY: target ? target.y - target.s*0.42 : FLOOR - 64, slipAt: 0.25 + Math.random()*0.55 };
+  // 半路掉下去只能掉在出口右邊（SLIP_MIN_X）：不然娃娃躺在出口那一格卻沒出貨，看起來像壞掉。
+  // 掉的位置 = 起點往左走 slipAt 的比例，所以 slipAt 最多只能到 slipMax；離出口太近、沒地方掉，就改演「差一點點」
+  const slipMax = Math.min(.8, (claw.x - SLIP_MIN_X) / Math.max(1, claw.x - 58));
+  if (fail === 'slip' && slipMax < .25) fail = 'wiggle';
+  claw.plan = { target, win, fail, stopY: target ? target.y - target.s*0.42 : FLOOR - 64, slipAt: 0.25 + Math.random()*Math.max(0, slipMax - .25) };
   claw.state = 'drop'; claw.dir = 0; renderCtrl();
 }
 let last = 0;
@@ -315,7 +321,7 @@ function step(ts){
   } else if (claw.state === 'carry'){
     claw.x -= SPEED*dt;
     const h = toys.find(t=>t.held);
-    if (h && P.fail === 'slip' && (claw.carry0 - claw.x) / Math.max(1, claw.carry0 - 58) > P.slipAt){
+    if (h && P.fail === 'slip' && ((claw.carry0 - claw.x) / Math.max(1, claw.carry0 - 58) > P.slipAt || claw.x <= SLIP_MIN_X)){
       h.held = false; h.fall = true; h.vy = 0; h.rest = restY(h.x); claw.open = 0.6;
       toast('啊，掉下去了…');
     }
@@ -339,10 +345,14 @@ function step(ts){
     if (t.fall){
       t.vy += 900*dt; t.y += t.vy*dt;
       if (t.y >= t.rest){
+        // 保險：不管怎麼掉的，落地的位置在出口那一格裡，就當作夾到，繼續往下掉進出口、照樣出貨
+        if (!t.toChute && inChute(t)){ t.toChute = true; t.rest = FLOOR + 60; continue; }
         t.y = t.rest; t.fall = false; t.wobA = .6; t.wob = 0;
         if (t.toChute){ t.gone = true; S.misses = 0; S.wins++; renderHud(); save(); showPrize(t.t); }
       }
     }
+    // 保險：已經躺在出口那一格裡的（舊版留下來的），爪子閒著時也讓它掉進去出貨
+    else if (!t.gone && !t.held && claw.state === 'idle' && inChute(t)){ t.fall = true; t.vy = 0; t.rest = FLOOR + 60; t.toChute = true; }
     if (t.wobA > 0 && !t.held && claw.state !== 'lift'){ t.wob += dt*12; t.wobA = Math.max(0, t.wobA - dt*1.4); }
   }
   if (page === 'claw') draw();
