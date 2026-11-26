@@ -41,6 +41,8 @@ const GUIDE = [
   {c: 'doll', ic: gdDoll('snoopy'), t: '小劇場', s: '娃娃頭上出現驚嘆號，點一下就開演。演過的在相簿可以重看。', go: () => { setPage('room'); openAlbum(); }, btn: '去相簿'},
   {c: 'doll', ic: STAY_MOON, t: '娃娃的夢', s: '晚上娃娃會睡覺。點睡著的娃娃，看牠夢到什麼。'},
   {c: 'doll', ic: gdDoll('dog'), t: '你不在的時候', s: '隔一陣子回來，地上會有牠們留下的小東西，撿起來有幣。'},
+  {c: 'doll', ic: typeof TV_BAG_ICON !== 'undefined' ? TV_BAG_ICON : ICON.living, t: '旅行', s: '客廳門邊的背包放點心、護身符、道具，放好就不用管。誰想出門會自己背走，路上寄明信片，回家帶土產。', go: () => { gdRoom('living'); if (typeof tvBagOpen === 'function') setTimeout(tvBagOpen, 300); }},
+  {c: 'doll', ic: gdDoll('snoopy'), t: '旅行相簿', s: '相簿上面的「旅行」。四個地方各 3 張明信片、2 種土產，還有誰去過幾次。', go: () => { if (typeof tvAlbumOpen === 'function') tvAlbumOpen(); }},
   // ---- 賺幣和買東西
   {c: 'coin', ic: COIN, t: '現在可以賺幣的事', s: '點上面的幣就會列出來，點了直接過去。', go: () => earnOpen(false)},
   {c: 'coin', ic: COIN, t: '每天的幣', s: `每天第一次打開送 ${typeof DAILY_COINS !== 'undefined' ? DAILY_COINS : 20} 枚，沒來也不會被扣。`},

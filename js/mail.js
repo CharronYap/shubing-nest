@@ -387,6 +387,7 @@ const MAIL_NEWS = [
   {id:'f2', t:'2026-11-26', b:'又多了很多東西，我念一遍。\n家具：森林露營、海邊、太空三個系列，各六件，湊齊各送一款地板或壁紙。還有一個魚缸，貓咪老師會一直盯著看。\n壁紙和地板也多了幾款，火腿的小店買得到。\n新房間：廚房和閣樓。小店有賣廚房的鑰匙和閣樓的梯子，買了上面就多一顆房間鈕。閣樓晚上看得到流星。\n窗外：清晨和傍晚顏色不一樣，有時候會下雨。下雨天小島不用澆水。\n念完了，好累'},
   {id:'one1', t:'2026-11-26', b:'娃娃的事改了一下，跟你說。\n每一種娃娃，家裡就是一隻。收納架上不會再寫有幾隻了。\n夾到家裡已經有的：那一隻可以送給朋友，也可以先留著。留著的時候牠會站在娃娃機旁邊當店員，每天帶 2 枚幣回來，不用再叫牠去打工。想送人的時候，點店員就可以。\n已經留著一隻，又夾到一樣的，會直接換成 3 枚幣。以前存了好幾隻一樣的，多的也幫你換成幣了。\n我也想當店員，可是要站著，還是算'},
   {id:'look1', t:'2026-11-26', b:'小窩換了一個樣子，跟你說一下。\n牆、家具、按鈕，都變成一張一張的紙疊起來的。字也換了，像用筆寫的。\n晚上屋裡會暗下來，窗戶旁邊有一圈黃黃的光。我覺得很好睡。\n東西都在原本的地方。娃娃、家具、幣一樣都沒少，玩法也沒變。\n壁紙和地板的花紋變得很淡，要靠近一點才看得到。\n我走了一圈，沙發還是我的。先去躺一下'},
+  {id:'tv1', t:'2026-11-26', b:'多了一件事，叫旅行。跟你說一下。\n客廳門邊多了一個背包。點它，可以放點心、護身符，還有一樣道具。這些火腿的小店有賣。\n放好就不用管了。誰想出門，會自己背走。誰去、去哪裡，都是牠們自己決定的。\n出門的那一隻，原本的位置會留一張紙條。路上會寄明信片回來，回家的時候帶土產。\n沒放東西牠們也會出門，只是走不遠。\n相簿上面多了一顆「旅行」，收到的明信片都貼在那裡。\n我也想去泡溫泉，可是好遠。再想想'},
   // 歡迎信：不在下面的迴圈裡寄，mailCheck 最後才寄，這樣會排在信箱最上面
   {id:'hi', hi:1, title:'歡迎來小窩', a:'coin-30', b:'你好，我是薯餅。\n這裡是小窩，我跟大家住在這裡。我平常都在發呆，有事點我一下就好。\n信裡附了 30 枚幣。娃娃機夾一次 2 枚，你可以多夾幾次，每天第一次夾不用幣。\n幣不夠的時候點上面的幣，會告訴你現在可以做什麼。客廳的電視可以玩小遊戲，每天的小事做完也有幣。\n下面幾封信是在講小窩有什麼，有空再看就好。\n我本來還想跟你說一件事，可是'},
 ];
@@ -534,7 +535,11 @@ function mailText(k){
   const {d, type, i, p} = mailParse(k);
   let title = mailFill(MAIL_TITLE[type] || '', p), body;
   if (type === 'news'){ const n = MAIL_NEWS.find(n => n.id === p.id) || MAIL_NEWS[0]; body = n.b; if (n.title) title = n.title; }
-  else if (type === 'trip'){
+  else if (type === 'pc' && typeof tvMailText === 'function'){
+    // 旅行寄回來的明信片（js/travel.js）
+    const r = tvMailText(d, p);
+    return {d, type, title: r.title, body: r.body, from: r.from, pic: r.pic};
+  } else if (type === 'trip'){
     // 過夜日記（data.js 的 STAY_DIARY）＋主人塞的小紙條
     const e = ((typeof STAY_DIARY !== 'undefined' && STAY_DIARY[d]) || [])[i];
     body = mailFill((e ? e.t : '在{w}家住了一晚。') + (p.x ? '\n{w}塞了一張小紙條讓牠帶回來：\n「{x}」' : ''), p);
@@ -558,7 +563,7 @@ function mailBodyHTML(x){
     if (l === '[拖鞋]') return `<p class="ml-sl">${typeof DROP_SVG !== 'undefined' ? DROP_SVG.slipper : ''}</p>`;
     if (j === note) return `<p class="ml-nt">${l}</p>`;
     const last = j === lines.length - 1 - (note >= 0 ? 1 : 0);
-    if (x.d === 'sloth' && last && x.type !== 'trip'){
+    if (x.d === 'sloth' && last && x.type !== 'trip' && x.type !== 'pc'){
       // 薯餅寫到一半睡著：最後幾個字一個比一個往下掉，後面接 Zzz（不然看起來像字被切掉）
       const cs = /[<&]/.test(l) ? null : [...l], n = 7;
       const tail = cs ? cs.slice(0, Math.max(0, cs.length - n)).join('') + cs.slice(-n).map((c, k) => `<span style="--i:${k + 1}">${c}</span>`).join('') : l;
@@ -568,16 +573,16 @@ function mailBodyHTML(x){
   }).join('');
   return `<div class="ml-tx ${x.d === 'moodeng' ? 'big' : ''} ${x.d === 'snoopy' ? 'novel' : ''}">${html}</div>`;
 }
-const mailSnip = x => x.d === 'dino' && x.type !== 'news' ? '一片葉子' : x.body.split('\n')[0].replace('[拖鞋]', '');
+const mailSnip = x => x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' ? '一片葉子' : x.body.split('\n')[0].replace('[拖鞋]', '');
 function mailCard(o, j, open){
   const x = mailText(o.k);
-  const from = x.type === 'news' ? '薯餅' : DOLL_NAME[x.d];
+  const from = x.type === 'news' ? '薯餅' : x.from || DOLL_NAME[x.d];
   let inner = '';
   if (open){
     // 龍龍：先是一片葉子，點一下翻到背面
-    inner = x.d === 'dino' && x.type !== 'news' && !o.f
+    inner = x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && !o.f
       ? `<button class="ml-leaf" data-flip="${j}" aria-label="把葉子翻過來">${MAIL_LEAF}<small>點一下翻過來</small></button>`
-      : mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
+      : (x.pic || '') + mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
     if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
   }
   return `<div class="ml ${o.r ? '' : 'unread'} ${open ? 'open' : ''}">

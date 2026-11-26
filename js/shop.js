@@ -58,6 +58,7 @@ function shopOpen(keep){
   openSheet(`<div class="hd">${SHOP_ICON}<span>火腿的小店</span><small class="pc-left">${COIN}${S.coins}</small></div>
     <div class="sp-box"><div class="yd-pg sp-pg"><img src="${SPR.piggy}" alt=""><p>${shopQuip}</p></div>
       ${list.length ? `<div class="sp-grid">${cards}</div>` : '<p class="al-em">今天沒有新東西了。能買的你都有了，明天再來看看。</p>'}
+      ${typeof tvShopHTML === 'function' ? tvShopHTML() : ''}
       <div class="er-it sp-sell ${bag ? '' : 'off'}"><span class="ic">${EARN_FLOWER}</span><span class="tx2"><b>收花和果子</b><small>${bag ? `你有 ${e.bag.flower} 朵花、${e.bag.fruit} 顆果子，一個 1 枚` : '小島的花圃每天可以摘花，樹兩天掉一顆果子'}</small></span>${bag ? `<button class="btn y sm" data-sp="sell">換 ${bag} 枚</button>` : ''}</div>
       <small class="bk-note">每天換一批。娃娃機的扭蛋也夾得到家具。</small></div>`);
   shopOpen.list = list;

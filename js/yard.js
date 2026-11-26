@@ -208,6 +208,7 @@ function yardPanel(){
       else if (a.night){ if (y.stay[a.who]){ off = 'off'; why = '在別塊地睡'; } }
       else if (y.help[a.who] === t){ off = 'off'; why = '今天幫過了'; }
       else if (whereDoll(a.who) === 'out'){ off = 'off'; why = '去朋友家了'; }
+      else if (whereDoll(a.who) === 'trip'){ off = 'off'; why = '去旅行了'; }
       else if (typeof asleep === 'function' && asleep(a.who)){ off = 'off'; why = '睡著了'; }
       const face = a.who === 'me' ? `<span class="yd-hand">${YARD_HAND}</span>` : `<img src="${SPR[a.who]}" alt="">`;
       btns += `<button class="yd-a ${off}" data-ya="${j}" aria-label="${a.who === 'me' ? '自己' : DOLL_NAME[a.who]}${a.label}${why ? '，' + why : ''}" ${off ? 'aria-disabled="true"' : ''}>${face}<span>${a.label}</span>${why ? `<small>${why}</small>` : ''}</button>`;

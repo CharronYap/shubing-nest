@@ -326,3 +326,20 @@
 /* 封面的開始鍵：拿掉亮面的反光和白邊 */
 .look-paper .cover .cv-go>span::before{display:none}
 .look-paper .cover .cv-go svg{stroke:var(--p-ink);filter:none}
+
+/* =====================================================================
+   旅行（js/travel.js）：紙條、背包上的小記號、行李的格子、相簿的空格
+   ===================================================================== */
+.look-paper .st-note{background:var(--p-paper);color:var(--p-ink);border-radius:3px;box-shadow:0 3px 0 var(--p-edge),0 7px 8px var(--p-shadow);font-family:var(--p-hand);font-weight:700}
+.look-paper .st-note::before{background:var(--p-a1);border-radius:1px;opacity:.85}
+.look-paper .fx-bag.on::after{background:var(--p-sun);box-shadow:0 2px 0 color-mix(in srgb,var(--p-sun) 60%,var(--p-ink))}
+.look-paper .tv-chip{display:inline-flex}
+.look-paper .tv-wel{background:var(--p-card)}
+.look-paper .tvpc{border-color:var(--p-paper);border-radius:4px;box-shadow:0 3px 0 var(--p-edge),0 8px 12px var(--p-shadow)}
+.look-paper .tv-th.no i,.look-paper .tv-sv.no .tile{border:0;background:var(--p-paperd);box-shadow:none}
+.look-paper .tv-mapn svg{color:var(--p-a1d)}
+/* 相簿每一隻那一頁：說過的話、去過夜和旅行的那幾行、跟誰比較好（補漏） */
+.look-paper .al-ln li{background:var(--p-card);border-radius:8px;box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .al-pal>span{background:var(--p-card);border-radius:10px;box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .al-pal svg{fill:var(--p-paperd)}
+.look-paper .al-pal svg.on{fill:var(--p-a1)}

@@ -230,6 +230,7 @@ $('#items').addEventListener('click',e=>{
     const w=whereDoll(id);
     if(w===roomId){removeItem(items.find(i=>i.kind==='doll'&&i.id===id).uid);return;}
     if(w==='out'){if(typeof stayTap==='function')stayTap();return;}
+    if(w==='trip'){if(typeof tvNoteTap==='function')tvNoteTap(id);return;}   // 去旅行了（js/travel.js）
     if(w==='yard'){yardRecall(id);if(typeof yardPaint==='function')yardPaint();}
     else if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
     const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();}
