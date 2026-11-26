@@ -375,8 +375,17 @@ function mergeSave(remote, guest) {
     for (const [d, n] of Object.entries(gm.n || {})) mm.n[d] = Math.max(mm.n[d] || 0, n || 0);
     mm.arch = mm.arch || {};
     for (const [d, a] of Object.entries(gm.arch || {})) mm.arch[d] = [...new Set([...(mm.arch[d] || []), ...a])].sort().slice(-24);
-    const seen = new Set((mm.l || []).map(o => o.t + o.k));
-    mm.l = [...(mm.l || []), ...(gm.l || []).filter(o => !seen.has(o.t + o.k))].sort((a, b) => a.t < b.t ? 1 : -1).slice(0, 30);
+    // 同一封只留一封：薯餅的更新信照編號（不看日期，兩台各寄一次的不會變兩封），其他的信照日期＋內容。
+    // 留下來的那一封，看過、附件領過只要有一邊是就算是（js/mail.js 的 mailSameKey）
+    const sameKey = typeof mailSameKey === 'function' ? mailSameKey : o => o.t + o.k;
+    const byKey = new Map(), merged = [];
+    [...(mm.l || []), ...(gm.l || [])].forEach(o => {
+      if (!o || typeof o.k !== 'string') return;
+      const k = sameKey(o), first = byKey.get(k);
+      if (!first) { const c = { ...o }; byKey.set(k, c); merged.push(c); return; }
+      if (o.r) first.r = o.r; if (o.g) first.g = o.g; if (o.f) first.f = o.f;
+    });
+    mm.l = merged.sort((a, b) => a.t < b.t ? 1 : -1).slice(0, 30);
     mm.last = [mm.last || '', gm.last || ''].sort().pop();
     mm.att = [mm.att || '', gm.att || ''].sort().pop();
     // 從雲端領走的東西：收到的明信片、領過的編號（明信片、送來的娃娃）。兩邊都留，同一筆只留一份
