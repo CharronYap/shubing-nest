@@ -594,11 +594,11 @@ function openMail(keep){
   const m = mailInit();
   if (!keep) mlOpenIx = -1;
   // 信箱只列娃娃寫的信和薯餅的更新信；朋友的明信片、送來的娃娃、過夜的日記在朋友面板（js/friend.js）
-  const mine = m.l.filter(o => !mailIsPal(o));
+  const mine = m.l.filter(o => !mailPalHide(o));
   const unread = mine.filter(o => !o.r).length, todo = mine.filter(o => o.a && !o.g).length;
   const palOn = typeof frOpen === 'function' && typeof sNet === 'function' && !!sNet(), pal = palOn && typeof frUnread === 'function' ? frUnread() : 0;
   openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>信箱</span>${unread ? `<small>${unread} 封沒看</small>` : ''}</div>
-    <div class="ml-box">${mine.length ? m.l.map((o, j) => (mailIsPal(o) ? '' : mailCard(o, j, j === mlOpenIx))).join('') : '<p class="al-em">還沒有信。娃娃們偶爾會寫信給你，不用特別等。</p>'}
+    <div class="ml-box">${mine.length ? m.l.map((o, j) => (mailPalHide(o) ? '' : mailCard(o, j, j === mlOpenIx))).join('') : '<p class="al-em">還沒有信。娃娃們偶爾會寫信給你，不用特別等。</p>'}
     ${palOn ? `<p class="bk-note ml-pal">朋友寄來的明信片、送來的娃娃、過夜的日記，都收在朋友那裡。${pal ? `現在有 ${pal} 件沒看。` : ''}</p>` : ''}</div>
     ${todo || unread || palOn ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}${palOn ? '<button class="btn" data-mall="pal">看朋友那邊</button>' : ''}</div>` : ''}`);
   evOpen = false; alOpen = false;
@@ -626,10 +626,10 @@ $('#sheet').addEventListener('click', e => {
     const o = m.l[+b.dataset.take]; mailTake(o); save(); renderEvBadge();
     toast(`收下${mailAtt(o.a).name}`); openMail(true);
   } else if (b.dataset.mall === 'take'){
-    const got = m.l.filter(o => o.a && !o.g && !mailIsPal(o)); got.forEach(mailTake); save(); renderEvBadge();
+    const got = m.l.filter(o => o.a && !o.g && !mailPalHide(o)); got.forEach(mailTake); save(); renderEvBadge();
     toast(`收下 ${got.length} 個附件`); openMail(true);
   } else if (b.dataset.mall === 'read'){
-    m.l.forEach(o => { if (!mailIsPal(o)) o.r = 1; }); save(); mailBadge(); openMail(true);
+    m.l.forEach(o => { if (!mailPalHide(o)) o.r = 1; }); save(); mailBadge(); openMail(true);
   } else if (b.dataset.mall === 'pal'){
     frOpen('in');
   }
@@ -638,10 +638,12 @@ $('#sheet').addEventListener('click', e => {
 /* ---------- 房間右上角的信封 ---------- */
 // 朋友那邊來的（從朋友家來的娃娃的信、過夜的日記）：收在朋友面板（js/friend.js），信箱不列、紅點也不算
 const mailIsPal = o => /^[a-z]+\.(gift|trip)\./.test((o && o.k) || '');
+// 沒登入時朋友面板打不開：朋友的東西照舊列在信箱，不然過夜的日記、帶回來的紙條會找不到
+const mailPalHide = o => mailIsPal(o) && typeof frOpen === 'function' && typeof sNet === 'function' && !!sNet();
 function mailBadge(){
   const b = $('#mailBtn'); if (!b) return;
   // 沒看的信。朋友的東西（明信片、送來的娃娃、日記）算在朋友鈕上，這裡不算，免得兩邊都亮
-  const n = S.mail ? S.mail.l.filter(o => !o.r && !mailIsPal(o)).length : 0;
+  const n = S.mail ? S.mail.l.filter(o => !o.r && !mailPalHide(o)).length : 0;
   if (typeof frBadge === 'function') frBadge();
   b.querySelector('.bd').textContent = n; b.querySelector('.bd').hidden = !n;
   b.classList.toggle('wig', !!n && !REDUCE);
@@ -670,3 +672,4 @@ function mailRows(d){
 
 mailCheck(true);
 setInterval(() => { if (S.mail && S.mail.last !== todayStr()) mailCheck(false); }, 60000);
+addEventListener('nestnet', () => mailBadge());   // 登入好了：朋友的東西改算在朋友鈕上（mailPalHide）

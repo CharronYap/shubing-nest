@@ -9,8 +9,18 @@
    不懲罰、不催人：朋友一直沒打開遊戲也沒關係，娃娃照樣隔天回來、日記照樣有；被主人提早送回家也一樣有日記，不寫原因。
    雲端：nestStays/{出門的人} = {from, fromName, to, doll, look, day, note, x, y}，一人一筆所以一次一隻。
      出門的人建立和刪除；主人只能改 note、x、y，也能刪（送牠回家）。不用 transaction：回家是出門的人打開遊戲時自己刪掉那筆。
-   存檔：S.album.out = {d, to, w:朋友名字, t:'出門那天', from:原本的房間, x, y}   S.album.trips = {娃娃:['日期|朋友名字']}（一隻留 12 筆） */
+   存檔：S.album.out = {d, to, w:朋友名字, t:'出門那天', from:原本的房間, x, y}   S.album.trips = {娃娃:['日期|朋友名字']}（一隻留 12 筆）
+
+   小紙條不能弄丟（2026-11-26，使用者回報「別人家寵物來我家，我留言塞給他回去，他都找不到留言在哪裡」）：
+   - 主人「送牠回家」時：有紙條（包括框裡打了字、還沒按「塞給牠」的）就不刪那一筆，改成把位置設成 x=0、y=0 當「送回家了」的記號
+     （畫面上客人的位置一定在 x 8～92、y 56～98，0,0 不會自己出現），紙條留在雲端等出門的人來拿。
+     用位置當記號是因為規則只准主人改 note、x、y，這樣不用重新發布規則。沒有紙條的照舊直接刪掉。
+   - 出門的人：看到 0,0 就當作被送回家，帶日記和紙條回來，再刪掉那一筆。提早叫回來的，有紙條也照樣帶一封信。
+   - 回家時雲端還沒連上（例如打開遊戲前 3 秒、斷線），娃娃先回來，那一筆留在雲端；之後連上時看到還留著、上面有紙條，
+     就補進那封日記（沒有日記就補寫一封），不再直接丟掉（stayLateNote）。
+   - 帶著紙條回來的那一次，房間裡跳一張卡片把紙條直接給你看（stayNoteShow），之後在朋友面板「他那邊來的」那一行也看得到。 */
 const STAY_HOME_H = 5, STAY_GUESTS = 3, STAY_LEN = 40;
+const stayBye = g => !!g && g.x === 0 && g.y === 0;   // 主人按了「送牠回家」、上面還有紙條（見上面）
 const STAY_MOON = '<svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor"/><path d="M17 3.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z" fill="currentColor"/></svg>';
 ICON.out = STAY_MOON;
 const stayOut = () => (S.album && S.album.out && DOLLS.includes(S.album.out.d) ? S.album.out : null);
@@ -91,42 +101,111 @@ function stayDiary(d, room){
   const pool = hit.length && Math.random() < .8 ? hit : any.length ? any : hit;
   return pool.length ? pool[Math.floor(Math.random() * pool.length)] : 0;
 }
-// 回家。diary：帶不帶日記（自己提早叫回來的不帶）
+// 寫一封過夜日記（信箱的 m.l，畫在朋友面板），有紙條就一起放。回傳那封信
+function stayLetter(d, w, note, room){
+  const t = todayStr();
+  const k = `${d}.trip.${stayDiary(d, room)}#w=${w}${note ? ';x=' + encodeURIComponent(note) : ''}`;
+  const m = mailInit(), o = {k, t, r: 0, a: null, g: 0};
+  m.l.unshift(o);
+  const ar = m.arch[d] = m.arch[d] || [];
+  ar.push(`${t}|${k}`); if (ar.length > MAIL_ARCH) ar.splice(0, ar.length - MAIL_ARCH);
+  return o;
+}
+// 回家。diary：帶不帶日記（自己提早叫回來的不帶；但主人塞了紙條的話，一樣寫一封把紙條帶回來）
 async function stayHome(diary){
   const o = stayOut(), net = sNet(); if (!o) return;
   let doc = null, room = null;
-  if (net){
-    try { doc = await net.stayMine(); } catch (e) { sQuiet('stay', e); }
-    if (diary) try { room = await net.room(o.to); } catch (e) { sQuiet('stay', e); }
-  }
+  if (net) try { doc = await net.stayMine(); } catch (e) { sQuiet('stay', e); }
+  const mine = !!doc && doc.to === o.to && doc.doll === o.d;
+  const note = mine ? sText(doc.note, STAY_LEN) : '';
+  if (net && (diary || note)) try { room = await net.room(o.to); } catch (e) { sQuiet('stay', e); }
   if (!stayOut() || S.album.out.d !== o.d) return;
   stayPutBack(o);
   delete S.album.out;
-  if (diary){
-    const t = todayStr(), note = doc && doc.to === o.to ? sText(doc.note, STAY_LEN) : '';
-    const k = `${o.d}.trip.${stayDiary(o.d, room)}#w=${o.w}${note ? ';x=' + encodeURIComponent(note) : ''}`;
-    const m = mailInit();
-    m.l.unshift({k, t, r: 0, a: null, g: 0});
-    const ar = m.arch[o.d] = m.arch[o.d] || [];
-    ar.push(`${t}|${k}`); if (ar.length > MAIL_ARCH) ar.splice(0, ar.length - MAIL_ARCH);
+  if (diary || note){
+    stayLetter(o.d, o.w, note, room);
     const tr = S.album.trips = S.album.trips || {}, l = tr[o.d] = tr[o.d] || [];
     l.push(`${o.t}|${o.w}`); if (l.length > 12) l.splice(0, l.length - 12);
-    setTimeout(() => toast(`${DOLL_NAME[o.d]}從${o.w}家回來了，信箱有牠的日記`), 800);
-    if (typeof memoAdd === 'function') memoAdd('stayBack', o.to, o.w, {id: 'sb' + o.t + o.d, d: o.d});
+    // 日記在朋友面板（登入了才有）；沒登入時信箱會列出來（js/mail.js mailPalHide）
+    const where = net ? '在朋友那裡' : '在信箱';
+    setTimeout(() => toast(note ? `${DOLL_NAME[o.d]}從${o.w}家回來了，帶回一張小紙條` : `${DOLL_NAME[o.d]}從${o.w}家回來了，日記${where}`), 800);
+    if (typeof memoAdd === 'function') memoAdd('stayBack', o.to, o.w, {id: 'sb' + o.t + o.d, d: o.d, m: note});
+    if (note) setTimeout(stayNoteShow, 1800);
   } else toast(`${DOLL_NAME[o.d]}回來了`);
+  if (doc && !mine) stayLateNote(doc);   // 雲端留著的是更早那一次的（上面可能有紙條）
   save();
   if (!VISIT){ if (RIDS.includes(roomId)) load(); mailBadge(); }
   // 日記和娃娃都回到自己的存檔了：等存檔上了雲端才結束雲端那一筆
   if (net && doc) sAfterSave(() => net.stayEnd(net.me.uid));
+}
+// 娃娃已經回來了，雲端那一筆卻還在、上面有紙條（回家那時候還沒連上雲端，或是更早那一次留下的）：
+// 把紙條補進那一次的日記；那一次沒有日記（提早叫回來）就補寫一封。回傳 true = 補了
+function stayLateNote(doc){
+  const note = sText(doc && doc.note, STAY_LEN), d = doc && doc.doll;
+  if (!note || !DOLLS.includes(d) || typeof doc.to !== 'string') return false;
+  const memo = typeof memoList === 'function' ? memoList() : [];
+  const named = memo.find(e => e.u === doc.to && e.n);
+  const w = ngName(named ? named.n : ''), dep = new Date((doc.day | 0) * 864e5).toISOString().slice(0, 10);
+  const m = mailInit();
+  // 那一次的日記：同一隻、同一個朋友、出門那天以後寫的
+  const hit = m.l.find(o => { try { const p = mailParse(o.k); return p.type === 'trip' && p.d === d && (p.p.w || '') === w && o.t >= dep; } catch (e) { return false; } });
+  if (hit){
+    if (mailParse(hit.k).p.x) return false;   // 已經帶回來了（回家和刪掉雲端那一筆之間又看了一次）
+    const k = hit.k + (hit.k.includes('#') ? ';' : '#') + 'x=' + encodeURIComponent(note);
+    const ar = m.arch[d] || [], j = ar.lastIndexOf(`${hit.t}|${hit.k}`);
+    if (j >= 0) ar[j] = `${hit.t}|${k}`;
+    hit.k = k; hit.r = 0; delete hit.sn;
+  } else stayLetter(d, w, note, null);
+  const back = memo.find(e => e.k === 'stayBack' && e.u === doc.to && e.d === d && e.t >= dep);
+  if (back){ back.m = note; back.ts = Date.now(); }
+  else if (typeof memoAdd === 'function') memoAdd('stayBack', doc.to, w, {id: 'sl' + (doc.day | 0) + d, d, m: note});
+  save();
+  if (!VISIT) mailBadge();
+  setTimeout(stayNoteShow, 1800);
+  return true;
+}
+// 帶著紙條回來：房間裡跳一張卡片，把紙條直接給你看（還沒看過的才跳，一次一張）。
+// 封面、面板、別的卡片開著，或不在房間那一頁時，先等一下再看
+let stNoteT = 0;
+function stayNoteShow(){
+  clearTimeout(stNoteT);
+  if (VISIT || !S.mail || !Array.isArray(S.mail.l)) return;
+  const o = S.mail.l.find(o => {
+    if (o.sn || o.r || !/^[a-z]+\.trip\./.test(o.k || '')) return false;
+    try { return !!mailParse(o.k).p.x; } catch (e) { return false; }
+  });
+  if (!o) return;
+  if (document.hidden || !$('#cover').hidden || !$('#sheet').hidden || screen.querySelector('.over') || $('#tour') || (typeof page !== 'undefined' && page !== 'room')){
+    stNoteT = setTimeout(stayNoteShow, 5000); return;
+  }
+  o.sn = 1; save();
+  const x = mailParse(o.k), name = DOLL_NAME[x.d] || '娃娃';
+  const ov = document.createElement('div'); ov.className = 'over';
+  ov.innerHTML = `<div class="pcard who st-back" role="dialog" aria-label="${name}帶回一張小紙條">
+    <div class="pic"><img src="${SPR[x.d]}" alt=""></div>
+    <h3>${name}回來了</h3>
+    <p class="who-l">牠從<b>${txSlot(x.p.w || '朋友')}</b>家帶回一張小紙條：</p>
+    <p class="st-paper">${txSlot(mailDec(x.p.x))}</p>
+    <div class="pz-row"><button class="btn y ok" aria-label="收好了">${CKS}</button><button class="btn who-mm">看日記</button></div>
+    <small class="st-where">之後在上面的「朋友」→「他那邊來的」也看得到。</small></div>`;
+  screen.appendChild(ov);
+  const next = () => { stNoteT = setTimeout(stayNoteShow, 1500); };
+  ov.querySelector('.ok').onclick = () => { o.r = 1; save(); ov.remove(); next(); };
+  ov.querySelector('.who-mm').onclick = () => { ov.remove(); if (typeof frLetterOpen === 'function') frLetterOpen(o); next(); };
 }
 // 打開小窩、回到這個分頁時看一次：時間到了就回家；還沒到但朋友已經送牠回家，也回來（一樣有日記）
 let stChecking = false;
 let stayLeft = false;
 async function stayCheck(){
   // 沒有娃娃在外面，雲端卻還留著一筆（上次回家後還沒來得及結束）：補結束，不然牠會一直顯示在朋友家
+  // 上面有紙條的話先補進日記（stayLateNote），不直接丟掉
   if (!stayOut() && !stayLeft && !VISIT){
     const net0 = sNet();
-    if (net0){ stayLeft = true; net0.stayMine().then(doc => { if (doc && !stayOut()) sAfterSave(() => net0.stayEnd(net0.me.uid)); }).catch(e => sQuiet('stay', e)); }
+    if (net0){
+      stayLeft = true;
+      net0.stayMine().then(doc => { if (doc && !stayOut()){ stayLateNote(doc); sAfterSave(() => net0.stayEnd(net0.me.uid)); } })
+        .catch(e => { stayLeft = false; sQuiet('stay', e); });
+    }
   }
   const o = stayOut(); if (!o || stChecking || VISIT) return;
   stChecking = true;
@@ -134,7 +213,8 @@ async function stayCheck(){
     if (stayDue(o)){ await stayHome(true); return; }
     const net = sNet(); if (!net) return;
     let doc; try { doc = await net.stayMine(); } catch (e) { sQuiet('stay', e); return; }
-    if (!doc || doc.to !== o.to || doc.doll !== o.d) await stayHome(true);
+    // 那一筆不見了（主人沒塞紙條就送牠回家）、或主人送牠回家但留著紙條（stayBye）：回來
+    if (!doc || doc.to !== o.to || doc.doll !== o.d || stayBye(doc)) await stayHome(true);
   } finally { stChecking = false; }
 }
 // 相簿那一頁
@@ -150,10 +230,10 @@ async function stayGuestsLoad(){
   try {
     const today = nestDayN(), h = new Date().getHours();
     const all = (await net.stayGuests()).filter(g => g && DOLLS.includes(g.doll) && typeof g.id === 'string');
-    // 太久沒被接回去的（出門的人一直沒打開遊戲）收掉，牠在對方那邊照樣會回家
-    all.filter(g => (g.day | 0) <= today - 7).forEach(g => net.stayEnd(g.id).catch(() => {}));
-    // 當天來的，和昨天來、還沒到早上 5 點的
-    stGuests = all.filter(g => g.day === today || (g.day === today - 1 && h < STAY_HOME_H)).sort((a, b) => a.day - b.day).slice(0, STAY_GUESTS);
+    // 太久沒被接回去的（出門的人一直沒打開遊戲）收掉，牠在對方那邊照樣會回家。塞了紙條的多留一陣子，等對方來拿
+    all.filter(g => (g.day | 0) <= today - (g.note ? 30 : 7)).forEach(g => net.stayEnd(g.id).catch(() => {}));
+    // 當天來的，和昨天來、還沒到早上 5 點的；已經送回家（帶著紙條等對方來拿）的不畫
+    stGuests = all.filter(g => !stayBye(g) && (g.day === today || (g.day === today - 1 && h < STAY_HOME_H))).sort((a, b) => a.day - b.day).slice(0, STAY_GUESTS);
   } catch (e) { sQuiet('stay', e); return; }
   stayPaint();
 }
@@ -215,7 +295,7 @@ function stayGuestOpen(g){
     <div class="st-box"><p class="st-hi">牠來住一晚，明天早上會自己回家。可以拖牠到想放的地方。</p>
       <div class="al-sec">塞一張小紙條讓牠帶回去</div>
       <input class="tx-in st-in" type="text" maxlength="${STAY_LEN}" placeholder="寫一句話（可以不寫）" aria-label="小紙條，${STAY_LEN} 字以內">
-      <div class="bk-go"><small>只有牠的主人看得到。</small><button class="btn y sm" data-st="note">塞給牠</button></div></div>
+      <div class="bk-go"><small>只有牠的主人看得到。牠回家時會交給主人，直接按「送牠回家」也會帶著。</small><button class="btn y sm" data-st="note">塞給牠</button></div></div>
     <div class="ml-ft"><button class="btn" data-st="bye">送牠回家</button></div>`);
   $('#sheet .st-in').value = sText(g.note, STAY_LEN);
   evOpen = false; alOpen = false;
@@ -231,14 +311,16 @@ $('#sheet').addEventListener('click', async e => {
     const g = stSheet;
     stBusy = true;
     try {
+      // 框裡打的字：按「塞給牠」或直接按「送牠回家」都算數（以前直接送回家，打了的字和塞過的紙條都會不見）
+      const inp = $('#sheet .st-in'), note = inp ? sText(inp.value, STAY_LEN) : sText(g.note, STAY_LEN);
       if (a === 'note'){
-        const note = sText($('#sheet .st-in').value, STAY_LEN);
         await net.staySet(g.id, {note}); g.note = note;
-        toast(note ? '塞給牠了' : '紙條拿掉了');
+        toast(note ? `塞給牠了，牠回家時會交給${sText(g.fromName, 12) || '主人'}` : '紙條拿掉了');
       } else {
-        await net.stayEnd(g.id);
+        // 有紙條：不刪，標成送回家了（stayBye），紙條留著讓對方帶回去；沒紙條照舊直接刪
+        if (note) await net.staySet(g.id, {note, x: 0, y: 0}); else await net.stayEnd(g.id);
         stGuests = stGuests.filter(x => x !== g); stayPaint();
-        toast(`${DOLL_NAME[g.doll]}回家了`);
+        toast(note ? `${DOLL_NAME[g.doll]}帶著小紙條回家了` : `${DOLL_NAME[g.doll]}回家了`);
       }
       $('#sheet').hidden = true;
     } catch (err) { sQuiet('stay', err); toast(err && err.code === 'not-found' ? '牠已經回家了' : sErr(err)); if (err && err.code === 'not-found'){ stGuests = stGuests.filter(x => x !== g); stayPaint(); $('#sheet').hidden = true; } }
@@ -254,5 +336,8 @@ $('#sheet').addEventListener('click', async e => {
 addEventListener('nestnet', () => { stayCheck(); stayGuestsLoad(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden){ stayCheck(); stayGuestsLoad(); } });
 setInterval(() => { if (!document.hidden){ stayCheck(); stayGuestsLoad(); } }, 5 * 60000);
-// 沒登入也要能回家（例如出門後登出了）：時間到了一樣回來，只是沒有小紙條
-setTimeout(() => { if (!sNet()) stayCheck(); }, 3000);
+// 雲端連不上也要能回家：時間到了一樣回來，紙條之後連上時再補（stayLateNote）。
+// 用帳號存檔的人多等一下，雲端通常幾秒內就連上了，紙條可以跟日記一起回來
+setTimeout(() => { if (!sNet()) stayCheck(); }, acctUid() ? 20000 : 3000);
+// 帶回來的紙條還沒看過（上次還沒跳卡片就關掉了）：進房間時跳
+setTimeout(stayNoteShow, 4000);

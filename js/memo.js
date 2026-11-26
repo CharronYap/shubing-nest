@@ -46,7 +46,7 @@ function memoText(e){
     case 'giftOut': return `把${d}送給${w}`;
     case 'giftIn': return `${w}送來了${d}`;
     case 'stayOut': return `${d}去${w}家過夜`;
-    case 'stayBack': return `${d}從${w}家帶日記回來`;
+    case 'stayBack': return e.m ? `${d}從${w}家帶回一張小紙條：「${txSlot(e.m)}」` : `${d}從${w}家帶日記回來`;
     case 'guest': return `${w}家的${d}來過夜`;
     case 'bookIn': return e.m ? `${w}在訪客簿寫：「${txSlot(e.m)}」` : `${w}在訪客簿貼了貼紙`;
     case 'bookOut': return `在${w}的訪客簿留了話`;
