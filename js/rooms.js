@@ -88,7 +88,8 @@ function mapOpen(){
     <div class="hm"><div class="hm-roof"></div>
       <div class="hm-house"><div class="hm-row one">${mapCell('attic')}</div><div class="hm-row">${mapCell('bed')}${mapCell('bath')}</div><div class="hm-row">${mapCell('living')}${mapCell('kitchen')}</div></div>
       <div class="hm-out">${mapCell('yard')}</div>
-      <p class="bk-note">點一間就過去。${VISIT ? '' : '還沒開的房間在火腿的小店買。'}</p></div>`);
+      <p class="bk-note">點一間就過去。${VISIT ? '' : '還沒開的房間在火腿的小店買。'}</p>
+      ${!VISIT && typeof roamToggleHTML === 'function' ? roamToggleHTML() : ''}</div>`);
   evOpen = false; alOpen = false;
 }
 $('#nav').addEventListener('click', e => {

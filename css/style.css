@@ -935,3 +935,18 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 }
 /* 「你不在的時候」的便條原本貼在房間最上面，會蓋到第二、三排的按鈕，往下挪 */
 .anote{top:108px}
+/* 娃娃自己動（js/roam.js）：一跳一跳、原地小動作。用 translate／scale／rotate 個別屬性，不蓋掉原本的 transform */
+.doll .body.roam-hop{animation:roamHop var(--hopt,.4s) ease-out}
+@keyframes roamHop{0%,100%{translate:0 0;scale:1.04 .94}45%{translate:0 var(--hop,-26%);scale:.97 1.04}}
+.doll .body.roam-yawn{animation:roamYawn 1.4s ease-in-out}
+@keyframes roamYawn{0%,100%{scale:1 1}35%,65%{scale:1.07 .9}}
+.doll .body.roam-jump{animation:roamJump .5s ease-out 2}
+@keyframes roamJump{0%,100%{translate:0 0}45%{translate:0 -30%}}
+.doll .body.roam-spin{animation:roamSpin .9s ease-in-out}
+@keyframes roamSpin{0%{rotate:y 0deg}100%{rotate:y 360deg}}
+.doll .body.roam-look{animation:roamLook 1.4s ease-in-out}
+@keyframes roamLook{0%,100%{rotate:0deg}30%{rotate:-7deg}70%{rotate:7deg}}
+@media (prefers-reduced-motion:reduce){.doll .body.roam-hop,.doll .body.roam-yawn,.doll .body.roam-jump,.doll .body.roam-spin,.doll .body.roam-look{animation:none!important}}
+.roam-sw{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:8px 10px;border-radius:14px;background:#fff7fb;font-size:13px;font-weight:800}
+.roam-tg{min-width:52px;border:2px solid var(--line);border-radius:999px;background:#fff;padding:5px 12px;font:inherit;font-weight:900;color:var(--soft);cursor:pointer}
+.roam-tg.on{border-color:var(--pink);background:var(--pink);color:#fff}
