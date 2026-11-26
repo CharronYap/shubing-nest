@@ -16,6 +16,7 @@ let roamOn = true;
 try { roamOn = localStorage.getItem(ROAM_KEY) !== '0'; } catch (e) {}
 const RS = {};                 // uid → {x, y, sit, seat, busy, next, trips, rest, …}；x 是 null = 在家
 let roamHold = 0, roamTimer = 0;
+let roamFree = false;        // 故意靠著家具的移動（去坐、龍龍去躲）：js/seen.js 不要把落點換掉
 const rnd = (a, b) => a + Math.random() * (b - a);
 let roamDolls = () => items.filter(i => i.kind === 'doll' && ROAM_P[i.id]);   // 第二步（js/roam2.js）會再包一層：出門去隔壁的不算
 const roamSt = it => (RS[it.uid] = RS[it.uid] || {x: null, y: null, sit: null, seat: 0, busy: false, next: Date.now() + rnd(4, 12) * 1000, trips: 0, rest: 0});
@@ -87,7 +88,9 @@ function roamSeats(it, want){
 }
 function roamSitOn(it, f, k){
   const [x, y] = seatPos(f, k), st = roamSt(it);
-  roamHopTo(it, x, Math.max(56, Math.min(95, y)), () => { if (roamSeatTaken(f, k, it.uid) || !items.includes(f)) return; st.x = null; st.y = null; st.sit = f.uid; st.seat = k; roamApply(it, elFor(it)); });
+  roamFree = true;
+  try { roamHopTo(it, x, Math.max(56, Math.min(95, y)), () => { if (roamSeatTaken(f, k, it.uid) || !items.includes(f)) return; st.x = null; st.y = null; st.sit = f.uid; st.seat = k; roamApply(it, elFor(it)); }); }
+  finally { roamFree = false; }
 }
 function roamSay(it, text){ const [x, y] = roamPos(it), st = RS[it.uid]; say({kind: 'doll', id: it.id, x, y, sit: (st && st.sit) || it.sit}, text); }
 function roamIdle(it, kind){
@@ -119,7 +122,9 @@ function roamAct(it, st, canMove){
   // 晃出去夠久了：回家
   if (st.trips >= 3 && canMove && !REDUCE){
     const hf = it.sit ? items.find(o => o.uid === it.sit && o.kind === 'furn') : null, [hx, hy] = hf ? seatPos(hf, it.seat) : [it.x, it.y];
-    roamHopTo(it, hx, Math.max(40, hy), () => roamHome(it)); st.trips = 0; return;
+    // 家（玩家擺的位置）如果會被家具擋住，就不回去了，繼續在看得到的地方晃（js/seen.js）
+    if (!hf && typeof seenHidden === 'function' && seenHidden(it.id, hx, hy)) st.trips = 0;
+    else { roamFree = !!hf; try { roamHopTo(it, hx, Math.max(40, hy), () => roamHome(it)); } finally { roamFree = false; } st.trips = 0; return; }
   }
   const keys = Object.keys(w); if (!keys.length) return;
   let r = Math.random() * keys.reduce((a, k) => a + w[k], 0), act = keys[0];
@@ -129,7 +134,13 @@ function roamAct(it, st, canMove){
   else if (act === 'sit'){ st.trips++; const [f, k] = seats[Math.floor(Math.random() * seats.length)]; roamSitOn(it, f, k); }
   else if (act === 'own'){ st.trips = 1; const [f, k] = own[0]; roamSitOn(it, f, k); }
   else if (act === 'follow'){ st.trips++; const o = others[Math.floor(Math.random() * others.length)], [ox, oy] = roamPos(o); roamHopTo(it, Math.max(10, Math.min(90, ox + (ox > 50 ? -9 : 9))), Math.max(60, Math.min(94, oy + 1))); }
-  else if (act === 'hide'){ st.trips++; const f = cover[Math.floor(Math.random() * cover.length)]; roamHopTo(it, Math.max(10, Math.min(90, f.x + rnd(-3, 3))), Math.max(58, Math.min(92, f.y - 2))); }
+  else if (act === 'hide'){
+    // 躲在家具後面：故意被擋住，躲一下就出來（js/seen.js 過 7 秒會讓牠跳到看得到的地方）
+    st.trips++; const f = cover[Math.floor(Math.random() * cover.length)];
+    roamFree = true;
+    try { roamHopTo(it, Math.max(10, Math.min(90, f.x + rnd(-3, 3))), Math.max(58, Math.min(92, f.y - 2)), () => { st.hid = Date.now(); }); } finally { roamFree = false; }
+    st.hid = Date.now();
+  }
   else if (act === 'idle'){ const list = seated ? P.idle.filter(k => k !== 'jump') : P.idle; if (list.length) roamIdle(it, list[Math.floor(Math.random() * list.length)]); }
   else if (act === 'talk'){ const L = ROAM_LINES[it.id]; let i = Math.floor(Math.random() * L.length); if (i === st.last) i = (i + 1) % L.length; st.last = i; roamSay(it, L[i]); }
 }
