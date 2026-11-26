@@ -195,3 +195,56 @@
 .look-paper .yd-pg,.look-paper .sp-pg{background:var(--p-card);border-radius:10px}
 .look-paper .roam-tg{border-color:transparent;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge)}
 .look-paper .roam-tg.on{background:var(--p-a2);color:var(--p-paper)}
+
+/* =====================================================================
+   娃娃機那一頁、門外小島、封面（B4、B2 的小島）
+   ===================================================================== */
+/* 娃娃機：機台是畫布（顏色在 js/paper.js 換），這裡是外框和下面的按鈕 */
+.look-paper #claw{border-radius:14px;box-shadow:0 5px 0 var(--p-edge),0 12px 16px var(--p-shadow)}
+.look-paper .rb{border:0;border-radius:14px;background:var(--p-a1);color:var(--p-paper);box-shadow:0 4px 0 var(--p-a1d),0 8px 9px var(--p-shadow)}
+.look-paper .rb.go{border-radius:16px;background:var(--p-sun);color:var(--p-ink);box-shadow:0 5px 0 var(--gold2),0 10px 10px var(--p-shadow)}
+.look-paper .rb:active,.look-paper .rb.press{transform:translateY(3px);box-shadow:0 1px 0 var(--p-a1d)}
+.look-paper .rb.go:active,.look-paper .rb.go.press{box-shadow:0 2px 0 var(--gold2)}
+.look-paper .rb .cost{background:var(--p-paper);color:var(--p-ink);border-radius:6px;box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .optc button{border:0;border-radius:10px;background:var(--p-card);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .optc button.on{box-shadow:0 0 0 3px var(--p-a1)}
+.look-paper .optc button.lock{background:var(--p-paperd);box-shadow:none}
+.look-paper .optc .lk{border-radius:4px;background:var(--p-paper);color:var(--p-edge);box-shadow:none}
+.look-paper .pity i{border-radius:2px;background:var(--p-edge)}
+.look-paper .pity i.on{background:var(--p-a1)}
+.look-paper .wk-row small{background:var(--p-ink);color:var(--p-paper);border-radius:5px;font-family:var(--p-hand)}
+/* 小島：天空和下面那張紙 */
+.look-paper .yard,.look-paper .yard.night{background:linear-gradient(var(--p-sky),color-mix(in srgb,var(--p-sky) 55%,var(--p-wall)) 72%,var(--p-wall2))}
+.look-paper .yd-panel{background:linear-gradient(color-mix(in srgb,var(--p-paper) 66%,transparent),color-mix(in srgb,var(--p-paper) 66%,transparent)),var(--p-fiber),var(--p-paper);
+  background-size:auto,192px 192px,auto;background-blend-mode:normal,multiply,normal;color:var(--p-ink);border-radius:16px;box-shadow:0 -2px 0 var(--p-edge),0 -6px 10px var(--p-shadow)}
+.look-paper .yd-a{border:0;border-radius:10px;background:var(--p-card);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .yd-a .yd-hand{color:var(--p-a1d)}
+.look-paper .yard.night .yd-t{filter:none}
+/* 封面：同一間客廳的樣子。牆、地板、窗戶、地毯、沙發、標題的小房子、開始鍵 */
+.look-paper .cover{font-family:var(--p-hand);background:linear-gradient(color-mix(in srgb,var(--p-wall) 56%,transparent),color-mix(in srgb,var(--p-wall) 56%,transparent)),var(--p-fiber),var(--p-wall);background-size:auto,192px 192px,auto;background-blend-mode:normal,multiply,normal}
+.look-paper .cover .cv-floor{background:linear-gradient(color-mix(in srgb,var(--p-ink) 22%,transparent),transparent 30%),var(--p-floor)}
+.look-paper .cover .cv-floor::before{background:var(--p-floor);box-shadow:0 -3px 0 var(--p-wood2)}
+.look-paper .cover .cv-win{border-radius:120px 120px 10px 10px;background:linear-gradient(var(--p-sky) 0 58%,var(--p-hill2) 58% 76%,var(--p-hill) 76%);box-shadow:inset 0 0 0 9px var(--p-wood),0 6px 0 var(--p-wood2),0 14px 16px var(--p-shadow)}
+.look-paper .cover .cv-win::before,.look-paper .cover .cv-win::after{background:var(--p-wood)}
+.look-paper .cover .cv-rug{background:radial-gradient(ellipse,var(--p-rug) 0 69%,transparent 70%)}
+.look-paper .cover .cv-cb{border-radius:12px;background:var(--p-paper);color:var(--p-ink);box-shadow:0 4px 0 var(--p-edge),0 8px 9px var(--p-shadow)}
+.look-paper .cover .cv-cb::before{display:none}
+.look-paper .cover .cv-cb.cv-cl{background:var(--p-a1);color:var(--p-paper);box-shadow:0 4px 0 var(--p-a1d),0 8px 9px var(--p-shadow)}
+.look-paper .cover .cv-acct{border:0;border-radius:10px;background:var(--p-paper);color:var(--p-ink);box-shadow:0 3px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .cover .cv-t{filter:none;text-shadow:none;font-family:var(--p-hand);font-weight:700}
+.look-paper .cover .cv-t::before{border-radius:6px;box-shadow:0 5px 0 var(--edge)}
+.look-paper .cover .cv-t i{border-radius:4px}
+.look-paper .cover .cv-t::after{display:none}
+.look-paper .cover .cv-t:nth-child(1),.look-paper .cover .cv-t:nth-child(5){--bg:var(--p-wood);--fg:var(--p-paper);--edge:var(--p-wood2)}
+.look-paper .cover .cv-t:nth-child(2){--bg:var(--p-sun);--fg:var(--p-ink);--edge:color-mix(in srgb,var(--p-sun) 60%,var(--p-ink))}
+.look-paper .cover .cv-t:nth-child(3){--bg:var(--p-paper);--fg:var(--p-a1d);--edge:var(--p-edge)}
+.look-paper .cover .cv-t:nth-child(4){--bg:var(--p-a1);--fg:var(--p-paper);--edge:var(--p-a1d)}
+.look-paper .cover .cv-stg img{filter:none}
+.look-paper .cover .cv-sofa .cv-bk{border-radius:34px 34px 12px 12px;background:var(--p-a1d);box-shadow:none}
+.look-paper .cover .cv-sofa .cv-bk::before{display:none}
+.look-paper .cover .cv-sofa .cv-st{border-radius:16px;background:var(--p-a1);box-shadow:0 5px 0 color-mix(in srgb,var(--p-a1d) 80%,var(--p-ink))}
+.look-paper .cover .cv-sofa .cv-ar{background:var(--p-a1l);box-shadow:0 5px 0 var(--p-a1d)}
+.look-paper .cover .cv-sofa .cv-ar::before{display:none}
+.look-paper .cover .cv-sofa .cv-lg{background:var(--p-wood2)}
+.look-paper .cover .cv-go>span{border-radius:22px;background:var(--p-sun);box-shadow:0 7px 0 color-mix(in srgb,var(--p-sun) 60%,var(--p-ink)),0 16px 18px var(--p-shadow)}
+.look-paper .cover .cv-go svg{fill:var(--p-ink)}

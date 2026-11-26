@@ -151,12 +151,14 @@ if (PAPER_ON) (() => {
     const hasArea = tag === 'g' ? !!el.querySelector('[fill]:not([fill="none"])') || (f && f !== 'none') : f && f !== 'none';
     if (!hasArea) return null;
     const c = el.cloneNode(true);
+    const g = el.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'g');
     [c, ...c.querySelectorAll('*')].forEach(n => {
       if (n.getAttribute('fill') && n.getAttribute('fill') !== 'none') n.setAttribute('fill', C.ink);
       if (n.getAttribute('stroke')) n.setAttribute('stroke', C.ink);
-      n.removeAttribute('id'); n.removeAttribute('opacity');
+      n.removeAttribute('id'); n.removeAttribute('opacity'); n.removeAttribute('class');
+      [...n.attributes].forEach(at => { if (at.name.startsWith('data-')) n.removeAttribute(at.name); });
     });
-    const g = el.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('pointer-events', 'none');
     g.setAttribute('opacity', '.2'); g.setAttribute('transform', 'translate(0 1.15)');
     g.appendChild(c);
     return g;
@@ -164,8 +166,8 @@ if (PAPER_ON) (() => {
   const noNs = t => t.replace(/ xmlns="http:\/\/www\.w3\.org\/2000\/svg"/g, '');
   // inner：<svg> 裡面的東西（家具）。full：整個 <svg …>…</svg>（固定的構造）
   function paperize(markup, key, full){
-    const k = key + '|' + phase;
-    if (PZ.has(k)) return PZ.get(k);
+    const k = key === null ? null : key + '|' + phase;
+    if (k !== null && PZ.has(k)) return PZ.get(k);
     let out = markup;
     try {
       const doc = new DOMParser().parseFromString(full ? markup.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ') : `<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`, 'image/svg+xml');
@@ -176,6 +178,7 @@ if (PAPER_ON) (() => {
         out = full ? noNs(SER.serializeToString(root)).replace('<svg ', '<svg ') : [...root.childNodes].map(n => noNs(SER.serializeToString(n))).join('');
       }
     } catch (e) { console.info('[paper] 這一件轉不了，先用原本的畫法', key, e); }
+    if (k === null) return out;
     PZ.set(k, out);
     if (PZ.size > 600) PZ.delete(PZ.keys().next().value);
     return out;
@@ -251,7 +254,7 @@ if (PAPER_ON) (() => {
   }
   // 只有「房間那一頁的客廳」才算（小島、娃娃機不算）：合成一個 class，樣式都掛在 .ppon 下面
   const sync = () => {
-    const on = screen.classList.contains('pp') && !screen.classList.contains('inyard') && !screen.classList.contains('pg-claw');
+    const on = screen.classList.contains('pp');   // 第一版只算客廳那一頁；現在房間、小島、娃娃機都算
     if (screen.classList.contains('ppon') !== on) screen.classList.toggle('ppon', on);
   };
   new MutationObserver(sync).observe(screen, {attributes: true, attributeFilter: ['class']});
@@ -276,6 +279,34 @@ if (PAPER_ON) (() => {
         ctx.strokeStyle = a(C.paper, .38); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(cx, cy, rx - 9, ry - 9, 0, 0, 7); ctx.stroke();
       }
     };
+  });
+  /* ---------- 娃娃機：是畫在畫布上的。把畫筆換顏色的那一步攔下來，每個顏色換成色票裡最接近的 ---------- */
+  // 顏色對照記起來（一秒畫幾十次，不能每次都重算）；天色換了就清掉
+  const CMAP = new Map(); let cmapPhase = '';
+  const cmap = v => {
+    if (typeof v !== 'string' || v[0] !== '#') return v;
+    if (cmapPhase !== phase){ CMAP.clear(); cmapPhase = phase; }
+    let m = CMAP.get(v); if (m === undefined){ m = pick(v); CMAP.set(v, m); }
+    return m;
+  };
+  try {
+    const cv = document.getElementById('claw'), cx = cv && cv.getContext('2d');
+    if (cx){
+      const proto = Object.getPrototypeOf(cx);
+      ['fillStyle', 'strokeStyle', 'shadowColor'].forEach(k => {
+        const d = Object.getOwnPropertyDescriptor(proto, k); if (!d || !d.set) return;
+        Object.defineProperty(cx, k, {configurable: true, get(){ return d.get.call(this); }, set(v){ d.set.call(this, cmap(v)); }});
+      });
+      // 漸層的每一站也換
+      ['createLinearGradient', 'createRadialGradient'].forEach(k => {
+        const f = cx[k]; if (typeof f !== 'function') return;
+        cx[k] = function(...a){ const g = f.apply(this, a), add = g.addColorStop; g.addColorStop = function(o, c){ return add.call(this, o, cmap(c)); }; return g; };
+      });
+    }
+  } catch (e) { console.info('[paper] 娃娃機的顏色換不了，先用原本的', e); }
+  // 小島：地圖是另外畫的一張圖（js/yard.js 比這個檔晚載入）。每次畫都轉一次，不記
+  addEventListener('DOMContentLoaded', () => {
+    if (typeof yardSVG === 'function'){ const y0 = yardSVG; yardSVG = function(...a){ const m = y0.apply(this, a); try { return paperize(m, null, /^\s*<svg/.test(m)); } catch (e) { return m; } }; }
   });
   document.documentElement.classList.add('look-paper');
   tone();
