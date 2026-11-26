@@ -21,7 +21,10 @@ const skitSeen = id => id in skitData().s;
 function skitCan(sc, t){
   if (!sc.cast.every(d => DOLL_N[d])) return false;
   if (sc.need.furn && !FURN_OWN[sc.need.furn]) return false;
-  if (sc.need.room && !home[sc.need.room]) return false;
+  // 指定房間的：那一間要開了，而且演員現在都擺在那一間（不然排了也演不到）
+  if (sc.need.room && (!home[sc.need.room] || !sc.cast.every(d => skitRoomOf(d) === sc.need.room))) return false;
+  // 下雨天的：天氣是照日期算的，今天沒下雨就不排
+  if (sc.need.rain && !(typeof skyWeather === 'function' && skyWeather(t) === 'rain')) return false;
   if (sc.serial){ const e = skitData().ep[sc.serial] || {n: 0}; if (sc.ep !== e.n + 1 || e.d === t) return false; }
   return true;
 }
@@ -34,8 +37,8 @@ function skitPlan(){
   const seed = typeof hashStr === 'function' ? hashStr('skit' + t) ^ (S.seed || 1) : 1, rr = typeof mulberry32 === 'function' ? mulberry32(seed) : Math.random;
   const pool = SKITS.filter(sc => skitCan(sc, t)).map(sc => ({sc, k: (skitSeen(sc.id) ? 0 : 2) + (skitTogether(sc) ? 3 : 0) + rr()})).sort((x, y) => y.k - x.k);
   const n = 3 + Math.floor(rr() * 3), q = [];
-  let serial = 0;
-  for (const {sc} of pool){ if (q.length >= n) break; if (sc.serial){ if (serial) continue; serial++; } q.push(sc.id); }
+  let serial = 0, night = 0;   // 連續劇一天一集；晚上才演的一天最多排一段（白天玩的人才不會有好幾格等到晚上）
+  for (const {sc} of pool){ if (q.length >= n) break; if (sc.serial){ if (serial) continue; serial++; } if (sc.need.night){ if (night) continue; night++; } q.push(sc.id); }
   a.d = t; a.q = q; a.done = [];
   save();
 }
@@ -47,6 +50,7 @@ function skitScan(){
     const sc = skitById(id); if (!sc || a.done.includes(id) || Object.keys(ready).length >= 2) return;
     if (!sc.cast.every(d => here.has(d) && !(typeof asleep === 'function' && asleep(d)))) return;
     if (sc.need.furn && !items.some(i => i.kind === 'furn' && i.id === sc.need.furn)) return;
+    if (sc.need.room && roomId !== sc.need.room) return;
     if (sc.need.rain && !(typeof skyWeather === 'function' && skyWeather() === 'rain')) return;
     if (sc.need.night && !isNight()) return;
     if (!ready[sc.cast[0]]) ready[sc.cast[0]] = sc;

@@ -22,7 +22,7 @@ SK('egg-turn', '今天的大事', ['egg'], {}, ['s egg 今天要完成一件大�
 SK('egg-shell', '蛋殼裡', ['egg'], {}, ['s egg 蛋殼裡最安全。',
   {q: '要叫牠出來嗎？', o: [['拿點心哄牠', ['s egg ……點心放門口就好。'], '蛋黃哥沒出來，但點心被拿進去了。'], ['不吵牠', ['s egg 你人真好。晚安。'], '你沒有吵蛋黃哥，牠說你人真好。']]}], '');
 SK('dog-hide', '藏拖鞋', ['dog'], {}, ['m dog l', 's dog 藏這裡，沒人知道。', 'm dog r', 's dog 咦，我藏哪裡去了。', 'a dog spin', 's dog 汪！找到了！在嘴裡！'], '皮蛋找了半天的拖鞋，一直在自己嘴裡。');
-SK('dog-home', '歡迎回來', ['dog'], {}, ['m dog c', 'a dog jump', 's dog 你回來了你回來了！', 's dog 你只離開一下下嗎。', 's dog 還是很想你！'], '你只離開一下下，皮蛋還是很想你。');
+SK('dog-home', '歡迎回來', ['dog'], {}, ['m dog c', 'a dog jump', 's dog 你回來了你回來了！', 's dog 你才出去一下下嗎。', 's dog 還是很想你！'], '你才出去一下下，皮蛋還是很想你。');
 SK('moodeng-high', '跳到天花板', ['moodeng'], {}, ['s moodeng 看我跳到天花板！！', 'a moodeng jump', 's moodeng 差一點！！再來！！', 'a moodeng jump', 's moodeng 天花板太高！！不公平！！'], '彈跳豬想跳到天花板，天花板太高了。');
 SK('moodeng-mad', '氣噗噗', ['moodeng'], {}, ['s moodeng 我生氣了！！',
   {q: '怎麼辦？', o: [['給牠一點水', ['s moodeng 水！！', 's moodeng ……好，不氣了！！'], '彈跳豬看到水就不氣了。'], ['等牠氣完', ['w', 's moodeng ……我忘記在氣什麼！！'], '彈跳豬氣到忘記自己在氣什麼。']]}], '');
@@ -89,3 +89,72 @@ SK('ep-bed-2', '薯餅找床（二）床', ['sloth'], {furn: 'bed'}, ['m sloth b
 SK('ep-bed-3', '薯餅找床（三）浴缸', ['sloth'], {furn: 'tub'}, ['m sloth tub', 's sloth 浴缸。涼涼的。', 's sloth 轉身會滑。扣分。'], '薯餅試了浴缸：涼涼的，轉身會滑。', {serial: 'bed', ep: 3});
 SK('ep-bed-4', '薯餅找床（四）', ['sloth'], {}, ['m sloth c', 's sloth 我都試過了。', 's sloth 最好睡的地方是——',
   {q: '是哪裡？', o: [['你旁邊', ['s sloth 對。就是這裡。', 'a sloth yawn', 's sloth 晚安。'], '薯餅找到全家最好睡的地方：你旁邊。'], ['哪裡都可以', ['s sloth 你怎麼知道。', 'a sloth yawn', 's sloth 晚安。'], '薯餅發現牠哪裡都睡得著。']]}], '', {serial: 'bed', ep: 4});
+
+/* ================= 第二批（2026-11-26，40 段） =================
+   方向：新玩家一開始娃娃不多，所以以「一隻就能演」的為主（每隻 3 段，其中 1 段會問你）；
+   補上第一批沒用到的條件：下雨天、晚上、廚房、閣樓；專屬家具 3 段；三隻以上挑第一批沒同台過的組合。
+   小島那一頁娃娃不在房間裡，演不了，所以沒有小島的段落。 */
+
+/* ---------- 一隻就能演（24 段，每隻 3 段） ---------- */
+SK('sloth-count', '數到三', ['sloth'], {}, ['s sloth 我數到三就起來。', 's sloth 一。', 'w', 's sloth 二。', 'n （過了很久）', 's sloth 三是明天的事。'], '薯餅數到二就停了，三是明天的事。');
+SK('sloth-wave', '打招呼', ['sloth'], {}, ['s sloth 你剛剛跟我揮手嗎。', 's sloth 我現在揮回去。', 'a sloth look',
+  {q: '要揮回去嗎？', o: [['也揮回去', ['s sloth 嗯。我們打過招呼了。', 's sloth 下次我會快一點。'], '薯餅慢了半天才揮手，你們還是打到招呼了。'], ['等牠揮完', ['w', 's sloth 揮完了。手有點酸。'], '薯餅認真把手揮完，說手有點酸。']]}], '');
+SK('sloth-race', '比誰慢', ['sloth'], {}, ['s sloth 跟你比誰比較慢。', 's sloth 預備。開始。', 'w', 'n （誰都沒有動）', 's sloth 你很強。平手。'], '薯餅跟你比誰比較慢，最後平手。');
+SK('egg-blanket', '棉被', ['egg'], {}, ['s egg 這條棉被黏住我了。', 's egg 不是我不起來。', 'a egg yawn', 's egg 是它不讓我走。'], '蛋黃哥說不是牠不起來，是棉被黏住牠。');
+SK('egg-plan', '明天的行程', ['egg'], {}, ['s egg 我在排明天的行程。', 's egg 早上躺著。下午也是。',
+  {q: '晚上呢？', o: [['晚上也躺著', ['s egg 你懂我。', 's egg 行程排滿了。好累。'], '蛋黃哥明天的行程排滿了：全部都是躺著。'], ['晚上陪你玩', ['s egg ……好麻煩。', 's egg 躺著玩可以嗎。'], '蛋黃哥答應晚上陪你玩，條件是躺著玩。']]}], '');
+SK('egg-roll', '滾過去', ['egg'], {}, ['s egg 餅乾掉在那邊。', 's egg 走過去太累。', 'm egg c', 'n （牠是滾過去的）', 's egg 到了。先休息再吃。'], '蛋黃哥滾去撿餅乾，到了先休息。');
+SK('dog-tail', '尾巴', ['dog'], {}, ['s dog 後面有東西跟著我！', 'a dog spin', 's dog 汪！它也跟著轉！', 'a dog spin', 's dog ……是我的尾巴。'], '皮蛋追了半天，發現那是自己的尾巴。');
+SK('dog-gift', '最寶貝的', ['dog'], {}, ['m dog c', 's dog 我有東西要送你！', 's dog 是我最寶貝的拖鞋！',
+  {q: '要收下嗎？', o: [['收下', ['a dog jump', 's dog 汪！要好好藏起來喔！'], '皮蛋把最寶貝的拖鞋送你，叫你好好藏起來。'], ['讓牠自己留著', ['s dog 真的嗎！', 's dog 那我幫你保管！'], '你讓皮蛋自己留著拖鞋，牠說是幫你保管。']]}], '');
+SK('dog-guard', '看門', ['dog'], {}, ['m dog r', 's dog 我在看門！很認真！', 's dog 有人來我就叫！', 'w', 's dog ……都沒有人來。', 's dog 那我叫給你聽。汪！'], '皮蛋認真看門，沒有人來，就叫給你聽。');
+SK('moodeng-tall', '長高了', ['moodeng'], {}, ['s moodeng 我今天長高了！！', 'a moodeng jump', 's moodeng 你看！！比昨天高！！', 's moodeng 因為我在半空中！！'], '彈跳豬說牠長高了，因為牠在半空中。');
+SK('moodeng-pet', '不准摸', ['moodeng'], {}, ['s moodeng 不准摸我！！', 'w', 's moodeng ……你怎麼真的沒摸！！',
+  {q: '要摸嗎？', o: [['摸一下', ['s moodeng 哼！！', 's moodeng 只有今天可以！！'], '彈跳豬說不准摸，又說只有今天可以。'], ['真的不摸', ['s moodeng 那我自己靠過去！！', 'm moodeng c'], '你沒有摸彈跳豬，牠自己靠過來了。']]}], '');
+SK('moodeng-shadow', '影子', ['moodeng'], {}, ['s moodeng 誰在學我！！', 'a moodeng jump', 's moodeng 你還學！！', 'n （那是牠的影子）', 's moodeng 算了！！一起跳！！'], '彈跳豬跟自己的影子吵架，後來一起跳。');
+SK('nyanko-rest', '閉目養神', ['nyanko'], {}, ['s nyanko 本大爺在閉目養神。', 'a nyanko yawn', 's nyanko 沒有在睡。', 'n （牠打呼了）', 's nyanko ……剛剛那是修行。'], '貓咪老師說牠沒有在睡，那是修行。');
+SK('nyanko-share', '饅頭', ['nyanko'], {}, ['s nyanko 這塊饅頭是我的。', 's nyanko ……你一直看是什麼意思。',
+  {q: '要說什麼？', o: [['說想吃', ['s nyanko 哼。分你一小塊。', 's nyanko 小塊的那一邊。'], '貓咪老師分你饅頭，小塊的那一邊。'], ['說只是看看', ['s nyanko 那你繼續看。', 's nyanko ……拿去啦，一半。'], '你說只是看看，貓咪老師還是分你一半。']]}], '');
+SK('nyanko-round', '有福氣', ['nyanko'], {}, ['s nyanko 誰說本大爺胖。', 's nyanko 這叫做有福氣。', 'a nyanko jump', 's nyanko 看，還跳得起來。', 's nyanko ……落地有點重。'], '貓咪老師說牠是有福氣，跳得起來，落地有點重。');
+SK('dino-roar', '練習吼', ['dino'], {}, ['s dino 我要練習最兇的吼。', 's dino 吼～', 's dino 不夠兇。再一次。', 'a dino jump', 's dino 吼～（破音了）'], '龍龍練習最兇的吼，結果破音了。');
+SK('dino-swap', '偷換', ['dino'], {}, ['s dino 我把兩樣東西換過來了。', 's dino 你猜是哪兩樣。',
+  {q: '猜得到嗎？', o: [['到處找找看', ['w', 's dino 其實我什麼都沒換。', 's dino 可是你找了好久。嘿嘿。'], '龍龍說牠換了東西，其實什麼都沒換。'], ['直接問牠', ['s dino 不能問！要用猜的！', 's dino 好啦。是我的兩隻襪子。'], '龍龍偷換的是牠自己的兩隻襪子。']]}], '');
+SK('dino-peek', '有洞的葉子', ['dino'], {}, ['s dino 這是我今天撿的葉子。', 's dino 這片給你，這片給我。', 's dino 這片有洞，可以偷看。', 'a dino look', 's dino 我看到你了。'], '龍龍撿了葉子，用有洞的那片偷看你。');
+SK('snoopy-log', '今日日誌', ['snoopy'], {}, ['s snoopy 今日日誌。', 's snoopy 早上：英勇地起床。', 's snoopy 中午：英勇地吃飯。', 's snoopy 下午：待補。先睡。'], '史努比的日誌寫到下午，先睡了。');
+SK('snoopy-role', '今天演誰', ['snoopy'], {}, ['s snoopy 今天我要扮演一個角色。',
+  {q: '演什麼好？', o: [['船長', ['s snoopy 全員注意，準備開船。', 's snoopy 船在哪裡。浴缸嗎。'], '史努比今天是船長，船是浴缸。'], ['廚師', ['s snoopy 今日特餐是白開水。', 's snoopy 火候剛好。請慢用。'], '史努比今天是廚師，特餐是白開水。'], ['什麼都不演', ['s snoopy 演自己最難。', 's snoopy 我需要排練。'], '史努比說演自己最難，要先排練。']]}], '');
+SK('snoopy-radar', '雷達', ['snoopy'], {}, ['s snoopy 雷達發現不明物體。', 'm snoopy l', 's snoopy 接近中。保持冷靜。', 's snoopy 確認。是一顆鈕扣。', 's snoopy 解除警報。'], '史努比的雷達發現不明物體，是一顆鈕扣。');
+SK('piggy-sky', '說來話長', ['piggy'], {}, ['s piggy 你知道天為什麼是藍的嗎。', 's piggy 我知道。', 's piggy 但是說來話長。', 's piggy 所以不說了。'], '火腿知道天為什麼是藍的，但是不說。');
+SK('piggy-heavy', '變重了', ['piggy'], {}, ['s piggy 我今天變重了。', 's piggy 不是胖。是存款增加。',
+  {q: '要說什麼？', o: [['恭喜牠', ['s piggy 謝謝。你很有眼光。', 's piggy 存夠了請你吃飯。'], '火腿變重是因為存款增加，還說要請你吃飯。'], ['問牠存了多少', ['s piggy 這是機密。', 's piggy 提示：比你多。'], '火腿不肯說存了多少，只說比你多。']]}], '');
+SK('piggy-motto', '今日一句', ['piggy'], {}, ['m piggy c', 's piggy 今天送大家一句話。', 's piggy 早睡早起身體好。', 's piggy 我自己做不到。', 's piggy 所以送給你們。'], '火腿送大家一句話：早睡早起，牠自己做不到。');
+
+/* ---------- 下雨天（2 段） ---------- */
+SK('w-rain-sloth', '聽雨', ['sloth'], {rain: true}, ['s sloth 外面在下雨。', 's sloth 雨也是慢慢掉下來的。', 'a sloth yawn', 's sloth 我們是同一國的。'], '下雨天，薯餅說雨跟牠是同一國的。');
+SK('w-rain-fly', '室內飛行', ['dog', 'snoopy'], {rain: true}, ['m dog snoopy', 's dog 下雨了！不能出去玩！', 's snoopy 本日停飛。原因：下雨。', 's dog 那我們在家裡飛！', 'a dog jump', 's snoopy 批准。室內飛行。'], '下雨天不能出去，皮蛋和史努比改在家裡飛。');
+
+/* ---------- 晚上（3 段） ---------- */
+SK('n-egg', '天黑了', ['egg'], {night: true}, ['s egg 天黑了。', 's egg 終於可以光明正大躺著。', 's egg 白天躺會被唸。', 's egg 晚上躺叫做睡覺。'], '天黑了，蛋黃哥說晚上躺著叫做睡覺。');
+SK('n-piggy', '燈不要關', ['piggy'], {night: true}, ['s piggy 我才不怕黑。', 's piggy 只是燈不要關比較好。',
+  {q: '要陪牠嗎？', o: [['陪牠一下', ['s piggy 我沒有叫你陪。', 's piggy ……但是不准走。'], '火腿說牠不怕黑，但是不准你走。'], ['幫牠留一盞燈', ['s piggy 很好。這樣比較省事。', 's piggy ……謝了。'], '你幫火腿留了一盞燈，牠小聲說了謝謝。']]}], '');
+SK('n-brew', '醞釀睡意', ['dog', 'sloth'], {night: true}, ['m dog sloth', 's dog 你怎麼還沒睡！', 's sloth 我在醞釀。', 's dog 那我陪你醞釀！', 'n （皮蛋先睡著了）', 's sloth ……晚安。'], '皮蛋陪薯餅醞釀睡意，自己先睡著了。');
+
+/* ---------- 廚房（2 段）、閣樓（2 段）：那隻娃娃要擺在那一間 ---------- */
+SK('k-nyanko', '好料', ['nyanko'], {room: 'kitchen'}, ['m nyanko c', 's nyanko 廚房是本大爺的地盤。', 's nyanko 聞到了。今天有好料。', 'a nyanko look', 's nyanko ……只有聞到。在哪裡。'], '貓咪老師在廚房聞到好料，找不到在哪裡。');
+SK('k-egg', '平底鍋', ['egg'], {room: 'kitchen'}, ['s egg 這裡是廚房。', 's egg 我覺得有點危險。', 's egg 那個平底鍋在看我。',
+  {q: '要怎麼辦？', o: [['擋在牠前面', ['s egg 謝謝。我躲你後面躺。'], '蛋黃哥覺得平底鍋在看牠，躲到你後面躺。'], ['說平底鍋是空的', ['s egg 空的才可怕。', 's egg 它在等。'], '你說平底鍋是空的，蛋黃哥說空的才可怕。']]}], '');
+SK('t-snoopy', '觀測站', ['snoopy'], {room: 'attic'}, ['m snoopy c', 's snoopy 這裡是高空觀測站。', 's snoopy 目前高度：兩層樓。', 's snoopy 視野良好。看到屋頂了。'], '史努比把閣樓當高空觀測站，看到了屋頂。');
+SK('t-sloth', '等流星', ['sloth'], {room: 'attic'}, ['s sloth 聽說這裡看得到流星。', 's sloth 我要許願。', 'w', 's sloth 願望還沒想好。', 's sloth 流星可以等我嗎。'], '薯餅在閣樓等流星，願望還沒想好。');
+
+/* ---------- 專屬家具（3 段） ---------- */
+SK('f-hammock', '吊床', ['sloth'], {furn: 'hammock'}, ['m sloth hammock', 's sloth 吊床會自己搖。', 's sloth 我不用動。它幫我動。', 'a sloth yawn', 's sloth 這是我見過最好的發明。'], '薯餅說吊床是最好的發明：牠不用動。');
+SK('f-trampoline', '彈簧床', ['moodeng'], {furn: 'trampoline'}, ['m moodeng trampoline', 's moodeng 這個會把我彈回來！！', 'a moodeng jump', 's moodeng 再高一點！！', 'a moodeng jump', 's moodeng 剛剛那下有摸到雲！！'], '彈跳豬在彈簧床上跳，說牠摸到雲了。');
+SK('f-snackcab', '看守點心櫃', ['nyanko'], {furn: 'snackcab'}, ['m nyanko snackcab', 's nyanko 本大爺負責看守這裡。', 's nyanko 誰都不准開。',
+  {q: '要開嗎？', o: [['請牠開一下', ['s nyanko 密碼是摸我的頭。', 's nyanko ……好了。只能拿一個。'], '點心櫃的密碼是摸貓咪老師的頭。'], ['不開', ['s nyanko 很好。你通過考驗了。', 's nyanko 獎品是一塊點心。'], '你沒有開點心櫃，貓咪老師說你通過考驗。']]}], '');
+
+/* ---------- 三隻以上（4 段，第一批沒同台過的組合） ---------- */
+SK('g-photo', '大合照', ['dog', 'egg', 'moodeng'], {}, ['s dog 來拍大合照！', 'm dog c', 'm moodeng dog', 's moodeng 我要站中間！！', 's egg 我躺前面就好。', 's dog 一、二、三！', 'a moodeng jump', 's egg 牠跳出去了。重拍。'], '拍大合照的時候彈跳豬跳出去了，要重拍。');
+SK('g-class', '第一課', ['nyanko', 'dino', 'dog'], {}, ['s nyanko 今天本大爺教你們。', 's nyanko 第一課：怎麼要點心。', 's dog 汪！我會！坐下！', 's dino 我會！直接拿走！', 's nyanko ……你們都不及格。', 's nyanko 正確答案是裝可憐。'], '貓咪老師教大家怎麼要點心：裝可憐。');
+SK('g-story', '念小說', ['snoopy', 'sloth', 'egg'], {}, ['s snoopy 我來念我的小說。', 's snoopy 第一章。', 'n （念了很久）', 's snoopy 完。有什麼感想。', 's sloth 第一句很好。', 's egg 後面我睡著了。'], '史努比念小說給大家聽，蛋黃哥睡著了。');
+SK('g-vote', '晚餐表決', ['piggy', 'dog', 'egg'], {}, ['s piggy 現在表決晚餐吃什麼。', 's dog 汪！都可以！', 's egg 不用嚼的。', 's piggy 這樣沒辦法統計。',
+  {q: '你投哪一個？', o: [['都可以', ['s dog 汪！我們一樣！', 's piggy 兩票。通過。吃都可以。'], '晚餐表決的結果是：都可以。'], ['不用嚼的', ['s egg 有品味。', 's piggy 兩票。通過。喝湯。'], '晚餐表決的結果是不用嚼的，喝湯。']]}], '');
