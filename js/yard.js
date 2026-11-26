@@ -176,6 +176,20 @@ function yardRows(d){
   const r = ((S.yard || {}).rec || {})[d] || []; if (!r.length) return '';
   return `<div class="al-sec">小島</div><ul class="al-ln al-st">${r.slice().reverse().slice(0, 6).map(x => `<li>${md(x.slice(0, 10))}　${x.slice(11)}</li>`).join('')}</ul>`;
 }
+/* 兩台裝置的小島合在一起（js/account.js 的 mergeSave 會叫；m 是雲端那份，g 是這台的，都是純資料）。
+   擺設（rm）跟其他房間一樣用雲端的。花的種類、收過幾朵、來過的客人：兩邊合起來。
+   花圃每一格：只有一邊有就用那一邊；兩邊都有，用比較晚種的。樹、地上的東西、點心盤、客人留的東西：用這台的（玩家剛剛看到的是這台）。 */
+function yardMerge(m, g){
+  const obj = x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {}), arr = x => (Array.isArray(x) ? x : []);
+  m.kinds = [...new Set([...arr(m.kinds), ...arr(g.kinds)])];
+  ['fl', 'gs'].forEach(k => { m[k] = obj(m[k]); Object.entries(obj(g[k])).forEach(([id, n]) => { m[k][id] = Math.max(m[k][id] || 0, n | 0); }); });
+  if (g.old12) m.old12 = 1;
+  const mb = arr(m.bed), gb = arr(g.bed); m.bed = [0, 1, 2, 3, 4, 5].map(i => { const a = mb[i] || null, b = gb[i] || null; return a && b ? (b.t > a.t ? b : a) : a || b; });
+  ['tree', 'drop', 'plate', 'left', 'dig', 'ws'].forEach(k => { if (k in g) m[k] = g[k]; });
+  m.wd = [...new Set([...arr(m.wd), ...arr(g.wd)])].slice(-30);
+  m.rec = obj(m.rec); Object.entries(obj(g.rec)).forEach(([d, l]) => { m.rec[d] = [...new Set([...arr(m.rec[d]), ...arr(l)])].sort().slice(-12); });
+  return m;
+}
 // 別的檔案還會叫的舊名字
 function yardOpen(){ if (roomId !== 'yard') goRoom('yard'); }
 function yardClose(){}

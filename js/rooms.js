@@ -24,7 +24,7 @@ function shopKeyBuy(r){
   if (!RIDS.includes(r)){ const i = RIDS.indexOf('yard'); if (i >= 0) RIDS.splice(i, 0, r); else RIDS.push(r); }   // 小島排最後
   $('#sheet').hidden = true;
   renderNav();
-  setTimeout(() => { toast(`${k.name}打開了，上面多了一顆房間鈕`); goRoom(r); }, 300);
+  setTimeout(() => { toast(`${k.name}打開了，上面的箭頭和小屋地圖都可以過去`); goRoom(r); }, 300);
 }
 
 /* 新房間的小事：when 是房間名，只有買了那一間才會排進來，一天最多多一件（main.js 的 planDay） */

@@ -163,18 +163,10 @@ export function createCloud(config, { emulator = false } = {}) {
     async save(data, uid) {
       await ready;
       if (uid && (!user || user.uid !== uid)) throw Object.assign(new Error('account changed'), { code: 'cloud/account-changed' });
-      try { await F.setDoc(ref(), data); }
-      catch (e) {
-        // 保險：規則已經在 2026-11-26 發布，正常不會走到這裡。萬一主控台的規則被換回舊版、不收新欄位，
-        // 就先拿掉賺幣的 earn 和新房間（home 的 kitchen、attic）再寫，其他進度照樣上雲端
-        const extra = ['earn'].filter(k => k in data);
-        const rooms = data.home ? ['kitchen', 'attic'].filter(k => k in data.home) : [];
-        if (!(e && e.code === 'permission-denied' && (extra.length || rooms.length))) throw e;
-        const d = { ...data }; extra.forEach(k => delete d[k]);
-        if (rooms.length){ d.home = { ...data.home }; rooms.forEach(k => delete d.home[k]); }
-        await F.setDoc(ref(), d);
-        console.info('[cloud] 規則還沒收新欄位，先存舊欄位', extra);
-      }
+      // 以前這裡有一段保險：被規則擋住就拿掉 earn 和新房間（kitchen、attic）再寫一次。規則早就都收了（2026-11-26 發布），
+      // 留著反而危險：如果是別的原因暫時被擋（例如登入剛好過期），第二次寫成功，雲端那份的房間和賺幣紀錄就被誤刪，
+      // 下次同步房間就不見了。2026-11-27 拿掉，被擋就照實丟出去，等一下會自己重試（js/account.js 的 failState）
+      await F.setDoc(ref(), data);
     },
     // ---------- 好友（players/{uid}，只在小窩裡） ----------
     friendCode,

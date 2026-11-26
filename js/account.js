@@ -346,6 +346,21 @@ const guestPlayed = g => (g.wins || 0) > 0 || (g.misses || 0) > 0 || (g.day && g
 // 帶進帳號：房間擺設用帳號裡的，娃娃、家具、壁紙、道具、幣取兩邊比較多的
 function mergeSave(remote, guest) {
   const m = JSON.parse(JSON.stringify(remote));
+  // 房間擺設用帳號裡的；但這台有、帳號裡還沒有的房間（剛買的廚房、閣樓，還沒傳上去）要留著，不能被雲端那份蓋掉
+  // （2026-11-27：使用者買了閣樓，另一台裝置剛好也改過存檔，合併後閣樓不見、看起來像買不到）
+  // 那一間裡的東西，雲端那份已經擺在別間的就不重複放
+  if (m.home && guest.home) {
+    const placed = new Set();
+    Object.values(m.home).forEach(r => (r && Array.isArray(r.items) ? r.items : []).forEach(i => { if (i) placed.add(i.kind + ':' + i.id); }));
+    ['kitchen', 'attic'].forEach(r => {
+      const g = guest.home[r];
+      if (m.home[r] || !g || !Array.isArray(g.items)) return;
+      const room = JSON.parse(JSON.stringify(g));
+      room.items = room.items.filter(i => i && !placed.has(i.kind + ':' + i.id));
+      room.items.forEach(i => { placed.add(i.kind + ':' + i.id); if (i.sit && !room.items.some(f => f.uid === i.sit)) i.sit = null; });
+      m.home[r] = room;
+    });
+  }
   for (const k of ['dollN', 'furnOwn', 'wallOwn', 'floorOwn', 'wish']) {
     m[k] = m[k] || {};
     for (const [id, n] of Object.entries(guest[k] || {})) m[k][id] = Math.max(m[k][id] || 0, n || 0);
@@ -413,6 +428,7 @@ function mergeSave(remote, guest) {
   // 門外小島：用帳號裡的那份，帳號裡還沒有才用這台的；種子數量取比較多的
   if (guest.yard) {
     if (!m.yard) m.yard = guest.yard;
+    else if (typeof yardMerge === 'function' && m.yard.v === 2 && guest.yard.v === 2) { try { yardMerge(m.yard, guest.yard); } catch (e) { console.info('[account] 小島的進度合不起來，先用雲端那份', e); } }
     else if (m.yard.v !== 2 && guest.yard.seeds) { const ms = m.yard.seeds = m.yard.seeds || {}; for (const [k, n] of Object.entries(guest.yard.seeds || {})) ms[k] = Math.max(ms[k] || 0, n || 0); }   // 舊版的小島才有種子
   }
   // 幣取比較多的。拿的是這台的，跟錢包對帳用的 base（earn.wb）也要用這台的，不然這段差額會重複算進蛋蛋島的錢包
