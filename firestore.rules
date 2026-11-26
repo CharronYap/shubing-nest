@@ -14,7 +14,12 @@ rules_version = '2';
 // 2026-11-26 賺幣和新房間（已發布）：
 //   小窩存檔 nestSaves 多收 earn（小遊戲今天幾局、誰在打工、里程碑、小店）一欄；
 //   存檔和公開房間的 home 可以多兩間：kitchen（廚房）、attic（閣樓），可有可無，檢查跟原本三間一樣。
-//   以上全部在 2026-11-26 整份發布，這個檔案跟主控台上的一樣。
+//   以上全部在 2026-11-26 整份發布。
+// 2026-11-26 躲貓貓（★ 還沒發布，等檢查）：
+//   nestRooms 公開資料多 hide 一欄 = {d 哪一隻, r 哪一間, f 家具的編號, day 哪天躲的}，每個值都檢查型別和長度；
+//   新的子集合 nestRooms/{uid}/found/{日子_找的人} = {from, fromName, day, ok 有沒有找到, n 用了幾次 1～3}，
+//   寫法跟 water 一樣：只有好友能建、一人一天一筆、不能改；主人能讀全部、能刪；找的人只能讀自己那一筆。
+//   其他段落沒有動。發布前躲貓貓的讀寫會被擋，遊戲那邊安靜處理（js/hide.js、js/cloud.js saveRoom 會拿掉 hide 再寫）。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
@@ -144,8 +149,19 @@ service cloud.firestore {
 
     // 去朋友家：nestRooms/{uid}，公開的房間。只放三個房間的擺設、娃娃穿什麼、名字和更新時間（第五版多願望清單和小島的樣子）；
     // 存檔裡的幣、相簿、道具這些都不在這裡。登入的人都能讀，只有本人能寫、能刪
+    // 躲貓貓的 hide：d 娃娃的編號、r 房間的編號（都是短的英文字）、f 家具在那一間的編號（整數）、day 哪天躲的（第幾天）
+    function okNestHide(h) {
+      return h is map
+        && h.keys().hasOnly(['d', 'r', 'f', 'day']) && h.keys().hasAll(['d', 'r', 'f', 'day'])
+        && h.d is string && h.d.size() >= 1 && h.d.size() <= 12
+        && h.r is string && h.r.size() >= 1 && h.r.size() <= 12
+        && h.f is int && h.f >= 0 && h.f <= 100000000
+        && h.day is int && h.day >= 0 && h.day <= 100000;
+    }
     function okNestPublic(d) {
-      return d.keys().hasOnly(['name', 'home', 'look', 't', 'want', 'yard'])
+      return d.keys().hasOnly(['name', 'home', 'look', 't', 'want', 'yard', 'hide'])
+        // 躲貓貓：hide = 哪一隻娃娃躲在哪一間的哪一件家具後面（可有可無）
+        && (!('hide' in d) || okNestHide(d.hide))
         // 第五版：want = 願望清單，最多 3 個娃娃的編號；yard = 小島 12 塊地現在的樣子，只給人看
         && (!('want' in d) || (d.want is list && d.want.size() <= 3))
         && (!('yard' in d) || (d.yard is map && d.yard.keys().hasOnly(['p']) && d.yard.p is list && d.yard.p.size() == 12))
@@ -283,6 +299,30 @@ service cloud.firestore {
         && wid == string(request.resource.data.day) + '_' + request.auth.uid
         && request.resource.data.plot is int
         && request.resource.data.plot >= 0 && request.resource.data.plot <= 11
+        && nestFriends(uid, request.auth.uid);
+      allow delete: if request.auth != null && request.auth.uid == uid;
+      allow update: if false;
+    }
+
+    // 躲貓貓找的結果：nestRooms/{主人}/found/{日子_找的人}（寫法跟上面的澆水一樣）
+    //   只有主人的朋友能寫，不能寫在自己家；文件名字由今天和找的人組成，所以一人一天一筆，寫了不能改
+    //   ok 有沒有找到（布林）、n 用了幾次（整數 1～3）
+    //   主人讀得到全部（打開遊戲時看誰來找過，再刪掉）；找的人只能確認自己今天那一筆在不在
+    match /nestRooms/{uid}/found/{fid} {
+      allow get: if request.auth != null
+        && (request.auth.uid == uid || fid.split('_')[1] == request.auth.uid);
+      allow list: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'day', 'ok', 'n'])
+        && request.resource.data.keys().hasAll(['from', 'fromName', 'day', 'ok', 'n'])
+        && request.resource.data.from == request.auth.uid
+        && okNestName(request.resource.data.fromName)
+        && nestToday(request.resource.data.day)
+        && fid == string(request.resource.data.day) + '_' + request.auth.uid
+        && request.resource.data.ok is bool
+        && request.resource.data.n is int
+        && request.resource.data.n >= 1 && request.resource.data.n <= 3
         && nestFriends(uid, request.auth.uid);
       allow delete: if request.auth != null && request.auth.uid == uid;
       allow update: if false;
