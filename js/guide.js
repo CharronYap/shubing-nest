@@ -82,6 +82,7 @@ function guideOpen(){
     <div class="er-box gd-box">
       <div class="gd-top"><img src="${SPR.sloth}" alt=""><p>小窩有的東西都在這裡。點「帶我去」就過去。</p><button class="btn sm" data-gdtour="1">薯餅再帶一次</button></div>
       ${GUIDE_CAT.map(([k, name]) => `<div class="al-sec">${name}</div>` + gdRows.map((x, i) => x.g.c === k ? row(x, i) : '').join('')).join('')}
+      ${typeof nestVer === 'function' && nestVer() ? `<p class="bk-note gd-ver">版本 ${nestVer()}</p>` : ''}
     </div>`);
   evOpen = false; alOpen = false;
 }

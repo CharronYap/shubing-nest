@@ -97,9 +97,9 @@ service cloud.firestore {
         && (!('light' in r) || r.light is bool);
     }
     // 整個家：客廳、臥室、浴室一定有；廚房、閣樓（買了才有）可有可無
-    // 2026-11-27 小島重做（還沒發布）：多收 yard。小島變成可以擺娃娃和家具的戶外房間，公開給朋友看的那份（nestRooms）會帶 home.yard。
-    //   自己的存檔（nests）不靠這一條：小島的擺設存在 yard 欄位裡（yard.rm），所以這條沒發布存檔也寫得上去；
-    //   沒發布時公開房間會先拿掉 home.yard 再寫（js/cloud.js 的 saveRoom），朋友只是暫時看不到小島上的娃娃和家具。
+    // 2026-11-27 小島重做（當天 02:02 已發布）：多收 yard。小島變成可以擺娃娃和家具的戶外房間，公開給朋友看的那份（nestRooms）會帶 home.yard。
+    //   自己的存檔（nests）不靠這一條：小島的擺設存在 yard 欄位裡（yard.rm）。
+    //   公開房間被擋時會先拿掉 home.yard 再寫（js/cloud.js 的 saveRoom，留著當保險）。
     function okNestHome(h) {
       return h is map && h.keys().hasOnly(['living', 'bed', 'bath', 'kitchen', 'attic', 'yard'])
         && okNestRoom(h.living) && okNestRoom(h.bed) && okNestRoom(h.bath)
@@ -289,7 +289,7 @@ service cloud.firestore {
     }
 
     // 幫朋友的小島澆水：nestRooms/{主人}/water/{日子_澆的人}
-    //   只有主人的朋友能寫，一人一天一次；plot 是花圃的第幾格（0～5；小島重做前是 0～11，2026-11-27 改，還沒發布）
+    //   只有主人的朋友能寫，一人一天一次；plot 是花圃的第幾格（0～5；小島重做前是 0～11，2026-11-27 改，已發布）
     //   主人讀得到全部（打開遊戲時套用到自己的存檔，再刪掉）；澆的人只能確認自己今天那一筆在不在
     match /nestRooms/{uid}/water/{wid} {
       allow get: if request.auth != null

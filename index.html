@@ -20,10 +20,19 @@ r.classList.add('look-paper');var h=new Date().getHours();if(h>=19||h<5)r.classL
 <link rel="icon" type="image/png" sizes="32x32" href="img/icon/icon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="img/icon/icon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="img/icon/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/cover.css">
-<link rel="stylesheet" href="css/paper.css">
-<link rel="stylesheet" href="css/account.css">
+<!-- 版本（2026-11-27）。每次推上去都要把下面 NEST_V 那一行換掉，只改這一個地方：
+     所有 css 和 js 的網址都會帶上 ?v=這個字，手機（尤其是加到主畫面的那一種）才不會一直用快取裡的舊檔。
+     小窩指南最下面會顯示這個字；開著的頁面回到前景時會抓一次 index.html 比對，不一樣就問要不要換上（js/version.js）。
+     NEST_JS 是載入順序，不能亂動：traveldata（裡面有土產的家具定義）一定要在 main 前面，main 一開始就會畫房間。 -->
+<script>
+var NEST_V='1127-5';
+var NEST_JS=['data','social','furn2','furn3','sky','looks','save','season','wardrobe','room','rooms','paper','yard','traveldata','claw','main','album','gift','away','pals','visit','photo','trip','mailai','mail','earn','games','shop','furnfx','nestgift','book','want','water','stay','card','roamdata','roam','roam2','skitdata','skit','spin','memo','hide','seen','friend','travel','hud','guide','music','cover','version'];
+(function(){var v='?v='+NEST_V,h='';
+['css/style.css','css/cover.css','css/paper.css','css/account.css'].forEach(function(f){h+='<link rel="stylesheet" href="'+f+v+'">'});
+NEST_JS.forEach(function(n){h+='<link rel="preload" as="script" href="js/'+n+'.js'+v+'">'});   // 先一起抓，照順序跑（下面是一個接一個寫出來的，沒有這一行會變成一個抓完才抓下一個）
+h+='<script type="importmap">'+JSON.stringify({imports:{'./js/cloud.js':'./js/cloud.js'+v,'./js/cloud-config.js':'./js/cloud-config.js'+v,'./js/wallet.js':'./js/wallet.js'+v}})+'<\/script>';
+document.write(h)})();
+</script>
 </head>
 <body>
 <div class="phone"><div class="screen" id="screen">
@@ -97,57 +106,6 @@ r.classList.add('look-paper');var h=new Date().getHours();if(h>=19||h<5)r.classL
       <div class="sheet" id="sheet" hidden></div>
       <div class="acct" id="acct" hidden></div>
     </div></div>
-<script src="js/data.js"></script>
-<script src="js/social.js"></script>
-<script src="js/furn2.js"></script>
-<script src="js/furn3.js"></script>
-<script src="js/sky.js"></script>
-<script src="js/looks.js"></script>
-<script src="js/save.js"></script>
-<script src="js/season.js"></script>
-<script src="js/wardrobe.js"></script>
-<script src="js/room.js"></script>
-<script src="js/rooms.js"></script>
-<script src="js/paper.js"></script>
-<script src="js/yard.js"></script>
-<!-- 旅行的資料（裡面有土產的家具定義）要在 main.js 第一次畫房間之前載入：2026-11-27 放在後面時，客廳擺了土產的人一打開就畫不出來、娃娃機和每天的幣都跟著沒跑 -->
-<script src="js/traveldata.js"></script>
-<script src="js/claw.js"></script>
-<script src="js/main.js"></script>
-<script src="js/album.js"></script>
-<script src="js/gift.js"></script>
-<script src="js/away.js"></script>
-<script src="js/pals.js"></script>
-<script src="js/visit.js"></script>
-<script src="js/photo.js"></script>
-<script src="js/trip.js"></script>
-<script src="js/mailai.js"></script>
-<script src="js/mail.js"></script>
-<script src="js/earn.js"></script>
-<script src="js/games.js"></script>
-<script src="js/shop.js"></script>
-<script src="js/furnfx.js"></script>
-<script src="js/nestgift.js"></script>
-<script src="js/book.js"></script>
-<script src="js/want.js"></script>
-<script src="js/water.js"></script>
-<script src="js/stay.js"></script>
-<script src="js/card.js"></script>
-<script src="js/roamdata.js"></script>
-<script src="js/roam.js"></script>
-<script src="js/roam2.js"></script>
-<script src="js/skitdata.js"></script>
-<script src="js/skit.js"></script>
-<script src="js/spin.js"></script>
-<script src="js/memo.js"></script>
-<script src="js/hide.js"></script>
-<script src="js/seen.js"></script>
-<script src="js/friend.js"></script>
-<script src="js/travel.js"></script>
-<script src="js/hud.js"></script>
-<script src="js/guide.js"></script>
-<script src="js/music.js"></script>
-<script src="js/cover.js"></script>
-<script type="module" src="js/account.js"></script>
+<script>(function(){var v='?v='+NEST_V,h='';NEST_JS.forEach(function(n){h+='<script src="js/'+n+'.js'+v+'"><\/script>'});h+='<script type="module" src="js/account.js'+v+'"><\/script>';document.write(h)})();</script>
 </body>
 </html>

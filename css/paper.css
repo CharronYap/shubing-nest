@@ -354,3 +354,6 @@
 .look-paper .yd-sign{background:var(--p-paper);box-shadow:0 2px 0 var(--p-edge)}
 .look-paper .yd-left b{background:var(--p-a1);color:var(--p-paper);border-radius:4px}
 .look-paper .yd-slot.empty::before{background:color-mix(in srgb,var(--p-ink) 30%,transparent);color:var(--p-paper);font-family:var(--p-hand)}
+.look-paper .verbar{background:var(--p-ink);border-radius:10px;box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 70%,#000),0 8px 12px var(--p-shadow)}
+.look-paper .verbar .vb-go{color:var(--p-paper);font-family:var(--p-hand)}
+.look-paper .verbar .vb-x{border-radius:6px;color:var(--p-paper)}
