@@ -891,3 +891,38 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .room[data-rid="bed"] .win{width:23%}
 .room[data-rid="bath"] .win{width:19%;top:calc(var(--wh,52%)*.07)}
 .room.dragdoll .fx{opacity:.5}
+/* 版面調整（js/layout.js）：有存過設定才會套 .lay／.lf，沒有的話下面這些都不作用 */
+.top.lay{flex-wrap:wrap;gap:var(--tg,6px);row-gap:6px}
+.top.lay #nav,.top.lay .topr{display:contents}
+.top.lay #nav[hidden]{display:none}
+/* 房間切換（自動寬度）：拿那一排剩下的寬度，最多到剛好放得下全部的房間；放不下就自己捲，不會把別顆擠到下一排 */
+.top.lay .rnav{flex:1 1 0;min-width:0;max-width:max-content}
+.lay-br{flex-basis:100%;height:0;margin:0;padding:0}
+.lay-br[hidden]{display:none}
+.screen:not(.more-open) .lay-br2{display:none}
+.screen:not(.more-open) .top.lay .in-more,.screen:not(.more-open) .lf.in-more{display:none!important}
+.top.noname .rnav button.on{width:28px!important;padding:0;display:grid}
+.top.noname .rnav button.on .nm{display:none}
+.lf:not(.tray),.tray.min.lf{left:var(--l-l,auto)!important;right:var(--l-r,auto)!important;top:var(--l-t,auto)!important;bottom:var(--l-b,auto)!important;transform:scale(var(--l-s,1))!important;transform-origin:var(--l-o,50% 50%)}
+/* 調整模式（網址加 ?layout=1） */
+.laymode .rbtn[hidden]{display:grid!important}
+.laymode [data-lay]{cursor:pointer}
+.laymode .in-more{outline:2px dashed #b9aab2;outline-offset:2px}
+.lay-sel{outline:3px solid #4a9fd0!important;outline-offset:3px;border-radius:12px}
+.lay-panel{position:absolute;left:8px;right:8px;bottom:calc(8px + var(--sab,0px));z-index:950;max-height:54%;overflow-y:auto;overscroll-behavior:contain;background:#fff;border-radius:18px;box-shadow:0 0 0 2px #cfe6f7,0 8px 24px rgba(60,40,70,.28);padding:10px 12px;display:grid;gap:8px;font-size:13px}
+.lay-panel.min{left:auto;padding:6px;max-height:none}
+.lay-hd{display:flex;align-items:center;justify-content:space-between}
+.lay-hd b{font-size:15px;font-weight:900;color:#2f7fb0}
+.lay-hint{margin:0;color:var(--soft);line-height:1.5}
+.lay-sec{font-size:12px;font-weight:900;color:var(--soft);border-top:2px dashed var(--line);padding-top:8px}
+.lay-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lay-row>span,.lay-row>b{flex:none;min-width:56px;font-weight:800}
+.lay-row>b{color:var(--pink2);font-weight:900}
+.lay-row input[type=range]{flex:1;min-width:110px}
+.lay-row output{flex:none;width:44px;text-align:right;font-weight:800;color:var(--soft)}
+.lay-row .btn.sm{padding:5px 10px}
+.lay-seg{display:flex;flex-wrap:wrap;gap:4px}
+.lay-seg button{border:2px solid var(--line);border-radius:999px;background:#fff;padding:5px 10px;font:inherit;font-size:12.5px;font-weight:800;color:inherit;cursor:pointer}
+.lay-seg button.on{border-color:#4a9fd0;background:#eaf5ff;color:#2f7fb0}
+.lay-ft{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.lay-out{width:100%;box-sizing:border-box;height:84px;border:2px solid var(--line);border-radius:10px;padding:6px;font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--ink);resize:none;-webkit-user-select:text;user-select:text}
