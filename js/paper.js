@@ -398,7 +398,15 @@ if (PAPER_ON) (() => {
   // 拍照、明信片（js/photo.js 比這個檔晚載入，等全部載完再換）：牆和地板照新風格畫，不看玩家選的壁紙。紙紋理在照片裡不畫
   addEventListener('DOMContentLoaded', () => {
     const a = (c, o) => { const [r, g, b] = hex(c); return `rgba(${r},${g},${b},${o})`; };
-    const patFill = (ctx, key, x, y, w, h) => { const im = DECO_IMG[key]; if (!im || !im.complete || !im.naturalWidth) return; try { ctx.fillStyle = ctx.createPattern(im, 'repeat'); ctx.fillRect(x, y, w, h); } catch (e) {} };
+    // 花紋：SVG 圖先畫成一張小畫布，再拿畫布做花紋。直接拿 SVG 圖做花紋（createPattern），iPhone 的瀏覽器會讓整張照片讀不出來（2026-11-27）
+    const DECO_CV = {};
+    const patFill = (ctx, key, x, y, w, h) => {
+      const im = DECO_IMG[key]; if (!im || !im.complete || !im.naturalWidth) return;
+      let e = DECO_CV[key];
+      if (!e || e.src !== im.src) e = DECO_CV[key] = {src: im.src, cv: typeof photoRaster === 'function' ? photoRaster(im, im.naturalWidth * 3, im.naturalHeight * 3) : null};
+      if (!e.cv){ if (typeof photoNote === 'function') photoNote('花紋 ' + key); return; }
+      try { const p = ctx.createPattern(e.cv, 'repeat'); p.setTransform(new DOMMatrix().scale(1 / 3)); ctx.fillStyle = p; ctx.fillRect(x, y, w, h); } catch (err) {}
+    };
     if (typeof paintWall === 'function') paintWall = async function(ctx, s, W, wh, kind){
       const w = wallOf(kind);
       ctx.fillStyle = w.c; ctx.fillRect(0, 0, W, wh);

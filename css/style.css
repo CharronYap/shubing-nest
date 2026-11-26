@@ -1211,3 +1211,7 @@ span.yd-kind{cursor:default}
 .yd-sil svg{filter:brightness(0);opacity:.2}
 .al-books{display:flex;gap:6px;margin:0 0 8px}
 .al-books .btn{flex:1;padding:6px 4px;font-size:13px}
+/* 拍好的照片：分享不了的時候改用長按存（js/photo.js 的 photoHold） */
+.phimg{-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
+.ph-hold{margin:0;font-size:14px;line-height:1.55;font-weight:800;text-align:center;color:var(--pink2)}
+.phcard.hold .phimg{transform:none}

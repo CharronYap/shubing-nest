@@ -127,7 +127,7 @@ function cardOpen(i){
   bar.querySelector('.pc-save').onclick = async () => {
     let shot = null;
     try { shot = await photoShoot(); } catch (e) { sQuiet('card', e); }
-    if (shot) photoSave(shot.canvas); else toast('這台存不了照片');
+    if (shot) photoPreview(shot); else toast('沒拍成，再試一次');
   };
   bar.hidden = false;
 }

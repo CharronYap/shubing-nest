@@ -22,13 +22,51 @@ function loadImg(src){
   });
 }
 const svgUrl = s => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
-// 畫面上的 SVG 元素換成圖片；寬高設成要畫的大小，放大不會糊
-function svgImg(el, w, h){
-  const c = el.cloneNode(true);
-  c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  c.setAttribute('width', Math.max(1, Math.round(w))); c.setAttribute('height', Math.max(1, Math.round(h)));
-  c.removeAttribute('style');
-  return loadImg(svgUrl(new XMLSerializer().serializeToString(c)));
+/* ---------- 畫布不能被「污染」（2026-11-27，使用者的 iPhone 一按相機就跳「存不了照片」）----------
+   iPhone 的瀏覽器（WebKit）比電腦嚴：有些圖一畫上去，整張畫布就再也讀不出來（toDataURL、toBlob 丟例外），照片就沒了。
+   已知會這樣的：拿 SVG 圖直接做花紋（createPattern）、SVG 裡有 foreignObject、SVG 裡再放 <image> 或指到外面的東西。電腦的 Chrome 不會，所以要靠這裡擋。
+   做法：每一樣圖先畫在小的暫存畫布上試一次，讀得回來才畫到照片上；讀不回來的換成拿掉可疑東西的版本，還是不行就跳過那一樣、記下名字。
+   拍完還是讀不回來的話，提示會寫是畫到哪一樣之後開始壞的（photoBad），截圖就知道要查哪裡。 */
+let photoBad = [];
+const photoNote = name => { if (name && !photoBad.includes(name)){ photoBad.push(name); console.info('[photo] 這一樣畫上去照片會存不了，跳過：' + name); } };
+const photoClean = cv => { try { cv.getContext('2d').getImageData(0, 0, 1, 1); return true; } catch (e) { return false; } };
+const photoImgSeen = new WeakMap();
+function photoImgOk(im){
+  if (!im) return false;
+  if (photoImgSeen.has(im)) return photoImgSeen.get(im);
+  const t = document.createElement('canvas'); t.width = t.height = 4;
+  let ok = false;
+  try { t.getContext('2d').drawImage(im, 0, 0, 4, 4); ok = photoClean(t); } catch (e) {}
+  photoImgSeen.set(im, ok);
+  return ok;
+}
+// 給別的檔案用：把一張圖（例如花紋的 SVG）先畫成畫布；讀不回來就回 null。花紋要用畫布做，不能直接拿 SVG 圖做
+function photoRaster(im, w, h){
+  if (!im || !im.complete || !im.naturalWidth) return null;
+  const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h));
+  try { c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); } catch (e) { return null; }
+  return photoClean(c) ? c : null;
+}
+const photoElName = el => { const it = el.closest && el.closest('.it'); if (it){ const o = items.find(x => String(x.uid) === it.dataset.u); return o ? o.id : 'it'; } const fx = el.closest && el.closest('.fx'); if (fx) return [...fx.classList].filter(c => c !== 'fx' && c !== 'ydx' && c !== 'tvx').join('.') || 'fx'; return el.closest && el.closest('#win') ? 'win' : el.closest && el.closest('.drop') ? 'drop' : 'svg'; };
+// 畫面上的 SVG 元素換成圖片；寬高設成要畫的大小，放大不會糊。回 null = 這一樣不畫
+async function svgImg(el, w, h, name){
+  const make = strip => {
+    const c = el.cloneNode(true);
+    c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    c.setAttribute('width', Math.max(1, Math.round(w))); c.setAttribute('height', Math.max(1, Math.round(h)));
+    c.removeAttribute('style');
+    if (strip){
+      c.querySelectorAll('foreignObject,image,feImage,filter,script,style').forEach(n => n.remove());
+      c.querySelectorAll('*').forEach(n => { ['filter', 'mask', 'clip-path'].forEach(a => n.removeAttribute(a)); [...n.attributes].forEach(a => { if (/href$/.test(a.name) && !/^#/.test(a.value)) n.removeAttribute(a.name); }); });
+    }
+    return loadImg(svgUrl(new XMLSerializer().serializeToString(c)));
+  };
+  let im = await make(false);
+  if (im && photoImgOk(im)) return im;
+  im = await make(true);
+  if (im && photoImgOk(im)) return im;
+  photoNote(name || photoElName(el));
+  return null;
 }
 
 /* ---------- 牆和地板的花紋（照 css/style.css 的 .w-* .f-* 畫） ---------- */
@@ -53,7 +91,8 @@ async function paintWall(ctx, s, W, wh, kind){
     fill(grad(ctx, 0, wh, '#bfe8ff', '#eaf8ff'));
     const css = getComputedStyle(document.documentElement).getPropertyValue('--cloud').trim();
     const m = /^url\(["']?(.*?)["']?\)$/s.exec(css), im = m && await loadImg(m[1]);
-    if (im) [[.14, .26, 64, 34], [.88, .62, 52, 28], [.46, .84, 40, 21]].forEach(([px, py, w, h]) => ctx.drawImage(im, (W - w) * px, (wh - h) * py, w, h));
+    if (im && !photoImgOk(im)) photoNote('wall-cloud');
+    else if (im) [[.14, .26, 64, 34], [.88, .62, 52, 28], [.46, .84, 40, 21]].forEach(([px, py, w, h]) => ctx.drawImage(im, (W - w) * px, (wh - h) * py, w, h));
   }
   else if (kind === 'tile'){
     fill(grad(ctx, 0, wh, '#d4f1fb', '#e6f8fd'));
@@ -172,6 +211,9 @@ async function photoShoot(){
   const s = PH.pw / cw;
   const c = document.createElement('canvas'); c.width = PH.W; c.height = PH.H;
   const ctx = c.getContext('2d');
+  photoBad = [];
+  let dirty = '';
+  const chk = name => { if (!dirty && !photoClean(c)){ dirty = name; photoNote('畫完' + name + '之後'); } };
   try { await document.fonts.load('900 40px "GenSenRounded"'); } catch (e) {}
 
   // 白邊
@@ -184,13 +226,13 @@ async function photoShoot(){
   const trip = typeof tripBg === 'function' ? tripBg() : null;   // 出遊背景（js/trip.js）：只畫背景和娃娃
   if (trip) trip.paint(ctx, W, H, wh);
   else {
-    await paintWall(ctx, s, W, wh, r.wall);
+    await paintWall(ctx, s, W, wh, r.wall); chk('牆');
     ctx.fillStyle = window.PAPER ? window.PAPER.tone().wood2 : '#fff'; ctx.fillRect(0, wh - 4, W, 7);   // 牆腳的白條（新風格 js/paper.js 是一條木色的紙）
-    paintFloor(ctx, s, W, H, wh, r.floor);
+    paintFloor(ctx, s, W, H, wh, r.floor); chk('地板');
     const winEl = $('#win svg');
-    if (winEl){ const b = boxIn(winEl, R), im = await svgImg(winEl, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }
+    if (winEl){ const b = boxIn(winEl, R), im = await svgImg(winEl, b.w * s, b.h * s, 'win'); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); chk('窗戶'); }
     // 房間固定的構造（門、磁磚、流理台、通往隔壁的門口…，js/rooms.js 的 .fx）：照片要跟畫面一樣
-    for (const fx of room.querySelectorAll('.fx svg')){ const b = boxIn(fx, R), im = await svgImg(fx, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }
+    for (const fx of room.querySelectorAll('.fx svg')){ const b = boxIn(fx, R), im = await svgImg(fx, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); chk(photoElName(fx)); }
   }
 
   // 家具、娃娃、地上的小東西：照前後順序（z-index）畫
@@ -201,7 +243,7 @@ async function photoShoot(){
   for (const {e} of els){
     const it = items.find(o => String(o.uid) === e.dataset.u);
     if (e.classList.contains('doll') && it){
-      drawDoll(ctx, e, R, it, fx);
+      drawDoll(ctx, e, R, it, fx); chk('娃娃 ' + it.id);
       const b = boxIn(e, R);
       if (b.x + b.w * .5 > cx && b.x + b.w * .5 < cx + cw && b.y + b.h * .5 > cy && b.y + b.h * .5 < cy + ch) inShot.add(it.id);
     } else {
@@ -209,6 +251,7 @@ async function photoShoot(){
       const svg = e.querySelector('svg'); if (!svg) continue;
       const b = boxIn(svg, R), im = await svgImg(svg, b.w * s, b.h * s);
       if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h);
+      chk(it ? it.id : 'drop');
     }
   }
 
@@ -243,7 +286,8 @@ async function photoShoot(){
     ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22); ctx.fillText('火腿', -10, 38);
     ctx.restore();
   }
-  return {canvas: c, dolls: [...inShot]};
+  chk('字');
+  return {canvas: c, dolls: [...inShot], skipped: photoBad.slice(), dirty};
 }
 
 /* 相簿：一起拍了照 */
@@ -269,19 +313,68 @@ function photoFlash(){
   stage.appendChild(f); setTimeout(() => f.remove(), 450);
 }
 const photoName = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `薯餅的小窩-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`; };
-async function photoSave(canvas){
-  const blob = await new Promise(ok => { try { canvas.toBlob(ok, 'image/png'); } catch (e) { ok(null); } });
-  if (!blob){ toast('這台存不了照片'); return; }
-  const file = new File([blob], photoName(), {type: 'image/png'});
-  // 手機：叫出分享（可以存到相簿或傳給別人）；電腦：直接下載
-  if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({files: [file]})){
-    try { await navigator.share({files: [file], title: '薯餅的小窩'}); return; }
-    catch (e) { if (e && e.name === 'AbortError') return; }
+/* 存照片。iPhone 的規矩：分享（navigator.share）一定要在手指按下去的當下叫，中間不能等任何東西，不然會被擋。
+   所以檔案在照片拍好、預覽出來的時候就先做好（photoFile），按「存下來」時直接叫分享。
+   分享不能用或失敗（不是自己取消）：不走下載連結（iPhone 從主畫面圖示開的時候，下載連結按了沒反應），
+   改成請使用者長按照片存，iPhone 長按圖片一定存得了。電腦照舊直接下載。真的分享出去了才說好了。 */
+async function photoFile(shot){
+  if (shot.file !== undefined) return shot.file;
+  let blob = null;
+  try { blob = await new Promise(ok => { try { shot.canvas.toBlob(ok, 'image/png'); } catch (e) { ok(null); } }); } catch (e) {}
+  shot.file = blob ? new File([blob], photoName(), {type: 'image/png'}) : null;
+  return shot.file;
+}
+function photoHold(o, why){
+  const card = o && o.querySelector('.phcard'); if (!card){ toast('長按照片就可以存'); return; }
+  card.classList.add('hold');
+  let p = card.querySelector('.ph-hold');
+  if (!p){ p = document.createElement('p'); p.className = 'ph-hold'; card.querySelector('.phimg').after(p); }
+  p.textContent = '長按上面這張照片，選「加入照片」或「儲存影像」，就存到手機了。';
+  if (why) console.info('[photo] 分享沒成功，改用長按存', why);
+}
+// 不能是 async：前面一等，iPhone 就不給分享了
+function photoSave(shot, o){
+  const file = shot.file, touch = matchMedia('(pointer: coarse)').matches;
+  if (touch){
+    let can = false;
+    try { can = !!(file && navigator.share && navigator.canShare && navigator.canShare({files: [file]})); } catch (e) {}
+    if (!can){ photoHold(o, file ? '這台不能分享檔案' : '檔案沒做出來'); return; }
+    navigator.share({files: [file], title: '薯餅的小窩'}).then(() => toast('好了')).catch(e => { if (e && e.name === 'AbortError') return; photoHold(o, e); });
+    return;
   }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name;
+  if (!file){ toast('這台存不了照片'); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   toast('照片存好了');
+}
+// 拍好的照片：預覽、存下來、再拍一張、寄給朋友。opt.again／opt.snap 沒給就沒有那兩顆（看明信片時存成圖片也用這個）
+async function photoPreview(shot, opt = {}){
+  let url = '', why = '';
+  try { url = shot.canvas.toDataURL('image/png'); } catch (e) { why = String((e && e.message) || e); }
+  if (!url){
+    // 暫時把原因寫在提示裡，方便截圖回報：哪一樣畫上去之後開始讀不回來，或瀏覽器給的錯誤
+    toast('拍不了：' + ((shot.skipped && shot.skipped.length ? shot.skipped.join('、') : why) || '不知道原因').slice(0, 60));
+    console.info('[photo] 畫布讀不回來', shot.skipped, why);
+    return null;
+  }
+  await photoFile(shot);
+  const old = screen.querySelector('.over.phov'); if (old) old.remove();
+  const o = document.createElement('div'); o.className = 'over phov';
+  o.innerHTML = `<div class="pcard phcard" role="dialog" aria-label="拍好的照片">
+      <img class="phimg" alt="拍好的照片" src="${url}">
+      ${opt.again && typeof tripRow === 'function' ? tripRow() : ''}
+      <div class="row"><button class="btn y ph-save">存下來</button>${opt.again ? '<button class="btn ph-again">再拍一張</button>' : ''}${opt.snap ? '<button class="btn ph-card">寄給朋友</button>' : ''}</div>
+      <button class="ph-x" aria-label="關閉"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button></div>`;
+  screen.appendChild(o);
+  o.addEventListener('click', e => { if (e.target === o) o.remove(); });
+  o.querySelector('.ph-x').onclick = () => o.remove();
+  o.querySelector('.ph-save').onclick = () => photoSave(shot, o);
+  if (opt.again){ if (typeof tripWire === 'function') tripWire(o); o.querySelector('.ph-again').onclick = () => { o.remove(); setTimeout(photoTake, 120); }; }
+  if (opt.snap) o.querySelector('.ph-card').onclick = () => { o.remove(); cardCompose(opt.snap); };
+  o.querySelector('.ph-save').focus({preventScroll: true});
+  if (shot.skipped && shot.skipped.length) toast('有 ' + shot.skipped.length + ' 樣沒拍進去：' + shot.skipped.join('、').slice(0, 40));
+  return o;
 }
 let photoBusy = false;
 async function photoTake(){
@@ -289,30 +382,12 @@ async function photoTake(){
   photoBusy = true;
   $('#sheet').hidden = true;
   photoFlash();
-  let shot = null;
-  try { shot = await photoShoot(); } catch (e) { console.info('[photo] 沒拍成', e); }
+  let shot = null, err = '';
+  try { shot = await photoShoot(); } catch (e) { console.info('[photo] 沒拍成', e); err = String((e && e.message) || e); }
   photoBusy = false;
-  if (!shot){ toast('沒拍成，再試一次'); return; }
-  photoRecord(shot.dolls);
+  if (!shot){ toast(err ? '沒拍成：' + err.slice(0, 60) : '沒拍成，再試一次'); return; }
   const snap = typeof cardSnap === 'function' && typeof sNet === 'function' && sNet() && !(typeof tripBg === 'function' && tripBg()) ? cardSnap() : null;   // 寄明信片用（js/card.js）
-  let url = '';
-  try { url = shot.canvas.toDataURL('image/png'); } catch (e) {}
-  if (!url){ toast('這台存不了照片'); return; }
-  const old = screen.querySelector('.over.phov'); if (old) old.remove();
-  const o = document.createElement('div'); o.className = 'over phov';
-  o.innerHTML = `<div class="pcard phcard" role="dialog" aria-label="拍好的照片">
-      <img class="phimg" alt="拍好的照片" src="${url}">
-      ${typeof tripRow === 'function' ? tripRow() : ''}
-      <div class="row"><button class="btn y ph-save">存下來</button><button class="btn ph-again">再拍一張</button>${snap ? '<button class="btn ph-card">寄給朋友</button>' : ''}</div>
-      <button class="ph-x" aria-label="關閉"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button></div>`;
-  screen.appendChild(o);
-  o.addEventListener('click', e => { if (e.target === o) o.remove(); });
-  o.querySelector('.ph-x').onclick = () => o.remove();
-  o.querySelector('.ph-save').onclick = () => photoSave(shot.canvas);
-  if (typeof tripWire === 'function') tripWire(o);
-  o.querySelector('.ph-again').onclick = () => { o.remove(); setTimeout(photoTake, 120); };
-  if (snap) o.querySelector('.ph-card').onclick = () => { o.remove(); cardCompose(snap); };
-  o.querySelector('.ph-save').focus({preventScroll: true});
+  if (await photoPreview(shot, {again: true, snap})) photoRecord(shot.dolls);
 }
 
 (function(){
