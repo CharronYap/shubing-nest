@@ -185,7 +185,7 @@ async function photoShoot(){
   if (trip) trip.paint(ctx, W, H, wh);
   else {
     await paintWall(ctx, s, W, wh, r.wall);
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, wh - 4, W, 7);   // 牆腳的白條
+    ctx.fillStyle = window.PAPER ? window.PAPER.tone().wood2 : '#fff'; ctx.fillRect(0, wh - 4, W, 7);   // 牆腳的白條（新風格 js/paper.js 是一條木色的紙）
     paintFloor(ctx, s, W, H, wh, r.floor);
     const winEl = $('#win svg');
     if (winEl){ const b = boxIn(winEl, R), im = await svgImg(winEl, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }

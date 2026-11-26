@@ -119,3 +119,79 @@
 /* 固定的構造也有一層影子 */
 .screen.ppon .fx:not(.fx-tiles):not(.fx-pass) svg{filter:drop-shadow(0 2.5px 1.5px color-mix(in srgb,var(--p-ink) 28%,transparent))}
 .screen.ppon .shoot{background:linear-gradient(90deg,transparent,var(--p-sun))}
+
+/* =====================================================================
+   面板、卡片、提示（B3）。掛在 .look-paper（網址有 ?look=paper 就有，不分哪一頁），
+   因為面板在房間頁和娃娃機頁都會開。做法：先把原本那組顏色變數（粉紅、金、墨色…）換成色票的顏色，
+   用變數的地方就自動跟著換；再把硬寫死的白底、粉紅框、圓膠囊一樣一樣改成紙片。
+   ===================================================================== */
+.look-paper .screen{
+  --p-hand:"LXGW WenKai TC","Klee One","Klee","Kaiti TC","BiauKai","DFKai-SB","標楷體",serif;
+  --p-fiber:url("../img/paper/fiber.png");
+  --p-edge:color-mix(in srgb,var(--p-paper) 74%,var(--p-ink));
+  --p-shadow:color-mix(in srgb,var(--p-ink) 34%,transparent);
+  --p-card:color-mix(in srgb,var(--p-paper) 48%,#fff);
+  --pink:var(--p-a1); --pink2:var(--p-a1d); --gold:var(--p-sun); --gold2:color-mix(in srgb,var(--p-sun) 60%,var(--p-ink));
+  --ink:var(--p-ink); --soft:color-mix(in srgb,var(--p-ink) 62%,var(--p-paper)); --line:var(--p-edge); --lav:var(--p-a2l); --lav2:var(--p-a2);
+  font-family:var(--p-hand);
+}
+/* 面板本身：一大張紙 */
+.look-paper .sheet{background:linear-gradient(color-mix(in srgb,var(--p-paper) 66%,transparent),color-mix(in srgb,var(--p-paper) 66%,transparent)),var(--p-fiber),var(--p-paper);
+  background-size:auto,192px 192px,auto;background-blend-mode:normal,multiply,normal;color:var(--p-ink);border-radius:16px;box-shadow:0 4px 0 var(--p-edge),0 14px 24px var(--p-shadow)}
+.look-paper .sheet .x,.look-paper .ac-x{border-radius:8px;background:var(--p-paperd);color:var(--p-ink)}
+.look-paper .sheet .hd{color:var(--p-a1d);font-size:19px}
+.look-paper .over{background:color-mix(in srgb,var(--p-ink) 46%,transparent)}
+.look-paper .pcard,.look-paper .gm-card{background:var(--p-paper);color:var(--p-ink);border:0;border-radius:16px;box-shadow:0 5px 0 var(--p-edge),0 14px 24px var(--p-shadow)}
+.look-paper .pcard .pic{background:var(--p-paperd);border-radius:16px}
+.look-paper .pcard h3{color:var(--p-a1d)}
+/* 按鈕：有厚度的紙片 */
+.look-paper .btn{border:0;border-radius:10px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 3px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .btn.y{background:var(--p-sun);color:var(--p-ink);box-shadow:0 3px 0 var(--gold2)}
+.look-paper .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--p-edge)}
+.look-paper .btn:disabled{opacity:.5}
+.look-paper .evb{border:0;border-radius:11px;background:var(--p-sun);box-shadow:0 3px 0 var(--gold2)}
+.look-paper .evb.go{border-radius:11px;background:var(--p-a1);color:var(--p-paper);box-shadow:0 3px 0 var(--p-a1d)}
+.look-paper .evb.lock{background:var(--p-paperd);box-shadow:0 3px 0 var(--p-edge)}
+.look-paper .evb .tp{background:var(--p-paper);border-radius:4px}
+/* 一格一格的卡片：小紙片，沒有框線 */
+.look-paper .ev,.look-paper .ml,.look-paper .er-it,.look-paper .al-cd,.look-paper .al-top,.look-paper .fr-it,.look-paper .fr-top,.look-paper .fr-a,.look-paper .mm-it,
+.look-paper .gd-top,.look-paper .ng-out,.look-paper .sp-it,.look-paper .wd-it,.look-paper .al-tabs button,.look-paper .roam-sw,.look-paper .sheet .tile,.look-paper .bk-it,.look-paper .st-box,.look-paper .sk-box{
+  background:var(--p-card);border-color:transparent;border-radius:10px;box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .ml.unread,.look-paper .fr-it.wait,.look-paper .fr-it.tap,.look-paper .mm-it.tap{background:color-mix(in srgb,var(--p-sun) 22%,var(--p-card));border-color:transparent}
+.look-paper .ev.done,.look-paper .gd-it.lk{background:var(--p-paperd);box-shadow:none}
+.look-paper .ev.hi,.look-paper .al-tabs button.on,.look-paper .sheet .tile.cur{box-shadow:0 0 0 3px var(--p-a1)}
+.look-paper .ng-chip{border:0;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .ng-chip.on{background:var(--p-a1);color:var(--p-paper);box-shadow:0 2px 0 var(--p-a1d)}
+.look-paper .tx-in,.look-paper .ac-form input,.look-paper .ac-add input{border:0;border-radius:8px;background:var(--p-card);color:var(--p-ink);box-shadow:inset 0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .al-sec{color:var(--p-a1d)}
+.look-paper .fr-av{border-radius:10px;background:var(--p-a2);color:var(--p-paper)}
+.look-paper .fr-a{color:var(--p-a1d)}
+.look-paper .fr-tabs{border-bottom-color:var(--p-edge)}
+.look-paper .fr-tabs button i,.look-paper .wd-it .pr{background:var(--p-sun);color:var(--p-ink);border-radius:5px}
+.look-paper .fr-new{border-radius:2px}
+/* 帳號視窗 */
+.look-paper .acct{background:color-mix(in srgb,var(--p-ink) 46%,transparent)}
+.look-paper .ac-card{background:var(--p-paper);color:var(--p-ink);border-radius:16px;box-shadow:0 5px 0 var(--p-edge),0 14px 24px var(--p-shadow);font-family:var(--p-hand)}
+.look-paper .ac-b{border:0;border-radius:10px;background:var(--p-a1);color:var(--p-paper);box-shadow:0 3px 0 var(--p-a1d);font-family:var(--p-hand)}
+.look-paper .ac-b.ghost{background:var(--p-paperd);color:var(--p-ink);box-shadow:0 3px 0 var(--p-edge)}
+/* 去朋友家時下面那一條、薯餅帶路的小卡、小劇場的字幕 */
+.look-paper .vb-hd b{color:var(--p-a1d)}
+.look-paper .tour,.look-paper .skit-bar,.look-paper .skit-q{background:var(--p-paper);color:var(--p-ink);border:0;border-radius:10px;box-shadow:0 3px 0 var(--p-edge),0 8px 12px var(--p-shadow)}
+.look-paper .tour p{color:var(--p-ink)}
+.look-paper .tour-hi{outline-color:var(--p-sun)}
+/* 娃娃頭上的記號：有小事（一張寫著點點的小紙片）、睡覺的 z */
+.look-paper .doll.has-ev::after{background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='3' y='5.2' width='18' height='15' rx='4' fill='%2323264a' opacity='.28'/><rect x='3' y='3.5' width='18' height='15' rx='4' fill='%23ffd36e'/><g fill='%2323264a'><circle cx='8' cy='11' r='1.6'/><circle cx='12' cy='11' r='1.6'/><circle cx='16' cy='11' r='1.6'/></g></svg>") center/contain no-repeat}
+.look-paper .doll.sleep::before,.look-paper .doll.sleep::after{color:var(--p-sun);font-family:var(--p-hand);text-shadow:0 1.5px 0 color-mix(in srgb,var(--p-ink) 45%,transparent)}
+/* 小屋地圖 */
+.look-paper .hm-c{border:0;border-radius:8px;box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .hm-c.cur{box-shadow:0 0 0 3px var(--p-a1)}
+.look-paper .hm-roof{background:var(--p-a1d)}
+.look-paper .hm-house{background:var(--p-wood3);box-shadow:inset 0 0 0 3px var(--p-wood);border-radius:10px}
+.look-paper .hm-c .hm-wall{background:var(--p-wall)!important}
+.look-paper .hm-c .hm-floor{background:var(--p-floor)!important;border-top-color:var(--p-wood2)}
+.look-paper .hm-c.lock .hm-wall{background:color-mix(in srgb,var(--p-ink) 60%,var(--p-paper))!important}
+.look-paper .hm-c.off::after{background:color-mix(in srgb,var(--p-ink) 50%,transparent)}
+.look-paper .al-tr span,.look-paper .spin-tip{border-color:transparent;background:var(--p-paperd);color:var(--p-ink);border-radius:6px}
+.look-paper .yd-pg,.look-paper .sp-pg{background:var(--p-card);border-radius:10px}
+.look-paper .roam-tg{border-color:transparent;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .roam-tg.on{background:var(--p-a2);color:var(--p-paper)}

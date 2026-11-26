@@ -257,6 +257,26 @@ if (PAPER_ON) (() => {
   new MutationObserver(sync).observe(screen, {attributes: true, attributeFilter: ['class']});
   // 開著不關的時候，每五分鐘看一次天色有沒有換
   setInterval(() => { if (!document.hidden && curPhase() !== phase && typeof paintRoom === 'function') paintRoom(); }, 5 * 60000);
+  // 拍照、明信片（js/photo.js 比這個檔晚載入，等全部載完再換）：牆和地板照新風格畫，不看玩家選的壁紙。紙紋理在照片裡不畫
+  addEventListener('DOMContentLoaded', () => {
+    const a = (c, o) => { const [r, g, b] = hex(c); return `rgba(${r},${g},${b},${o})`; };
+    if (typeof paintWall === 'function') paintWall = async function(ctx, s, W, wh){
+      ctx.fillStyle = C.wall; ctx.fillRect(0, 0, W, wh);
+      if (roomId !== 'attic'){ ctx.fillStyle = a(C.ink, .2); ctx.fillRect(0, wh * .69 - 2, W, 2); ctx.fillStyle = C.wall2; ctx.fillRect(0, wh * .69, W, wh * .31); }
+    };
+    if (typeof paintFloor === 'function') paintFloor = function(ctx, s, W, H, wh){
+      const fh = H - wh;
+      ctx.fillStyle = C.floor; ctx.fillRect(0, wh, W, fh);
+      const g = ctx.createLinearGradient(0, wh, 0, wh + fh * .26); g.addColorStop(0, a(C.ink, .26)); g.addColorStop(1, a(C.ink, 0));
+      ctx.fillStyle = g; ctx.fillRect(0, wh, W, fh * .26);
+      if (roomId === 'living'){
+        const cx = W / 2, cy = wh + fh * .49, rx = W * .43, ry = fh * .25;
+        ctx.fillStyle = a(C.ink, .24); ctx.beginPath(); ctx.ellipse(cx, cy + 3, rx, ry, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = C.rug; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 7); ctx.fill();
+        ctx.strokeStyle = a(C.paper, .38); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(cx, cy, rx - 9, ry - 9, 0, 0, 7); ctx.stroke();
+      }
+    };
+  });
   document.documentElement.classList.add('look-paper');
   tone();
   window.PAPER = {furn: PAPER_FURN.slice(), tone: () => Object.assign({}, C), phase: () => phase};
