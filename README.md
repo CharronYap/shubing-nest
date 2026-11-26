@@ -154,6 +154,8 @@ firestore.rules Firestore 規則（好友 players、存檔 nestSaves、公開房
 firebase.json   本機模擬器設定
 docs/CLOUD.md   雲端帳號說明和後台步驟
 docs/AI-LETTERS.md  AI 寫娃娃信的說明、上線步驟和花費上限
+docs/LETTERS.md     娃娃的信全部內容（給人看的版本，從 js/mail.js 整理出來）
+docs/gpt/           八隻娃娃的個性和寫信的規則（0 是總覽，1 到 8 是當初請 GPT 改寫時每隻貼的那一份）
 worker/         AI 寫信用的 Cloudflare Worker（保管 API 金鑰、檢查登入、限制一天幾封、請 Claude 寫）
 audio/          背景音樂
 img/            八隻娃娃的圖（img/cover/ 是封面用的）
