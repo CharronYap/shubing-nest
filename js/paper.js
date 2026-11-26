@@ -3,7 +3,7 @@
    index.html 最前面有一小段程式看同一個參數，先把 .look-paper 掛上去，第一眼才不會閃一下舊的顏色。
    第一版只換客廳（使用者看過說「可以，繼續換」）。現在五間房間都是新風格：牆、地板、窗戶和窗外、門口、每一間固定的構造、所有家具、
    上面的按鈕、收納架、對話框和提示。門外小島、娃娃機那一頁、封面還是原本的樣子。不改存檔、不改規則、不動玩法。
-   家具：手畫的在 PF（客廳最早那 7 件、第一批 16 件、第二批 13 件、第三批前半 19 件）；其他的用 paperize() 自動轉：拿掉描邊和亮面的反光、顏色換成色票裡最接近的那一個、
+   家具：71 件都是手畫的，在 PF（客廳最早那 7 件、第一批 16 件、第二批 13 件、第三批 35 件）。旅行的土產、小島的戶外家具和之後新增還沒手畫的，用 paperize() 自動轉：拿掉描邊和亮面的反光、顏色換成色票裡最接近的那一個、
    每一塊下面加一塊往下錯開的影子。之後新增的家具不用另外畫，會自動轉。
    畫法（照 樣張/小窩風格樣板.html 的 B 款）：
    - 每一樣東西是色紙剪出來的色塊，沒有描邊；每一層下面有一塊往下錯開的深色影子，越前面錯得越多。
@@ -113,6 +113,8 @@ if (PAPER_ON) (() => {
   const ell = (cx, cy, rx, ry) => c => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${c}"/>`;
   const circ = (cx, cy, r) => c => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/>`;
   const both = (...fs) => c => fs.map(f => f(c)).join('');
+  // 五角星：中心、外圈和內圈的半徑
+  const star = (cx, cy, R, r) => path('M' + Array.from({length: 10}, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r : R; return (cx + q * Math.cos(a)).toFixed(2) + ' ' + (cy + q * Math.sin(a)).toFixed(2); }).join('L') + 'z');
   const strip = (d, c, w = 2) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
 
   /* ---------- 客廳的家具：外框（viewBox）、坐的位置都跟原本一樣，只換畫法 ---------- */
@@ -373,6 +375,84 @@ if (PAPER_ON) (() => {
         + `<g class="fzb" fill="none" stroke="${C.paper}" stroke-width="1.300"><circle cx="66" cy="34" r="2"/><circle cx="63" cy="26" r="1.400"/><circle cx="67" cy="19" r="1"/></g>`
         + path('M13 17c3-4 8-5.500 13-5.500l.500 2.600c-4 0-8 1.300-11 4.500z')(C.paper)
         + rect(6, 8, 72, 5, 2.5)(mix(gl, C.paper, .5)); },
+
+    /* ---- 手畫第三批的後半（2026-11-27）：廚房 3 件、閣樓 3 件、節日 10 件。到這裡 71 件家具都是手畫的了。
+       節日的照一般的樣子畫（燈籠、春字、南瓜、小松樹……），不仿現成的角色或商品 ---- */
+    // 廚房
+    fridge: () => rect(10, 97, 7, 5, 2)(C.paperd) + rect(45, 97, 7, 5, 2)(C.paperd)
+      + L(rect(6, 4, 50, 96, 9), C.paper, 1.5)
+      + rect(6, 37, 50, 2.6)(C.paperd) + rect(45, 14, 5, 16, 2.5)(C.a2) + rect(45, 46, 5, 26, 2.5)(C.a2)
+      + L(rect(14, 12, 14, 11, 2, 'rotate(-6 21 17)'), mix(C.sun, C.paper, .45), .4) + rect(17, 15.500, 8, 1.300, .6, 'rotate(-6 21 17)')(C.wood3) + rect(17, 18.500, 5, 1.300, .6, 'rotate(-6 21 17)')(C.wood3)
+      + L(path('M22 62s-6-3.600-6-7.400c0-2 1.400-3.200 3-3.200 1.100 0 2.200.600 3 1.700.800-1.100 1.900-1.700 3-1.700 1.600 0 3 1.200 3 3.200C28 58.400 22 62 22 62z'), C.a1, .4),
+    stove: () => strip('M48 10c-2-3 2-4 0-7M58 10c-2-3 2-4 0-7', C.paperd, 1.8)
+      + L(rect(42, 13.500, 24, 8, 2), C.a2, .6) + rect(66, 15, 10, 2.6, 1.3)(C.a2d) + rect(39, 12, 30, 2.8, 1.4)(C.a2l)
+      + L(rect(6, 26, 74, 48, 7), C.a1l, 1.4)
+      + L(rect(16, 41, 54, 26, 5), C.paper, .6) + rect(22, 47, 42, 14, 3)(mix(C.ink, C.paper, .25)) + rect(28, 36.200, 30, 2.8, 1.4)(C.a1d)
+      + L(rect(4, 20, 78, 10, 5), C.paper, 1.1)
+      + circ(15, 34.500, 2.1)(C.a1d) + circ(22.500, 34.500, 2.1)(C.a1d),
+    dinetable: () => rect(18, 26, 7, 34, 3)(C.wood2) + rect(87, 26, 7, 34, 3)(C.wood2)
+      + L(ell(56, 26, 52, 14), C.wood3, 1.4) + ell(56, 24, 42, 9)(C.paper)
+      + ell(34, 23.500, 10, 4)(C.paperd) + L(circ(34, 21.500, 4), C.sun, .3)
+      + ell(76, 24.500, 10, 4)(C.paperd) + L(path('M70 23c3-5.500 9-5.500 12 0z'), C.a1l, .3)
+      + L(rect(52, 9, 8, 12, 2.5), C.a2, .5) + rect(53.500, 10.500, 5, 2, 1)(C.a2l),
+    // 閣樓
+    trunk: () => strip('M33 11c0-7 16-7 16 0', C.wood2, 2.6)
+      + L(rect(6, 10, 70, 40, 7), C.wood, 1.4)
+      + rect(6, 23, 70, 2.6)(C.wood2)
+      + L(both(rect(20, 8, 8, 44, 2), rect(54, 8, 8, 44, 2)), C.wood3, .6)
+      + L(rect(36, 19, 10, 10, 2), C.sun, .5) + circ(41, 24, 1.5)(C.wood2)
+      + [[11, 15], [71, 15], [11, 45], [71, 45]].map(([x, y]) => circ(x, y, 1.6)(C.wood3)).join(''),
+    floorpad: () => L(ell(42, 22, 38, 14), C.rug, 1.1)
+      + ell(42, 18, 30, 9)(mix(C.rug, C.paper, .5))
+      + strip('M42 18L20 14M42 18l22-4M42 18l-14 8M42 18l14 8', mix(C.rug, C.paper, .15), 1.4)
+      + circ(42, 18, 2.8)(C.rug),
+    starlight: () => L(ell(23, 56, 12, 4), mix(C.sun, C.paper, .4), .7) + rect(21, 40, 4, 16, 2)(C.paper)
+      + L(star(23, 23, 21, 10), C.sun, 1.1)
+      + circ(19, 21.500, 1.4)(C.wood2) + circ(27, 21.500, 1.4)(C.wood2) + strip('M20 26c2 2 4 2 6 0', C.wood2, 1.4),
+    // 節日
+    lantern: () => { const red = mix(C.a1, '#d93a34', .6), gold = mix(C.sun, C.wood, .25);
+      return rect(19, 0, 2, 9, 1)(gold) + [16, 20, 24].map((x, i) => rect(x - 1, 50, 2, i === 1 ? 13 : 10, 1)(gold)).join('')
+        + L(ell(20, 30, 17, 18), red, 1.2) + ell(20, 30, 10.500, 18)(mix(red, C.paper, .16)) + ell(20, 30, 4, 18)(red)
+        + L(rect(13, 7, 14, 5, 2), gold, .4) + L(rect(13, 46, 14, 5, 2), gold, .4); },
+    couplet: () => { const red = mix(C.a1, '#d93a34', .6), gold = mix(C.sun, C.paper, .2);
+      return L(rect(10, 10, 28, 28, 3, 'rotate(45 24 24)'), red, 1)
+        + `<rect x="14" y="14" width="20" height="20" rx="2" transform="rotate(45 24 24)" fill="none" stroke="${gold}" stroke-width="1.400"/>`
+        + `<text x="24" y="30.500" text-anchor="middle" font-size="17" font-weight="700" fill="${gold}" font-family="serif">春</text>`; },
+    petal: () => { const pk = mix(C.a1l, C.paper, .4), fl = both(...[0, 72, 144, 216, 288].map(a => c => `<ellipse cx="0" cy="-4" rx="3" ry="4.400" transform="translate(0 10) rotate(${a})" fill="${c}"/>`));
+      return strip('M4 6c22 16 62 16 84 0', C.wood2, 1.4)
+        + [[14, 12], [28, 17], [46, 19], [64, 17], [78, 12]].map(([x, y]) => `<g transform="translate(${x} ${y})">${rect(-.6, 0, 1.2, 5)(C.wood2)}${L(fl, pk, .5)}${circ(0, 10, 1.9)(C.sun)}</g>`).join(''); },
+    melon: () => L(path('M4 16v8c0 8 14 13 31 13s31-5 31-13v-8z'), C.leaf, 1.2)
+      + strip('M14 23v10M26 25v11M44 25v11M56 23v10', C.leafd, 2.6)
+      + L(ell(35, 16, 31, 11), C.paper, .6) + ell(35, 16, 27, 8.4)(mix(C.a1, '#ee5068', .5))
+      + [[22, 14], [30, 19], [38, 13], [46, 18], [28, 11], [42, 10]].map(([x, y]) => ell(x, y, 1.2, 1.9)(C.wood2)).join(''),
+    moonlamp: () => L(ell(22, 57, 14, 4), mix(C.sun, C.paper, .5), .7) + rect(20.500, 43, 3, 13, 1.5)(mix(C.sun, C.wood, .3))
+      + L(path('M29 5a20 20 0 1 0 0 40a25 25 0 0 1 0-40z'), C.sun, 1.2)
+      + circ(13.500, 20, 2)(mix(C.sun, C.wood, .25)) + circ(14.500, 32, 1.4)(mix(C.sun, C.wood, .25))
+      + L(star(35.500, 18, 5, 2.200), mix(C.sun, C.a1, .35), .3),
+    rabbit: () => { const gold = mix(C.sun, C.wood, .25);
+      return rect(10, 43, 34, 2, 1)(gold) + L(circ(15, 44, 4), C.sun, .4) + L(circ(39, 44, 4), C.sun, .4)
+        + L(both(path('M37 22c-3-10 0-19 4-19s4 9-1 19z'), path('M42 23c0-9 5-16 8-15s1 9-5 16z')), C.paper, .8)
+        + path('M39 19c-1.500-7 0-12 1.800-12s2 5-.300 12z')(C.a1l) + path('M44.500 20c.500-5 3-8.500 4.500-8s.500 4.500-3 8.500z')(C.a1l)
+        + L(ell(26, 31, 21, 11), C.paper, 1.1)
+        + strip('M14 23c4 3 4 12 0 16M23 21c4 4 4 15 0 20', C.a1l, 2.2)
+        + circ(40, 28, 1.8)(mix(C.a1, '#d93a34', .6)) + ell(44, 32, 2.4, 1.4)(C.a1l); },
+    pumpkin: () => { const og = mix(C.a1, C.sun, .38), lt = mix(C.sun, C.paper, .4);
+      return strip('M25 11c0-5 2-8 6-9', C.leaf, 2.8)
+        + L(ell(25, 28, 22, 16), og, 1.2) + ell(25, 28, 13.500, 16)(mix(og, C.paper, .16)) + ell(25, 28, 5, 16)(og)
+        + path('M14 25l4.500-5 4.500 5zM27 25l4.500-5 4.500 5z')(lt) + path('M15 31c4 5 16 5 20 0l-3 2-3-2-4 2-4-2-3 2z')(lt); },
+    pine: () => L(path('M16 68h18l-3 12H19z'), C.a1, .7) + rect(21, 62, 8, 7)(C.wood)
+      + L(path('M25 10L9 36h8L4 62h42L33 36h8z'), C.leaf, 1.3) + path('M25 10L9 36h32z')(C.leafl)
+      + `<path d="M14 46c8 4 16 4 24-2M18 28c5 3 10 3 15-1" fill="none" stroke="${C.paper}" stroke-width="2" stroke-dasharray=".1 4.200" stroke-linecap="round"/>`
+      + circ(18, 52, 3)(mix(C.a1, '#d93a34', .6)) + circ(33, 54, 3)(C.sun) + circ(27, 40, 2.6)(C.a2l) + circ(21, 33, 2.2)(C.a1l)
+      + L(star(25, 9, 8.500, 3.800), C.sun, .5),
+    snowflake: () => { const f = c => `<g fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round"><path stroke-width="3" d="M20 3v34M5.300 11.500l29.400 17M5.300 28.500l29.400-17"/><path stroke-width="2.200" d="M15 5l5 5 5-5M15 35l5-5 5 5M4.500 17.500l6.600-1.600-1.600-6.600M35.500 22.500l-6.600 1.600 1.600 6.600M4.500 22.500l6.600 1.600-1.600 6.600M35.500 17.500l-6.600-1.600 1.600-6.600"/></g>`;
+      return L(f, mix(C.a2, C.paper, .6), .6) + circ(20, 20, 3.2)(C.paper); },
+    cake: () => L(ell(23, 48, 22, 3.4), C.paper, .5)
+      + L(rect(3, 31, 40, 15, 4), C.a1l, .9)
+      + L(rect(7, 19, 32, 14, 4), C.paper, .8)
+      + path('M7 25v-2a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v2c-3 3-5 3-8 0s-5 3-8 0-5 3-8 0-5 3-8 0z')(C.a1l)
+      + circ(12, 18, 2.6)(mix(C.a1, '#d93a34', .6)) + circ(34, 18, 2.6)(mix(C.a1, '#d93a34', .6))
+      + rect(21.500, 9, 3, 10, 1)(C.a2) + path('M23 2c-3 3-3 6 0 7 3-1 3-4 0-7z')(C.sun),
   };
   /* ---------- 其他家具、每一間固定的構造：自動轉成紙雕的畫法 ---------- */
   // 一個顏色換成色票裡最接近的：先看是白、灰還是有顏色，有顏色的照色相分到木頭、主色、黃、綠、青、紫幾家，再照深淺挑
