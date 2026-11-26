@@ -333,9 +333,23 @@ function layout(){
   const wall=Math.min(.52,.52*oh/h);
   stage.style.width=w+'px';stage.style.height=h+'px';
   room.style.setProperty('--wh',(wall*100)+'%');
-  if(Math.abs(ratio-RATIO)>.001||Math.abs(wall-WALL)>.001){RATIO=ratio;WALL=wall;if(items.length)render();}
+  if(Math.abs(ratio-RATIO)>.001||Math.abs(wall-WALL)>.001){
+    RATIO=ratio;WALL=wall;
+    if(items.length)render();
+    if(typeof yardPaint==='function')yardPaint();   // 小島地上的東西是照牆高算位置的，比例變了要重畫
+  }
 }
 new ResizeObserver(layout).observe(area);
+// 手機（尤其是加到主畫面的）剛打開的頭一兩秒，畫面高度會再變一次；轉方向、字型載完也會。這幾個時候都重排一次，
+// 房間才不會用錯的高度排（2026-11-27 使用者說每次打開房間會變形）。排的結果一樣就什麼都不動，不會閃
+{
+  const again=()=>{try{layout();}catch(e){}};
+  if(window.visualViewport)visualViewport.addEventListener('resize',again);
+  addEventListener('orientationchange',()=>setTimeout(again,250));
+  addEventListener('pageshow',again);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(again);
+  [400,1200,2500].forEach(ms=>setTimeout(again,ms));
+}
 setInterval(()=>{if(isNight()!==screen.classList.contains('night')||(typeof skyKey==='function'&&screen.dataset.sky!==skyKey()))paintRoom();if(typeof skyRainWater==='function')skyRainWater();},60000);
 
 /* 換房間 */

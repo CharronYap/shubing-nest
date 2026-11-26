@@ -31,7 +31,7 @@
   box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 24%,transparent),inset 0 0 0 9px var(--p-rug),inset 0 0 0 10.5px color-mix(in srgb,var(--p-paper) 38%,transparent)}
 
 /* ---------- 窗戶、門口、開關 ---------- */
-.screen.ppon .win{width:34%;top:calc(var(--wh,52%)*.1)}
+.screen.ppon .win{width:30%;top:calc(var(--wh,52%)*.1)}
 /* 晚上窗邊一圈暖光（漸層，不是濾鏡） */
 .screen.ppon .win::before{content:"";position:absolute;inset:-34% -30%;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--p-sun) 30%,transparent),transparent);opacity:0;z-index:-1;transition:opacity .6s}
 .screen.ppon.night .win::before{opacity:1}
@@ -113,9 +113,8 @@
 /* ---------- 閣樓：斜屋頂的樑、圓天窗（原本的樣式在 css/style.css） ---------- */
 .screen.ppon .room[data-rid="attic"] .wall::before{inset:0;height:auto;box-shadow:none;
   background:linear-gradient(to bottom right,var(--p-wood) 0 20%,var(--p-wood2) 20% 21.5%,transparent 22%),linear-gradient(to bottom left,var(--p-wood) 0 20%,var(--p-wood2) 20% 21.5%,transparent 22%)}
-.screen.ppon .room[data-rid="attic"] .win{width:26%;top:calc(var(--wh,52%)*.2)}
+.screen.ppon .room[data-rid="attic"] .win{width:29%;top:calc(var(--wh,52%)*.16)}
 .screen.ppon .room[data-rid="attic"] .win::after{border-color:var(--p-wood);box-shadow:0 0 0 2px var(--p-wood2),0 3px 0 2px color-mix(in srgb,var(--p-ink) 24%,transparent)}
-.screen.ppon .room[data-rid="bath"] .win{width:24%;top:calc(var(--wh,52%)*.07)}
 /* 固定的構造也有一層影子 */
 .screen.ppon .fx:not(.fx-tiles):not(.fx-pass) svg{filter:drop-shadow(0 2.5px 1.5px color-mix(in srgb,var(--p-ink) 28%,transparent))}
 .screen.ppon .shoot{background:linear-gradient(90deg,transparent,var(--p-sun))}

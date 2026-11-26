@@ -46,7 +46,8 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .f-cloud{background:radial-gradient(ellipse 22px 12px at 20px 14px,#fff 0 60%,transparent 64%) 0 0/48px 30px,#e6defc}
 .floor::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(90,50,80,.13),rgba(90,50,80,0) 40%);pointer-events:none}
 
-.win{position:absolute;left:50%;top:calc(var(--wh,52%)*.135);width:28%;transform:translateX(-50%);pointer-events:none}
+/* 窗戶：每一間同一個大小、同一個高度（2026-11-27 使用者說每間大小不一樣不好看）。閣樓是圓的天窗，大小看起來差不多 */
+.win{position:absolute;left:50%;top:calc(var(--wh,52%)*.12);width:30%;transform:translateX(-50%);pointer-events:none}
 .win svg{display:block;width:100%;height:auto}
 
 .it{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%;touch-action:none;cursor:grab}
@@ -787,7 +788,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .rnav:has(>:nth-child(5)) button{flex:none;scroll-snap-align:center}
 .room[data-rid="attic"] .wall::before{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(to bottom right,#c98f56 0 20%,#a8714f 20% 21.5%,transparent 22%),linear-gradient(to bottom left,#c98f56 0 20%,#a8714f 20% 21.5%,transparent 22%)}
-.room[data-rid="attic"] .win{top:calc(var(--wh,52%)*.2);width:24%}
+.room[data-rid="attic"] .win{top:calc(var(--wh,52%)*.16);width:29%}
 .room[data-rid="attic"] .win svg{clip-path:circle(44% at 50% 50%)}
 .room[data-rid="attic"] .win::after{content:"";position:absolute;left:50%;top:50%;width:92%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:5px solid #c98f56;box-shadow:0 0 0 2px #a8714f;pointer-events:none}
 .shoot{position:absolute;width:46px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff);transform:rotate(24deg);opacity:0;animation:shoot 1.2s ease-out;pointer-events:none}
@@ -887,9 +888,7 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .fx-pass.l{transform:none}
 .fx-pass.r{transform:translateX(-100%)}
 .fx-pass::after{content:"";position:absolute;inset:-6px -4px}
-.room[data-rid="living"] .win{width:34%}
-.room[data-rid="bed"] .win{width:23%}
-.room[data-rid="bath"] .win{width:19%;top:calc(var(--wh,52%)*.07)}
+/* 以前每一間的窗戶大小不一樣（客廳 34%、臥室 23%、浴室 19%），2026-11-27 改成一樣大，寫在最上面的 .win */
 .room.dragdoll .fx{opacity:.5}
 /* 上面的按鈕版面（js/hud.js）：第一排 回封面｜地圖鈕｜幣、相機；第二排 娃娃機＋小店｜信箱＋訪客簿＋小事；第三排 相簿｜音樂 */
 .top{gap:6px}
