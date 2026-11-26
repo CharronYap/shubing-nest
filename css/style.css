@@ -704,7 +704,9 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .gm-body{display:grid;gap:8px}
 .gc-field{position:relative;height:min(52dvh,380px);border-radius:16px;overflow:hidden;background:linear-gradient(#e9f6ff,#fff6e6);touch-action:none;outline:none;cursor:ew-resize}
 .gc-cat{position:absolute;bottom:2%;width:26%;transform:translateX(-50%);pointer-events:none;transform-origin:50% 100%}
-.gc-cat.yum{animation:rsq .3s ease-out}
+/* 貓咪老師是用 translateX(-50%) 置中的，共用的 rsq 會把它蓋掉（接到時往右跳半個身體），所以另外寫一組，每一格都帶著置中 */
+.gc-cat.yum{animation:gcYum .3s ease-out}
+@keyframes gcYum{0%,100%{transform:translateX(-50%)}40%{transform:translateX(-50%) scale(1.06,.94)}}
 .gc-d{position:absolute;width:11%;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none}
 .gc-d svg{width:100%;height:100%;display:block}
 .gf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
@@ -799,7 +801,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 @keyframes fz2{0%,100%{transform:translateX(8px)}48%{transform:translateX(-22px)}50%{transform:translateX(-22px) scaleX(-1)}98%{transform:translateX(8px) scaleX(-1)}}
 @keyframes fzb{0%{transform:translateY(8px);opacity:0}30%{opacity:1}100%{transform:translateY(-10px);opacity:0}}
 .doll.sp-watch .body{animation:spWatch 5s ease-in-out infinite}
-@keyframes spWatch{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes spWatch{0%,100%{rotate:-3deg}50%{rotate:3deg}}   /* 用 rotate 不用 transform：牠坐著時原本的 scale(.92) 才不會被蓋掉 */
 @media (prefers-reduced-motion:reduce){.fz1,.fz2,.fzb,.doll.sp-watch .body{animation:none!important}}
 /* 出遊背景：拍照預覽下面的一排 */
 .ph-bgs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
