@@ -70,4 +70,5 @@
 @media (prefers-reduced-motion:reduce){.cover *{animation:none!important}.cover{transition:none}}
 
 /* 小窩指南的問號：娃娃機鈕的左邊 */
-.cover .cv-cb.cv-gd{right:74px;--c1:#ffe9a8;--c2:#f5b93a;--c3:#c98a12}
+/* 2026-11-27 封面不放娃娃機的鈕了，問號靠到最右邊（原本 right:74px，讓位給娃娃機那顆） */
+.cover .cv-cb.cv-gd{right:14px;--c1:#ffe9a8;--c2:#f5b93a;--c3:#c98a12}

@@ -356,3 +356,7 @@
 .look-paper .verbar{background:var(--p-ink);border-radius:10px;box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 70%,#000),0 8px 12px var(--p-shadow)}
 .look-paper .verbar .vb-go{color:var(--p-paper);font-family:var(--p-hand)}
 .look-paper .verbar .vb-x{border-radius:6px;color:var(--p-paper)}
+/* 收納架：還沒有的那一排、怎麼拿的小字 */
+.look-paper .tray-more{border:0;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .tray-more i{color:var(--p-a1d)}
+.look-paper .tile .how{background:color-mix(in srgb,var(--p-paper) 90%,transparent);color:var(--p-ink);border-radius:4px}

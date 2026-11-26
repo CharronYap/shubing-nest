@@ -493,7 +493,7 @@ function tvWelcome(){
   if (($('#cover') && !$('#cover').hidden) || !$('#sheet').hidden){ tvWelT = setTimeout(tvWelcome, 2500); return; }
   const rows = t.wel.map(w => {
     const P = TV_PLACES[w.p] || TV_PLACES.park, s = TV_SOUV[w.sv];
-    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來一個${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : '放在收納架的家具那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這次沒有帶東西回來。</small>';
+    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來一個${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這次沒有帶東西回來。</small>';
     return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${(TV_DIARY[w.d][w.di] || TV_DIARY[w.d][0]).replace(/\{p\}/g, P.name)}」</p>${got}</div></div>`;
   }).join('');
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>回家了</span></div><div class="tv-box">${rows}</div>
@@ -551,20 +551,7 @@ if (typeof openAlbum === 'function'){
     hd.after(row);
   };
 }
-// 收納架的家具那一頁：最後多一排土產（有了才列；每一間都能擺，擺在別間的標房間，點了搬過來）
-{
-  const prev = renderTray;
-  renderTray = function(){
-    prev.apply(this, arguments);
-    if (tab !== 'furn' || VISIT) return;
-    const own = Object.keys(TV_SOUV).map(tvSouvId).filter(id => FURN_OWN[id]); if (!own.length) return;
-    const nw = typeof newFurnList === 'function' ? newFurnList() : [];
-    $('#items').insertAdjacentHTML('beforeend', `<span class="grp">${TV_BAG_ICON}</span>` + own.map(id => {
-      const w = whereFurn(id), here = w === roomId, away = w && !here;
-      return `<button class="tile ${here ? 'placed' : ''} ${away ? 'away' : ''}" data-furn="${id}" aria-label="${FURN[id].name}">${furnSVG(id)}${here ? CK : ''}${away ? `<span class="rm">${ICON[w]}</span>` : ''}${!w && nw.includes(id) ? '<span class="nw">新</span>' : ''}</button>`;
-    }).join(''));
-  };
-}
+// 土產在收納架的「紀念品」那一頁（js/room.js 的 renderTray）
 
 /* ---------- 按鈕 ---------- */
 $('#sheet').addEventListener('click', e => {

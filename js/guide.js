@@ -22,7 +22,7 @@ const gdTab = t => { gdRoom(roomId === 'yard' ? 'living' : null); tab = t; if (t
 
 const GUIDE = [
   // ---- 房間和佈置
-  {c: 'room', ic: ICON.living, t: '擺娃娃和家具', s: '從下面的收納架拖進房間；拖回架子就是收起來。', go: () => gdTab('furn')},
+  {c: 'room', ic: ICON.living, t: '擺娃娃和家具', s: '下面的收納架有四頁：娃娃、家具、牆地、紀念。點一下擺進房間，拖回架子就是收起來。還沒有的收在每一頁最下面。', go: () => gdTab('furn')},
   {c: 'room', ic: MAP_ICON, t: '小屋地圖', s: '上面中間那顆。看得到每一間有誰，點一間就過去。', go: () => mapOpen()},
   {c: 'room', ic: '<span class="sw w-dots"></span>', t: '壁紙和地板', s: '收納架第三個分頁，點一下就換。', go: () => gdTab('deco')},
   {c: 'room', ic: gdDoll('sloth'), t: '開燈和關燈', s: '牆上的開關。關了燈，房間暗下來，燈會亮。', go: () => gdRoom(roomId === 'yard' ? 'living' : null)},
@@ -30,7 +30,7 @@ const GUIDE = [
   {c: 'room', ic: ICON.kitchen, t: '廚房', s: '多一間可以佈置的房間。', go: () => gdRoom('kitchen'), lock: gdKey('kitchen'), lockGo: gdShop, lockBtn: '去小店'},
   {c: 'room', ic: ICON.attic, t: '閣樓', s: '晚上從天窗看得到流星。', go: () => gdRoom('attic'), lock: gdKey('attic'), lockGo: gdShop, lockBtn: '去小店'},
   {c: 'room', ic: CAM_ICON, t: '拍照', s: '右上角的相機。把現在的房間拍下來，可以存到手機。', go: () => { gdRoom(roomId === 'yard' ? 'living' : null); toast('右上角的相機，按一下就拍'); }},
-  {c: 'room', ic: gdDoll('moodeng'), t: '窗外和季節', s: '窗外跟著時間、天氣、月份變。過節那幾天，收納架會多出節日的東西。'},
+  {c: 'room', ic: gdDoll('moodeng'), t: '窗外和季節', s: '窗外跟著時間、天氣、月份變。過節那幾天，收納架的紀念那一頁會多出節日的東西。'},
   // ---- 娃娃
   {c: 'doll', ic: CLAW_ICON, t: '娃娃機', s: '夾娃娃、家具和扭蛋。每天第一次不用幣。', go: () => { gdShut(); setPage('claw'); }},
   {c: 'doll', ic: EV_ICON, t: '今天的小事', s: '每天有幾件小事，點有記號的娃娃去處理，做完一件 3 枚。', go: () => { setPage('room'); openEvents(); }},

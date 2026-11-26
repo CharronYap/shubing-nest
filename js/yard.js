@@ -458,7 +458,7 @@ if (typeof fixPaint === 'function'){ const fp = fixPaint; fixPaint = function(){
   const prev = renderTray;
   renderTray = function(){
     prev.apply(this, arguments);
-    if (roomId === 'yard' && tab !== 'doll' && tab !== 'furn') $('#items').innerHTML = '<p class="al-em yd-nodeco">小島的天空和草地跟著時間換，不用貼壁紙。</p>';
+    if (roomId === 'yard' && tab === 'deco') $('#items').innerHTML = '<p class="al-em yd-nodeco">小島的天空和草地跟著時間換，不用貼壁紙。</p>';
   };
 }
 
