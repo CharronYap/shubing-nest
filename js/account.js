@@ -312,7 +312,10 @@ async function pushRoom() {
   // 第五版：願望清單（最多 3 隻還沒有的娃娃）和小島給朋友看的樣子（每塊地是什麼，不含種子、次數）
   const want = typeof wantList === 'function' ? wantList() : [];
   if (want.length) data.want = want;
-  if (S.yard && Array.isArray(S.yard.p) && S.yard.day) data.yard = { p: S.yard.p.map(p => (p.k ? { s: p.s, k: p.k } : { s: p.s })) };
+  // 小島（js/yard.js、js/water.js）：花圃 6 格的樣子（規則要 12 格，後面填空）；小島這間的擺設放 home.yard。
+  // home.yard 要等規則發布才收，沒發布時 cloud.saveRoom 會拿掉再寫，其他房間照樣放得上去
+  const yp = typeof waterPublic === 'function' ? waterPublic() : null;
+  if (yp) { data.yard = yp; if (home.yard && Array.isArray(home.yard.items)) data.home.yard = pubRoom(home.yard); }
   // 躲貓貓：哪一隻躲在哪一間的哪一件家具後面（js/hide.js）。規則還沒收這一欄時 cloud.saveRoom 會拿掉再寫
   const hide = typeof hidePublic === 'function' ? hidePublic() : null;
   if (hide) data.hide = hide;
@@ -401,7 +404,7 @@ function mergeSave(remote, guest) {
   // 門外小島：用帳號裡的那份，帳號裡還沒有才用這台的；種子數量取比較多的
   if (guest.yard) {
     if (!m.yard) m.yard = guest.yard;
-    else { const ms = m.yard.seeds = m.yard.seeds || {}; for (const [k, n] of Object.entries(guest.yard.seeds || {})) ms[k] = Math.max(ms[k] || 0, n || 0); }
+    else if (m.yard.v !== 2 && guest.yard.seeds) { const ms = m.yard.seeds = m.yard.seeds || {}; for (const [k, n] of Object.entries(guest.yard.seeds || {})) ms[k] = Math.max(ms[k] || 0, n || 0); }   // 舊版的小島才有種子
   }
   // 幣取比較多的。拿的是這台的，跟錢包對帳用的 base（earn.wb）也要用這台的，不然這段差額會重複算進蛋蛋島的錢包
   if ((guest.coins || 0) > (m.coins || 0) && guest.earn && Number.isInteger(guest.earn.wb) && m.earn) { m.earn.wb = guest.earn.wb; m.earn.wu = guest.earn.wu; }

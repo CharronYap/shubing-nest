@@ -14,6 +14,8 @@ const ICON = {
 };
 ICON.yard='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 11.5L12 7l9.5 4.5L12 16z"/><path d="M2.5 11.5V13l9.5 4.5 9.5-4.5v-1.5L12 16z" opacity=".55"/><path d="M12 7V3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 3.4c1.6-.8 3.3-.4 4.4.6-1.5.8-3.1.7-4.4-.6z"/><path d="M5 19.4c1-1 2.6-1 3.4 0 .8-.8 2.2-.7 2.8.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const RIDS=['living','bed','bath'];
+// 上面的房間鈕、通往隔壁的門口用這個：去朋友家時，對方還沒有新的小島就不列小島（js/yard.js 會把 yard 加進 RIDS）
+const roomList=()=>RIDS.filter(r=>r!=='yard'||!VISIT||!!VISIT.yard);
 let roomId='living', items=[];
 // 去朋友家的時候（visit.js）：VISIT = {name, home, look}，房間畫朋友的，不能拖、不存檔
 let VISIT=null;
@@ -231,8 +233,7 @@ $('#items').addEventListener('click',e=>{
     if(w===roomId){removeItem(items.find(i=>i.kind==='doll'&&i.id===id).uid);return;}
     if(w==='out'){if(typeof stayTap==='function')stayTap();return;}
     if(w==='trip'){if(typeof tvNoteTap==='function')tvNoteTap(id);return;}   // 去旅行了（js/travel.js）
-    if(w==='yard'){yardRecall(id);if(typeof yardPaint==='function')yardPaint();}
-    else if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
+    if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
     const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();}
   else if(t.dataset.furn){const id=t.dataset.furn;if(!FURN_OWN[id]){toast(FURN[id].gift?'湊齊娃娃的專屬家具送你':'娃娃機夾得到，小店也買得到');return;}
     const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);return;}
@@ -321,7 +322,7 @@ setInterval(()=>{if(isNight()!==screen.classList.contains('night')||(typeof skyK
 /* 換房間 */
 function renderNav(){
   const yd=typeof yardOn!=='undefined'&&yardOn;
-  const ids=VISIT&&!VISIT.yard?RIDS:[...RIDS,'yard'];
+  const ids=roomList();
   // 現在這一間的那顆變寬、圖示旁邊寫名字（.nm 只有 .on 才顯示）；其他間只有圖示
   // 最左邊的小房子：小屋地圖（js/rooms.js）
   $('#nav').innerHTML=`${typeof mapOpen==='function'?`<button class="rmap" aria-label="小屋地圖">${typeof MAP_ICON!=='undefined'?MAP_ICON:HOUSE}</button>`:''}<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'})[r]}">${ICON[r]}<span class="nm">${ROOM_SHORT[r]||''}</span></button>`).join('')}</div>`;
@@ -349,8 +350,6 @@ function load(){
 // goingTo：正在切過去、還沒換好的房間。連點時用它判斷，不然點回原房間會被略過
 let goingTo=null;
 function goRoom(r){
-  if(r==='yard'){if(typeof yardOpen==='function'&&!yardOn){yardOpen();if(yardOn)roomSign('yard');}return;}
-  if(typeof yardOn!=='undefined'&&yardOn){yardClose();if(r===(goingTo??roomId)){renderNavTo(r);roomSign(r);return;}}
   const from=goingTo??roomId;if(r===from)return;const d=RIDS.indexOf(r)>RIDS.indexOf(from)?1:-1;goingTo=r;slide(d,()=>{roomId=r;goingTo=null;load();});renderNavTo(r);roomSign(r);}
 function renderNavTo(r){const rn=$('#nav .rnav');document.querySelectorAll('.rnav button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);if(on&&rn&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=b.offsetLeft-rn.offsetLeft-rn.clientWidth/2+b.offsetWidth/2;});}
 // 切換鈕上寫的短名字，和換房間時上方中間跳出來的小牌子（一秒後淡掉）

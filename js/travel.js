@@ -49,8 +49,8 @@ const tvToolFree = id => !!tvData().tool[id] && !tvData().out.some(o => tvToolLi
   const prev = whereDoll;
   whereDoll = function(id){ return (typeof S !== 'undefined' && S.album && S.album.tv && Array.isArray(S.album.tv.out) && S.album.tv.out.some(o => o && Array.isArray(o.ds) && o.ds.includes(id))) ? 'trip' : prev(id); };
 }
-// 在家的：有這隻、沒去旅行、沒去朋友家過夜、沒在小島幫忙
-const tvHomeDolls = () => DOLLS.filter(d => DOLL_N[d] && !['trip', 'out', 'yard'].includes(whereDoll(d)));
+// 在家的：有這隻、沒去旅行、沒去朋友家過夜（在小島上的也算在家）
+const tvHomeDolls = () => DOLLS.filter(d => DOLL_N[d] && !['trip', 'out'].includes(whereDoll(d)));
 
 /* ---------- 出門：這一刻把整趟的結果決定好 ---------- */
 const tvPickW = (list, wOf) => { const ws = list.map(wOf), sum = ws.reduce((a, b) => a + b, 0); let r = Math.random() * sum; for (let i = 0; i < list.length; i++){ r -= ws[i]; if (r <= 0) return list[i]; } return list[list.length - 1]; };
@@ -257,7 +257,9 @@ function tvMerge(m, g){
   });
   t.out = keep;
   // 房間對齊
-  const H = m.home || {}, rooms = Object.keys(H).filter(r => H[r] && Array.isArray(H[r].items));
+  const H = Object.assign({}, m.home || {});
+  if (m.yard && m.yard.rm && Array.isArray(m.yard.rm.items)) H.yard = m.yard.rm;   // 小島那一間的擺設存在 yard.rm（js/yard.js）
+  const rooms = Object.keys(H).filter(r => H[r] && Array.isArray(H[r].items));
   const where = d => rooms.find(r => H[r].items.some(i => i && i.kind === 'doll' && i.id === d));
   keep.forEach(o => o.ds.forEach(d => { const r = where(d); if (!r) return; const it = H[r].items.find(i => i.kind === 'doll' && i.id === d); H[r].items.forEach(x => { if (x.sit === it.uid) x.sit = null; }); H[r].items.splice(H[r].items.indexOf(it), 1); }));
   let next = Math.max(m.uid || 0, g.uid || 0, ...rooms.map(r => Math.max(0, ...H[r].items.map(i => i.uid || 0)))) + 1;
@@ -455,13 +457,17 @@ function tvRows(d){
   }).join('')}</ul>`;
 }
 const tvMapNote = () => tvData().out.map(o => `<p class="bk-note tv-mapn">${TV_BAG_ICON}${tvOutLine(o)}。</p>`).join('');
-// 相簿最上面多一顆「旅行」
+// 相簿最上面多一排：紀念冊（js/memo.js 加的那顆搬下來）、旅行、小島（花和小客人，js/yard.js）
 if (typeof openAlbum === 'function'){
   const prev = openAlbum;
   openAlbum = function(d){
     prev(d);
-    const hd = $('#sheet .hd');
-    if (hd && !VISIT && !hd.querySelector('[data-tv]')) hd.insertAdjacentHTML('beforeend', `<button class="btn sm al-memo al-tv" data-tv="album">旅行</button>`);
+    const sh = $('#sheet'), hd = sh.querySelector('.hd');
+    if (!hd || VISIT || sh.querySelector('.al-books')) return;
+    const row = document.createElement('div'); row.className = 'al-books';
+    const memo = hd.querySelector('[data-memo]'); if (memo){ memo.className = 'btn sm'; row.appendChild(memo); }
+    row.insertAdjacentHTML('beforeend', '<button class="btn sm" data-tv="album">旅行</button>' + (typeof yardBookOpen === 'function' ? '<button class="btn sm" data-yd="book">小島</button>' : ''));
+    hd.after(row);
   };
 }
 // 收納架的家具那一頁：最後多一排土產（有了才列；每一間都能擺，擺在別間的標房間，點了搬過來）

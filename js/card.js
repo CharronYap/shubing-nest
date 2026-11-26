@@ -102,7 +102,7 @@ function cardOpen(i){
   if (!c.r){ c.r = 1; save(); mailBadge(); }
   const s = c.snap, rid = RIDS.includes(s.rid) ? s.rid : 'living';
   // 借「去朋友家」那一套把房間擺出來：三間都放同一份，只看得到這一間
-  const v = visitClean({home: {living: s.room, bed: s.room, bath: s.room}, look: s.look});
+  const v = visitClean({home: Object.fromEntries(RIDS.map(r => [r, s.room])), look: s.look});
   visitBack = roomId;
   VISIT = {name: c.w, uid: '', home: v.home, look: v.look, card: true, night: !!s.night};
   cardView = c;

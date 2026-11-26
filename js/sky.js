@@ -69,10 +69,8 @@ function skyEvents(t){
   return pool.length ? [pool[skyHash('ev' + t) % pool.length]] : [];
 }
 const skyLine = d => (skyWeather() === 'rain' && Math.random() < .35 ? SKY_LINES[d] : '');
-// 下雨天小島不用澆水：種好的地自己冒芽
+// 下雨天小島不用澆水：還沒開的花都算澆過了（js/yard.js）
 function skyRainWater(){
-  if (VISIT || skyWeather() !== 'rain' || !S.yard || !Array.isArray(S.yard.p)) return;
-  const t = todayStr(); let n = 0;
-  S.yard.p.forEach(p => { if (p.s === 'seed'){ p.s = 'sprout'; p.t = t; n++; } });
-  if (n){ if (S.yard.day) (S.yard.news = S.yard.news || []).push('下雨了，種好的地都喝到水，冒芽了。'); save(); if (typeof yardPaint === 'function') yardPaint(); }
+  if (VISIT || skyWeather() !== 'rain') return;
+  if (typeof yardRain === 'function') yardRain();
 }

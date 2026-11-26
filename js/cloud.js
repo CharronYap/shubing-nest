@@ -217,6 +217,11 @@ export function createCloud(config, { emulator = false } = {}) {
       if (!user) throw new Error('not signed in');
       try { await F.setDoc(F.doc(db, 'nestRooms', user.uid), data); }
       catch (e) {
+        // 小島重做（2026-11-27）：小島這間的擺設放 home.yard，規則發布前不收。先只拿掉這一間再寫一次，其他都留著
+        if (e && e.code === 'permission-denied' && data.home && data.home.yard) {
+          const h = { ...data.home }; delete h.yard;
+          return this.saveRoom({ ...data, home: h });
+        }
         // 保險（規則已發布，正常不會走到這裡）：第五版的 want（願望清單）、yard（小島給朋友看的樣子）舊版規則不收。還沒發布時先拿掉再寫，房間照樣放得上去
         // 躲貓貓的 hide（規則 2026-11-26 已發布）也一樣留著保險：被擋就先拿掉，房間照樣放得上去
         const extra = ['want', 'yard', 'hide'].filter(k => k in data);

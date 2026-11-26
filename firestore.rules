@@ -97,11 +97,15 @@ service cloud.firestore {
         && (!('light' in r) || r.light is bool);
     }
     // 整個家：客廳、臥室、浴室一定有；廚房、閣樓（買了才有）可有可無
+    // 2026-11-27 小島重做（還沒發布）：多收 yard。小島變成可以擺娃娃和家具的戶外房間，公開給朋友看的那份（nestRooms）會帶 home.yard。
+    //   自己的存檔（nests）不靠這一條：小島的擺設存在 yard 欄位裡（yard.rm），所以這條沒發布存檔也寫得上去；
+    //   沒發布時公開房間會先拿掉 home.yard 再寫（js/cloud.js 的 saveRoom），朋友只是暫時看不到小島上的娃娃和家具。
     function okNestHome(h) {
-      return h is map && h.keys().hasOnly(['living', 'bed', 'bath', 'kitchen', 'attic'])
+      return h is map && h.keys().hasOnly(['living', 'bed', 'bath', 'kitchen', 'attic', 'yard'])
         && okNestRoom(h.living) && okNestRoom(h.bed) && okNestRoom(h.bath)
         && (!('kitchen' in h) || okNestRoom(h.kitchen))
-        && (!('attic' in h) || okNestRoom(h.attic));
+        && (!('attic' in h) || okNestRoom(h.attic))
+        && (!('yard' in h) || okNestRoom(h.yard));
     }
     function okNestCount(m) {
       return m is map && m.size() <= 200;
@@ -163,7 +167,8 @@ service cloud.firestore {
       return d.keys().hasOnly(['name', 'home', 'look', 't', 'want', 'yard', 'hide'])
         // 躲貓貓：hide = 哪一隻娃娃躲在哪一間的哪一件家具後面（可有可無）
         && (!('hide' in d) || okNestHide(d.hide))
-        // 第五版：want = 願望清單，最多 3 個娃娃的編號；yard = 小島 12 塊地現在的樣子，只給人看
+        // 第五版：want = 願望清單，最多 3 個娃娃的編號；yard = 小島現在的樣子，只給人看。
+        //   小島重做後還是 12 格（這一條不用改）：前 6 格是花圃，後 6 格填空（js/water.js 的 waterPublic）
         && (!('want' in d) || (d.want is list && d.want.size() <= 3))
         && (!('yard' in d) || (d.yard is map && d.yard.keys().hasOnly(['p']) && d.yard.p is list && d.yard.p.size() == 12))
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 24
@@ -284,7 +289,7 @@ service cloud.firestore {
     }
 
     // 幫朋友的小島澆水：nestRooms/{主人}/water/{日子_澆的人}
-    //   只有主人的朋友能寫，一人一天一次；plot 是第幾塊地（0～11）
+    //   只有主人的朋友能寫，一人一天一次；plot 是花圃的第幾格（0～5；小島重做前是 0～11，2026-11-27 改，還沒發布）
     //   主人讀得到全部（打開遊戲時套用到自己的存檔，再刪掉）；澆的人只能確認自己今天那一筆在不在
     match /nestRooms/{uid}/water/{wid} {
       allow get: if request.auth != null
@@ -299,7 +304,7 @@ service cloud.firestore {
         && nestToday(request.resource.data.day)
         && wid == string(request.resource.data.day) + '_' + request.auth.uid
         && request.resource.data.plot is int
-        && request.resource.data.plot >= 0 && request.resource.data.plot <= 11
+        && request.resource.data.plot >= 0 && request.resource.data.plot <= 5
         && nestFriends(uid, request.auth.uid);
       allow delete: if request.auth != null && request.auth.uid == uid;
       allow update: if false;

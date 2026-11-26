@@ -140,32 +140,9 @@ $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('[data-clerkg]'); if (b) spareGive(b.dataset.clerkg);
 });
 
-/* ---------- 小島收成：花圃每天摘一次花，樹每兩天掉一顆果子。不算自己一天 3 次 ---------- */
+/* ---------- 小島收成：花和果子在小島上點一下就收（js/yard.js），這裡只管拿去小店換幣 ---------- */
 const EARN_FLOWER = '<svg viewBox="0 0 40 40"><path d="M20 36V22" stroke="#4f9a3c" stroke-width="3" stroke-linecap="round"/><g fill="#ffb3d3" stroke="#e0609d" stroke-width="2"><circle cx="20" cy="9" r="5"/><circle cx="12" cy="15" r="5"/><circle cx="28" cy="15" r="5"/><circle cx="15" cy="23" r="5"/><circle cx="25" cy="23" r="5"/></g><circle cx="20" cy="16.5" r="4.4" fill="#ffd75e" stroke="#d99a1c" stroke-width="1.8"/></svg>';
 const EARN_FRUIT = '<svg viewBox="0 0 40 40"><circle cx="20" cy="23" r="12" fill="#ff9aa8" stroke="#d95a70" stroke-width="2.4"/><path d="M20 12c0-4 2-6 5-7" fill="none" stroke="#8a5a3a" stroke-width="2.4" stroke-linecap="round"/><path d="M22 9c4-3 8-2 9 1-3 2-7 2-9-1z" fill="#8fd47a" stroke="#4f9a3c" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 20c1-3 3-4 5-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';
-function earnHvCan(i){
-  const p = S.yard && S.yard.p[i]; if (!p) return false;
-  const last = earnData().hv[i], t = todayStr();
-  if (p.s === 'flower') return last !== t;
-  if (p.s === 'tree') return !last || earnDays(last, t) >= 2;
-  return false;
-}
-function earnYardBtns(i){
-  const p = S.yard.p[i];
-  if (p.s !== 'flower' && p.s !== 'tree') return '';
-  const fl = p.s === 'flower';
-  return earnHvCan(i)
-    ? `<div class="yd-acts"><button class="yd-a" data-hv="${i}"><span class="yd-hand">${fl ? EARN_FLOWER : EARN_FRUIT}</span><span>${fl ? '摘一朵花' : '撿果子'}</span></button></div>`
-    : `<p class="yd-nt">${fl ? '今天摘過了，明天還會開。' : '果子還沒長出來，兩天一顆。'}</p>`;
-}
-$('#yard').addEventListener('click', e => {
-  const b = e.target.closest('[data-hv]'); if (!b || VISIT) return;
-  const i = +b.dataset.hv; if (!earnHvCan(i)) return;
-  const e2 = earnData(), fl = S.yard.p[i].s === 'flower';
-  e2.hv[i] = todayStr(); e2.bag[fl ? 'flower' : 'fruit']++;
-  save(); yardPaint();
-  toast(fl ? '摘了一朵花，可以拿去火腿的小店換幣' : '撿到一顆果子，可以拿去火腿的小店換幣');
-});
 const earnBagN = () => { const b = earnData().bag; return (b.flower || 0) + (b.fruit || 0); };
 function earnSellBag(){
   const b = earnData().bag, n = earnBagN(); if (!n) return 0;
@@ -192,8 +169,8 @@ function earnMsList(){
   DOLLS.forEach(d => L.push({k: 'doll-' + d, n: 5, ok: !!met[d], t: `第一次遇到${DOLL_NAME[d]}`}));
   Object.entries(EARN_SETS).forEach(([k, ids]) => L.push({k: 'set-' + k, n: 10, ok: ids.every(i => FURN_OWN[i]), t: `湊齊${EARN_SET_NAME[k] || '一個系列'}`}));
   DOLLS.forEach(d => [10, 30].forEach(c => L.push({k: `n${c}-${d}`, n: 10, ok: (cnt[d] || 0) >= c, t: `跟${DOLL_NAME[d]}一起做完 ${c} 件小事`})));
-  // 整好 = 石頭和草叢都清掉了
-  L.push({k: 'yard', n: 20, ok: !!(S.yard && S.yard.day && !S.yard.p.some(p => p.s === 'rock' || p.s === 'bush')), t: '小島 12 塊地都整好'});
+  // 小島重做前是「12 塊地都整好」；以前整好的人照樣算（S.yard.old12）
+  L.push({k: 'yard', n: 20, ok: !!(S.yard && (S.yard.old12 || Object.keys(S.yard.fl || {}).length >= 6)), t: '小島的花收過 6 種'});
   return L;
 }
 function earnMsCheck(){
@@ -217,7 +194,7 @@ function earnMsOpen(){
 function earnMore(L){
   const e = earnData();
   L.push({ic: `<img src="${SPR.nyanko}" alt="">`, t: '電視小遊戲', s: e.g < EARN_GAME_TOP ? `今天前 ${EARN_GAME_TOP} 局 3～5 枚，還有 ${EARN_GAME_TOP - e.g} 局` : '每局 1 枚，想玩幾局都可以', btn: '玩', go: gameMenu});
-  if (S.yard && S.yard.p.some((p, i) => earnHvCan(i))) L.push({ic: EARN_FLOWER, t: '小島有花或果子可以收', s: '收了拿去小店，一個 1 枚', go: () => { $('#sheet').hidden = true; setPage('room'); goRoom('yard'); }});
+  if (typeof yardReady === 'function' && yardReady()) L.push({ic: EARN_FLOWER, t: '小島有東西可以收', s: '開的花、樹上的果子，收了拿去小店，一個 1 枚', go: () => { $('#sheet').hidden = true; setPage('room'); goRoom('yard'); }});
   if (earnBagN()) L.push({ic: EARN_FRUIT, t: `手上有 ${earnBagN()} 個花和果子`, s: '拿去火腿的小店換幣', btn: '去小店', go: () => { if (typeof shopOpen === 'function') shopOpen(); }});
   // 等著送人的娃娃自動當店員，不用手動派
   if (e.work.length) L.push({ic: `<img src="${SPR[e.work[0].d]}" alt="">`, t: '等著送人的娃娃在娃娃機當店員', s: `每隻一天 ${EARN_WORK_PAY} 枚，現在 ${e.work.length} 隻。點店員可以送給朋友`, btn: '去看', go: () => { $('#sheet').hidden = true; setPage('claw'); }});

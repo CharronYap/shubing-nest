@@ -344,3 +344,13 @@
 .look-paper .al-pal>span{background:var(--p-card);border-radius:10px;box-shadow:0 2px 0 var(--p-edge)}
 .look-paper .al-pal svg{fill:var(--p-paperd)}
 .look-paper .al-pal svg.on{fill:var(--p-a1)}
+
+/* =====================================================================
+   門外小島（js/yard.js）：風景那兩大張不要加影子濾鏡；面板裡的格子
+   ===================================================================== */
+#room .fx.yd-bg svg{filter:none!important}
+.look-paper .yd-kind.no{border:0;background:var(--p-paperd);box-shadow:none}
+.look-paper .yd-ready{background:var(--p-sun);box-shadow:0 2px 0 color-mix(in srgb,var(--p-sun) 60%,var(--p-ink))}
+.look-paper .yd-sign{background:var(--p-paper);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .yd-left b{background:var(--p-a1);color:var(--p-paper);border-radius:4px}
+.look-paper .yd-slot.empty::before{background:color-mix(in srgb,var(--p-ink) 30%,transparent);color:var(--p-paper);font-family:var(--p-hand)}

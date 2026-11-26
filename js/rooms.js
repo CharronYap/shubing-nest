@@ -21,7 +21,7 @@ const shopKeyPic = r => (r === 'kitchen'
 function shopKeyBuy(r){
   const k = ROOM_KEY[r]; if (!k || home[r]) return;
   home[r] = {wall: k.wall, floor: k.floor, items: []};
-  if (!RIDS.includes(r)) RIDS.push(r);
+  if (!RIDS.includes(r)){ const i = RIDS.indexOf('yard'); if (i >= 0) RIDS.splice(i, 0, r); else RIDS.push(r); }   // 小島排最後
   $('#sheet').hidden = true;
   renderNav();
   setTimeout(() => { toast(`${k.name}打開了，上面多了一顆房間鈕`); goRoom(r); }, 300);
@@ -65,7 +65,7 @@ function mapCell(r){
   const nm = `<span class="hm-nm">${ICON[r] || ''}${ROOM_LABEL[r]}</span>`, tag = here ? '<span class="hm-here">你在這裡</span>' : '';
   if (r === 'yard'){
     const has = VISIT ? !!VISIT.yard : true;
-    const st = !VISIT && S.yard && S.yard.stay ? Object.keys(S.yard.stay).filter(d => SPR[d]) : [];
+    const st = ((H.yard && H.yard.items) || []).filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id);   // 小島現在是房間，列在上面的娃娃
     return `<button class="hm-c hm-y ${here ? 'cur' : ''} ${has ? '' : 'none'}" data-hm="yard" ${has ? '' : 'disabled'} aria-label="門外小島${here ? '，你在這裡' : ''}"><span class="hm-isle"></span>
       <span class="hm-dolls">${st.map(d => `<img src="${SPR[d]}" alt="${DOLL_NAME[d]}">`).join('')}</span>${nm}${tag}</button>`;
   }
@@ -166,7 +166,8 @@ function fixPaint(){
   else if (r === 'kitchen'){ add('fx-counter', FIX.counter(), `left:50%;width:44%;${base}`); add('fx-hooks', FIX.hooks(), 'left:81%;width:24%;top:calc(var(--wh,52%)*.3)'); }
   // 通往隔壁的門口（照切換鈕的順序）。看明信片時只有一間，不畫
   if (VISIT && VISIT.card) return;
-  const i = RIDS.indexOf(r), prev = RIDS[i - 1], next = RIDS[i + 1];
+  // 小島不排在「隔壁」裡：它是從客廳的門走出去的，所以小島左邊的門口通客廳，最後一間的右邊沒有門口
+  const L = roomList().filter(x => x !== 'yard'), i = L.indexOf(r), prev = r === 'yard' ? 'living' : L[i - 1], next = r === 'yard' ? null : L[i + 1];
   if (prev) add('fx-pass l', FIX.pass(prev, 'l'), `left:0;width:9%;${base}`, prev, `去${ROOM_LABEL[prev]}`);
   if (next) add('fx-pass r', FIX.pass(next, 'r'), `left:100%;width:9%;${base}`, next, `去${ROOM_LABEL[next]}`);
 }

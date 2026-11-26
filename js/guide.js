@@ -26,7 +26,7 @@ const GUIDE = [
   {c: 'room', ic: MAP_ICON, t: '小屋地圖', s: '上面中間那顆。看得到每一間有誰，點一間就過去。', go: () => mapOpen()},
   {c: 'room', ic: '<span class="sw w-dots"></span>', t: '壁紙和地板', s: '收納架第三個分頁，點一下就換。', go: () => gdTab('deco')},
   {c: 'room', ic: gdDoll('sloth'), t: '開燈和關燈', s: '牆上的開關。關了燈，房間暗下來，燈會亮。', go: () => gdRoom(roomId === 'yard' ? 'living' : null)},
-  {c: 'room', ic: ICON.yard, t: '門外小島', s: '種草、種花、種樹，娃娃會輪流來幫忙。', go: () => gdRoom('yard')},
+  {c: 'room', ic: ICON.yard, t: '門外小島', s: '客廳的門走出去。可以帶娃娃去、擺戶外的家具；種花、搖樹、招待小客人，都是點一下。', go: () => gdRoom('yard')},
   {c: 'room', ic: ICON.kitchen, t: '廚房', s: '多一間可以佈置的房間。', go: () => gdRoom('kitchen'), lock: gdKey('kitchen'), lockGo: gdShop, lockBtn: '去小店'},
   {c: 'room', ic: ICON.attic, t: '閣樓', s: '晚上從天窗看得到流星。', go: () => gdRoom('attic'), lock: gdKey('attic'), lockGo: gdShop, lockBtn: '去小店'},
   {c: 'room', ic: CAM_ICON, t: '拍照', s: '右上角的相機。把現在的房間拍下來，可以存到手機。', go: () => { gdRoom(roomId === 'yard' ? 'living' : null); toast('右上角的相機，按一下就拍'); }},
@@ -49,7 +49,7 @@ const GUIDE = [
   {c: 'coin', ic: gdDoll('nyanko'), t: '電視小遊戲', s: '接點心、翻牌。每天前 3 局給得比較多，之後想玩幾局都可以。', go: () => { setPage('room'); gameMenu(); }},
   {c: 'coin', ic: SHOP_ICON, t: '火腿的小店', s: '家具、壁紙、房間的鑰匙，每天換一批。花和果子也拿來這裡換幣。', go: gdShop},
   {c: 'coin', ic: gdDoll('piggy'), t: '娃娃機的店員', s: '夾到家裡已經有的娃娃，可以送朋友，也可以留著。留著的那隻當店員，每隻一天 2 枚。', go: () => { gdShut(); setPage('claw'); }},
-  {c: 'coin', ic: ICON.yard, t: '小島收成', s: '花圃每天可以摘一次花，樹每兩天掉一顆果子。', go: () => gdRoom('yard')},
+  {c: 'coin', ic: ICON.yard, t: '小島收成', s: '花開了點一下就收，樹每天三顆果子。拿去火腿的小店，一個 1 枚。', go: () => gdRoom('yard')},
   {c: 'coin', ic: WANT_STAR, t: '里程碑', s: '第一次做到某些事會有幣，補發不會漏。', go: () => earnMsOpen()},
   // ---- 朋友（都要登入）
   {c: 'pal', ic: FR_ICON, t: '朋友', s: '上面第二排右邊那顆。去朋友家、寄明信片、送娃娃、去過夜都從這裡；朋友那邊來的東西也都收在這裡。', go: () => { setPage('room'); frOpen(); }, lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},

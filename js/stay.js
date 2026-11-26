@@ -38,7 +38,7 @@ visitExtras.push((f, more) => {
 function stayPickPaint(){
   const p = stPick; if (!p) return;
   const out = stayOut();
-  const can = DOLLS.filter(d => DOLL_N[d] && whereDoll(d) !== 'yard' && whereDoll(d) !== 'trip');   // 在小島幫忙的、去旅行的不能再去過夜
+  const can = DOLLS.filter(d => DOLL_N[d] && whereDoll(d) !== 'trip');   // 去旅行的不能再去過夜
   let body;
   if (out) body = `<p class="al-em">${DOLL_NAME[out.d]}已經在${txSlot(out.w)}家過夜了。一次只能有一隻在外面，等牠回來再換別隻。</p>`;
   else if (!can.length) body = '<p class="al-em">還沒有可以出門的娃娃。</p>';

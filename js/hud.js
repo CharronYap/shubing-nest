@@ -34,7 +34,7 @@ const HUD_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 })();
 // 地圖鈕：‹ 現在這間 ›。箭頭帶 data-r（js/room.js 原本的點擊處理會換房間），中間是 .rmap（js/rooms.js 開小屋地圖）
 renderNav = function(cur){
-  const list = VISIT && !VISIT.yard ? RIDS.slice() : [...RIDS, 'yard'];
+  const list = roomList();
   const r = cur || (typeof yardOn !== 'undefined' && yardOn ? 'yard' : (goingTo ?? roomId));
   const i = Math.max(0, list.indexOf(r)), prev = list[(i - 1 + list.length) % list.length], next = list[(i + 1) % list.length];
   const name = ROOM_LABEL[r] || '';
