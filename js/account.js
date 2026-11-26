@@ -28,6 +28,10 @@ const afterSaved = [];                                        // 等「存檔真
 const EGG_CFG = EMU ? null : EGG_FIREBASE_CONFIG;
 const EGG_LINK = u => 'shubingNest.egg.' + u;
 let wallet = null, walletOn = false, wState = '', wT = 0, wBusy = null;
+let wLooks = null;   // 上次對帳時錢包裡的帽子和衣服；小窩多了它沒有的（剛買、剛夾到）就再對一次
+// 小窩擁有、可以跟蛋蛋島共用的帽子和衣服（不戴、原本的樣子不算）
+const myLooks = () => (Array.isArray(S.closet) ? S.closet : []).filter(k => /^(hat|outfit)\./.test(k) && k !== 'hat.none' && k !== 'outfit.none');
+const looksDirty = () => !wLooks || myLooks().some(k => !wLooks.has(k));
 const eggLinked = () => { try { return !!(me && wallet && wallet.user && localStorage.getItem(EGG_LINK(me.uid)) === wallet.user.uid); } catch (e) { return false; } };
 // 用名字和密碼連蛋蛋島（登入小窩時、帳號視窗按「連起來」時）。回傳 true = 連上了
 async function walletLink(name, password, nestUid) {
@@ -47,15 +51,22 @@ async function walletSync() {
   const c0 = S.coins, who = me.uid;
   wBusy = (async () => {
     try {
-      const r = await wallet.syncNest(who, c0, first ? null : E0.wb, eu);
+      const r = await wallet.syncNest(who, c0, first ? null : E0.wb, eu, myLooks());
       if (!me || me.uid !== who || saveLock) return;
       const E = S.earn = S.earn || {};
       S.coins = Math.max(0, Math.min(1000000, r.coins + (S.coins - c0)));
       E.wb = r.coins; E.wu = eu;
+      // 蛋蛋島那邊有、小窩還沒有的帽子和衣服：直接放進衣櫃（小窩不認得的，例如蛋蛋島的特效、底座，本來就不在錢包裡）
+      wLooks = new Set(r.looks || []);
+      S.closet = Array.isArray(S.closet) ? S.closet : [];
+      const got = (r.looks || []).filter(k => typeof LOOK_ITEMS !== 'undefined' && LOOK_ITEMS[k] && !S.closet.includes(k));
+      got.forEach(k => S.closet.push(k));
       wState = 'ok';
       save();
       try { renderHud(); } catch (e) {}
-      if (first) say(`跟蛋蛋島連上了，兩邊的幣合在一起，現在有 ${S.coins} 枚`);
+      if (got.length && !document.querySelector('#sheet').hidden && document.querySelector('#sheet .wd-pg') && typeof openWardrobe === 'function') openWardrobe();
+      if (first) say(`跟蛋蛋島連上了，兩邊的幣合在一起，現在有 ${S.coins} 枚${got.length ? `，衣櫃多了 ${got.length} 件` : ''}`);
+      else if (got.length) say(`從蛋蛋島帶來 ${got.length} 件衣服和配件，衣櫃裡有了`);
     } catch (e) {
       // 規則還沒在 plush-crush 主控台發布：這次開著的時候先不試了，幣照舊自己算
       if (e && e.code === 'permission-denied') { wState = 'denied'; walletOn = false; }
@@ -65,11 +76,11 @@ async function walletSync() {
   })();
   try { await wBusy; } finally { wBusy = null; }
   if (!box.hidden && box.querySelector('.ac-wl')) paintWallet();
-  if (walletOn && S.earn && S.coins !== S.earn.wb) walletSoon();
+  if (walletOn && S.earn && (S.coins !== S.earn.wb || (wLooks && looksDirty()))) walletSoon();
 }
 function walletSoon() { clearTimeout(wT); wT = setTimeout(walletSync, 2000); }
 // 存檔寫好時（save.js 的 onNestSave）：幣有變就排一次對帳
-function onSaved() { schedulePush(); if (walletOn && !wBusy && S.earn && S.coins !== S.earn.wb) walletSoon(); }
+function onSaved() { schedulePush(); if (walletOn && !wBusy && S.earn && (S.coins !== S.earn.wb || looksDirty())) walletSoon(); }
 async function walletStart() {
   if (!wallet || !me) return;
   try { await wallet.ready; } catch (e) { return; }
