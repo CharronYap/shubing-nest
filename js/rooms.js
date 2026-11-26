@@ -27,6 +27,37 @@ function shopKeyBuy(r){
   setTimeout(() => { toast(`${k.name}打開了，上面的箭頭和小屋地圖都可以過去`); goRoom(r); }, 300);
 }
 
+/* 還沒開的房間：直接問要不要打開（2026-11-27 使用者從地圖點閣樓被帶到小店，看到「閣樓的梯子」不知道是在買什麼）。
+   小屋地圖、小窩指南都走這裡；小店裡那兩樣照舊可以買，下面多一行字說是開哪一間。back：按「先不要」回到哪裡（沒有就關掉） */
+let roomAskBack = null;
+function roomAsk(r, back){
+  const k = ROOM_KEY[r]; if (!k || home[r] || VISIT) return;
+  roomAskBack = typeof back === 'function' ? back : null;
+  const lack = k.price - S.coins;
+  openSheet(`<div class="hd">${ICON[r]}<span>${k.name}</span><small class="pc-left">${COIN}${S.coins}</small></div>
+    <div class="rk-box"><span class="tile rk-pic">${shopKeyPic(r)}</span>
+      <p class="rk-q">${k.name}還沒開。${lack > 0 ? `打開要 ${k.price} 枚幣。` : `用 ${k.price} 枚幣打開嗎？`}</p>
+      ${lack > 0 ? `<p class="rk-lack">還差 ${lack} 枚</p>` : ''}
+      <div class="rk-row">${lack > 0 ? '<button class="btn y" data-rk="earn">去賺幣</button>' : `<button class="btn y" data-rk="${r}">打開（${k.price}）</button>`}<button class="btn" data-rk="no">先不要</button></div></div>`);
+  evOpen = false; alOpen = false;
+}
+// 付幣、打開、走進去。跟在小店買那一樣是同一件事（js/shop.js 的 shopBuy）
+function roomKeyPay(r){
+  const k = ROOM_KEY[r]; if (!k || home[r] || VISIT) return;
+  if (S.coins < k.price){ roomAsk(r, roomAskBack); return; }
+  S.coins -= k.price;
+  shopKeyBuy(r);
+  if (typeof shopStock === 'function') shopStock().bought.push('k:' + r);
+  renderHud(); save();
+}
+$('#sheet').addEventListener('click', e => {
+  const b = e.target.closest('[data-rk]'); if (!b) return;
+  const v = b.dataset.rk, back = roomAskBack; roomAskBack = null;
+  if (v === 'no'){ $('#sheet').hidden = true; if (back) back(); }
+  else if (v === 'earn'){ if (typeof earnOpen === 'function') earnOpen(); else $('#sheet').hidden = true; }
+  else { roomAskBack = back; roomKeyPay(v); }
+});
+
 /* 新房間的小事：when 是房間名，只有買了那一間才會排進來，一天最多多一件（main.js 的 planDay） */
 EVENTS.push(
   {id:'kit-nyanko', d:['nyanko'], when:'kitchen', t:'貓咪老師坐在廚房正中間，說這裡以後歸牠管。', end:'摸了牠的頭。貓咪老師說可以，但冰箱不能亂開。'},
@@ -55,7 +86,7 @@ setInterval(() => {
 /* ---------- 小屋地圖（看得出自己在哪一間 2） ----------
    切換鈕最左邊的小房子：打開整棟雲上小屋的剖面圖。最上面是閣樓，二樓是臥室和浴室，一樓是客廳和廚房，門外是小島。
    - 每一格看得到那一間現在的壁紙和地板、有沒有開燈、哪幾隻娃娃在裡面（小頭像）
-   - 還沒開的房間畫成關燈，掛一把鑰匙和價錢，點了去小店
+   - 還沒開的房間畫成關燈，掛一把鑰匙和價錢，點了直接問要不要打開（roomAsk）
    - 現在在的那一格有亮框和「你在這裡」；點任何一格就過去
    - 去朋友家時畫的是朋友的家 */
 const MAP_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11.500L12 4l9 7.500V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M12 4v17M3 13.500h18" stroke="#fff" stroke-width="1.600"/></svg>';
@@ -74,7 +105,7 @@ function mapCell(r){
     const k = ROOM_KEY[r];
     return VISIT
       ? `<button class="hm-c lock none" disabled aria-label="${ROOM_LABEL[r]}，這裡看不到"><span class="hm-wall"></span>${nm}</button>`
-      : `<button class="hm-c lock" data-hm="${r}" aria-label="${ROOM_LABEL[r]}還沒開，${k.key} ${k.price} 枚幣"><span class="hm-wall"></span><span class="hm-key">${MAP_KEY}<b>${COIN}${k.price}</b></span>${nm}</button>`;
+      : `<button class="hm-c lock" data-hm="${r}" aria-label="${ROOM_LABEL[r]}還沒開，點一下打開，${k.price} 枚幣"><span class="hm-wall"></span><span class="hm-key">${MAP_KEY}<b>點一下打開・${COIN}${k.price}</b></span>${nm}</button>`;
   }
   // 現在誰在這一間：出門去隔壁的不算、來作客的算（js/roam2.js）；沒有那個檔案就照擺設
   const dolls = (typeof roamIn === 'function' ? roamIn(r, rm) : rm.items.filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id)).slice(0, 6).map(id => ({id}));
@@ -90,7 +121,7 @@ function mapOpen(){
       <div class="hm-house"><div class="hm-row one">${mapCell('attic')}</div><div class="hm-row">${mapCell('bed')}${mapCell('bath')}</div><div class="hm-row">${mapCell('living')}${mapCell('kitchen')}</div></div>
       <div class="hm-out">${mapCell('yard')}</div>
       ${!VISIT && typeof tvMapNote === 'function' ? tvMapNote() : ''}
-      <p class="bk-note">點一間就過去。${VISIT ? '' : '還沒開的房間在火腿的小店買。'}</p>
+      <p class="bk-note">點一間就過去。${VISIT ? '' : '還沒開的房間點一下就能打開。'}</p>
       ${!VISIT && typeof roamToggleHTML === 'function' ? roamToggleHTML() : ''}</div>`);
   evOpen = false; alOpen = false;
 }
@@ -102,7 +133,7 @@ $('#nav').addEventListener('click', e => {
 $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('[data-hm]'); if (!b || !$('#sheet .hm')) return;
   const r = b.dataset.hm;
-  if (r !== 'yard' && !(VISIT ? VISIT.home : home)[r]){ if (!VISIT && typeof shopOpen === 'function') shopOpen(); return; }
+  if (r !== 'yard' && !(VISIT ? VISIT.home : home)[r]){ if (!VISIT) roomAsk(r, mapOpen); return; }
   $('#sheet').hidden = true;
   goRoom(r);
 });
@@ -143,12 +174,12 @@ const FIX = {
     <path d="M16 14v12" stroke="#b9773f" stroke-width="2.600" stroke-linecap="round"/><ellipse cx="16" cy="32" rx="6" ry="7" fill="#ffd9a0" stroke="#d99a00" stroke-width="1.600"/>
     <path d="M40 14v10" stroke="#b9773f" stroke-width="2.600" stroke-linecap="round"/><rect x="34" y="24" width="12" height="15" rx="3" fill="#cdeeff" stroke="#4a9fd0" stroke-width="1.600"/><path d="M38 27v9M42 27v9" stroke="#4a9fd0" stroke-width="1.200"/>
     <path d="M58 16c0-3 12-3 12 0v14c0 8-12 8-12 0z" fill="#ff9cc8" stroke="#e0609d" stroke-width="1.600"/><path d="M58 22h12" stroke="#fff" stroke-width="1.600"/></svg>`,
-  // 房間邊上的門口：side 'l' 貼左邊、'r' 貼右邊，門框上是隔壁那一間的圖示
+  // 房間邊上的門口：side 'l' 貼左邊、'r' 貼右邊，門框上是隔壁那一間的圖示。箭頭和圖示是給人點的（class ph-no），拍照時不畫、門本身留著
   pass: (r, side) => `<svg viewBox="0 0 34 100"><g ${side === 'l' ? 'transform="translate(34 0) scale(-1 1)"' : ''}>
     <path d="M6 100V22c0-9 6-14 14-14h14v92z" fill="#7a5a48"/><path d="M11 100V24c0-6 4-10 10-10h13v86z" fill="#fde9d2"/>
     <path d="M11 100V24c0-6 4-10 10-10h13" fill="none" stroke="#c98f56" stroke-width="2.400"/><path d="M6 100V22c0-9 6-14 14-14h14" fill="none" stroke="#9a6431" stroke-width="2.400"/>
-    <path d="M24 50l6 6-6 6" fill="none" stroke="#ff9cc8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
-    <circle cx="${side === 'l' ? 14 : 20}" cy="30" r="9.500" fill="#fff" stroke="#ffd3e6" stroke-width="1.800"/><g transform="translate(${side === 'l' ? 6.500 : 12.500} 22.500) scale(.625)" fill="#ff6fb0">${fxIcon(r).replace(/<\/?svg[^>]*>/g, '')}</g></svg>`,
+    <path class="ph-no" d="M24 50l6 6-6 6" fill="none" stroke="#ff9cc8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <circle class="ph-no" cx="${side === 'l' ? 14 : 20}" cy="30" r="9.500" fill="#fff" stroke="#ffd3e6" stroke-width="1.800"/><g class="ph-no" transform="translate(${side === 'l' ? 6.500 : 12.500} 22.500) scale(.625)" fill="#ff6fb0">${fxIcon(r).replace(/<\/?svg[^>]*>/g, '')}</g></svg>`,
 };
 function fixPaint(){
   room.querySelectorAll('.fx').forEach(e => e.remove());

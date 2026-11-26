@@ -232,7 +232,13 @@ async function photoShoot(){
     const winEl = $('#win svg');
     if (winEl){ const b = boxIn(winEl, R), im = await svgImg(winEl, b.w * s, b.h * s, 'win'); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); chk('窗戶'); }
     // 房間固定的構造（門、磁磚、流理台、通往隔壁的門口…，js/rooms.js 的 .fx）：照片要跟畫面一樣
-    for (const fx of room.querySelectorAll('.fx svg')){ const b = boxIn(fx, R), im = await svgImg(fx, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); chk(photoElName(fx)); }
+    // 門口上的箭頭和隔壁那一間的圖示是按鈕（class ph-no）：拍照時先藏起來，門本身留著
+    for (const fx of room.querySelectorAll('.fx svg')){
+      const hid = [...fx.querySelectorAll('.ph-no')]; hid.forEach(e => e.setAttribute('display', 'none'));
+      try { const b = boxIn(fx, R), im = await svgImg(fx, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }
+      finally { hid.forEach(e => e.removeAttribute('display')); }
+      chk(photoElName(fx));
+    }
   }
 
   // 家具、娃娃、地上的小東西：照前後順序（z-index）畫

@@ -1285,3 +1285,18 @@ span.yd-kind{cursor:default}
 /* 收納架的格子也一樣：細長的家具圖縮進格子裡，不要超出去 */
 .items .tile{grid-template:minmax(0,1fr)/minmax(0,1fr)}
 .items .tile>svg{min-height:0}
+
+/* 還沒開的房間：直接問要不要打開（js/rooms.js 的 roomAsk） */
+.rk-box{display:grid;justify-items:center;gap:8px;padding:6px 4px 4px;text-align:center}
+.rk-box .rk-pic{width:96px;cursor:default}
+.rk-q{margin:4px 0 0;font-size:15.500px;font-weight:900;line-height:1.5}
+.rk-lack{margin:0;font-size:13px;font-weight:800;color:var(--pink2)}
+.rk-row{display:flex;gap:10px;justify-content:center;margin-top:6px;flex-wrap:wrap}
+.rk-row .btn{min-width:108px}
+/* 地圖上還沒開的那一格：鑰匙下面寫「點一下打開・40」 */
+.hm-key b{white-space:nowrap}
+/* 小店：鑰匙和梯子下面那一行說明 */
+.sp-it .rm-tag{white-space:normal;text-align:center;line-height:1.3;justify-content:center}
+/* 朋友的明信片：你家的娃娃也在裡面 */
+.pc-top .pc-mine{opacity:1;font-weight:800;margin-top:2px}
+.pc-top:has(.pc-mine){top:calc(7px + var(--sat,0px))}

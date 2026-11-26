@@ -360,9 +360,9 @@ if (PAPER_ON) (() => {
       ${L(path('M6 100V22c0-9 6-14 14-14h14v92z'), C.wood, 1.5)}
       ${path('M11 100V24c0-6 4-10 10-10h13v86z')(mix(C.wall2, C.ink, .35))}
       <path d="M11 100V24c0-6 4-10 10-10h13v4H23c-5 0-8 3-8 8v74z" fill="${C.ink}" opacity=".3"/>
-      ${path('M24.500 50l6.500 6-6.500 6z')(C.sun)}</g>
-    ${L(circ(side === 'l' ? 14 : 20, 30, 9.5), C.paper, 1.2)}
-    <g transform="translate(${side === 'l' ? 6.5 : 12.5} 22.5) scale(.625)" fill="${C.ink}" style="color:${C.ink}">${(ICON[r] || '').replace(/<\/?svg[^>]*>/g, '')}</g></svg>`;
+      <g class="ph-no">${path('M24.500 50l6.500 6-6.500 6z')(C.sun)}</g></g>
+    <g class="ph-no">${L(circ(side === 'l' ? 14 : 20, 30, 9.5), C.paper, 1.2)}</g>
+    <g class="ph-no" transform="translate(${side === 'l' ? 6.5 : 12.5} 22.5) scale(.625)" fill="${C.ink}" style="color:${C.ink}">${(ICON[r] || '').replace(/<\/?svg[^>]*>/g, '')}</g></svg>`;
   const lswPaper = () => `<svg viewBox="0 0 24 32">${L(rect(2, 2, 20, 28, 4), C.paper, 1)}${rect(7.5, 6.5, 9, 19, 3)(C.paperd)}<rect class="nub" x="9" y="7.6" width="6" height="8" rx="2.4" fill="${C.a1}"/></svg>`;
 
   const inLiving = () => typeof RIDS !== 'undefined' && RIDS.includes(roomId);   // 名字是第一版留下來的：現在五間房間都算

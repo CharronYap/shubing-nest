@@ -16,7 +16,8 @@ const gdRoom = r => { gdShut(); setPage('room'); if (typeof yardOn !== 'undefine
 const gdAcct = () => { gdShut(); const b = $('#coverAcct'); if (b) b.click(); };
 const gdDoll = d => `<img src="${SPR[d]}" alt="">`;
 const gdNeedLogin = () => gdIn() ? '' : '登入之後才有。帳號在封面左上角。';
-const gdKey = r => () => home[r] ? '' : `還沒開。火腿的小店有賣${ROOM_KEY[r].key}，${ROOM_KEY[r].price} 枚幣。`;
+const gdKey = r => () => home[r] ? '' : `還沒開。${ROOM_KEY[r].price} 枚幣可以打開。`;
+const gdAsk = r => () => roomAsk(r, guideOpen);   // 直接問要不要打開（js/rooms.js）
 const gdShop = () => { if (typeof shopOpen === 'function') shopOpen(); };
 const gdTab = t => { gdRoom(roomId === 'yard' ? 'living' : null); tab = t; if (typeof setTray === 'function') setTray(false); renderTray(); if (typeof layout === 'function') layout(); };
 
@@ -28,8 +29,8 @@ const GUIDE = [
   {c: 'room', ic: '<span class="sw w-dots"></span>', t: '壁紙和地板', s: '收納架第三個分頁，點一下就換。', go: () => gdTab('deco')},
   {c: 'room', ic: gdDoll('sloth'), t: '開燈和關燈', s: '牆上的開關。關了燈，房間暗下來，燈會亮。', go: () => gdRoom(roomId === 'yard' ? 'living' : null)},
   {c: 'room', ic: ICON.yard, t: '門外小島', s: '客廳的門走出去。可以帶娃娃去、擺戶外的家具；種花、搖樹、招待小客人，都是點一下。', go: () => gdRoom('yard')},
-  {c: 'room', ic: ICON.kitchen, t: '廚房', s: '多一間可以佈置的房間。', go: () => gdRoom('kitchen'), lock: gdKey('kitchen'), lockGo: gdShop, lockBtn: '去小店'},
-  {c: 'room', ic: ICON.attic, t: '閣樓', s: '晚上從天窗看得到流星。', go: () => gdRoom('attic'), lock: gdKey('attic'), lockGo: gdShop, lockBtn: '去小店'},
+  {c: 'room', ic: ICON.kitchen, t: '廚房', s: '多一間可以佈置的房間。', go: () => gdRoom('kitchen'), lock: gdKey('kitchen'), lockGo: gdAsk('kitchen'), lockBtn: '打開'},
+  {c: 'room', ic: ICON.attic, t: '閣樓', s: '晚上從天窗看得到流星。', go: () => gdRoom('attic'), lock: gdKey('attic'), lockGo: gdAsk('attic'), lockBtn: '打開'},
   {c: 'room', ic: CAM_ICON, t: '拍照', s: '右上角的相機。把現在的房間拍下來，可以存到手機。', go: () => { gdRoom(roomId === 'yard' ? 'living' : null); toast('右上角的相機，按一下就拍'); }},
   {c: 'room', ic: gdDoll('moodeng'), t: '窗外和季節', s: '窗外跟著時間、天氣、月份變。過節那幾天，收納架的紀念那一頁會多出節日的東西。'},
   // ---- 娃娃

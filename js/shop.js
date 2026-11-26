@@ -49,7 +49,7 @@ function shopOpen(keep){
   const cards = list.map((x, i) => {
     const own = shopOwned(x), p = shopPrice(x);
     // 家具標出是哪一間用的；已經有的可以點「去擺」，直接帶到那一間的收納架
-    const tag = x.kind === 'furn' ? furnRoomTag(x.id) : x.kind === 'key' ? '' : '<span class="rm-tag">每一間都能換</span>';
+    const tag = x.kind === 'furn' ? furnRoomTag(x.id) : x.kind === 'key' ? `<span class="rm-tag">買了就能進${ROOM_KEY[x.id].name}</span>` : '<span class="rm-tag">每一間都能換</span>';
     const have = x.kind === 'furn' ? `<button class="btn sm sp-go" data-spgo="${x.id}" aria-label="有了，去擺${shopName(x)}">有了・去擺</button>` : '<small>有了</small>';
     return `<div class="sp-it ${own ? 'own' : ''}"><span class="tile">${shopPic(x)}</span><b>${shopName(x)}</b>${tag}
       ${own ? have : `<button class="btn y sm" data-sp="${i}" aria-label="買${shopName(x)}，${p} 枚幣">${COIN}${p}</button>`}</div>`;
