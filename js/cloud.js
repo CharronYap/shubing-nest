@@ -25,6 +25,7 @@
 //   第五版（規則發布前都會被擋，呼叫的地方要接住錯誤）：
 //   cloud.bookAdd(uid, day, {fromName, sticker, msg}) / cloud.bookMine(uid, day) / cloud.book(uid) / cloud.bookDel(uid, id)   訪客簿
 //   cloud.waterAdd(uid, day, {fromName, plot}) / cloud.waterMine(uid, day) / cloud.waters() / cloud.waterDel(id)             幫朋友澆水
+//   cloud.foundAdd(uid, day, {fromName, ok, n}) / cloud.foundMine(uid, day) / cloud.founds() / cloud.foundDel(id)            躲貓貓找的結果（js/hide.js）
 //   cloud.stayGo({to, doll, look, day, x, y, fromName}) / cloud.stayMine() / cloud.stayGuests() / cloud.staySet(uid, patch) / cloud.stayEnd(uid)   過夜
 //   cloud.cardSend({to, snap, msg, fromName}) / cloud.cardsTo() / cloud.cardDel(id)                                          明信片
 //
@@ -211,7 +212,8 @@ export function createCloud(config, { emulator = false } = {}) {
       try { await F.setDoc(F.doc(db, 'nestRooms', user.uid), data); }
       catch (e) {
         // 保險（規則已發布，正常不會走到這裡）：第五版的 want（願望清單）、yard（小島給朋友看的樣子）舊版規則不收。還沒發布時先拿掉再寫，房間照樣放得上去
-        const extra = ['want', 'yard'].filter(k => k in data);
+        // 躲貓貓的 hide（2026-11-26，規則還沒發布）也一樣：被擋就先拿掉，房間照樣放得上去
+        const extra = ['want', 'yard', 'hide'].filter(k => k in data);
         const rooms = data.home ? ['kitchen', 'attic'].filter(k => k in data.home) : [];
         if (!(e && e.code === 'permission-denied' && (extra.length || rooms.length))) throw e;
         const d = { ...data }; extra.forEach(k => delete d[k]);
@@ -324,6 +326,31 @@ export function createCloud(config, { emulator = false } = {}) {
       await ready;
       if (!user) throw new Error('not signed in');
       await F.deleteDoc(F.doc(db, 'nestRooms', user.uid, 'water', id));
+    },
+    // ---------- 躲貓貓：朋友找的結果（nestRooms/{主人}/found/{日子_找的人}），寫法跟澆水一樣 ----------
+    async foundAdd(uid, day, { fromName, ok, n }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'nestRooms', uid, 'found', `${day}_${user.uid}`), {
+        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), day, ok: !!ok, n: Math.max(1, Math.min(3, n | 0)),
+      });
+    },
+    async foundMine(uid, day) {
+      await ready;
+      if (!user) return null;
+      const s = await F.getDoc(F.doc(db, 'nestRooms', uid, 'found', `${day}_${user.uid}`));
+      return s.exists() ? s.data() : null;
+    },
+    async founds() {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestRooms', user.uid, 'found'), F.limit(30)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    async foundDel(id) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.deleteDoc(F.doc(db, 'nestRooms', user.uid, 'found', id));
     },
     // ---------- 娃娃去朋友家過夜（nestStays/{出門的人}，一人一筆） ----------
     async stayGo({ to, doll, look, day, x, y, fromName }) {

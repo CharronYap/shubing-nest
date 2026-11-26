@@ -1029,3 +1029,37 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .tour-hi{outline:3.5px solid #ffb400;outline-offset:3px;border-radius:16px;animation:tourPulse 1.2s ease-in-out infinite}
 @keyframes tourPulse{50%{outline-offset:8px;outline-color:rgba(255,180,0,.45)}}
 @media (prefers-reduced-motion:reduce){.tour-hi{animation:none}}
+
+/* ---------- 躲貓貓（js/hide.js） ---------- */
+.hide-chip{position:absolute;transform:translate(-50%,0);z-index:560;appearance:none;border:2.5px solid #ffd27a;background:#fff;color:#8a5a12;font:inherit;font-size:13px;font-weight:900;
+  border-radius:999px;padding:5px 13px;box-shadow:0 4px 0 #f0d9a6;cursor:pointer;white-space:nowrap;animation:hideChip .2s ease-out}
+.hide-chip:active{translate:0 2px;box-shadow:0 2px 0 #f0d9a6}
+@keyframes hideChip{from{opacity:0;scale:.8}to{opacity:1;scale:1}}
+.room.hide-pick .it:not(.doll){outline:3px dashed #ffb400;outline-offset:2px;border-radius:14px;cursor:pointer}
+.room.hide-pick .it.doll{opacity:.55}
+.doll.hiding .body{scale:.8;animation:hidePeek 3.4s ease-in-out infinite}
+@keyframes hidePeek{0%,100%{translate:0 0}50%{translate:0 -7%}}
+.it.hide-no{animation:hideNo .5s ease-in-out}
+@keyframes hideNo{20%{rotate:-5deg}45%{rotate:5deg}70%{rotate:-3deg}100%{rotate:0deg}}
+.hidepop{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
+.hidepop .body{animation:hideOut .9s cubic-bezier(.3,1.5,.5,1)}
+@keyframes hideOut{0%{translate:0 40%;scale:.5;opacity:0}60%{translate:0 -30%;scale:1.05;opacity:1}100%{translate:0 0;scale:1}}
+.vb-hide{background:#fff3c4;border-color:#e8b93c;color:#6b4a08}
+.vb-hide svg{color:#e8a013}
+@media (prefers-reduced-motion:reduce){.hide-chip,.doll.hiding .body,.it.hide-no,.hidepop .body{animation:none}}
+/* ---------- 紀念冊、今天誰來過（js/memo.js） ---------- */
+.al-memo{margin-left:auto;margin-right:34px}
+.mm-box{display:grid;gap:7px}
+.mm-it{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:14px;border:2px solid #f3e7ef;background:#fff}
+.mm-it small{flex:none;width:62px;font-size:11.5px;font-weight:800;color:var(--soft)}
+.mm-it .ic{flex:none;width:22px;height:22px;display:grid;place-items:center;color:var(--pink2)}
+.mm-it .ic svg{width:100%;height:100%}
+.mm-it p{flex:1;min-width:0;margin:0;font-size:13.5px;line-height:1.45;font-weight:700;overflow-wrap:anywhere}
+.mm-it p i{font-style:normal;font-size:11.5px;color:var(--pink2);margin-left:6px;font-weight:800}
+.mm-it.tap{cursor:pointer;border-color:#f6c9dc}
+.pcard.who{max-width:280px;justify-items:stretch;text-align:left}
+.pcard.who h3{text-align:center}
+.who-l{margin:0;font-size:14px;line-height:1.55;font-weight:700;overflow-wrap:anywhere}
+.who-l svg{width:16px;height:16px;vertical-align:-3px;margin-right:4px}
+.pcard.who .pz-row{justify-content:center}
+.pcard.who .who-mm{width:auto;height:auto;padding:10px 14px}

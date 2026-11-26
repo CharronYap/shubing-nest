@@ -93,6 +93,9 @@ async function pushRoom() {
   const want = typeof wantList === 'function' ? wantList() : [];
   if (want.length) data.want = want;
   if (S.yard && Array.isArray(S.yard.p) && S.yard.day) data.yard = { p: S.yard.p.map(p => (p.k ? { s: p.s, k: p.k } : { s: p.s })) };
+  // 躲貓貓：哪一隻躲在哪一間的哪一件家具後面（js/hide.js）。規則還沒收這一欄時 cloud.saveRoom 會拿掉再寫
+  const hide = typeof hidePublic === 'function' ? hidePublic() : null;
+  if (hide) data.hide = hide;
   const key = JSON.stringify(data);
   if (key === roomSent) return;
   try { await cloud.saveRoom({ ...data, t: Date.now() }); roomSent = key; }
@@ -297,7 +300,7 @@ function openAccount() {
     try {
       const found = (await cloud.findCode(code)).filter(p => p.uid !== me.uid);
       if (!found.length) err.textContent = '找不到這個好友碼';
-      else { await cloud.addFriend(found[0].uid); f.c.value = ''; say(`加了 ${found[0].name}`); await loadFriends(); }
+      else { await cloud.addFriend(found[0].uid); f.c.value = ''; say(`加了 ${found[0].name}`); if (window.nestMemo) window.nestMemo('friend', found[0].uid, found[0].name); await loadFriends(); }
     } catch (e2) { console.warn('[account]', e2); err.textContent = '沒有成功，請再試一次'; }
     f.querySelector('button').disabled = false;
   };
@@ -371,7 +374,7 @@ async function loadFriends() {
       if (b.dataset.rm !== undefined && !b.dataset.sure){ b.dataset.sure = '1'; b.textContent = '確定移除'; setTimeout(() => { if (b.isConnected){ delete b.dataset.sure; b.textContent = '移除'; } }, 4000); return; }
       b.disabled = true;
       try {
-        if (b.dataset.add !== undefined){ await cloud.addFriend(p.uid); say(`加了 ${p.name}`); }
+        if (b.dataset.add !== undefined){ await cloud.addFriend(p.uid); say(`加了 ${p.name}`); if (window.nestMemo) window.nestMemo('friend', p.uid, p.name); }
         else { await cloud.removeFriend(p.uid); say(`把 ${p.name} 從好友移除了`); }
         friends = null; await loadFriends();
       } catch (e2) { console.warn('[account]', e2); say('沒有成功，請再試一次'); b.disabled = false; }
@@ -397,7 +400,7 @@ window.nestNet = {
   heartsToday: () => cloud.heartsToday(nestDay()),   // 愛心換幣（js/earn.js）
 };
 // 第五版的雲端動作，原樣轉給 cloud.js
-['bookAdd', 'bookMine', 'book', 'bookDel', 'waterAdd', 'waterMine', 'waters', 'waterDel',
+['bookAdd', 'bookMine', 'book', 'bookDel', 'waterAdd', 'waterMine', 'waters', 'waterDel', 'foundAdd', 'foundMine', 'founds', 'foundDel',
   'stayGo', 'stayMine', 'stayGuests', 'staySet', 'stayEnd', 'cardSend', 'cardsTo', 'cardDel']
   .forEach(k => { window.nestNet[k] = (...a) => cloud[k](...a); });
 

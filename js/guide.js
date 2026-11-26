@@ -58,6 +58,9 @@ const GUIDE = [
   {c: 'pal', ic: MAIL_ICON, t: '送娃娃', s: '把留著的那隻送給朋友。從信箱最下面，或點娃娃機的店員。', go: () => { setPage('room'); openMail(); }, btn: '去信箱', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
   {c: 'pal', ic: WATER_ICON, t: '幫忙澆水', s: '去朋友家的小島幫他澆水。朋友也會來幫你，一次 1 枚。', go: gdAcct, btn: '開好友清單', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
   {c: 'pal', ic: STAY_MOON, t: '過夜', s: '去朋友家時，可以讓一隻娃娃留下來住一晚，隔天牠帶日記回來。', go: gdAcct, btn: '開好友清單', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
+  {c: 'pal', ic: gdDoll('dino'), t: '躲貓貓', s: '點一隻娃娃選「躲起來」，再點一件家具。朋友來你家有 3 次機會找牠，找到兩邊各 1 枚。', go: () => gdRoom(roomId === 'yard' ? 'living' : null), lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
+  {c: 'pal', ic: ALB_ICON, t: '兩個人的紀念冊', s: '跟朋友一起做過的事，照時間排：明信片、送的娃娃、過夜、訪客簿、躲貓貓、澆水。', go: () => { setPage('room'); memoOpen(); }, lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
+  {c: 'pal', ic: HEART(), t: '今天誰來過', s: '朋友在你不在的時候來過，打開小窩會跳一張小卡片告訴你，一天最多一次。'},
   {c: 'pal', ic: CARD_ICON, t: '明信片', s: '拍完照可以寄給朋友。收到的在信箱裡。', go: () => { setPage('room'); openMail(); }, btn: '去信箱', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
 ];
 

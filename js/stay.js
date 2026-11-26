@@ -112,6 +112,7 @@ async function stayHome(diary){
     const tr = S.album.trips = S.album.trips || {}, l = tr[o.d] = tr[o.d] || [];
     l.push(`${o.t}|${o.w}`); if (l.length > 12) l.splice(0, l.length - 12);
     setTimeout(() => toast(`${DOLL_NAME[o.d]}從${o.w}家回來了，信箱有牠的日記`), 800);
+    if (typeof memoAdd === 'function') memoAdd('stayBack', o.to, o.w, {id: 'sb' + o.t + o.d, d: o.d});
   } else toast(`${DOLL_NAME[o.d]}回來了`);
   save();
   if (!VISIT){ if (RIDS.includes(roomId)) load(); mailBadge(); }
