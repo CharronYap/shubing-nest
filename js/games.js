@@ -3,6 +3,8 @@
    - 翻牌：12 張牌，八隻娃娃抽六隻各兩張，翻到一樣的就收走，翻完算翻了幾次。
    - 這是誰的（2026-11-27）：中間出現一樣東西，點牠的主人（家裡有的娃娃才會出現），40 秒算送回幾樣。點錯那隻只會搖頭，不扣東西。
      樣式寫在這個檔裡（gm3Css，class 都是 gm3- 開頭），沒有放進 css/style.css。
+   - 連星星（2026-11-28）：夜空裡有標了 1、2、3 的星星，照順序點，連成一個形狀（每隻娃娃一個），連完那隻冒出來講一句。
+     45 秒算連出幾個。點錯的星星只會晃一下，不扣東西；下一顆一直在閃，不用記。樣式在 gm4Css，class 都是 gm4- 開頭。
    給幣：每天前 3 局照成績給 3～5 枚，之後每一局固定 1 枚，沒有次數上限（js/earn.js 的 earnGameDone）。
    不懲罰、不催人：漏接、翻錯都不扣東西，中途關掉也不會怎樣（只是那一局沒有幣）。 */
 const GAME_TV = '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3" fill="currentColor"/><rect x="5.5" y="8.5" width="10" height="7" rx="1.5" fill="#fff"/><circle cx="18" cy="10" r="1" fill="#fff"/><circle cx="18" cy="13.5" r="1" fill="#fff"/><path d="M9 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -227,6 +229,116 @@ function gameWhose(){
   gmRaf = requestAnimationFrame(tick);
 }
 
+/* ---------- 連星星 ---------- */
+// 每隻娃娃一個形狀（照個性挑）：p 是一圈的點（-1～1，照順序連，最後接回第一顆），c 是連完塗的顏色，l 是那隻講的話
+const GM4_SHAPES = {
+  sloth: {n: '雲', c: '#ffffff', l: '是雲耶。好軟。', p: [[-.95, .35], [-.9, -.05], [-.55, -.3], [-.2, -.6], [.25, -.55], [.55, -.25], [.95, .05], [.85, .4]]},
+  egg: {n: '蛋', c: '#ffe58f', l: '是蛋。我先躺一下。', p: [[0, -.95], [.5, -.6], [.7, 0], [.55, .6], [0, .85], [-.55, .6], [-.7, 0], [-.5, -.6]]},
+  dog: {n: '拖鞋', c: '#ff9cc8', l: '汪！是拖鞋！我的！', p: [[0, -.95], [.42, -.65], [.45, -.1], [.38, .45], [.25, .9], [-.25, .9], [-.38, .45], [-.45, -.1], [-.42, -.65]]},
+  moodeng: {n: '水滴', c: '#8fd3ef', l: '是水！！我的水！！', p: [[0, -1], [.4, -.35], [.62, .2], [.42, .7], [0, .85], [-.42, .7], [-.62, .2], [-.4, -.35]]},
+  nyanko: {n: '饅頭', c: '#fff8ee', l: '是饅頭。本大爺餓了。', p: [[-.95, .45], [-.85, -.05], [-.55, -.45], [0, -.62], [.55, -.45], [.85, -.05], [.95, .45]]},
+  dino: {n: '葉子', c: '#b8e986', l: '嘿嘿，是我的葉子！', p: [[0, -1], [.45, -.55], [.6, 0], [.4, .5], [0, .95], [-.4, .5], [-.6, 0], [-.45, -.55]]},
+  snoopy: {n: '紙飛機', c: '#cdeeff', l: '王牌飛行員的飛機。', p: [[-.95, -.55], [0, -.25], [.95, 0], [0, .25], [-.95, .55], [-.45, 0]]},
+  piggy: {n: '硬幣', c: '#ffd66b', l: '一枚硬幣，收下了。', p: [[0, -.8], [.57, -.57], [.8, 0], [.57, .57], [0, .8], [-.57, .57], [-.8, 0], [-.57, -.57]]},
+};
+const GM4_ICON = '<svg viewBox="0 0 40 40"><rect x="3" y="3" width="34" height="34" rx="9" fill="#3b3f8f"/><path d="M10 28L17 13l9 8 6-9" fill="none" stroke="#fff3c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><g fill="#ffd75e"><circle cx="10" cy="28" r="3"/><circle cx="17" cy="13" r="3"/><circle cx="26" cy="21" r="3"/><circle cx="32" cy="12" r="3"/></g></svg>';
+// 一顆星（5 個角，圓角）：中心 0,0，大小 r
+const gm4Star = r => { let d = ''; for (let k = 0; k < 10; k++){ const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * .45 : r; d += (k ? 'L' : 'M') + (rr * Math.cos(a)).toFixed(2) + ' ' + (rr * Math.sin(a)).toFixed(2); } return d + 'Z'; };
+function gm4Css(){
+  if (document.getElementById('gm4-css')) return;
+  const s = document.createElement('style'); s.id = 'gm4-css';
+  s.textContent = `
+.gm4-sky{position:relative;height:min(58dvh,430px);border-radius:16px;overflow:hidden;background:linear-gradient(#232a5c,#3b3f8f 70%,#5a4f93);touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.gm4-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.gm4-s{cursor:pointer;outline:none}
+.gm4-s .hit{fill:transparent}
+.gm4-s .st{fill:#fff3c4;stroke:#d99a00;stroke-width:.5;stroke-linejoin:round}
+.gm4-s text{font:700 3.6px sans-serif;fill:#5a4a52;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.gm4-s.on .st{fill:#ffd75e}
+.gm4-s.nx .st{fill:#fff;stroke:#ffd75e;stroke-width:.9}
+.gm4-s.nx .ring{fill:none;stroke:#ffd75e;stroke-width:.6;opacity:.8;transform-box:fill-box;transform-origin:center;animation:gm4Ring 1.2s ease-out infinite}
+.gm4-s.no .st{transform-box:fill-box;transform-origin:center;animation:gm4No .35s}
+.gm4-s:focus-visible .st{stroke:#fff;stroke-width:1.2}
+.gm4-line{fill:none;stroke:#fff3c4;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round;opacity:.95}
+.gm4-fill{stroke:none;opacity:0;transition:opacity .35s}
+.gm4-fill.on{opacity:.55}
+.gm4-done{position:absolute;left:50%;bottom:4%;transform:translateX(-50%);display:grid;justify-items:center;gap:4px;pointer-events:none;animation:gm4Pop .3s ease-out}
+.gm4-done[hidden]{display:none}
+.gm4-name{position:absolute;left:0;right:0;top:3%;text-align:center;font-size:20px;font-weight:900;color:#fff3c4;text-shadow:0 2px 0 rgba(0,0,0,.25);pointer-events:none;animation:gm4Fade .3s ease-out}
+.gm4-name[hidden]{display:none}
+.gm4-done p{margin:0;padding:3px 10px;border-radius:10px;font-size:12.5px;font-weight:800;white-space:nowrap;background:var(--p-paper,#fff);color:var(--p-ink,var(--ink,#5a4650));box-shadow:0 2px 0 var(--p-edge,#ead9e2)}
+.gm4-done img{width:64px;height:64px;object-fit:contain}
+@keyframes gm4Ring{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.9);opacity:0}}
+@keyframes gm4No{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.2px)}75%{transform:translateX(1.2px)}}
+@keyframes gm4Fade{0%{opacity:0}100%{opacity:1}}
+@keyframes gm4Pop{0%{transform:translateX(-50%) scale(.6);opacity:0}100%{transform:translateX(-50%) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.gm4-s.nx .ring{animation:none}.gm4-s.no .st,.gm4-done,.gm4-name{animation:none}}`;
+  document.head.appendChild(s);
+}
+function gameStars(){
+  gm4Css();
+  const SEC = 45, W = 100, H = 130;
+  const own = DOLLS.filter(d => DOLL_N[d] > 0 && GM4_SHAPES[d]), pool = own.length ? own : Object.keys(GM4_SHAPES);
+  let bg = '';
+  for (let i = 0; i < 28; i++) bg += `<circle cx="${(Math.random() * W).toFixed(1)}" cy="${(Math.random() * H).toFixed(1)}" r="${(.25 + Math.random() * .45).toFixed(2)}" fill="#fff" opacity="${(.25 + Math.random() * .5).toFixed(2)}"/>`;
+  const o = gameShell('連星星', `<div class="gm-body"><div class="gm4-sky">
+      <svg class="gm4-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="group" aria-label="照順序點星星"><g>${bg}</g><path class="gm4-fill"/><polyline class="gm4-line" points=""/><g class="gm4-stars"></g></svg>
+      <b class="gm4-name" hidden></b><div class="gm4-done" hidden aria-live="polite"><img alt=""><p></p></div>
+    </div><p class="gm-tip">照 1 2 3 的順序點星星，連出一個形狀。點錯不扣東西。</p></div>`);
+  const svg = o.querySelector('.gm4-svg'), stars = o.querySelector('.gm4-stars'), line = o.querySelector('.gm4-line'), fill = o.querySelector('.gm4-fill');
+  const done = o.querySelector('.gm4-done'), name = o.querySelector('.gm4-name'), st = o.querySelector('.gm-st');
+  let score = 0, over = false, busy = false, next = 0, pts = [], cur = '', last = '';
+  const t0 = performance.now();
+  const round = () => {
+    let d, k = 0; do d = pool[Math.floor(Math.random() * pool.length)]; while (pool.length > 1 && d === last && k++ < 20);
+    cur = last = d;
+    const sh = GM4_SHAPES[d], r = 27 + Math.random() * 5, rot = (Math.random() - .5) * .5, cx = 50 + (Math.random() - .5) * 10, cy = 56 + (Math.random() - .5) * 6;
+    let p = sh.p.map(([x, y]) => [cx + r * (x * Math.cos(rot) - y * Math.sin(rot)), cy + r * (x * Math.sin(rot) + y * Math.cos(rot))]).map(([x, y]) => [Math.max(7, Math.min(W - 7, x)), Math.max(17, Math.min(H - 38, y))]);
+    const s0 = Math.floor(Math.random() * p.length); p = [...p.slice(s0), ...p.slice(0, s0)];   // 從哪一顆開始每次不一樣
+    if (Math.random() < .5) p = [p[0], ...p.slice(1).reverse()];                                   // 順時針、逆時針都有
+    pts = p; next = 0;
+    stars.innerHTML = p.map(([x, y], i) => `<g class="gm4-s ${i ? '' : 'nx'}" data-i="${i}" transform="translate(${x.toFixed(2)} ${y.toFixed(2)})" tabindex="0" role="button" aria-label="第 ${i + 1} 顆星"><circle class="hit" r="7"/><circle class="ring" r="4.6"/><path class="st" d="${gm4Star(4.4)}"/><text y=".3">${i + 1}</text></g>`).join('');
+    line.setAttribute('points', ''); fill.setAttribute('d', ''); fill.classList.remove('on'); fill.setAttribute('fill', sh.c);
+    done.hidden = true; name.hidden = true;
+    busy = false;
+  };
+  const finish = () => {
+    busy = true; score++;
+    const sh = GM4_SHAPES[cur];
+    line.setAttribute('points', [...pts, pts[0]].map(q => q.map(v => v.toFixed(2)).join(',')).join(' '));
+    fill.setAttribute('d', 'M' + pts.map(q => q.map(v => v.toFixed(2)).join(' ')).join('L') + 'Z'); fill.classList.add('on');
+    name.textContent = sh.n; done.querySelector('img').src = SPR[cur]; done.querySelector('p').textContent = sh.l;
+    name.hidden = false; done.hidden = false;
+    setTimeout(() => { if (!over && o.isConnected) round(); }, REDUCE ? 900 : 1500);
+  };
+  const tap = g => {
+    if (!g || busy || over) return;
+    const i = +g.dataset.i;
+    if (i === next){
+      g.classList.remove('nx'); g.classList.add('on');
+      line.setAttribute('points', pts.slice(0, next + 1).map(q => q.map(v => v.toFixed(2)).join(',')).join(' '));
+      next++;
+      if (next >= pts.length){ finish(); return; }
+      const n = stars.querySelector(`[data-i="${next}"]`); if (n) n.classList.add('nx');
+    } else if (i > next){ g.classList.remove('no'); void g.getBoundingClientRect(); g.classList.add('no'); setTimeout(() => g.classList.remove('no'), 400); }
+  };
+  svg.addEventListener('pointerdown', e => { tap(e.target.closest('.gm4-s')); });
+  svg.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ const g = e.target.closest('.gm4-s'); if (g){ e.preventDefault(); tap(g); } } });
+  const tick = now => {
+    if (over || !o.isConnected) return;
+    const el = (now - t0) / 1000;
+    st.textContent = `${score} 個  ${Math.max(0, Math.ceil(SEC - el))} 秒`;
+    if (el >= SEC){
+      over = true; st.textContent = '';
+      gameEnd(o, score ? `連出 ${score} 個形狀` : '這一局還沒連完，下次再來', score >= 6 ? 5 : score >= 3 ? 4 : 3, gameStars);
+      return;
+    }
+    gmRaf = requestAnimationFrame(tick);
+  };
+  round();
+  gmRaf = requestAnimationFrame(tick);
+}
+
 /* ---------- 選單 ---------- */
 function gameMenu(){
   if (VISIT) return;
@@ -235,12 +347,13 @@ function gameMenu(){
       <div class="er-it"><span class="ic"><img src="${SPR.nyanko}" alt=""></span><span class="tx2"><b>接點心</b><small>30 秒，幫貓咪老師接掉下來的點心</small></span><button class="btn y sm" data-gm="catch">玩</button></div>
       <div class="er-it"><span class="ic">${HEART('#ffb3d3', '#fff')}</span><span class="tx2"><b>翻牌</b><small>12 張牌，找出一樣的兩張</small></span><button class="btn y sm" data-gm="flip">玩</button></div>
       <div class="er-it"><span class="ic">${GM3_BOX}</span><span class="tx2"><b>這是誰的</b><small>40 秒，把東西送回給牠的主人</small></span><button class="btn y sm" data-gm="whose">玩</button></div>
+      <div class="er-it"><span class="ic">${GM4_ICON}</span><span class="tx2"><b>連星星</b><small>45 秒，照順序點星星，連出一個形狀</small></span><button class="btn y sm" data-gm="stars">玩</button></div>
     </div>`);
   evOpen = false; alOpen = false;
 }
 $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('[data-gm]'); if (!b) return;
-  if (b.dataset.gm === 'catch') gameCatch(); else if (b.dataset.gm === 'whose') gameWhose(); else gameFlip();
+  if (b.dataset.gm === 'catch') gameCatch(); else if (b.dataset.gm === 'whose') gameWhose(); else if (b.dataset.gm === 'stars') gameStars(); else gameFlip();
 });
 // 點電視（接在衣櫃的 onFurnTap 後面）
 {
