@@ -232,3 +232,8 @@ SK('g3-night', '夜間巡邏隊', ['nyanko', 'dino', 'moodeng'], {night: true}, 
 SK('f3-jump', '比跳高', ['moodeng', 'sloth'], {}, ['m moodeng sloth', 's moodeng 跟我比跳高！！', 's sloth 好。我先準備一下。', 'a moodeng jump', 'a moodeng jump', 's moodeng 你怎麼還沒跳！！', 's sloth 準備好了。跳。', 'n 薯餅的腳離開地面一點點。', 's moodeng ……好啦你也有跳！！'], '彈跳豬找薯餅比跳高，薯餅準備好久，跳了一點點。');
 SK('f3-leafbed', '葉子被子', ['dino', 'egg'], {}, ['m dino egg', 's dino 你在睡覺嗎？', 's egg 我在躺。不一樣。', 's dino 那我幫你蓋葉子被子。', 'n 龍龍一片一片放上葉子。', 's egg ……有一點癢。',
   {q: '要怎麼辦？', o: [['幫蛋黃哥拿掉', ['s egg 謝謝。好累。', 's dino 那我蓋我自己。'], '你幫蛋黃哥拿掉葉子，龍龍改蓋自己。'], ['再多蓋一點', ['s dino 嘿嘿，變成葉子山了！', 's egg 山不用動。很好。'], '蛋黃哥被蓋成一座葉子山，牠說山不用動很好。']]}], '');
+
+/* ---------- 下雨天系列（js/furn4.js 的 rainday，2 段） ---------- */
+SK('r5-boot', '好大的鞋子', ['dog', 'nyanko'], {furn: 'bootstool'}, ['m dog bootstool', 's dog 汪！好大的鞋子！', 's dog 可以藏好多拖鞋！', 'm nyanko bootstool', 's nyanko 這是椅子。本大爺要坐。', 's dog 那我藏在你下面！',
+  {q: '雨鞋凳要給誰用？', o: [['給貓咪老師坐', ['s nyanko 哼，坐起來不錯。', 's dog 那我在旁邊顧！'], '貓咪老師坐上雨鞋凳，皮蛋在旁邊顧。'], ['給皮蛋藏東西', ['a dog jump', 's dog 汪！藏好了！', 's nyanko ……有拖鞋味。不坐了。'], '皮蛋把拖鞋藏進雨鞋凳，貓咪老師不坐了。']]}], '');
+SK('r5-umbrella', '等下雨', ['moodeng', 'egg'], {furn: 'umbrellalamp'}, ['m moodeng umbrellalamp', 's moodeng 傘打開了！！', 's moodeng 是不是要下雨了！！', 'm egg umbrellalamp', 's egg 這是燈。', 's moodeng 那我等它下雨！！', 'n 等了很久，燈都沒有下雨。', 's egg 在傘下面躺著，也不錯。', 's moodeng ……好啦也不錯！！'], '彈跳豬在雨傘燈下等下雨，最後跟蛋黃哥一起躺著。');
