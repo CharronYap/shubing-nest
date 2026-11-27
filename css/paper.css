@@ -275,6 +275,8 @@
 .look-paper .bk-form{background:color-mix(in srgb,var(--p-sun) 16%,var(--p-card));border:0;border-radius:10px;box-shadow:0 2px 0 var(--p-edge)}
 .look-paper .bk-st button{border:0;border-radius:10px;background:var(--p-card);box-shadow:0 2px 0 var(--p-edge)}
 .look-paper .bk-st button.on{background:var(--p-card);box-shadow:0 0 0 3px var(--p-a1)}
+.look-paper .bk-st button.stk-b{background:none;box-shadow:none;border-radius:14px}
+.look-paper .bk-st button.stk-b.on{background:color-mix(in srgb,var(--p-a1) 14%,transparent);box-shadow:0 0 0 3px var(--p-a1)}
 .look-paper .bk-in{border:0;border-radius:8px;background:var(--p-card);color:var(--p-ink);box-shadow:inset 0 2px 0 var(--p-edge);font-family:var(--p-hand)}
 .look-paper .bk-it.new{background:color-mix(in srgb,var(--p-sun) 22%,var(--p-card))}
 .look-paper .bk-s{border:0;border-radius:10px;background:var(--p-paper);box-shadow:0 2px 0 var(--p-edge)}
