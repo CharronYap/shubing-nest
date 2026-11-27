@@ -14,7 +14,7 @@
      tv = {bag:{food,charm,tool}, inv:{用品:幾個}, tool:{道具:1}, out:[旅程], back:{娃娃:回來的時間}, cards:{地方:收到哪幾張},
            sv:{土產:拿過幾次}, cnt:{娃娃:{地方:幾次}}, log:{娃娃:['日期|地方|同行|日記第幾句']}, wel:[還沒看的回家通知], free:'沒帶行李出門的那天',
            pp:{出國的地方:'第一次去的那天'}（護照的章）, tk:1（更新信附的那一張機票收過了）,
-           who:{'地方:第幾張':'寄的娃娃，用 + 接'}（相簿裡的明信片照這個把娃娃貼上去）, pics:[{id,p,c,ds:'娃娃用 + 接',t:'日期'}]（每趟回家的紀念合照，留 30 張）}
+           who:{'地方:第幾張':'寄的娃娃，用 + 接'}（相簿裡的明信片照這個把娃娃貼上去）, pics:[{id,p,c,ds:'娃娃用 + 接',t:'日期'}]（每趟回家的紀念合照，全部都留；2026-11-27 以前留 30 張，被砍掉的照回家合照信補回來，補過記 pf:1）}
      旅程 = {id, ds:[娃娃], p, t0, t1, food, charm, tool, hm:{娃娃:{r,x,y}}, pcs:[{c,at,d,l 或 u}], sent, sv:{娃娃:土產}, di:{娃娃:日記第幾句}}
      沒有陣列直接包陣列（Firestore 不收）。
    測試：console 打 tvDebug.skip(小時) 把時間往後撥（只在這次開著的時候有效，不存）、tvDebug.go() 叫牠們現在看要不要出門。 */
@@ -38,8 +38,28 @@ function tvData(){
   if (!Array.isArray(t.out)) t.out = [];
   if (!Array.isArray(t.wel)) t.wel = [];
   if (!Array.isArray(t.pics)) t.pics = [];
+  if (!t.pf) tvPicsFromMail(t);
   t.out = t.out.filter(o => o && Array.isArray(o.ds) && TV_PLACES[o.p] && Array.isArray(o.pcs));
   return t;
+}
+/* 以前合照只留 30 張（2026-11-27 起全部都留）。被砍掉的，從信箱裡的回家合照信補回來：
+   信的代號是「娃娃.pc.0#p=地方;c=第幾張;g=娃娃-娃娃」，t 是日期。有 p、c、g 而且 pics 裡沒有同一天、同地方、同一張的才補；
+   沒有 g 的舊信不猜是誰，不補。只看主存檔裡的信（搬到雲端舊信那邊的不讀）。補過記 t.pf = 1，之後不再找。 */
+function tvPicsFromMail(t){
+  const l = S.mail && Array.isArray(S.mail.l) ? S.mail.l : null;
+  if (!l) return;
+  const has = new Set(t.pics.map(x => x && `${x.t}|${x.p}|${x.c}`)), add = [];
+  l.forEach(o => {
+    if (!o || typeof o.k !== 'string' || typeof o.t !== 'string') return;
+    const m = /^[a-z0-9_]+\.pc\.0#(.*)$/i.exec(o.k); if (!m) return;
+    const a = {}; m[1].split(';').forEach(kv => { const i = kv.indexOf('='); if (i > 0) a[kv.slice(0, i)] = kv.slice(i + 1); });
+    const c = +a.c, ds = String(a.g || '').split('-').filter(d => DOLL_NAME[d]);
+    if (!a.g || !ds.length || !TV_PLACES[a.p] || !(TV_CARDS[a.p] && TV_CARDS[a.p][c])) return;
+    const key = `${o.t}|${a.p}|${c}`; if (has.has(key)) return;
+    has.add(key); add.push({id: `pm-${o.t}-${a.p}-${c}-${ds.join('-')}`, p: a.p, c, ds: ds.join('+'), t: o.t});
+  });
+  if (add.length) t.pics = [...t.pics, ...add].sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
+  t.pf = 1;
 }
 const tvTrip = d => tvData().out.find(o => o.ds.includes(d)) || null;
 const tvNames = ds => ds.map(d => DOLL_NAME[d]).join('和');
@@ -202,7 +222,7 @@ function tvReturn(o){
   if (t.wel.length > 12) t.wel.splice(0, t.wel.length - 12);
   // 紀念合照：背景是那個地方的其中一張（這一趟寄過的優先），進信箱、也收進旅行相簿
   const pc0 = o.pcs.length ? o.pcs[Math.floor(Math.random() * o.pcs.length)].c : Math.floor(Math.random() * 3), who = o.ds.slice(0, 8);
-  t.pics.push({id: o.id, p: o.p, c: pc0, ds: who.join('+'), t: day}); if (t.pics.length > 30) t.pics.splice(0, t.pics.length - 30);
+  t.pics.push({id: o.id, p: o.p, c: pc0, ds: who.join('+'), t: day});   // 全部都留（2026-11-27），不砍
   tvMailPut(`${who[0]}.pc.0#p=${o.p};c=${pc0};g=${who.join('-')}`, day, o.t1);
   // 一起去過：每一對交情加一點（全家去的加少一點）；出門前在吵架的，回來就和好了
   for (let x = 0; x < o.ds.length; x++) for (let z = x + 1; z < o.ds.length; z++){
@@ -305,8 +325,9 @@ function tvMerge(m, g){
   // 護照的章：留比較早的那一天；更新信附的那張機票：有一邊收過就算收過（機票的張數在上面 inv 取多的）
   t.pp = obj(t.pp); Object.entries(obj(gt.pp)).forEach(([p, d]) => { if (typeof d === 'string' && (!t.pp[p] || d < t.pp[p])) t.pp[p] = d; });
   if (gt.tk) t.tk = 1;
+  if (gt.pf) t.pf = 1;
   const pid = new Set(arr(t.pics).map(x => x && x.id));
-  t.pics = [...arr(t.pics), ...arr(gt.pics).filter(x => x && !pid.has(x.id))].sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0)).slice(-30);
+  t.pics = [...arr(t.pics), ...arr(gt.pics).filter(x => x && !pid.has(x.id))].sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));   // 全部都留，用 id 去重
   // 旅程
   const all = {};
   [...arr(t.out), ...arr(gt.out)].filter(okTrip).forEach(o => { const e = all[o.id]; if (!e) all[o.id] = JSON.parse(JSON.stringify(o)); else e.sent = Math.max(e.sent | 0, o.sent | 0); });
@@ -538,7 +559,7 @@ function tvWelcome(){
 }
 
 /* ---------- 相簿：旅行那一本、每一隻那一頁的幾行、小屋地圖下面的一行 ---------- */
-let tvBig = null;
+let tvBig = null, tvPicN = 30;   // 合照先畫最新的 30 張，按「再看 30 張」多畫 30 張
 function tvAlbumOpen(){
   const t = tvData(), all = Object.keys(TV_PLACES);
   const total = all.reduce((n, p) => n + tvBits(t.cards[p]), 0);
@@ -561,7 +582,7 @@ function tvAlbumOpen(){
   let big = '';
   if (tvBig && tvBig[0] === 'pic'){ const x = pics.find(q => q.id === tvBig[1]); if (x) big = `<div class="tv-big">${tvCardHTML(x.p, x.c, pk(x), true)}<p class="tvpc-cap">${md(x.t)}・${pk(x).length > 2 ? '大家' : tvNames(pk(x).filter(d => DOLL_NAME[d]))}在${TV_PLACES[x.p].name}</p></div>`; }
   else if (tvBig && ((t.cards[tvBig[0]] || 0) & (1 << tvBig[1]))) big = `<div class="tv-big">${tvCardHTML(tvBig[0], tvBig[1], tvWhoOf(tvBig[0], tvBig[1]))}<p class="tvpc-cap">${TV_PLACES[tvBig[0]].name}・${TV_CARDS[tvBig[0]][tvBig[1]].name}</p></div>`;
-  const picRow = pics.length ? `<div class="al-sec">合照<small>每一趟回家前拍一張，留最近 30 張</small></div><div class="tv-pics">${pics.map(x => `<button class="tv-th" data-tvpic="${x.id}" aria-label="${md(x.t)}在${TV_PLACES[x.p].name}的合照">${tvCardHTML(x.p, x.c, pk(x), true)}<small>${md(x.t)}・${TV_PLACES[x.p].short || TV_PLACES[x.p].name.replace('山上的', '')}</small></button>`).join('')}</div>` : '';
+  const picRow = pics.length ? `<div class="al-sec">合照<small>每一趟回家前拍一張</small></div><div class="tv-pics">${pics.slice(0, tvPicN).map(x => `<button class="tv-th" data-tvpic="${x.id}" aria-label="${md(x.t)}在${TV_PLACES[x.p].name}的合照">${tvCardHTML(x.p, x.c, pk(x), true)}<small>${md(x.t)}・${TV_PLACES[x.p].short || TV_PLACES[x.p].name.replace('山上的', '')}</small></button>`).join('')}</div>${pics.length > tvPicN ? `<button class="btn sm tv-more" data-tv="more">再看 ${Math.min(30, pics.length - tvPicN)} 張${pics.length - tvPicN > 30 ? `<small>還有 ${pics.length - tvPicN} 張</small>` : ''}</button>` : ''}` : '';
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>旅行</span><small class="pc-left">明信片 ${total} / ${all.length * 3}</small></div>
     <div class="tv-box tv-album">${t.out.length ? `<ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : ''}${big}${picRow}${pages}${abroad}
       <p class="bk-note">明信片是牠們路上寄回來的，信箱裡看得到背面寫的話。合照是回家前拍的。土產每一間都能擺。</p></div>
@@ -616,7 +637,13 @@ $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('[data-tv]'); if (!b) return;
   const a = b.dataset.tv;
   if (a === 'bag') tvBagOpen();
-  else if (a === 'album'){ tvBig = null; tvAlbumOpen(); }
+  else if (a === 'album'){ tvBig = null; tvPicN = 30; tvAlbumOpen(); }
+  else if (a === 'more'){
+    // 多畫 30 張，畫完回到原本捲到的地方（合照那一排是橫的，往右接著看）
+    const bx = $('#sheet .tv-album'), row = $('#sheet .tv-pics'), y = bx ? bx.scrollTop : 0, x = row ? row.scrollLeft : 0;
+    tvPicN += 30; tvAlbumOpen();
+    const bx2 = $('#sheet .tv-album'), row2 = $('#sheet .tv-pics'); if (bx2) bx2.scrollTop = y; if (row2) row2.scrollLeft = x;
+  }
   else if (a === 'pass') tvPassOpen();
   else if (a === 'shop'){ if (typeof shopOpen === 'function') shopOpen(); }
   else if (a === 'back'){ if (typeof openAlbum === 'function') openAlbum(); }

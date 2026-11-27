@@ -1307,6 +1307,8 @@ span.yd-kind{cursor:default}
 /* 面板本身會上下捲、裡面這一排又會左右捲：每一列照內容的高度，不要被壓扁 */
 .tv-album{grid-auto-rows:max-content}
 .tv-box>.tv-pics{overflow-y:hidden}
+.tv-more{align-self:center;display:flex;align-items:baseline;gap:6px;margin:0 auto 4px}
+.tv-more small{font-size:11px;opacity:.7}
 /* 有新版的提示（js/version.js）、小窩指南最下面的版本 */
 .verbar{position:absolute;left:50%;top:calc(64px + var(--sat,0px));transform:translateX(-50%);z-index:780;display:flex;align-items:center;gap:4px;max-width:92%;padding:4px 4px 4px 6px;border-radius:999px;background:rgba(107,45,74,.94);box-shadow:0 4px 12px rgba(0,0,0,.2)}
 .verbar .vb-go{border:0;background:none;color:#fff;font:inherit;font-size:13.500px;font-weight:800;padding:7px 8px;cursor:pointer}
