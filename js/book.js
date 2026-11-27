@@ -13,9 +13,9 @@ const BOOK_BFLY = '<svg viewBox="0 0 40 40"><path d="M20 20c-3-8-9-11-13-9-3 2-2
 const BOOK_BIRD = '<svg viewBox="0 0 40 40"><path d="M9 24c0-8 6-13 13-13 5 0 9 3 9 8 0 7-6 12-13 12-5 0-9-3-9-7z" fill="#9ed8f5" stroke="#4a9fd0" stroke-width="2"/><path d="M31 17l6-1-5 5z" fill="#ffb400" stroke="#d48a00" stroke-width="1.6" stroke-linejoin="round"/><circle cx="26" cy="16.5" r="1.8" fill="#3a2a35"/><path d="M13 23c3 3 8 3 11-1" fill="none" stroke="#4a9fd0" stroke-width="2" stroke-linecap="round"/><path d="M17 31v4M22 31v4" stroke="#d48a00" stroke-width="2" stroke-linecap="round"/></svg>';
 let bk = null;
 
-/* 貼紙：八隻娃娃的臉一開始就有；季節家具有哪幾樣、貓咪老師在小島招來過蝴蝶或小鳥，就各多一張 */
+/* 貼紙：32 張貼圖（js/stickers.js）一開始就有，一隻娃娃三張排成一欄；季節家具有哪幾樣、貓咪老師在小島招來過蝴蝶或小鳥，就各多一張，排在後面 */
 function bookStickers(){
-  const l = DOLLS.map(d => 'd-' + d);
+  const l = STK.map(s => s.id);
   if (typeof SEASON_FURN !== 'undefined') SEASON_FURN.forEach(id => { if (FURN_OWN[id]) l.push('f-' + id); });
   const rec = ((S.yard && S.yard.rec && S.yard.rec.nyanko) || []).join('');
   if (rec.includes('蝴蝶')) l.push('y-bfly');
@@ -23,16 +23,17 @@ function bookStickers(){
   return l;
 }
 function bookStickerName(id){
+  if (stkGet(id)) return stkName(id);
   const [k, x] = [id.slice(0, 1), id.slice(2)];
   if (k === 'd' && DOLL_NAME[x]) return DOLL_NAME[x];
   if (k === 'f' && FURN[x]) return FURN[x].name || '裝飾';
   return id === 'y-bfly' ? '蝴蝶' : id === 'y-bird' ? '小鳥' : '愛心';
 }
-// 不認得的貼紙（朋友的版本比較新）畫成一顆愛心
+// 舊的娃娃臉（d-*）畫成那隻娃娃的第一張貼圖；不認得的貼紙（朋友的版本比較新）畫成一顆愛心
 function bookStickerHTML(id){
   id = String(id || '');
+  const st = stkHTML(id); if (st) return st;
   const [k, x] = [id.slice(0, 1), id.slice(2)];
-  if (k === 'd' && SPR[x]) return `<img src="${SPR[x]}" alt="">`;
   if (k === 'f' && FURN[x]) return furnSVG(x);
   if (id === 'y-bfly') return BOOK_BFLY;
   if (id === 'y-bird') return BOOK_BIRD;
@@ -64,7 +65,7 @@ async function bookLoad(){
       const seen = bookSeen(), fresh = b.list.filter(e => !seen.includes(e.id));
       if (fresh.length){
         b.fresh = fresh.map(e => e.id);
-        fresh.forEach(e => bookHop(String(e.sticker || '').slice(2)));
+        fresh.forEach(e => bookHop(stkDoll(e.sticker)));
         const m = mailInit(); m.bk = b.list.slice(0, 60).map(e => e.id); save();
       }
     }
@@ -72,6 +73,7 @@ async function bookLoad(){
   if (bk === b && !$('#sheet').hidden && $('#sheet .bk-box')) bookPaint();
 }
 function bookHop(d){
+  if (!d) return;
   const it = items.find(i => i.kind === 'doll' && i.id === d);
   if (!it || VISIT) return;
   const el = elFor(it).querySelector('.body');
@@ -93,7 +95,7 @@ function bookPaint(){
         if (!b.sticker) b.sticker = st[0];
         form = `<div class="bk-form">
           <div class="al-sec">貼一張貼紙</div>
-          <div class="bk-st">${st.map(id => `<button class="${b.sticker === id ? 'on' : ''}" data-bks="${id}" aria-label="${bookStickerName(id)}貼紙" aria-pressed="${b.sticker === id}">${bookStickerHTML(id)}</button>`).join('')}</div>
+          <div class="bk-st">${st.map(id => `<button class="${b.sticker === id ? 'on' : ''}${stkGet(id) ? ' stk-b' : ''}" data-bks="${id}" aria-label="${bookStickerName(id)}貼紙" aria-pressed="${b.sticker === id}">${bookStickerHTML(id)}</button>`).join('')}</div>
           <input class="bk-in" type="text" maxlength="${BOOK_LEN}" placeholder="寫一句話（可以不寫）" aria-label="寫一句話，${BOOK_LEN} 字以內">
           <div class="bk-go"><small>來這裡的朋友都看得到，一天一則。</small><button class="btn y sm" data-bk="add">貼上去</button></div></div>`;
       }
@@ -102,7 +104,7 @@ function bookPaint(){
     b.page = Math.max(0, Math.min(pages - 1, b.page));
     const rows = b.list.slice(b.page * BOOK_PAGE, (b.page + 1) * BOOK_PAGE).map(e => {
       const can = b.owner || e.from === net.me.uid;
-      return `<div class="bk-it ${b.fresh && b.fresh.includes(e.id) ? 'new' : ''}"><span class="bk-s">${bookStickerHTML(e.sticker)}</span>
+      return `<div class="bk-it ${b.fresh && b.fresh.includes(e.id) ? 'new' : ''}"><span class="bk-s${stkGet(e.sticker) ? ' stk-s' : ''}">${bookStickerHTML(e.sticker)}</span>
         <div class="bk-tx"><b>${txSlot(sText(e.fromName, 24) || '朋友')}</b><small>${dayMd(e.day | 0)}</small>${e.msg ? `<p>${txSlot(sText(e.msg, BOOK_LEN))}</p>` : ''}</div>
         ${can ? `<button class="bk-del" data-bkd="${e.id.replace(/[^\w-]/g, '')}" aria-label="丟掉這一則（要按兩次）"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>` : ''}</div>`;
     }).join('');
@@ -118,7 +120,7 @@ function bookPaint(){
 async function bookAdd(){
   const b = bk, net = sNet(); if (!b || !net || b.busy || b.owner || b.mine) return;
   b.busy = true;
-  const day = nestDayN(), msg = sText(b.msg, BOOK_LEN), sticker = b.sticker || 'd-sloth';
+  const day = nestDayN(), msg = sText(b.msg, BOOK_LEN), sticker = b.sticker || 's-sloth-slow';
   try {
     await net.bookAdd(b.uid, day, {fromName: net.me.name, sticker, msg});
     const e = {id: `${day}_${net.me.uid}`, from: net.me.uid, fromName: net.me.name, day, sticker, ...(msg ? {msg} : {})};
@@ -144,7 +146,7 @@ async function bookDel(id){
 $('#sheet').addEventListener('click', e => {
   if (!bk || !$('#sheet .bk-box')) return;
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.bks){ bk.sticker = b.dataset.bks; bookPaint(); }
+  if (b.dataset.bks){ bk.sticker = b.dataset.bks; b.parentElement.querySelectorAll('button').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); }
   else if (b.dataset.bk === 'add') bookAdd();
   else if (b.dataset.bkd){
     // 刪留言：按兩次才真的刪（第一次只是問，三秒沒按就變回叉叉）
