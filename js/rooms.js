@@ -84,41 +84,177 @@ setInterval(() => {
 }, 7000);
 
 /* ---------- 小屋地圖（看得出自己在哪一間 2） ----------
-   切換鈕最左邊的小房子：打開整棟雲上小屋的剖面圖。最上面是閣樓，二樓是臥室和浴室，一樓是客廳和廚房，門外是小島。
-   - 每一格看得到那一間現在的壁紙和地板、有沒有開燈、哪幾隻娃娃在裡面（小頭像）
-   - 還沒開的房間畫成關燈，掛一把鑰匙和價錢，點了直接問要不要打開（roomAsk）
-   - 現在在的那一格有亮框和「你在這裡」；點任何一格就過去
+   上面中間的地圖鈕：打開整棟雲上小屋的剖面圖。最上面是紅瓦屋頂底下的閣樓，二樓是臥室和浴室，一樓是客廳和廚房，門外是浮在雲上的小島。
+   2026-11-27 照使用者用 Gemini 畫的設計圖重畫（娃娃不照那張圖，還是原本的照片貼紙）：
+   - 畫法跟房間一樣是紙雕：色紙色塊、沒有描邊、每一塊下面墊一塊往下錯開的影子。顏色用 js/paper.js 寫在 #screen 上的色票，
+     跟著天色換；?look=old 沒有色票時用白天那一組（HM_K）。
+   - 屋頂一排一排的紅瓦；閣樓是屋頂底下那個三角形，有圓天窗、紙箱、梯子。
+   - 每一間畫上自己的家具（臥室：床、衣櫃、星星小夜燈；浴室：磁磚、蓮蓬頭、浴缸；客廳：電視、沙發、書櫃；廚房：掛勾和鍋子、流理台、冰箱），
+     牆和地板還是那一間現在的壁紙地板（w-、f-，顏色和花紋在 js/paper.js 的 deco()），關燈的那一間變暗，娃娃是小頭像。
+   - 還沒開的房間：畫面變暗，中間一把鑰匙和價錢，點了直接問要不要打開（roomAsk）
+   - 現在在的那一格有珊瑚色的框和「你在這裡」（閣樓的框會被屋頂蓋住、又跟紅瓦同色，所以是名牌變成珊瑚色、寫「閣樓・你在這裡」）；點任何一格就過去
    - 去朋友家時畫的是朋友的家 */
 const MAP_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11.500L12 4l9 7.500V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M12 4v17M3 13.500h18" stroke="#fff" stroke-width="1.600"/></svg>';
 const MAP_KEY = '<svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="5" fill="#ffd75e" stroke="#d99a00" stroke-width="1.800"/><circle cx="8" cy="9" r="1.800" fill="#fff8e0"/><path d="M12 13l8 8M17 18l2-2" fill="none" stroke="#d99a00" stroke-width="2.400" stroke-linecap="round"/></svg>';
+/* 畫圖的小工具：hv('a1') 是色票的顏色；hR、hC、hE、hP 回傳「給顏色、畫出形狀」的函式；hL 先畫一塊往下錯開的影子再畫本體 */
+const HM_K = (() => {
+  const k = {sky: '#a9c8ea', hill: '#3f6f93', hill2: '#6f9fc0', sun: '#ffd36e', cloud: '#ffffff', wall: '#dfe3f0', wall2: '#c9cfe6', floor: '#cdb5c9', wood: '#8a5a45', wood2: '#623f30',
+    a1: '#ff8a66', a2: '#3f9aa5', leaf: '#4c9a78', ink: '#23264a', paper: '#fbf6ea', sea: '#3f86b8', sand: '#e9dccb', rug: '#b9bde0'};
+  const hx = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const mix = (a, b, t) => '#' + hx(a).map((v, i) => Math.round(v + (hx(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
+  return Object.assign(k, {a1d: mix(k.a1, k.ink, .2), a1l: mix(k.a1, k.paper, .22), a2l: mix(k.a2, k.paper, .25), wood3: mix(k.wood, k.paper, .22),
+    leafd: mix(k.leaf, k.ink, .22), leafl: mix(k.leaf, k.paper, .22), paperd: mix(k.paper, k.ink, .14)});
+})();
+const hv = k => `var(--p-${k},${HM_K[k]})`;
+const hn = v => Math.round(v * 10) / 10;
+const hS = (tag, a) => c => `<${tag} ${a} style="fill:${hv(c)}"/>`;
+const hR = (x, y, w, h, r = 0) => hS('rect', `x="${hn(x)}" y="${hn(y)}" width="${hn(w)}" height="${hn(h)}" rx="${r}"`);
+const hC = (cx, cy, r) => hS('circle', `cx="${hn(cx)}" cy="${hn(cy)}" r="${hn(r)}"`);
+const hE = (cx, cy, rx, ry) => hS('ellipse', `cx="${hn(cx)}" cy="${hn(cy)}" rx="${hn(rx)}" ry="${hn(ry)}"`);
+const hP = d => hS('path', `d="${d}"`);
+const hAll = (...fs) => c => fs.map(f => f(c)).join('');
+const hL = (f, c, d = 1) => `<g opacity="${(.16 + .05 * d).toFixed(2)}" transform="translate(0 ${hn(1.2 * d)})">${f('ink')}</g>${f(c)}`;
+const hLine = (d, w) => c => `<path d="${d}" style="fill:none;stroke:${hv(c)}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+const hFade = (f, op) => `<g opacity="${op}">${f}</g>`;
+const hStar = (cx, cy, R, r) => hP('M' + Array.from({length: 10}, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r : R; return hn(cx + q * Math.cos(a)) + ' ' + hn(cy + q * Math.sin(a)); }).join('L') + 'z');
+// 牆上割開的窗：木框、天空和遠山、洞的上緣和左緣有牆的厚度的影子、十字窗框、窗台
+const hWin = (x, y, w, h) => hL(hR(x - 2.2, y - 2.2, w + 4.4, h + 4.4, 1.6), 'wood', 1)
+  + hR(x, y, w, h, .6)('sky') + hC(x + w * .72, y + h * .3, Math.min(w, h) * .14)('sun')
+  + hP(`M${hn(x)} ${hn(y + h)}V${hn(y + h * .72)}Q${hn(x + w * .3)} ${hn(y + h * .42)} ${hn(x + w * .58)} ${hn(y + h * .66)}T${hn(x + w)} ${hn(y + h * .58)}V${hn(y + h)}z`)('hill2')
+  + hP(`M${hn(x)} ${hn(y + h)}V${hn(y + h * .86)}Q${hn(x + w * .4)} ${hn(y + h * .7)} ${hn(x + w * .7)} ${hn(y + h * .84)}T${hn(x + w)} ${hn(y + h * .8)}V${hn(y + h)}z`)('hill')
+  + hFade(hR(x, y, w, h * .14)('ink') + hR(x, y, w * .07, h)('ink'), .2)
+  + hR(x + w / 2 - .7, y, 1.4, h)('wood') + hR(x, y + h / 2 - .7, w, 1.4)('wood')
+  + hL(hR(x - 4, y + h + 1.4, w + 8, 2.8, 1), 'wood2', .6);
+// 房間格子共用：牆和地板的交界、上緣和左緣被房子的木框擋住的影子
+const hRoomEdge = (W, H, y) => hR(0, y - 1.4, W, 2.8)('wood2') + hFade(hR(0, 0, W, 2.6)('ink') + hR(0, 0, 2.2, H)('ink'), .2);
+const HM_ART = {
+  bed: () => hRoomEdge(160, 90, 58) + hWin(60, 9, 26, 19)
+    + hFade(hStar(36, 15, 2.4, 1)('sun') + hStar(116, 9, 2, .8)('sun') + hStar(146, 14, 1.8, .75)('sun'), .8)
+    + hFade(hC(104, 20, 9)('sun'), .3) + hR(103.3, 25, 1.4, 8)('paperd') + hL(hR(100, 32, 8, 3, 1), 'paper', .5) + hL(hStar(104, 20, 6.4, 2.8), 'sun', .8)
+    + hL(hE(88, 80, 22, 4.5), 'rug', .6)
+    + hR(10, 72, 3, 6, 1)('wood2') + hR(52, 72, 3, 6, 1)('wood2')
+    + hL(hR(7, 40, 9, 35, 3), 'wood', 1) + hL(hR(9, 62, 50, 11, 2), 'wood', 1)
+    + hL(hR(13, 56, 44, 9, 3), 'paper', .8) + hL(hR(28, 54.5, 30, 11.5, 3), 'a1', .9) + hL(hE(21, 55, 7, 3.8), 'paper', .7)
+    + hL(hR(54, 51, 6, 23, 2.5), 'wood', 1.1)
+    + hR(124, 74, 3, 4, 1)('wood2') + hR(145, 74, 3, 4, 1)('wood2')
+    + hL(hR(121, 28, 30, 47, 3), 'wood', 1.4) + hL(hAll(hR(124, 31, 10.5, 41, 1.5), hR(137.5, 31, 10.5, 41, 1.5)), 'wood3', .5)
+    + hC(132.5, 52, 1.3)('sun') + hC(139.5, 52, 1.3)('sun') + hL(hR(119, 25, 34, 4, 1.5), 'wood2', .6),
+  bath: () => hRoomEdge(160, 90, 58)
+    + hFade(hR(0, 30, 160, 27)('a2'), .22)
+    + hFade(Array.from({length: 16}, (_, i) => hR(5 + i * 10, 31, .8, 26)('paper')).join('') + hR(0, 39.6, 160, .8)('paper') + hR(0, 48.6, 160, .8)('paper'), .55)
+    + hFade(hR(0, 29, 160, 2.2)('a2'), .7)
+    + hWin(16, 6, 18, 13)
+    + hR(46, 21, 18, 1.6, .8)('paperd') + hL(hR(49, 22.5, 12, 15, 1.5), 'sun', .7) + hR(49, 33, 12, 1.6)('a1')
+    + hR(148, 5, 2.4, 13)('paperd') + hR(134, 15.4, 16, 2.4, 1)('paperd') + hL(hP('M128 16h10l-2 5h-6z'), 'paperd', .6)
+    + hFade([[130, 24], [133.5, 28], [136.5, 24.5], [131, 32], [135.5, 34]].map(([x, y]) => hR(x, y, 1.1, 3.2, .5)('a2')).join(''), .85)
+    + hL(hR(20, 70, 26, 7, 3), 'a1l', .5)
+    + hR(104, 74, 3, 4, 1)('wood2') + hR(144, 74, 3, 4, 1)('wood2')
+    + hR(150, 47, 2.4, 8, 1)('paperd')
+    + hL(hAll(hC(108, 53, 3.2), hC(115, 51, 4), hC(122, 53, 3)), 'paper', .5)
+    + hL(hP('M98 56h56v8c0 8-6 12-14 12h-28c-8 0-14-4-14-12z'), 'paper', 1.3) + hL(hR(96, 54, 60, 4, 2), 'paperd', .6),
+  living: () => hRoomEdge(160, 90, 58) + hWin(54, 8, 46, 27)
+    + hL(hE(84, 80, 40, 6), 'rug', .6)
+    + hLine('M20 43l-4-6M28 43l4-6', 1.2)('wood2') + hC(16, 37, 1.4)('a1') + hC(32, 37, 1.4)('sun')
+    + hL(hR(10, 42, 28, 20, 3), 'paper', 1) + hR(13, 45, 22, 14, 1.5)('sky') + hP('M13 59v-4q6-4 11-1t11-2v7z')('hill2')
+    + hR(9, 75, 3, 3)('wood2') + hR(36, 75, 3, 3)('wood2') + hL(hR(6, 62, 36, 13, 2), 'wood', 1.1)
+    + hR(23.4, 64, 1.2, 9)('wood2') + hC(20, 68.5, 1)('paper') + hC(27, 68.5, 1)('paper')
+    + hR(63, 74, 3, 4)('wood2') + hR(102, 74, 3, 4)('wood2')
+    + hL(hR(60, 50, 48, 18, 6), 'a1d', 1) + hL(hR(62, 62, 44, 11, 4), 'a1', 1.1)
+    + hL(hAll(hR(55, 57, 10, 17, 4.5), hR(103, 57, 10, 17, 4.5)), 'a1l', 1.3) + hL(hR(68, 53, 10, 9, 2), 'a2', .6)
+    + hL(hR(124, 26, 28, 50, 2.5), 'wood', 1.3) + hR(127, 30, 22, 20, 1)('wood2') + hR(127, 53, 22, 19, 1)('wood2')
+    + hL(hAll(hR(129, 34, 3, 16, .5), hR(137.5, 36, 3, 14, .5)), 'a2', .4) + hL(hR(133, 33, 3.4, 17, .5), 'a1', .4) + hL(hR(141.5, 35, 3, 15, .5), 'sun', .4)
+    + hL(hR(129, 59, 7, 13, .8), 'leaf', .4) + hL(hE(143, 67, 4, 5), 'paper', .4),
+  kitchen: () => hRoomEdge(160, 90, 58) + hWin(96, 8, 26, 18)
+    + hL(hR(14, 10, 48, 2.4, 1.2), 'wood2', .5) + hR(21.2, 12, 1.6, 4)('paperd') + hR(35.2, 12, 1.6, 4)('paperd') + hR(49.2, 12, 1.6, 4)('paperd')
+    + hR(21.2, 15, 1.6, 8, .8)('wood2') + hL(hC(22, 28, 6), 'hill', .8) + hFade(hC(20, 26, 2)('paper'), .25)
+    + hL(hR(30.5, 18, 11, 10, 2.5), 'a1', .7) + hR(34.5, 15.5, 3, 3, 1)('a1d')
+    + hR(49.3, 15, 1.4, 12, .7)('paperd') + hL(hE(50, 27, 3.6, 2.6), 'paperd', .5)
+    + hL(hAll(hR(11, 36, 7, 8, 1.5), hR(30, 35, 8, 9, 1.5)), 'paper', .5) + hL(hR(21, 38, 6, 6, 1.5), 'sun', .5) + hR(11, 35, 7, 2, .6)('a2') + hR(30, 34, 8, 2, .6)('a1')
+    + hL(hR(7, 44, 38, 2.6, 1), 'wood', .8)
+    + hR(13, 65, 2.4, 11)('wood2') + hR(35, 65, 2.4, 11)('wood2') + hL(hR(10, 62, 30, 3.5, 1.5), 'wood', 1) + hL(hR(22, 56.5, 6, 5.5, 1.2), 'a1', .5)
+    + hL(hR(84, 58, 44, 18, 2), 'wood', 1.2) + hL(hAll(hR(87, 61, 18, 13, 1.2), hR(107, 61, 18, 13, 1.2)), 'wood3', .4)
+    + hC(102, 67.5, 1)('sun') + hC(110, 67.5, 1)('sun')
+    + hL(hR(82, 54, 48, 5, 1.5), 'paperd', 1)
+    + hFade(hAll(hE(92, 54, 4, 1.2), hE(102, 54, 4, 1.2))('ink'), .35) + hL(hP('M88.5 53c0-6.5 10-6.5 10 0z'), 'a2', .6)
+    + hR(112, 54, 12, 1.6, .6)('a2l') + hLine('M118 54v-5h4', 1.4)('paperd')
+    + hR(136, 75, 3, 3)('wood2') + hR(151, 75, 3, 3)('wood2')
+    + hL(hR(134, 22, 22, 54, 3), 'paper', 1.4) + hR(134, 40, 22, 1.2)('paperd') + hR(137, 29, 1.6, 7, .8)('paperd') + hR(137, 44, 1.6, 10, .8)('paperd'),
+  // 閣樓：屋頂底下的三角形（250×120，頂點在中間）。圓天窗、紙箱、梯子
+  attic: () => hR(0, 99, 250, 2.8)('wood2')
+    + hFade(hR(96, 0, 3, 100)('wood') + hR(151, 0, 3, 100)('wood'), .18)
+    + hL(hC(125, 50, 15.5), 'wood', 1) + hC(125, 50, 12.5)('sky') + hC(129.5, 45.5, 3)('sun')
+    + hP('M112.5 58q6-6 12.5-2t12.5-4v.5a12.5 12.5 0 0 1-25 0z')('hill2') + hFade(hP('M112.5 50a12.5 12.5 0 0 1 25 0h-2.5a10 10 0 0 0-20 0z')('ink'), .2)
+    + hR(124.3, 37.5, 1.4, 25)('wood') + hR(112.5, 49.3, 25, 1.4)('wood')
+    + hL(hE(125, 109, 46, 5.5), 'rug', .6)
+    + hL(hR(58, 80, 28, 20, 1.5), 'sand', 1.1) + hFade(hR(58, 86, 28, 2.2)('wood'), .5)
+    + hL(hR(64, 65, 19, 15, 1.5), 'wood3', 1) + hL(hR(88, 89, 13, 11, 1.2), 'sand', .8)
+    + hL(hAll(hR(150, 54, 2.6, 46, 1), hR(165, 54, 2.6, 46, 1)), 'wood', .8)
+    + [62, 72, 82, 92].map(y => hL(hR(150, y, 17.6, 2.2, 1), 'wood3', .5)).join('')
+    + hL(hR(176, 92, 12, 8, 1.5), 'a1', .6) + hR(179, 89, 6, 3, 1)('a1d'),
+  // 門外小島：浮在雲上，看得到底下一層一層的土；小路、池塘、果樹
+  yard: () => hL(hAll(hE(52, 88, 24, 8), hC(42, 83, 9), hC(58, 79, 11), hC(72, 85, 8)), 'cloud', 1)
+    + hL(hAll(hE(262, 28, 16, 5), hC(256, 25, 6), hC(266, 23, 7)), 'cloud', .8) + hL(hAll(hE(32, 24, 12, 4), hC(30, 21, 5)), 'cloud', .7)
+    + hL(hP('M78 64Q150 140 222 64z'), 'wood2', 1.4)
+    + hL(hP('M62 58Q62 78 100 86Q150 96 200 86Q238 78 238 58z'), 'wood', 1.2)
+    + hL(hE(150, 56, 90, 22), 'leaf', 1.3) + hFade(hE(138, 50, 60, 12)('leafl'), .5)
+    + hL(hP('M143 77C146 70 160 64 155 56C151 50 145 46 149 37h4.5C150 45 157 50 160 56C165 65 154 71 155 77z'), 'sand', .6)
+    + hL(hE(196, 62, 20, 8), 'paperd', .8) + hE(196, 61, 17, 6.5)('a2') + hE(191, 59.4, 8, 2.4)('a2l')
+    + hR(126, 30, 3, 13, 1)('wood') + hL(hC(127.5, 26, 8), 'leafd', .9)
+    + hR(102, 38, 4, 17, 1.5)('wood') + hL(hAll(hC(104, 32, 12), hC(94, 38, 8), hC(114, 38, 8)), 'leaf', 1.2)
+    + hC(98, 31, 2.3)('a1') + hC(110, 36, 2.3)('a1') + hC(104, 41, 2.1)('a1')
+    + hR(212, 38, 3.4, 13, 1)('wood') + hL(hP('M213.7 14l11 25h-22z'), 'leafd', 1)
+    + hFade([[76, 60], [170, 70], [224, 54], [120, 70]].map(([x, y]) => hP(`M${x} ${y}l2-5 1.4 5 1.6-4 1 4z`)('leafd')).join(''), .7)
+    + hL(hAll(hE(250, 88, 24, 8), hC(240, 84, 9), hC(256, 80, 11), hC(268, 86, 8)), 'cloud', 1),
+};
+// 屋頂：外面的三角形減掉閣樓那個三角形，一排一排紅瓦（下面的先畫，上面那一排的波浪邊蓋在下面那一排上）。後面那一層是房子的牆和閣樓的地板
+const HM_BAND = 'M170 2L340 166H294.4L170 46L45.6 166H0z';
+function hmBack(){
+  return `<svg class="hm-back" viewBox="0 0 340 178" aria-hidden="true">${hL(hAll(hR(250, 38, 16, 70, 1.5), hR(247, 34, 22, 6, 1.5)), 'wood', 1)}${hP('M13 178V153.5L170 2L327 153.5V178z')('wood')}${hR(40, 165, 260, 3)('wood2')}</svg>`;
+}
+function hmRoof(){
+  let rows = '';
+  for (let k = 13; k >= 0; k--){
+    const y = 2 + k * 12.4, off = k % 2 ? 6.5 : 0;
+    let d = `M0 ${hn(y)}H340V${hn(y + 12.4)}H0z`;
+    for (let x = -off; x < 346; x += 13) d += `M${hn(x - 6.5)} ${hn(y + 12.4)}a6.5 6.5 0 0 0 13 0z`;
+    rows += hL(hP(d), 'a1', 1.4);
+  }
+  return `<svg class="hm-roofs" viewBox="0 0 340 178" aria-hidden="true"><defs><clipPath id="hm-band"><path d="${HM_BAND}"/></clipPath></defs>
+    <g clip-path="url(#hm-band)">${rows}</g>
+    ${hL(hLine('M45.6 166L170 46L294.4 166', 4.2), 'a1d', 1.6)}${hL(hLine('M2 165L170 3L338 165', 5), 'a1d', 1)}
+    ${hL(hAll(hR(0, 163, 47, 5.5, 2.2), hR(293, 163, 47, 5.5, 2.2)), 'a1d', .8)}</svg>`;
+}
+const hmDolls = ids => `<span class="hm-dolls">${ids.map(d => `<img src="${SPR[d]}" alt="">`).join('')}</span>`;
 function mapCell(r){
   const H = VISIT ? VISIT.home : home, here = (typeof yardOn !== 'undefined' && yardOn ? 'yard' : roomId) === r;
-  const nm = `<span class="hm-nm">${ICON[r] || ''}${ROOM_LABEL[r]}</span>`, tag = here ? '<span class="hm-here">你在這裡</span>' : '';
+  const nm = `<span class="hm-nm">${ICON[r] || ''}${ROOM_LABEL[r]}${here && r === 'attic' ? '・你在這裡' : ''}</span>`, tag = here && r !== 'attic' ? '<span class="hm-here">你在這裡</span>' : '';
   if (r === 'yard'){
     const has = VISIT ? !!VISIT.yard : true;
-    const st = ((H.yard && H.yard.items) || []).filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id);   // 小島現在是房間，列在上面的娃娃
-    return `<button class="hm-c hm-y ${here ? 'cur' : ''} ${has ? '' : 'none'}" data-hm="yard" ${has ? '' : 'disabled'} aria-label="門外小島${here ? '，你在這裡' : ''}"><span class="hm-isle"></span>
-      <span class="hm-dolls">${st.map(d => `<img src="${SPR[d]}" alt="${DOLL_NAME[d]}">`).join('')}</span>${nm}${tag}</button>`;
+    const st = ((H.yard && H.yard.items) || []).filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id).slice(0, 6);   // 小島現在是房間，列在上面的娃娃
+    return `<button class="hm-c hm-y ${here ? 'cur' : ''} ${has ? '' : 'lock none'}" data-hm="yard" ${has ? '' : 'disabled'} aria-label="門外小島${here ? '，你在這裡' : ''}${st.length ? '，' + st.map(d => DOLL_NAME[d]).join('、') + '在這裡' : ''}">
+      <span class="hm-pic"><svg class="hm-art" viewBox="0 0 300 110" aria-hidden="true">${HM_ART.yard()}</svg>${hmDolls(st)}${tag}</span>${nm}</button>`;
   }
-  const rm = H[r];
+  const rm = H[r], at = r === 'attic';
+  const vb = at ? '0 0 250 120' : '0 0 160 90';
+  const pic = (w, f, inner) => `<span class="hm-pic"><span class="hm-wall w-${w}"></span><span class="hm-floor f-${f}"></span><svg class="hm-art" viewBox="${vb}" aria-hidden="true">${HM_ART[r]()}</svg>${inner}</span>`;
+  const cls = `hm-c ${at ? 'hm-at' : ''}`;
   if (!rm){
     const k = ROOM_KEY[r];
     return VISIT
-      ? `<button class="hm-c lock none" disabled aria-label="${ROOM_LABEL[r]}，這裡看不到"><span class="hm-wall"></span>${nm}</button>`
-      : `<button class="hm-c lock" data-hm="${r}" aria-label="${ROOM_LABEL[r]}還沒開，點一下打開，${k.price} 枚幣"><span class="hm-wall"></span><span class="hm-key">${MAP_KEY}<b>點一下打開・${COIN}${k.price}</b></span>${nm}</button>`;
+      ? `<button class="${cls} lock none" disabled aria-label="${ROOM_LABEL[r]}，這裡看不到">${pic(k.wall, k.floor, '')}${nm}</button>`
+      : `<button class="${cls} lock" data-hm="${r}" aria-label="${ROOM_LABEL[r]}還沒開，點一下打開，${k.price} 枚幣">${pic(k.wall, k.floor, `<span class="hm-key">${MAP_KEY}<b>點一下打開・${COIN}${k.price}</b></span>`)}${nm}</button>`;
   }
   // 現在誰在這一間：出門去隔壁的不算、來作客的算（js/roam2.js）；沒有那個檔案就照擺設
-  const dolls = (typeof roamIn === 'function' ? roamIn(r, rm) : rm.items.filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id)).slice(0, 6).map(id => ({id}));
-  return `<button class="hm-c ${here ? 'cur' : ''} ${rm.light === false ? 'off' : ''}" data-hm="${r}" aria-label="${ROOM_LABEL[r]}${here ? '，你在這裡' : ''}，${dolls.length ? dolls.map(i => DOLL_NAME[i.id]).join('、') + '在這裡' : '沒有娃娃'}">
-    <span class="hm-wall w-${rm.wall}"></span><span class="hm-floor f-${rm.floor}"></span>
-    <span class="hm-dolls">${dolls.map(i => `<img src="${SPR[i.id]}" alt="">`).join('')}</span>${nm}${tag}</button>`;
+  const dolls = (typeof roamIn === 'function' ? roamIn(r, rm) : rm.items.filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id)).slice(0, 6);
+  return `<button class="${cls} ${here ? 'cur' : ''} ${rm.light === false ? 'off' : ''}" data-hm="${r}" aria-label="${ROOM_LABEL[r]}${here ? '，你在這裡' : ''}${rm.light === false ? '，關著燈' : ''}，${dolls.length ? dolls.map(d => DOLL_NAME[d]).join('、') + '在這裡' : '沒有娃娃'}">
+    ${pic(rm.wall, rm.floor, hmDolls(dolls) + tag)}${nm}</button>`;
 }
 function mapOpen(){
   if (VISIT && VISIT.card) return;
   const who = VISIT ? `${typeof txSlot === 'function' ? txSlot(VISIT.name) : ''}的小窩` : '小屋地圖';
   openSheet(`<div class="hd">${MAP_ICON}<span>${who}</span></div>
-    <div class="hm"><div class="hm-roof"></div>
-      <div class="hm-house"><div class="hm-row one">${mapCell('attic')}</div><div class="hm-row">${mapCell('bed')}${mapCell('bath')}</div><div class="hm-row">${mapCell('living')}${mapCell('kitchen')}</div></div>
+    <div class="hm"><div class="hm-top">${hmBack()}${mapCell('attic')}${hmRoof()}</div>
+      <div class="hm-house"><div class="hm-row">${mapCell('bed')}${mapCell('bath')}</div><div class="hm-row">${mapCell('living')}${mapCell('kitchen')}</div></div>
       <div class="hm-out">${mapCell('yard')}</div>
       ${!VISIT && typeof tvMapNote === 'function' ? tvMapNote() : ''}
       <p class="bk-note">點一間就過去。${VISIT ? '' : '還沒開的房間點一下就能打開。'}</p>
