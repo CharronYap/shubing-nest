@@ -148,7 +148,8 @@ function sayFit(b, it, h){
   const over = [...document.querySelectorAll(SAY_OVER)].filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden')
     .map(e => { const q = e.getBoundingClientRect(); return {l: q.left - R.left, r: q.right - R.left, t: q.top - R.top, b: q.bottom - R.top}; })
     .filter(o => o.l < cx + w / 2 + 4 && o.r > cx - w / 2 - 4).sort((a, c) => a.t - c.t);
-  const foot = R.height * (roomY(it.y) - h - 2) / 100, top = foot - bh, feet = R.height * roomY(it.y) / 100;   // foot：泡泡的下緣；feet：娃娃的腳
+  // foot：泡泡的下緣；feet：娃娃的腳。頭上有名牌的（來過夜的客人）：泡泡下緣的小尖角在名牌上緣之上，留 4px
+  const head = R.height * (roomY(it.y) - h) / 100, foot = it.tagH ? head - 2 - it.tagH - 4 - TIP : head - R.height * .02, top = foot - bh, feet = R.height * roomY(it.y) / 100;
   // 從泡泡上緣一路看到娃娃的腳：娃娃自己被那一條擋住一半的時候，泡泡也不留在那一條上面，免得看不出是誰在講
   if (top >= 4 && !over.some(o => top < o.b + GAP && feet > o.t)){ b.style.top = foot / R.height * 100 + '%'; return; }
   let y = R.height * (roomY(it.y) + 1.5) / 100 + TIP;

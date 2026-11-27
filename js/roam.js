@@ -99,7 +99,12 @@ function roamSitOn(it, f, k){
   try { roamHopTo(it, x, Math.max(56, Math.min(95, y)), () => { if (roamSeatTaken(f, k, it.uid) || !items.includes(f)) return; st.x = null; st.y = null; st.sit = f.uid; st.seat = k; roamApply(it, elFor(it)); }); }
   finally { roamFree = false; }
 }
-function roamSay(it, text){ const [x, y] = roamPos(it), st = RS[it.uid]; say({kind: 'doll', id: it.id, x, y, sit: (st && st.sit) || it.sit}, text); }
+function roamSay(it, text){
+  const [x, y] = roamPos(it), st = RS[it.uid], o = {kind: 'doll', id: it.id, x, y, sit: (st && st.sit) || it.sit};
+  // 客人頭上有名牌（js/stay.js）：泡泡要放在名牌上面，不然看不出是哪一隻在講（js/main.js 的 sayFit 會用 tagH）
+  if (it.guest){ const el = elFor(it), t = el && el.querySelector('.st-tag'); if (t) o.tagH = t.offsetHeight; }
+  say(o, text);
+}
 function roamIdle(it, kind){
   const el = elFor(it); if (!el) return;
   const b = el.querySelector('.body'), c = 'roam-' + kind;
