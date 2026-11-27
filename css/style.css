@@ -1197,7 +1197,14 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .room.dragdoll .fx.fx-bag{opacity:1}
 /* 金色小圓點放在袋身右邊，不跟頂上露出的點心疊在一起 */
 .fx-bag.on::after{content:"";position:absolute;right:-12%;top:50%;width:26%;aspect-ratio:1;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px #fff}
-.tv-note{position:absolute}
+/* 出門的紙條收在每一間的右下角，疊成一小疊（js/travel.js 的 nsPaint）：比家具、娃娃上面，背包（390）和夜晚的暗色（400）下面 */
+.ns-stk{position:absolute;right:3%;bottom:2.5%;width:17%;min-width:60px;aspect-ratio:1;padding:0;border:0;background:none;cursor:pointer;z-index:385;font:inherit}
+.ns-stk .ns-p{position:absolute;inset:0;width:auto;min-width:0;transform-origin:50% 60%}
+.ns-stk .ns-b{filter:brightness(.93)}
+.ns-stk .ns-b::before{display:none}
+.ns-stk .ns-more{position:absolute;left:50%;top:100%;transform:translate(-50%,-55%);white-space:nowrap;padding:1px 7px;border-radius:999px;background:#fff;color:var(--pink2);font-size:10.5px;font-weight:800;box-shadow:0 1px 3px rgba(80,40,70,.18)}
+.ns-ln{list-style:none;margin:0;padding:2px;display:grid;gap:6px;max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
+.ns-ln button{display:block;width:100%;text-align:left;padding:10px 13px;border:0;border-radius:14px 14px 14px 4px;background:#fff;box-shadow:0 0 0 1.5px var(--line);font:inherit;font-size:14px;font-weight:700;line-height:1.45;color:inherit;cursor:pointer}
 .tv-box{display:grid;gap:8px;padding:2px;max-height:calc(100dvh - 230px);overflow-y:auto;overscroll-behavior:contain}
 .tv-box .al-sec{margin:6px 2px 2px;display:flex;align-items:baseline;gap:8px}
 .al-sec small{font-size:11.500px;font-weight:700;color:var(--soft)}
@@ -1305,8 +1312,6 @@ span.yd-kind{cursor:default}
 .phimg{-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
 .ph-hold{margin:0;font-size:14px;line-height:1.55;font-weight:800;text-align:center;color:var(--pink2)}
 .phcard.hold .phimg{transform:none}
-/* 全家旅行：客廳的大紙條 */
-.tv-fam{width:26%;min-width:92px;font-size:12.500px;padding:10px 6px;transform:translate(-50%,-100%) rotate(-3deg)}
 /* 旅行相簿：最上面一排合照（左右滑） */
 .tv-pics{display:grid;grid-auto-flow:column;grid-auto-columns:42%;gap:8px;overflow-x:auto;padding:2px 2px 6px;scroll-snap-type:x proximity;min-height:min-content;flex:none}
 .tv-pics .tv-th{scroll-snap-align:start;min-width:0}

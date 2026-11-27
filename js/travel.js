@@ -432,24 +432,49 @@ function tvRoomPaint(){
     b.onclick = () => tvBagOpen();
     room.appendChild(b);
   }
-  tvData().out.filter(o => o.fam).forEach(o => {
-    if (roomId !== 'living') return;
-    const n = document.createElement('button');
-    n.className = 'tvx st-note tv-note tv-fam'; n.setAttribute('aria-label', `全家去${TV_PLACES[o.p].name}了`);
-    n.style.left = '40%'; n.style.top = roomY(74) + '%'; n.style.zIndex = 60 + 74 * 3;
-    n.innerHTML = `<span>全家出門了<br>去${tvDest(o.p)}<br>${tvWhen(o.t1)}回來</span>`;
-    n.onclick = () => tvNoteTap(o.ds[0]);
-    room.appendChild(n);
+  nsPaint();
+}
+/* 出門的紙條（2026-11-27 改善計畫 07）：旅行、全家出門、去朋友家過夜的紙條，不再貼在牠原本站的地方，每一間都收到右下角疊成一小疊。
+   最多露出 3 張（每張歪一點、往上錯開一點），超過的寫「還有 N 張」；全家出門那張放最上面。
+   點那一疊打開清單卡，一行一隻，點一行打開原本那張（tvNoteTap／stay.js 的 stayTap）；只有一張就直接打開。
+   o.hm 照舊記著原位，回家還是回原位。拍照（js/photo.js）只拍 .it、.gst.st-guest 那些，這一疊不會入鏡。
+   stay.js 的 stayPaint 也會叫 nsPaint（過夜出門、回來時房間不一定重畫）。 */
+function nsList(){
+  if (VISIT) return [];
+  const fam = [], l = [];
+  tvData().out.forEach(o => {
+    if (o.fam){ if (roomId === 'living') fam.push({t: `全家出門了<br>去${tvDest(o.p)}`, line: tvOutLine(o), go: () => tvNoteTap(o.ds[0])}); return; }
+    o.ds.forEach(d => {
+      const h = o.hm[d]; if (!h || h.r !== roomId) return;
+      l.push({t: `${DOLL_NAME[d]}<br>去${tvDest(o.p)}了`, line: `${DOLL_NAME[d]}去${tvWhere(o.p)}了，大概${tvWhen(o.t1)}回來`, go: () => tvNoteTap(d)});
+    });
   });
-  tvData().out.filter(o => !o.fam).forEach(o => o.ds.forEach(d => {
-    const h = o.hm[d]; if (!h || h.r !== roomId) return;
-    const n = document.createElement('button');
-    n.className = 'tvx st-note tv-note'; n.setAttribute('aria-label', `${DOLL_NAME[d]}去${TV_PLACES[o.p].name}了`);
-    n.style.left = h.x + '%'; n.style.top = roomY(h.y) + '%'; n.style.zIndex = 60 + Math.round(h.y * 3);
-    n.innerHTML = `<span>${DOLL_NAME[d]}<br>去${tvDest(o.p)}了</span>`;
-    n.onclick = () => tvNoteTap(d);
-    room.appendChild(n);
-  }));
+  const so = typeof stayOut === 'function' ? stayOut() : null;
+  if (so && so.from === roomId) l.push({t: `${DOLL_NAME[so.d]}<br>去${txSlot(so.w)}家<br>過夜了`, line: `${DOLL_NAME[so.d]}去${txSlot(so.w)}家過夜了`, a: `${DOLL_NAME[so.d]}去過夜了`, go: () => stayTap()});
+  return fam.concat(l);
+}
+function nsPaint(){
+  room.querySelectorAll('.ns-stk').forEach(e => e.remove());
+  const l = nsList(); if (!l.length) return;
+  const b = document.createElement('button');
+  b.className = 'tvx ns-stk';
+  b.setAttribute('aria-label', l.length > 1 ? `出門的紙條 ${l.length} 張` : (l[0].a || l[0].line));   // 過夜那張的朋友名字是 txSlot 的標記，念的時候用 a
+  // 最上面那張（l[0]，有字）微微歪；後面兩張各歪一邊、往上錯開一點，看得出是一疊
+  const k = Math.min(3, l.length), pos = ['0,0) rotate(-3deg', '5px,-7px) rotate(8deg', '-5px,-12px) rotate(-11deg'];
+  // 最下面那張先畫、最上面那張最後畫
+  b.innerHTML = Array.from({length: k}, (_, i) => { const j = k - 1 - i;
+    return `<span class="st-note ns-p${j ? ' ns-b' : ''}" style="transform:translate(${pos[j]})">${j ? '' : `<span>${l[0].t}</span>`}</span>`; }).join('')
+    + (l.length > 3 ? `<small class="ns-more">還有 ${l.length - 3} 張</small>` : '');
+  b.onclick = () => nsOpen();
+  room.appendChild(b);
+}
+function nsOpen(){
+  const l = nsList(); if (!l.length) return;
+  if (l.length === 1){ l[0].go(); return; }
+  openSheet(`<div class="hd">${TV_BAG_ICON}<span>出門的</span></div>
+    <ul class="ns-ln">${l.map((x, i) => `<li><button type="button" data-ns="${i}">${x.line}</button></li>`).join('')}</ul>`);
+  $('#sheet').querySelectorAll('[data-ns]').forEach(e => { e.onclick = () => { const x = l[+e.dataset.ns]; if (x) x.go(); }; });
+  evOpen = false; alOpen = false;
 }
 // 房間每次重畫完補回去（接在 away.js、stay.js 的 afterRoomRender 後面）；固定的構造重畫時也補
 {
@@ -457,7 +482,8 @@ function tvRoomPaint(){
   afterRoomRender = function(){ if (prev) prev(); tvRoomPaint(); };
   if (typeof fixPaint === 'function'){ const fp = fixPaint; fixPaint = function(){ fp.apply(this, arguments); tvRoomPaint(); }; }
 }
-const tvOutLine = o => `${tvWho(o)}去${tvAb(o.p) ? `${TV_PLACES[o.p].country}看${TV_PLACES[o.p].name}` : TV_PLACES[o.p].name}了，大概${tvWhen(o.t1)}回來`;
+const tvWhere = p => (tvAb(p) ? `${TV_PLACES[p].country}看${TV_PLACES[p].name}` : TV_PLACES[p].name);
+const tvOutLine = o => `${tvWho(o)}去${tvWhere(o.p)}了，大概${tvWhen(o.t1)}回來`;
 function tvNoteTap(d){
   const o = tvTrip(d); if (!o) return;
   const P = TV_PLACES[o.p];
