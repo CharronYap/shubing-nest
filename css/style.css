@@ -875,35 +875,58 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .rmap{flex:none;width:30px;height:30px;border-radius:50%;border:3px solid #fff;background:#fff;color:var(--pink);box-shadow:0 3px 0 #ead9e2;display:grid;place-items:center;padding:0;cursor:pointer}
 .rmap svg{width:17px;height:17px}
 .rmap:active{transform:translateY(2px);box-shadow:0 1px 0 #ead9e2}
-.hm{display:grid;justify-items:center;gap:0;padding:2px 2px 0}
-.hm-roof{width:74%;height:44px;background:#e98a6b;clip-path:polygon(50% 0,100% 100%,0 100%);margin-bottom:-2px}
-.hm-house{width:100%;display:grid;gap:5px;padding:6px;border-radius:14px;background:#f2cf9c;box-shadow:inset 0 0 0 3px #c98f56}
-.hm-row{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.hm-row.one{grid-template-columns:1fr;justify-items:center}
-.hm-row.one .hm-c{width:62%}
-.hm-out{width:100%;margin-top:8px;padding:10px 6px 4px;border-radius:50% 50% 16px 16px/26px 26px 16px 16px;background:linear-gradient(#eaf6ff,#fff)}
-.hm-c{position:relative;display:block;width:100%;aspect-ratio:16/10;border:3px solid #fff;border-radius:10px;overflow:hidden;padding:0;background:#fff;cursor:pointer;font:inherit;color:inherit;box-shadow:0 0 0 1px #c98f56}
-.hm-c .hm-wall{position:absolute;left:0;right:0;top:0;height:62%}
-.hm-c .hm-floor{position:absolute;left:0;right:0;bottom:0;height:38%;border-top:2px solid #fff}
-.hm-c.off::after{content:"";position:absolute;inset:0;background:rgba(40,40,110,.5);pointer-events:none}
-.hm-c.lock .hm-wall{height:100%;background:#5a567a}
-.hm-c.lock.none{opacity:.5;cursor:default}
-.hm-key{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:2px}
+/* 小屋地圖（js/rooms.js 的 mapOpen）。2026-11-27 照使用者的設計圖重畫：紙雕的紅瓦屋頂、屋頂底下三角形的閣樓、木頭房子裡四間、雲上的小島。
+   顏色都用 js/paper.js 的色票（--p-*），?look=old 沒有色票時用後面寫的白天那一組。屋頂、家具、小島是 SVG（js/rooms.js 的 HM_ART），這裡只排位置 */
+.hm{--hm-ink:var(--p-ink,#23264a);--hm-paper:var(--p-paper,#fbf6ea);--hm-a1:var(--p-a1,#ff8a66);--hm-wood:var(--p-wood,#8a5a45);--hm-wood2:var(--p-wood2,#623f30);
+  --hm-edge:var(--p-edge,#d2cfcd);display:grid;gap:0;padding:2px 0 0}
+.hm-top{position:relative;width:100%;aspect-ratio:340/178}
+.hm-top>svg{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.hm-top>.hm-roofs{z-index:2}
+.hm-house{position:relative;width:92.4%;justify-self:center;display:grid;gap:6px;padding:5px 6px 7px;background:var(--hm-wood);border-radius:0 0 10px 10px;
+  box-shadow:0 4px 0 var(--hm-wood2),0 10px 12px var(--p-shadow,rgba(35,38,74,.25))}
+.hm-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.hm-c{position:relative;display:block;width:100%;margin:0;padding:0;border:0;border-radius:8px;overflow:hidden;background:var(--hm-paper);color:var(--hm-ink);font:inherit;cursor:pointer;
+  box-shadow:0 2px 0 var(--hm-wood2);-webkit-tap-highlight-color:transparent}
+.hm-c:active{transform:translateY(1px)}
+.hm-pic{position:relative;display:block;width:100%;aspect-ratio:16/9;overflow:hidden;background:linear-gradient(var(--p-wall,#dfe3f0) 64.5%,var(--p-floor,#cdb5c9) 0)}
+.hm-wall{position:absolute;left:0;right:0;top:0;height:64.5%}
+.hm-floor{position:absolute;left:0;right:0;bottom:0;height:35.5%}
+.hm-art{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* 關燈、還沒開：整格蓋一層暗的，娃娃和字在上面 */
+.hm-pic::after{content:"";position:absolute;inset:0;z-index:1;background:var(--hm-ink);opacity:0;pointer-events:none}
+.hm-c.off .hm-pic::after{opacity:.48}
+.hm-c.lock .hm-pic::after{opacity:.62}
+.hm-c.lock.none{cursor:default;opacity:.5}
+.hm-c.lock.none:active{transform:none}
+.hm-dolls{position:absolute;left:4px;right:4px;bottom:5%;z-index:2;display:flex;justify-content:center;align-items:flex-end}
+.hm-dolls img{width:26px;height:26px;object-fit:contain;margin:0 -2px;filter:drop-shadow(0 1.5px 0 rgba(35,38,74,.25))}
+.hm-nm{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:5px;padding:3px 0 4px;font-size:13px;font-weight:900;color:var(--hm-ink);background:var(--hm-paper)}
+.hm-nm svg{flex:none;width:15px;height:15px;color:var(--hm-a1)}
+.hm-c.cur{box-shadow:0 0 0 3px var(--hm-a1),0 3px 0 3px var(--hm-wood2)}
+.hm-here{position:absolute;left:50%;top:6%;transform:translateX(-50%);z-index:3;white-space:nowrap;padding:1px 9px 2px;border-radius:999px;background:var(--hm-a1);color:var(--hm-paper);
+  font-size:11px;font-weight:900;box-shadow:0 2px 0 color-mix(in srgb,var(--hm-a1) 70%,var(--hm-ink))}
+.hm-key{position:absolute;left:50%;top:46%;z-index:3;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:2px}
 .hm-key svg{width:26px;height:26px}
-.hm-key b{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:900;color:#fff}
+.hm-key b{display:flex;align-items:center;gap:3px;white-space:nowrap;font-size:12px;font-weight:900;color:var(--hm-paper)}
 .hm-key b svg{width:14px;height:14px}
-.hm-dolls{position:absolute;left:4px;right:4px;bottom:20px;display:flex;justify-content:center;align-items:flex-end;gap:1px;z-index:1}
-.hm-dolls img{width:24px;height:24px;object-fit:contain;margin:0 -2px}
-.hm-nm{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;align-items:center;justify-content:center;gap:4px;padding:2px 0;font-size:12px;font-weight:900;color:var(--ink);background:rgba(255,255,255,.86)}
-.hm-nm svg{width:14px;height:14px;color:var(--pink)}
-.hm-c.cur{border-color:var(--pink);box-shadow:0 0 0 3px #ffd3e6,0 0 0 4px var(--pink)}
-.hm-here{position:absolute;left:50%;top:4px;transform:translateX(-50%);z-index:3;white-space:nowrap;padding:2px 8px;border-radius:999px;background:var(--pink);color:#fff;font-size:11px;font-weight:900}
-.hm-y{aspect-ratio:16/6;background:none;box-shadow:none;border-color:transparent}
-.hm-y.cur{border-color:var(--pink)}
-.hm-y.none{opacity:.4;cursor:default}
-.hm-isle{position:absolute;left:50%;top:6px;width:46%;height:52%;transform:translateX(-50%);background:#bfe6a0;border:2px solid #9fd17f;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
-.hm-y .hm-dolls{bottom:22px}
-.hm-y .hm-nm{background:none}
+/* 閣樓：屋頂底下的三角形，名牌是一顆小圓牌壓在閣樓的地板上 */
+.hm-c.hm-at{position:absolute;left:13.41%;top:25.84%;width:73.18%;height:67.42%;z-index:1;border-radius:0;overflow:visible;background:none;box-shadow:none}
+.hm-at .hm-pic{position:absolute;inset:0;aspect-ratio:auto;clip-path:polygon(50% 0,100% 100%,0 100%);background:linear-gradient(var(--p-wall,#dfe3f0) 83%,var(--p-floor,#cdb5c9) 0)}
+.hm-at .hm-wall{height:83%}
+.hm-at .hm-floor{height:17%}
+.hm-at .hm-nm{position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);padding:2px 12px 3px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 0 var(--hm-wood2)}
+.hm-at .hm-dolls{bottom:9%}
+.hm-at .hm-key{top:66%}
+.hm-at.cur{box-shadow:none}
+.hm-at.cur .hm-nm{background:var(--hm-a1);color:var(--hm-paper)}
+.hm-at.cur .hm-nm svg{color:var(--hm-paper)}
+.hm-at:focus-visible{outline:none}
+.hm-at:focus-visible .hm-nm{outline:3px solid var(--hm-a1);outline-offset:2px}
+/* 門外小島：一張天空色的卡片 */
+.hm-out{width:100%;margin-top:14px}
+.hm-y .hm-pic{aspect-ratio:300/110;background:linear-gradient(var(--p-sky,#a9c8ea),color-mix(in srgb,var(--p-sky,#a9c8ea) 45%,var(--hm-paper)))}
+.hm-y .hm-dolls{bottom:42%}
+.hm-y.lock .hm-pic::after{opacity:0}
 /* 看得出自己在哪一間（3）：每一間固定的樣子、通往隔壁的門口 */
 .fx{position:absolute;transform:translateX(-50%);z-index:5;margin:0;padding:0;border:0;background:none;display:block;-webkit-tap-highlight-color:transparent}
 .fx svg{display:block;width:100%;height:auto;pointer-events:none}
