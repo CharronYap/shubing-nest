@@ -29,6 +29,7 @@
 //   cloud.stayGo({to, doll, look, day, x, y, fromName}) / cloud.stayMine() / cloud.stayGuests() / cloud.staySet(uid, patch) / cloud.stayEnd(uid)   過夜
 //   cloud.cardSend({to, snap, msg, fromName}) / cloud.cardsTo() / cloud.cardDel(id)                                          明信片
 //   cloud.letterSend({to, msg, re, d, fromName}) / cloud.lettersTo() / cloud.letterDel(id)                                    回信（js/letter.js）
+//   cloud.chatSend(uid, {m, s}) / chatRecent(uid) / chatOlder(uid, cur) / chatSince(uid, ts) / chatMeta(uid) / chatMetas() / chatSeen(uid) / chatDel(uid, id)   朋友聊天（js/chat.js）
 //
 // SDK 從 Google 的 CDN 載（約 110 KB gzip），只有打開遊戲後才在背景載，不會拖慢開始。
 
@@ -124,6 +125,20 @@ export function createCloud(config, { emulator = false } = {}) {
     isReady = true;
   })();
   ready.catch(e => console.warn('[cloud] 雲端存檔載入失敗（照樣可以玩，存在這台裝置）', e));
+
+  // 聊天：兩個人的帳號排序後用 _ 接起來當編號；排前面的人看到哪裡記在 sa，後面的記在 sb
+  const chatKey = uid => {
+    if (!user) throw new Error('not signed in');
+    if (typeof uid !== 'string' || !/^[A-Za-z0-9-]{1,64}$/.test(uid) || uid === user.uid) throw new Error('bad uid');
+    const p = [user.uid, uid].sort();
+    return [p.join('_'), p[0] === user.uid ? 'sa' : 'sb'];
+  };
+  const ms = t => (t && typeof t.toMillis === 'function' ? t.toMillis() : 0);
+  const chatMsg = d => { const o = d.data(); return { id: d.id, from: o.from, m: o.m, s: o.s, t: ms(o.t), ts: o.t || null }; };
+  const chatMetaOf = (cid, o) => {
+    const u = Array.isArray(o.u) ? o.u : cid.split('_'), first = u[0] === (user && user.uid);
+    return { cid, other: first ? u[1] : u[0], t: ms(o.t), f: o.f || '', seen: ms(first ? o.sa : o.sb), seenTs: (first ? o.sa : o.sb) || null, x: ms(o.x) };
+  };
 
   // 小窩的存檔：nestSaves/{uid}（規則裡的 saves 是從蛋蛋島複製來的，小窩不用）
   const ref = () => {
@@ -426,6 +441,74 @@ export function createCloud(config, { emulator = false } = {}) {
     async letterDel(id) {
       await ready;
       await F.deleteDoc(F.doc(db, 'nestLetters', id));
+    },
+    // ---------- 朋友聊天（js/chat.js）----------
+    //   nestChats/{兩個人的帳號排序後用 _ 接起來} = {u: [兩個帳號], t: 最後一則的時間, f: 最後一則誰送的, sa/sb: 排前面／後面的人看到哪裡, x: 最後一次收回的時間}
+    //   nestChats/{同上}/msgs/{自動編號} = {from, t: 伺服器時間, m: 字} 或 {from, t, s: 貼圖代號}
+    //   時間都用伺服器時間（規則檢查 == request.time）。讀回來的 t 換成毫秒，ts 留著原本的 Timestamp（查「這之後的」要用）
+    async chatSend(uid, { m, s }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      const [cid, side] = chatKey(uid), now = F.serverTimestamp();
+      const o = { from: user.uid, t: now };
+      if (m) o.m = String(m).slice(0, 80); else o.s = String(s || '').slice(0, 40);
+      const mr = F.doc(F.collection(db, 'nestChats', cid, 'msgs'));
+      const b = F.writeBatch(db);
+      b.set(mr, o);
+      b.set(F.doc(db, 'nestChats', cid), { u: cid.split('_'), t: now, f: user.uid, [side]: now }, { merge: true });
+      await b.commit();
+      return mr.id;
+    },
+    async chatRecent(uid, n = 50) {
+      await ready;
+      if (!user) return { list: [], cur: null };
+      const r = await F.getDocs(F.query(F.collection(db, 'nestChats', chatKey(uid)[0], 'msgs'), F.orderBy('t', 'desc'), F.limit(n)));
+      return { list: r.docs.map(chatMsg).reverse(), cur: r.docs.length === n ? r.docs[r.docs.length - 1] : null };
+    },
+    // 比 cur（上一次讀到最舊的那一則）更早的
+    async chatOlder(uid, cur, n = 50) {
+      await ready;
+      if (!user || !cur) return { list: [], cur: null };
+      const r = await F.getDocs(F.query(F.collection(db, 'nestChats', chatKey(uid)[0], 'msgs'), F.orderBy('t', 'desc'), F.startAfter(cur), F.limit(n)));
+      return { list: r.docs.map(chatMsg).reverse(), cur: r.docs.length === n ? r.docs[r.docs.length - 1] : null };
+    },
+    // ts 之後才送的（舊的在前面）
+    async chatSince(uid, ts, n = 50) {
+      await ready;
+      if (!user || !ts) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestChats', chatKey(uid)[0], 'msgs'), F.where('t', '>', ts), F.orderBy('t'), F.limit(n)));
+      return r.docs.map(chatMsg);
+    },
+    async chatMeta(uid) {
+      await ready;
+      if (!user) return null;
+      const [cid] = chatKey(uid);
+      const s = await F.getDoc(F.doc(db, 'nestChats', cid));
+      return s.exists() ? chatMetaOf(cid, s.data()) : null;
+    },
+    // 自己的每一段聊天（房間裡算沒看的數量用）
+    async chatMetas() {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestChats'), F.where('u', 'array-contains', user.uid), F.limit(60)));
+      return r.docs.map(d => chatMetaOf(d.id, d.data()));
+    },
+    // 記下自己看到這裡了
+    async chatSeen(uid) {
+      await ready;
+      if (!user) return;
+      const [cid, side] = chatKey(uid);
+      await F.setDoc(F.doc(db, 'nestChats', cid), { u: cid.split('_'), [side]: F.serverTimestamp() }, { merge: true });
+    },
+    // 收回自己送的一則（另外記一個收回的時間，對方開著聊天頁的話會重讀一次）
+    async chatDel(uid, id) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      const [cid] = chatKey(uid);
+      const b = F.writeBatch(db);
+      b.delete(F.doc(db, 'nestChats', cid, 'msgs', id));
+      b.set(F.doc(db, 'nestChats', cid), { u: cid.split('_'), x: F.serverTimestamp() }, { merge: true });
+      await b.commit();
     },
     // ---------- 全部都留（js/keep.js）：存檔底下的子集合，只有本人能讀寫 ----------
     //   nestSaves/{uid}/memo/{月份}、nestSaves/{uid}/mail/{月份} = {l:[…], t}；nestSaves/{uid}/cards/{明信片編號} = 一張明信片

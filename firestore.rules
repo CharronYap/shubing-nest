@@ -27,6 +27,10 @@ rules_version = '2';
 // 2026-11-27 回信（2026-11-27 20:18 已發布）：
 //   新集合 nestLetters/{自動編號} = {from, fromName, to, msg, re, d, t}：朋友送來的娃娃、過夜的日記、明信片、回信下面可以回一封信，只有字。
 //   寫法跟 nestCards 一樣：寄的人是本人、不能寄給自己、收的人的好友名單裡要有寄的人；兩邊都讀得到、都能刪；不能改。其他段落沒有動。
+// 2026-11-27 朋友聊天（還沒發布）：
+//   新集合 nestChats/{兩個人的帳號排序後用 _ 接起來} = {u, t, f, sa, sb, x}（最後一則的時間、誰送的、兩個人各自看到哪裡、最後一次收回的時間），
+//   和它底下的 msgs/{自動編號} = {from, t, m 字（1～80）或 s 貼圖代號（1～40）}。
+//   只有編號裡的那兩個人能讀；送訊息要兩邊都在對方的好友名單裡；from 是本人、時間是伺服器時間；不能改，只能刪自己送的。其他段落沒有動。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
@@ -516,6 +520,57 @@ service cloud.firestore {
         && okCardSnap(request.resource.data.snap)
         && (!('r' in request.resource.data) || request.resource.data.r is int)
         && (!('u' in request.resource.data) || (request.resource.data.u is string && request.resource.data.u.size() <= 64));
+    }
+
+    // 朋友聊天：nestChats/{cid}，cid = 兩個人的帳號排序後用 _ 接起來（帳號裡沒有 _），例如 aaa_bbb
+    //   u  = 那兩個帳號（跟 cid 拆開來一樣）
+    //   t  = 最後一則的時間、f = 最後一則誰送的：只有送訊息的時候改，t 要是伺服器時間、f 是本人，而且兩邊都要在對方的好友名單裡
+    //   sa = 排前面那個人看到哪裡、sb = 排後面那個人：各自只能改自己的，值是伺服器時間
+    //   x  = 最後一次收回訊息的時間（伺服器時間），對方開著聊天頁時看到它變了會重讀
+    //   只有這兩個人讀得到；不能刪
+    function chatMe(cid) {
+      return request.auth != null
+        && cid.split('_').size() == 2
+        && cid.split('_')[0] < cid.split('_')[1]
+        && request.auth.uid in cid.split('_');
+    }
+    function chatFriends(cid) {
+      return nestFriendOf(cid.split('_')[0], cid.split('_')[1]) && nestFriendOf(cid.split('_')[1], cid.split('_')[0]);
+    }
+    function chatSide(cid) {
+      return request.auth.uid == cid.split('_')[0] ? 'sa' : 'sb';
+    }
+    // ch：這次改到的欄位
+    function chatMetaOk(cid, ch) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['u', 't', 'f', 'sa', 'sb', 'x'])
+        && d.u == cid.split('_')
+        && ch.hasOnly(['u', 't', 'f', 'x', chatSide(cid)])
+        && (!ch.hasAny(['t', 'f']) || (d.t == request.time && d.f == request.auth.uid && chatFriends(cid)))
+        && (!ch.hasAny([chatSide(cid)]) || d[chatSide(cid)] == request.time)
+        && (!ch.hasAny(['x']) || d.x == request.time);
+    }
+    match /nestChats/{cid} {
+      allow get: if chatMe(cid);
+      allow list: if request.auth != null && request.auth.uid in resource.data.u;
+      allow create: if chatMe(cid) && chatMetaOk(cid, request.resource.data.keys());
+      allow update: if chatMe(cid) && chatMetaOk(cid, request.resource.data.diff(resource.data).affectedKeys());
+      allow delete: if false;
+
+      // 一則訊息：from 送的人、t 伺服器時間，m（字，1～80）和 s（貼圖代號，1～40）只能有一個
+      match /msgs/{mid} {
+        allow read: if chatMe(cid);
+        allow create: if chatMe(cid) && chatFriends(cid)
+          && request.resource.data.keys().hasOnly(['from', 't', 'm', 's'])
+          && request.resource.data.from == request.auth.uid
+          && request.resource.data.t == request.time
+          && ((request.resource.data.keys().hasAll(['m']) && !request.resource.data.keys().hasAny(['s'])
+                && request.resource.data.m is string && request.resource.data.m.size() >= 1 && request.resource.data.m.size() <= 80)
+            || (request.resource.data.keys().hasAll(['s']) && !request.resource.data.keys().hasAny(['m'])
+                && request.resource.data.s is string && request.resource.data.s.size() >= 1 && request.resource.data.s.size() <= 40));
+        allow delete: if chatMe(cid) && resource.data.from == request.auth.uid;
+        allow update: if false;
+      }
     }
 
     // 其他東西一律不能讀寫

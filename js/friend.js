@@ -6,6 +6,7 @@
    - 另一頁「寄出去的」：還在朋友門口等的娃娃（可以收回）、寄出去的明信片、在他家訪客簿寫的、幫他澆的水……
    - 2026-11-27 起信箱也列朋友的東西（「明信片」「朋友家」兩類），跟這裡是同一份資料；在信箱看過的明信片和日記，這裡的數字就不再算。
    資料不另外存一份：跟相簿的「兩個人的紀念冊」共用 S.album.memo（js/memo.js），加上信箱裡的明信片（S.mail.pc）、雲端上還沒領的娃娃。
+   2026-11-27 起「去他家」旁邊多一顆「聊天」（js/chat.js），朋友傳來還沒看的訊息也算進上面朋友鈕的數字。
    只多一個數字 S.album.frSeen = 上次打開面板的時間（放在 album 裡，不用改規則）。新舊風格都能用。
    要放在 hud.js 前面載入（hud.js 會把 #palBtn 排進第二排）。 */
 const FR_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8.600" cy="8.400" r="3.600"/><circle cx="17" cy="9.400" r="2.800"/><path d="M1.800 19.600c.500-3.900 3.200-6.200 6.800-6.200s6.300 2.300 6.800 6.200c.100.600-.400 1.100-1 1.100H2.800c-.600 0-1.100-.500-1-1.100z"/><path d="M15.200 14.100c.600-.200 1.200-.300 1.800-.300 2.800 0 4.800 1.800 5.200 4.800.100.600-.400 1.100-1 1.100h-3.700c.100-.400.100-.800 0-1.300-.300-1.800-1.100-3.300-2.300-4.300z"/></svg>';
@@ -24,7 +25,8 @@ function frUnread(){
     if (e.k === 'stayBack' && e.d){ const o = frLetter('trip', e.d, e.u); return !!(o && o.r); }
     if (e.k === 'letterIn' && e.c && typeof letterById === 'function'){ const o = letterById(e.c); return !!(o && o.r); }   // 朋友寫的信（js/letter.js）
   } catch (err) {} return false; };
-  return frMemo().filter(e => FR_IN.includes(e.k) && e.k !== 'giftIn' && (e.ts || 0) > t && !seen(e)).length + (typeof ngWaiting === 'function' ? ngWaiting() : 0);
+  return frMemo().filter(e => FR_IN.includes(e.k) && e.k !== 'giftIn' && (e.ts || 0) > t && !seen(e)).length + (typeof ngWaiting === 'function' ? ngWaiting() : 0)
+    + (typeof chatUnreadAll === 'function' ? chatUnreadAll() : 0);   // 聊天傳來還沒看的（js/chat.js）
 }
 function frBadge(){
   const b = $('#palBtn'); if (!b) return;
@@ -116,10 +118,11 @@ function frPaint(){
     rows += memo.filter(e => FR_OUT.includes(e.k)).map(e => `<div class="fr-it"><small>${md(e.t)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(e)}</p></div>`).join('');
     if (!rows) rows = `<p class="al-em">還沒有寄東西給${txSlot(nm)}。</p>`;
   }
+  const chN = uid => (typeof chatUnreadOf === 'function' ? chatUnreadOf(uid) : 0), chatN = chN(f.uid);
   const inNew = frMemo().filter(e => e.u === f.uid && FR_IN.includes(e.k) && e.k !== 'giftIn' && (e.ts || 0) > frNewSince).length;
   openSheet(`${head}<div class="fr-box">
-      ${frList.length > 1 ? `<div class="ng-chips">${frList.map(p => `<button class="ng-chip ${p.uid === frWho ? 'on' : ''}" data-frwho="${p.uid}" aria-pressed="${p.uid === frWho}">${txSlot(sText(p.name, 12))}</button>`).join('')}</div>` : ''}
-      <div class="fr-top"><span class="fr-av" aria-hidden="true">${txSlot([...nm][0] || '友')}</span><b>${txSlot(nm)}</b><button class="btn y" data-fr="visit">${typeof HOUSE !== 'undefined' ? HOUSE : ''}<span>去他家</span></button></div>
+      ${frList.length > 1 ? `<div class="ng-chips">${frList.map(p => `<button class="ng-chip ${p.uid === frWho ? 'on' : ''}" data-frwho="${p.uid}" aria-pressed="${p.uid === frWho}">${txSlot(sText(p.name, 12))}${chN(p.uid) ? '<i class="fr-new" aria-label="有新訊息"></i>' : ''}</button>`).join('')}</div>` : ''}
+      <div class="fr-top"><span class="fr-av" aria-hidden="true">${txSlot([...nm][0] || '友')}</span><b>${txSlot(nm)}</b>${typeof chatOpen === 'function' ? `<button class="btn fr-chat" data-fr="chat" aria-label="${chatN ? `聊天，${chatN} 則沒看` : '聊天'}">${CHAT_ICON}<span>聊天</span>${chatN ? `<i>${chatN}</i>` : ''}</button>` : ''}<button class="btn y" data-fr="visit">${typeof HOUSE !== 'undefined' ? HOUSE : ''}<span>去他家</span></button></div>
       ${f.hasMe === false ? '<small class="bk-note">他還沒把你加進好友。等他加你之後，才能寄明信片和在訪客簿寫字給他。</small>' : ''}
       <div class="fr-acts">
         <button class="fr-a" data-fr="card">${CARD_ICON}<span>寄明信片</span></button>
@@ -158,6 +161,7 @@ $('#sheet').addEventListener('click', async e => {
     // 明信片上是現在這間房間的樣子：拍下來，收件人先選好
     cardCompose(cardSnap()); if (typeof cardDraft !== 'undefined' && cardDraft){ cardDraft.to = f.uid; cardDraft.friends = frList; cardPaint(); }
   }
+  else if (a === 'chat'){ if (typeof chatOpen === 'function') chatOpen(f, () => frPaint()); }
   else if (a === 'gift'){ ngPick = {doll: null, to: f.uid, m: null, msg: ''}; ngOpenPick(); }
   else if (a === 'stay'){ stPick = {uid: f.uid, name: f.name, d: null}; stayPickPaint(); }
 });
