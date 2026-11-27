@@ -2,25 +2,29 @@
    線條粗細和配色照前三批（粉紅、黃、藍、木頭色），多一個薄荷綠。沒有用外面的圖，也沒有照任何真的樂園或別的作品的造型。
    - 客廳：木馬搖椅（可以坐）、摩天輪燈（會亮）、爆米花機
    - 臥室：小火車櫃（可以坐）、熱氣球吊飾（掛在牆上）、售票亭
+   - 湊齊送「旋轉木馬」（客廳，兩隻可以各坐一匹馬）：跟全家福相框牆一樣是家具獎品，gift:1，扭蛋夾不到、小店不賣。
+     發獎品用 js/furnfx.js 原本的 setCheck（讀 FURN_SERIES 的 gift），里程碑「湊齊小小遊樂園系列」+10 枚是 js/earn.js 自動加的。
    新風格（紙片）不用另外畫：js/paper.js 會自動轉（拿掉描邊和反光，每一塊下面墊一塊影子）。
    所以每一個部位都有自己的填色，細的線條用 fill="none" 畫，轉過去還看得到。
-   這個系列沒有湊齊的獎品：要送獎品得改 js/furnfx.js、js/earn.js 那邊，這一批先只分組。
+   獎品只能是家具：壁紙、地板的獎品在新風格要另外在 js/paper.js 的 PWALL、PFLOOR 加一筆，不然會變成素色。
    index.html 的 NEST_JS 要排在 furn3 後面、main 前面（main 一載入就會畫房間）。 */
-Object.assign(FURN, {
-  rockhorse:{room:'living',name:'木馬搖椅',price:30,ser:'park',vb:[100,78],w:29,seats:[[.53,.4]],svg:()=>`
-    <path d="M4 61c16 12 76 12 92 0-2 8-15 14-46 14S6 69 4 61z" fill="#c98f56" ${st('#9a6431',2.2)}/>
+// 木馬的身體（腳、尾巴、頭、鬃毛、馬鞍）：搖椅木馬和旋轉木馬共用。m 鬃毛和尾巴、sd 馬鞍布的顏色 [填色, 線]
+const parkHorse = (m = ['#a8e6cf', '#5cb592'], sd = ['#ff9cc8', '#e0609d']) => `
     <rect x="30" y="44" width="6" height="22" rx="3" fill="#fff" ${st('#cfc3ca',1.6)}/><rect x="40" y="46" width="6" height="21" rx="3" fill="#fff" ${st('#cfc3ca',1.6)}/>
     <rect x="58" y="46" width="6" height="21" rx="3" fill="#fff" ${st('#cfc3ca',1.6)}/><rect x="68" y="44" width="6" height="22" rx="3" fill="#fff" ${st('#cfc3ca',1.6)}/>
-    <path d="M77 34c8-3 15 1 17 10-6 0-11-2-15-6z" fill="#a8e6cf" ${st('#5cb592',1.8)}/>
+    <path d="M77 34c8-3 15 1 17 10-6 0-11-2-15-6z" fill="${m[0]}" ${st(m[1],1.8)}/>
     <path d="M33 8l1-6 5 5z" fill="#fff" ${st('#cfc3ca',1.6)}/>
     <path d="M41 33C39 24 38 16 36 11c-2-4-6-5-10-4-5 1-10 5-12 10-1 4 1 7 5 7h6c0 6 1 11 3 17z" fill="#fff" ${st('#cfc3ca',2.2)}/>
     <ellipse cx="52" cy="40" rx="27" ry="11" fill="#fff" ${st('#cfc3ca',2.2)}/>
-    <path d="M36 9c4 1 6 4 6 8 3 3 3 6 1 9 2 3 2 6 0 9l-3-2c0-7-1-15-4-20z" fill="#a8e6cf" ${st('#5cb592',1.8)}/>
-    <path d="M42 31h20l3 13c-8 2.400-18 2.400-26 0z" fill="#ff9cc8" ${st('#e0609d',2)}/>
+    <path d="M36 9c4 1 6 4 6 8 3 3 3 6 1 9 2 3 2 6 0 9l-3-2c0-7-1-15-4-20z" fill="${m[0]}" ${st(m[1],1.8)}/>
+    <path d="M42 31h20l3 13c-8 2.400-18 2.400-26 0z" fill="${sd[0]}" ${st(sd[1],2)}/>
     <circle cx="44.500" cy="44.600" r="1.600" fill="#ffd75e"/><circle cx="52" cy="45.400" r="1.600" fill="#ffd75e"/><circle cx="59.500" cy="44.600" r="1.600" fill="#ffd75e"/>
     <path d="M43 31.500c1-5.500 17-5.500 18 0z" fill="#ffd75e" ${st('#d99a00',1.6)}/>
     <circle cx="26" cy="13" r="1.700" fill="#5a4a52"/><circle cx="19" cy="19.500" r="2" fill="#ffc2d9"/><circle cx="15" cy="18.500" r=".9" fill="#cfc3ca"/>
-    <path d="M30 38c3 2 6 3 9 3" ${st('#fff',1.6)} fill="none" opacity=".8"/>`},
+    <path d="M30 38c3 2 6 3 9 3" ${st('#fff',1.6)} fill="none" opacity=".8"/>`;
+Object.assign(FURN, {
+  rockhorse:{room:'living',name:'木馬搖椅',price:30,ser:'park',vb:[100,78],w:29,seats:[[.53,.4]],svg:()=>`
+    <path d="M4 61c16 12 76 12 92 0-2 8-15 14-46 14S6 69 4 61z" fill="#c98f56" ${st('#9a6431',2.2)}/>${parkHorse()}`},
   ferrislamp:{room:'living',name:'摩天輪燈',price:20,ser:'park',vb:[72,96],w:20,glow:[.5,.36],svg:()=>{
     const cab = ['#ff9cc8|#e0609d','#a8e6cf|#5cb592','#ffd66b|#d99a1c','#8fd3ef|#4a9fd0'];
     let cabins = '';
@@ -85,10 +89,30 @@ Object.assign(FURN, {
     <path d="M4 41L36 12l32 29z" fill="#a8e6cf" ${st('#5cb592',2.2)}/>
     <path d="M36 22.600l1.700 4.200 4.400.3-3.400 2.800 1.100 4.300L36 31.800l-3.800 2.400 1.100-4.300-3.400-2.800 4.400-.3z" fill="#ffd75e" ${st('#d99a00',1.4)}/>
     <path d="M3 40h66v3c-2 4-7 4-8.300 0-2 4-7 4-8.200 0-2 4-7 4-8.300 0-2 4-7 4-8.200 0-2 4-7 4-8.300 0-2 4-7 4-8.200 0-2 4-7 4-8.300 0-2 4-7 4-8.200 0z" fill="#ffd66b" ${st('#d99a1c',1.6)}/>`},
+  // ---------- 湊齊小小遊樂園系列才送 ----------
+  carousel:{room:'living',name:'旋轉木馬',gift:1,vb:[120,124],w:46,seats:[[.25,.6],[.75,.6]],svg:()=>{
+    let lights = '';
+    [16, 30, 45, 60, 75, 90, 104].forEach(x => { const y = 104 + 9 * Math.sqrt(1 - ((x - 60) / 55) ** 2) + 3.6; lights += `<circle cx="${x}" cy="${y.toFixed(1)}" r="1.900" fill="#ffd75e" ${st('#d99a00',1)}/>`; });
+    return `
+    <path d="M60 9V1" ${st('#b9773f',2)} fill="none"/><path d="M60 1l10 3.400L60 8z" fill="#ff6f8a" ${st('#d9435f',1.4)}/>
+    <path d="M5 104v6c0 6 25 11 55 11s55-5 55-11v-6z" fill="#ff9cc8" ${st('#e0609d',2.2)}/>
+    <ellipse cx="60" cy="104" rx="55" ry="9" fill="#ffe3ef" ${st('#ff9cc8',2.2)}/>
+    ${lights}
+    <rect x="53" y="40" width="14" height="66" rx="4" fill="#fff3c4" ${st('#d99a00',1.8)}/><rect x="56" y="50" width="8" height="40" rx="3" fill="#a8e6cf" ${st('#5cb592',1.4)}/>
+    <path d="M30 42v64M90 42v64" ${st('#d99a00',2.6)} fill="none"/>
+    <g transform="translate(8 60) scale(.42)">${parkHorse()}</g>
+    <g transform="translate(112 60) scale(-.42 .42)">${parkHorse(['#ff9cc8', '#e0609d'], ['#a8e6cf', '#5cb592'])}</g>
+    <path d="M60 9C40 14 18 26 6 42h108C102 26 80 14 60 9z" fill="#fff" ${st('#ff6f8a',2.2)}/>
+    <path d="M57.600 12.400C50 18 45 28 43.400 40h8C52.600 29 55 19 57.600 12.400zM62.400 12.400C70 18 75 28 76.600 40h-8C67.400 29 65 19 62.400 12.400z" fill="#ff9cc8"/>
+    <path d="M49 15C36 20 25 29 17.400 40H26c6.400-10 14-19 23-25zM71 15c13 5 24 14 31.600 25H94c-6.400-10-14-19-23-25z" fill="#ff9cc8"/>
+    <path d="M4 41h112v3c-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.600 0-2 4-6.600 4-8.800 0z" fill="#ffd66b" ${st('#d99a1c',1.6)}/>
+    <circle cx="60" cy="9" r="3.200" fill="#ffd75e" ${st('#d99a00',1.4)}/>
+    <path d="M14 36c6-8 14-14 22-17" ${st('#fff',2)} fill="none" opacity=".8"/>`;
+  }},
 });
-// 系列：只分組，沒有湊齊的獎品（ids 湊齊不會送東西，收納架的「紀念」會列出這一組）
+// 系列：6 件湊齊送旋轉木馬（js/furnfx.js 的 setCheck 會發，js/earn.js 會自動多一個湊齊的里程碑）
 Object.assign(FURN_SERIES, {
-  park:{name:'小小遊樂園系列', ids:['rockhorse','ferrislamp','popcorn','traincab','balloonwall','ticketbooth']},
+  park:{name:'小小遊樂園系列', ids:['rockhorse','ferrislamp','popcorn','traincab','balloonwall','ticketbooth'], gift:{kind:'furn', id:'carousel', name:'旋轉木馬'}},
 });
 // 收納架照房間列家具：新家具排在原本的後面
 Object.keys(FURN).forEach(id => { const f = FURN[id]; if (!f.season){ const l = ROOM_FURN[f.room] = ROOM_FURN[f.room] || []; if (!l.includes(id)) l.push(id); } });
