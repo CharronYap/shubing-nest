@@ -1266,6 +1266,9 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .tv-chip svg{width:26px;height:26px;flex:none}
 .tv-chip[disabled]{opacity:.5;cursor:default}
 .tv-tip{display:block;margin:4px 2px 0;font-size:12px;color:var(--soft)}
+/* 想去的地方（04b）：選了的前面一顆小星星 */
+.tv-want{padding:5px 12px}
+.tv-want .tv-star{width:14px;height:14px}
 .tv-gd svg{width:70%;height:70%}
 .tv-shophd{margin-top:16px;display:block}
 .tv-shophd small{display:block;margin-top:2px}

@@ -40,7 +40,31 @@ function tvData(){
   if (!Array.isArray(t.pics)) t.pics = [];
   if (!t.pf) tvPicsFromMail(t);
   t.out = t.out.filter(o => o && Array.isArray(o.ds) && TV_PLACES[o.p] && Array.isArray(o.pcs));
+  // 想去的地方（04b）：不認得的地方（對方版本比較新）濾掉，最多 TV_WANT_MAX 個
+  if ('want' in t){
+    const w = Array.isArray(t.want) ? t.want.filter((x, i, a) => typeof x === 'string' && TV_PLACES[x] && a.indexOf(x) === i).slice(0, TV_WANT_MAX) : [];
+    if (!Array.isArray(t.want) || w.length !== t.want.length) t.want = w;
+  }
   return t;
+}
+/* ---------- 想去的地方（2026-11-28，改善計畫 04b）----------
+   背包那一頁選最多三個地方，出門抽地方時那幾個權重 3 倍（tvPlan）。
+   存檔：tv.want = [地方]，tv.wt = 最後改的時間（兩台合併時取比較新的那一份，不合成 6 個） */
+const TV_WANT_MAX = 3;
+const TV_STAR = '<svg class="tv-star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.800l2.700 5.700 6.200.800-4.600 4.300 1.200 6.200L12 16.800l-5.500 3 1.200-6.200-4.600-4.300 6.200-.800z" fill="currentColor"/></svg>';
+const tvWant = () => tvData().want || [];
+// 國內的先列，出國的照 abroad.js 的順序接在後面
+const tvWantList = () => Object.keys(TV_PLACES).sort((a, b) => (tvAb(a) ? 1 : 0) - (tvAb(b) ? 1 : 0));
+const tvWantChip = (x, on) => `<button class="ng-chip tv-chip tv-want ${on ? 'on' : ''}" data-tvwant="${x}" aria-pressed="${on}">${on ? TV_STAR : ''}<span>${TV_PLACES[x].name}</span></button>`;
+function tvWantTap(b){
+  const x = b.dataset.tvwant, t = tvData(); if (!TV_PLACES[x]) return;
+  const l = tvWant(), on = l.includes(x);
+  if (!on && l.length >= TV_WANT_MAX){ toast('最多選三個，先取消一個'); return; }
+  t.want = on ? l.filter(y => y !== x) : [...l, x];
+  t.wt = Date.now();
+  save();
+  // 只換這一顆，不重畫整頁（捲到的地方不跳）
+  b.outerHTML = tvWantChip(x, !on);
 }
 /* 以前合照只留 30 張（2026-11-27 起全部都留）。被砍掉的，從信箱裡的回家合照信補回來：
    信的代號是「娃娃.pc.0#p=地方;c=第幾張;g=娃娃-娃娃」，t 是日期。有 p、c、g 而且 pics 裡沒有同一天、同地方、同一張的才補；
@@ -99,9 +123,15 @@ function tvPlan(now){
   const abL = Object.keys(TV_PLACES).filter(tvAb), abroad = tools.includes('ticket') && abL.length > 0;
   if (wantFam ? outN > 0 : outN >= TV_MAX_OUT) return null;   // 下雨天沒有傘，大家都不想出門
   const food = TV_GOODS[bag.food] ? bag.food : '', charm = TV_GOODS[bag.charm] ? bag.charm : '';
-  const tier = abroad ? 4 : food === 'bento' ? 3 : food === 'sand' ? 2 : 1;
-  const p = abroad ? tvPickW(abL, x => 1 + 2 * (3 - tvBits(t.cards[x]))) : tier === 3 ? 'onsen' : tier === 2 ? (tools.includes('torch') && (hr >= 15 || hr < 2) ? 'market' : 'beach') : 'park';
-  const P = TV_PLACES[p];
+  // 想去的地方（2026-11-28，04b）：勾了的權重 3 倍，照樣是抽的。勾了但這一趟去不了的，不在候選裡，自然跳過
+  const want = tvWant(), wx = x => (want.includes(x) ? 3 : 1);
+  // 國內（使用者 2026-11-28 選 B）：點心決定最遠走到哪。沒帶、飯糰 → 近的；三明治 → 最遠中等；便當 → 最遠遠的。
+  // 以前點心直接對到的那個地方權重 4，比較近的各 1；夜市要手電筒、15 點以後到 2 點前
+  const far = food === 'bento' ? 3 : food === 'sand' ? 2 : 1, night = tools.includes('torch') && (hr >= 15 || hr < 2);
+  const base = far === 3 ? 'onsen' : far === 2 ? (night ? 'market' : 'beach') : 'park';
+  const near = Object.keys(TV_PLACES).filter(x => !tvAb(x) && TV_PLACES[x].tier <= far && (!TV_PLACES[x].night || night));
+  const p = abroad ? tvPickW(abL, x => (1 + 2 * (3 - tvBits(t.cards[x]))) * wx(x)) : tvPickW(near, x => (x === base ? 4 : 1) * wx(x));
+  const P = TV_PLACES[p], tier = abroad ? 4 : P.tier;   // 路上花的時間照抽到的地方算（帶便當去公園就是 2～3 小時）
   const hid = typeof hideGet === 'function' && hideGet() ? hideGet().d : '';
   const can = homeD.filter(d => now - (t.back[d] || 0) >= TV_REST_H * 36e5 && (d !== 'egg' || food === 'bento' || abroad) && d !== hid);   // 蛋黃哥：要有便當才肯走路；搭飛機不用走，牠也去
   const famD = homeD.filter(d => d !== hid);
@@ -163,6 +193,9 @@ function tvPlan(now){
     home[r].items.splice(home[r].items.indexOf(it), 1);
   });
   if (food || charm || tool) t.bag = {};   // 背走了，背包空了
+  // 點心用完自動補（使用者 2026-11-28 選 A）：庫存還有同樣的，再放一個進背包。只補點心，護身符、道具照舊清空。
+  // o.rf 記這趟補了哪一樣，回家卡片寫一句
+  if (food && (t.inv[food] | 0) > 0){ t.inv[food]--; t.bag.food = food; o.rf = food; }
   t.out.push(o);
   return o;
 }
@@ -195,6 +228,8 @@ function tvPutBack(d, h){
    行李記成 點心,護身符,道具 用 , 接；沒帶是 -。沒帶行李一定只去公園、寄一張明信片（tvPlan），寫法照固定那一句 */
 const tvBagOf = o => [o.food, o.charm, ...tvToolList(o.tool)].filter(id => id && TV_GOODS[id]).join(',') || '-';
 const TV_ZH_N = ['', '一', '兩', '三', '四', '五'];
+// 出門時點心從庫存自動補了一個（04b）：歡迎回家卡上接在行李那句後面
+const tvRfLine = w => (TV_GOODS[w.rf] ? `背包又放了一個${TV_GOODS[w.rf].name}。` : '');
 function tvBagLine(b, p, n){
   if (b === undefined || b === '') return '';   // 以前的紀錄沒記行李
   const ids = String(b).split(',').filter(id => TV_GOODS[id]), P = TV_PLACES[p] || TV_PLACES.park, cards = TV_ZH_N[+n] || String(+n || 0);
@@ -224,7 +259,7 @@ function tvReturn(o){
       have = t.sv[k] = (t.sv[k] || 0) + 1;
     }
     // o：這一趟的 id（歡迎回家照這個把同一趟併成一張卡、找合照）；fam：全家出門（2026-11-27）
-    t.wel.push(Object.assign({d, p: o.p, sv: k, c: have, di: o.di[d] | 0, w: other, b: bg, n, o: o.id || ''}, o.fam ? {fam: 1} : {}));
+    t.wel.push(Object.assign({d, p: o.p, sv: k, c: have, di: o.di[d] | 0, w: other, b: bg, n, o: o.id || ''}, o.fam ? {fam: 1} : {}, TV_GOODS[o.rf] ? {rf: o.rf} : {}));
   });
   // 紀念合照：背景是那個地方的其中一張（這一趟寄過的優先），進信箱、也收進旅行相簿
   const pc0 = o.pcs.length ? o.pcs[Math.floor(Math.random() * o.pcs.length)].c : Math.floor(Math.random() * 3), who = o.ds.slice(0, 8);
@@ -273,7 +308,11 @@ function tvCheck(){
     if (now - last >= 3 * 36e5){
       let vt = last + (tvPacked() ? 20 + Math.random() * 70 : 120 + Math.random() * 180) * 60000;
       for (let i = 0; i < TV_CHAIN && vt < now - 5 * 60000; i++){
+        // 沒行李一天只出門一次（跟 tvLive 一樣看 t.free），日期照這一趟出門的時間算。以前這裡沒看，很久沒開會連續幾趟都是公園
+        const packed = tvPacked();
+        if (!packed && t.free === tvDate(vt)) break;
         const o = tvPlan(vt); if (!o) break;
+        if (!packed) t.free = tvDate(vt);
         changed = true;
         res = tvSettle(now); pcN += res.pc; back.push(...res.back);
         if (t.out.includes(o)) break;   // 這一趟還沒回來
@@ -328,6 +367,9 @@ function tvMerge(m, g){
   const wk = w => JSON.stringify(w), seenW = new Set(arr(t.wel).map(wk));
   t.wel = [...arr(t.wel), ...arr(gt.wel).filter(w => !seenW.has(wk(w)))];   // 不設上限：看過就清空
   t.free = [t.free || '', gt.free || ''].sort().pop(); if (!t.free) delete t.free;
+  // 想去的地方：取改得比較新的那一份，不合成 6 個（04b）
+  if (Array.isArray(gt.want) && (!Array.isArray(t.want) || (+gt.wt || 0) > (+t.wt || 0))){ t.want = gt.want.slice(); if (gt.wt) t.wt = +gt.wt; }
+  if (Array.isArray(t.want)) t.want = t.want.filter((x, i, a) => typeof x === 'string' && a.indexOf(x) === i).slice(0, TV_WANT_MAX);
   t.who = Object.assign({}, obj(gt.who), obj(t.who));
   // 護照的章：留比較早的那一天；更新信附的那張機票：有一邊收過就算收過（機票的張數在上面 inv 取多的）
   t.pp = obj(t.pp); Object.entries(obj(gt.pp)).forEach(([p, d]) => { if (typeof d === 'string' && (!t.pp[p] || d < t.pp[p])) t.pp[p] = d; });
@@ -620,12 +662,15 @@ function tvBagOpen(){
     }).join('');
     const picked = k === 'tool' ? tvToolList(bag.tool) : (TV_GOODS[bag[k]] ? [bag[k]] : []);
     const now = picked.length ? `<small class="tv-tip">${picked.map(id => TV_GOODS[id].tip).join('、')}</small>` : '';
-    return `<div class="tv-slot"><div class="al-sec">${name}<small>${tip}</small></div>${have.length ? `<div class="ng-chips">${chips}</div>${now}` : '<p class="bk-note">還沒有。火腿的小店有賣。</p>'}</div>`;
+    const rf = k === 'food' ? '<small class="tv-tip">點心用完，會從庫存再放一個同樣的。</small>' : '';
+    return `<div class="tv-slot"><div class="al-sec">${name}<small>${tip}</small></div>${have.length ? `<div class="ng-chips">${chips}</div>${now}${rf}` : '<p class="bk-note">還沒有。火腿的小店有賣。</p>'}</div>`;
   };
+  const want = tvWant();
+  const wantBox = `<div class="tv-slot"><div class="al-sec">想去的地方<small>選三個，娃娃會比較常去</small></div><div class="ng-chips">${tvWantList().map(x => tvWantChip(x, want.includes(x))).join('')}</div></div>`;
   const out = t.out.length ? `<div class="al-sec">出門的</div><ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : '';
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>行李</span></div>
     <div class="tv-box tv-bagbox"><p class="st-hi">${tvToolList(bag.tool).includes('ticket') ? (tvToolList(bag.tool).includes('basket') ? (t.out.length ? '機票和野餐籃都放好了。等出門的回來，下一趟全家一起出國。' : '機票和野餐籃都放好了。下一趟全家一起出國。') : '機票放好了。下一個出門的會搭飛機出國，兩三天才回來。') : tvToolList(bag.tool).includes('basket') ? (t.out.length ? '野餐籃放好了。等出門的回來，下一趟全家一起去。' : '野餐籃放好了。下一趟全家一起去。') : tvPacked() ? '放好了。誰想出門，會自己背走。' : '想放什麼就放，放好就不用管了。誰去、去哪裡，牠們自己決定。'}</p>
-      ${TV_SLOTS.map(slot).join('')}${out}
+      ${TV_SLOTS.map(slot).join('')}${wantBox}${out}
       <p class="bk-note">沒放東西牠們也會出門，只是走不遠。點一下放進去，再點一下拿出來。</p></div>
     <div class="ml-ft"><button class="btn" data-tv="shop">去小店</button><button class="btn" data-tv="album">旅行相簿</button></div>`);
   evOpen = false; alOpen = false;
@@ -690,7 +735,7 @@ function tvWelcome(){
   const oldCard = w => {
     const P = TV_PLACES[w.p] || TV_PLACES.park, s = TV_SOUV[w.sv];
     const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來${s.unit || '一個'}${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : w.c > 1 ? `現在有 ${w.c} ${unitOf(s)}了，都在收納架的紀念品那一頁。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這趟沒有帶東西回來。</small>';
-    const bl = tvBagLine(w.b, w.p, w.n);
+    const bl = tvBagLine(w.b, w.p, w.n) + tvRfLine(w);
     return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.abroad ? P.country : P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${diary(w)}」</p>${bl ? `<small class="tv-bl">${bl}</small>` : ''}${got}</div></div>`;
   };
   // 同一趟（2026-11-27）：標題一次、一隻一行日記、行李一次、這一趟的合照、土產列在最下面
@@ -700,7 +745,7 @@ function tvWelcome(){
     const x = t.pics.find(q => q.id === w0.o && TV_PLACES[q.p] && (TV_CARDS[q.p] || [])[q.c]);
     const pic = x ? `<button class="tv-wph" data-tvwpic="${x.id}" aria-label="看這一趟的合照">${tvCardHTML(x.p, x.c, String(x.ds).split('+'), true)}</button>` : '';
     const rows = g.map(w => `<div class="tv-wd"><img src="${SPR[w.d]}" alt="${DOLL_NAME[w.d] || ''}"><p>「${diary(w)}」</p></div>`).join('');
-    const bl = tvBagLine(w0.b, w0.p, w0.n);
+    const bl = tvBagLine(w0.b, w0.p, w0.n) + tvRfLine(w0);
     // 土產：同一樣的併成一行（「蛋黃哥和薯餅各帶回來…」），一隻的那張不寫名字
     const sv = [];
     g.forEach(w => { if (!TV_SOUV[w.sv]) return; const e = sv.find(z => z.k === w.sv); if (e){ e.ds.push(w.d); e.c = Math.max(e.c, w.c | 0); e.dup = e.dup || w.dup; } else sv.push({k: w.sv, ds: [w.d], c: w.c | 0, dup: w.dup}); });
@@ -847,6 +892,7 @@ $('#sheet').addEventListener('click', e => {
   const sv = e.target.closest('[data-tvsave]'); if (sv){ tvSaveClick(sv); return; }
   const sd = e.target.closest('[data-tvsend]'); if (sd){ tvSendClick(sd); return; }
   const p = e.target.closest('[data-tvp]'); if (p){ tvPack(p.dataset.tvp); return; }
+  const wn = e.target.closest('[data-tvwant]'); if (wn){ tvWantTap(wn); return; }
   const by = e.target.closest('[data-tvbuy]'); if (by){ tvBuy(by.dataset.tvbuy); return; }
   const lg = e.target.closest('[data-tvlog]');
   if (lg){

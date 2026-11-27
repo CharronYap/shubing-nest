@@ -10,7 +10,7 @@
    - 帽子跟著轉：戴頭頂的照頭的位置挪，戴臉上的（墨鏡、腮紅）跟著臉移、轉到側面淡出。
    - 衣服是照正面畫的：穿著衣服的娃娃在房間裡最多轉 30 度，不做轉圈；相簿裡轉超過 30 度衣服先淡出，轉回來再出現。
    - 彈跳豬、龍龍、史努比、火腿沒有 3D 掃描：移動時左右翻面朝移動的方向。
-   角度只記在記憶體，不存檔。拍照、明信片畫的都是正面（它們用的是 img/<id>.png）。
+   角度只記在記憶體，不存檔。拍照、明信片照按下快門那一刻的角度畫（側身就畫旋轉圖的那一格，js/photo.js），不先轉回正面。
    這個檔要放在 roam.js、roam2.js、skit.js 後面載入（包它們的函式）。 */
 const SPIN = {
   sloth: {src: 'img/spin/sloth.webp', fr: .5},
@@ -249,19 +249,6 @@ room.addEventListener('pointerdown', e => {
   el.classList.remove('flipx');
   if (SPS.get(el)) spinTo(el, 0, {rest: false});
 }, true);
-
-// 拍照、做明信片：畫的是正面的圖（img/<id>.png），帽子的位置卻是照畫面上量的，所以按下去之前全部先轉回正面
-function spinFrontAll(){
-  room.classList.add('spin-snap');
-  room.querySelectorAll('.doll').forEach(el => {
-    el.classList.remove('flipx');
-    const st = SPS.get(el); if (!st) return;
-    clearTimeout(st.restT); st.f = st.t = 0; st.turn = null; st.then = null; st.hold = false; spinLive.delete(el); spinDraw(el, st);
-  });
-  void room.offsetWidth;
-  setTimeout(() => room.classList.remove('spin-snap'), 60);
-}
-if (typeof photoShoot === 'function'){ const prev = photoShoot; photoShoot = function(){ spinFrontAll(); return prev.apply(this, arguments); }; }
 
 /* ---------- 相簿：手指左右滑，轉 360 度 ---------- */
 function spinAlbum(ph){
