@@ -195,3 +195,40 @@ SK('w-rain-moodeng', '雨在跳', ['moodeng'], {rain: true}, ['s moodeng 下雨�
 SK('n-quiet', '誰最小聲', ['dino', 'moodeng'], {night: true}, ['m dino moodeng', 's dino 噓，晚上要小聲。', 's dino 來比誰最小聲。', 's moodeng 好！！我最小聲！！', 's dino ……你已經輸了。', 's moodeng 不公平！！（小聲）'], '晚上龍龍和彈跳豬比誰最小聲，彈跳豬一開口就輸了。');
 SK('n-nyanko', '宵夜', ['nyanko'], {night: true}, ['s nyanko 晚上肚子特別餓。', 's nyanko 這是常識。', 'a nyanko look', 's nyanko 所以要吃宵夜。',
   {q: '要給牠什麼？', o: [['一小塊點心', ['s nyanko 哼，算你懂事。', 's nyanko 這塊本大爺收下了。'], '貓咪老師吃了宵夜，說你算懂事。'], ['一杯熱牛奶', ['s nyanko 那是小貓喝的吧。', 'a nyanko look', 's nyanko ……再一杯。'], '貓咪老師說熱牛奶是小貓喝的，還是喝了兩杯。']]}], '');
+
+/* ================= 第三批：遊樂園、廚房、閣樓、節日、三隻的天氣（2026-11-28，12 段） =================
+   遊樂園 2 段、廚房（爐台、冰箱）2 段、閣樓 2 段、節日家具 2 段、三隻一起的下雨天和晚上各 1 段、
+   還沒同台過的兩隻 2 段（彈跳豬和薯餅、龍龍和蛋黃哥）。
+   字的規則：只用常用字；標點只用 ，。！？…「」～；旁白不加括號。
+   節日家具（js/season.js）擺出來的日子不一定剛好是那一天，所以只寫跟那件家具對得上的事，不寫「今天是幾號」。 */
+
+/* ---------- 遊樂園（2 段） ---------- */
+SK('p3-popcorn', '會跳的玉米', ['dog', 'piggy'], {furn: 'popcorn'}, ['m dog popcorn', 's dog 汪！裡面有人在敲門！', 'm piggy popcorn', 's piggy 那是玉米在跳。', 's dog 玉米會跳？好厲害！', 's piggy 跳完就變好吃的了。',
+  {q: '要給皮蛋吃一顆嗎？', o: [['給牠一顆', ['a dog jump', 's dog 汪！軟軟的好好吃！', 's piggy 一顆就好，要省著吃。'], '皮蛋吃到一顆爆米花，火腿說要省著吃。'], ['陪牠一起看', ['s dog 又跳了！又跳了！', 's piggy 你比玉米還會跳。'], '皮蛋看玉米跳，火腿說牠比玉米還會跳。']]}], '');
+SK('p3-train', '誤點的小火車', ['snoopy', 'egg'], {furn: 'traincab'}, ['m snoopy traincab', 's snoopy 列車長報到。', 's snoopy 本列車開往點心站。', 'm egg traincab', 's egg 去車站要走路嗎。', 's snoopy 不用，坐著就會到。', 's egg 那我要一張票。', 'n 小火車一直沒有動。', 's snoopy 本列車誤點，請稍等。', 's egg 好。等是我的專長。'], '史努比的小火車一直誤點，蛋黃哥說等是牠的專長。');
+
+/* ---------- 廚房（2 段） ---------- */
+SK('k3-stove', '秘密的料', ['dino', 'piggy'], {furn: 'stove'}, ['m dino stove', 's dino 我要加一點秘密的料。', 'm piggy stove', 's piggy 等一下，你要加什麼？', 's dino 一片葉子。嘿嘿。',
+  {q: '要讓龍龍加嗎？', o: [['讓牠加一點點', ['s dino 好了！變成葉子湯！', 's piggy ……聞起來還不錯。'], '龍龍在鍋子裡加了葉子，火腿說聞起來還不錯。'], ['請火腿先試味道', ['s piggy 我先試一口。', 's piggy 嗯，是葉子的味道。', 's dino 對吧！很好喝吧！'], '火腿試了一口龍龍的湯，是葉子的味道。']]}], '');
+SK('k3-fridge', '冰箱的燈', ['sloth', 'piggy'], {furn: 'fridge'}, ['m sloth fridge', 's sloth 冰箱裡面有一個燈。', 's sloth 門關起來，燈還亮嗎。', 'm piggy fridge', 's piggy 這個我知道。會關掉。', 's sloth 你看過嗎。', 's piggy ……沒看過。',
+  {q: '要怎麼知道？', o: [['打開一點點看', ['s sloth 亮的。', 's piggy 因為你打開了啊。', 's sloth 喔。對耶。'], '薯餅偷看冰箱的燈，打開的時候當然是亮的。'], ['不要知道也可以', ['s piggy 嗯，有些事不用知道。', 's sloth 好。那我去睡。'], '薯餅決定不知道冰箱的燈也沒關係，先去睡了。']]}], '');
+
+/* ---------- 閣樓（2 段） ---------- */
+SK('t3-trunk', '舊皮箱裡的線索', ['dino', 'snoopy'], {furn: 'trunk'}, ['m dino trunk', 's dino 這個箱子好舊喔。', 'm snoopy trunk', 's snoopy 裡面一定有藏寶圖。', 's dino 我來打開！', 'a dino jump', 'n 箱子裡只有一條舊毛巾。', 's snoopy 毛巾……也是線索。', 's dino 線索說要去洗澡嗎？'], '史努比和龍龍打開舊皮箱，裡面只有一條舊毛巾。');
+SK('t3-floorpad', '幾分', ['egg', 'piggy'], {furn: 'floorpad'}, ['m egg floorpad', 's egg 這個墊子懂我。', 'm piggy floorpad', 's piggy 我來打個分數。', 's piggy 軟度八分，顏色七分。', 's egg 不用動，一百分。', 's piggy ……不是這樣算的。',
+  {q: '你給懶人墊幾分？', o: [['一百分', ['s egg 你也懂。', 's piggy 好吧，二比一。'], '懶人墊得到一百分，火腿說二比一，牠輸了。'], ['八十分', ['s piggy 很好，有眼光。', 's egg 八十分也可以躺。'], '你給懶人墊八十分，蛋黃哥說八十分也可以躺。']]}], '');
+
+/* ---------- 節日家具（2 段，家具在 js/season.js） ---------- */
+SK('x3-pine', '最上面的星星', ['moodeng', 'nyanko'], {furn: 'pine'}, ['m moodeng pine', 's moodeng 這棵樹要變漂亮！！', 's moodeng 星星要放最上面！！', 'a moodeng jump', 's moodeng 差一點點！！', 'm nyanko pine', 's nyanko 真是的，本大爺來。', 's nyanko ……本大爺也搆不到。',
+  {q: '要幫牠們嗎？', o: [['幫忙放到最上面', ['s moodeng 好漂亮！！', 's nyanko 哼，是本大爺指揮得好。'], '你幫忙把星星放到小松樹最上面，貓咪老師說是牠指揮得好。'], ['放低一點就好', ['s moodeng 低的也很漂亮！！', 's nyanko 這樣大家都看得到。'], '小松樹的星星放在低低的地方，大家都看得到。']]}], '');
+SK('x3-pumpkin', '南瓜怪', ['dino', 'sloth'], {furn: 'pumpkin'}, ['m dino pumpkin', 's dino 嘿嘿，我躲在南瓜後面。', 'n 薯餅慢慢走過來了。', 'm sloth pumpkin', 's dino 吼～我是南瓜怪！', 'w', 's sloth ……嗯？南瓜會講話。', 's dino 你怎麼沒有嚇到！', 's sloth 有啊。剛剛才嚇到。'], '龍龍扮南瓜怪嚇薯餅，薯餅過了好久才嚇到。');
+
+/* ---------- 三隻一起：下雨天、晚上（各 1 段） ---------- */
+SK('g3-rain', '跟雨打招呼', ['moodeng', 'piggy', 'sloth'], {rain: true}, ['s moodeng 窗戶在響！！誰在敲！！', 's piggy 是雨。沒有人。', 's sloth 雨在跟我們打招呼。', 's moodeng 那我也要敲回去！！', 'a moodeng jump',
+  {q: '下雨天要做什麼？', o: [['一起敲窗戶', ['s sloth 咚咚。', 's piggy ……好吧，咚咚。'], '下雨天三隻一起敲窗戶，跟雨打招呼。'], ['安靜聽雨', ['s moodeng ……雨講好久喔！！', 's piggy 難得安靜五分鐘。'], '下雨天三隻安靜聽雨，火腿說難得安靜五分鐘。']]}], '');
+SK('g3-night', '夜間巡邏隊', ['nyanko', 'dino', 'moodeng'], {night: true}, ['s nyanko 夜間巡邏隊，集合。', 'm dino nyanko', 'm moodeng nyanko', 's dino 報到！要巡哪裡？', 's nyanko 點心櫃。很重要。', 's moodeng 那是你自己想吃！！', 's nyanko ……巡邏順便吃。', 's dino 嘿嘿，我也要順便。'], '晚上的巡邏隊出發，貓咪老師說巡邏順便吃點心。');
+
+/* ---------- 還沒同台過的兩隻（2 段） ---------- */
+SK('f3-jump', '比跳高', ['moodeng', 'sloth'], {}, ['m moodeng sloth', 's moodeng 跟我比跳高！！', 's sloth 好。我先準備一下。', 'a moodeng jump', 'a moodeng jump', 's moodeng 你怎麼還沒跳！！', 's sloth 準備好了。跳。', 'n 薯餅的腳離開地面一點點。', 's moodeng ……好啦你也有跳！！'], '彈跳豬找薯餅比跳高，薯餅準備好久，跳了一點點。');
+SK('f3-leafbed', '葉子被子', ['dino', 'egg'], {}, ['m dino egg', 's dino 你在睡覺嗎？', 's egg 我在躺。不一樣。', 's dino 那我幫你蓋葉子被子。', 'n 龍龍一片一片放上葉子。', 's egg ……有一點癢。',
+  {q: '要怎麼辦？', o: [['幫蛋黃哥拿掉', ['s egg 謝謝。好累。', 's dino 那我蓋我自己。'], '你幫蛋黃哥拿掉葉子，龍龍改蓋自己。'], ['再多蓋一點', ['s dino 嘿嘿，變成葉子山了！', 's egg 山不用動。很好。'], '蛋黃哥被蓋成一座葉子山，牠說山不用動很好。']]}], '');

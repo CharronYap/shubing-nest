@@ -6,6 +6,8 @@
    - 有廚房、還沒有爐台或冰箱的話，火腿的小店每天都擺（排在今天的貨前面；原本是隨機的，很難等到）。
    存檔：放在相簿裡的一格 S.album.kitchen = {d:'今天', n:今天煮了幾次, f:['菜.誰煮的', …]}（跟小劇場的 S.album.skit 一樣，不用改雲端規則）。
    f 存成字串，不存成兩層的清單：雲端的資料庫不收清單裡面再放清單。
+   菜：第一批 6 道，第二批（2026-11-28）加烤吐司、水餃、果凍、蛋炒飯。每隻有一道最喜歡的（KC_EAT_FAV），吃到講另外一句，
+   冰箱選「給誰吃」時那隻會標「最喜歡」。舊存檔沒有新菜也沒關係；不認得的菜在 kcData 會濾掉。
    每一道菜的圖都是自己用 SVG 畫的。樣式寫在這個檔裡（kcCss），class 都是 kc- 開頭。 */
 const KC_MAX = 8, KC_DAY = 3;
 const kcSvg = s => `<svg viewBox="0 0 40 40">${s}</svg>`;
@@ -16,22 +18,33 @@ const KC_DISH = {
   omelet: {n: '蛋包飯', s: '上面淋紅紅的醬', svg: kcSvg('<ellipse cx="20" cy="26" rx="17" ry="7" fill="#fff" stroke="#e3cfd8" stroke-width="2"/><path d="M7 24c0-7 6-11 13-11s13 4 13 11c-3 3-23 3-26 0z" fill="#ffe27a" stroke="#d99a1c" stroke-width="2.200" stroke-linejoin="round"/><path d="M13 18.600l3 2.400 3-2.400 3 2.400 3-2.400 3 2.400" fill="none" stroke="#ff6f8a" stroke-width="2.400" stroke-linecap="round" stroke-linejoin="round"/>')},
   potato: {n: '烤地瓜', s: '熱熱的，要剝皮', svg: kcSvg('<path d="M7 26c-3-6 3-14 13-16 9-2 16 2 14 9-2 8-12 12-20 12-4 0-6-2-7-5z" fill="#b56a8a" stroke="#7a3f5a" stroke-width="2.200" stroke-linejoin="round"/><ellipse cx="22" cy="20" rx="8" ry="5.600" fill="#ffd66b" stroke="#d99a1c" stroke-width="1.800" transform="rotate(-18 22 20)"/><path d="M14 8c0-2 1-3 2-4M20 7c0-2 1-3 2-4" fill="none" stroke="#cfc3ca" stroke-width="1.800" stroke-linecap="round"/>')},
   soup: {n: '玉米湯', s: '喝了暖暖的', svg: kcSvg('<path d="M5 19h30c0 8-6 14-15 14S5 27 5 19z" fill="#8fd3ef" stroke="#4a9fd0" stroke-width="2.200" stroke-linejoin="round"/><ellipse cx="20" cy="19" rx="15" ry="4" fill="#ffe58f" stroke="#4a9fd0" stroke-width="2"/><circle cx="15" cy="19" r="1.400" fill="#e8b52a"/><circle cx="21" cy="18" r="1.400" fill="#e8b52a"/><circle cx="25" cy="20" r="1.400" fill="#e8b52a"/><path d="M15 12c-1.600-2 1.600-3 0-5M22 12c-1.600-2 1.600-3 0-5" fill="none" stroke="#cfc3ca" stroke-width="1.800" stroke-linecap="round"/>')},
+  // 第二批（2026-11-28）：家常、小孩會喜歡的
+  toast: {n: '烤吐司', s: '烤得香香的', svg: kcSvg('<path d="M9 33V18c-3-1-4.400-3.600-3.400-6.400C7 8 12 6 20 6s13 2 14.400 5.600c1 2.800-.4 5.400-3.400 6.400v15z" fill="#d9944a" stroke="#a8622a" stroke-width="2.200" stroke-linejoin="round"/><path d="M12 31V17c-2-.8-2.800-2.400-2-4 1.400-2.600 5.400-3.800 10-3.800s8.600 1.200 10 3.800c.8 1.600 0 3.200-2 4v14z" fill="#ffe9c4"/><rect x="16" y="15" width="8" height="6" rx="1.800" fill="#ffe58f" stroke="#d99a00" stroke-width="1.400"/>')},
+  dumpling: {n: '水餃', s: '一口一個', svg: kcSvg('<ellipse cx="20" cy="29" rx="17" ry="6" fill="#fff" stroke="#e3cfd8" stroke-width="2"/><path d="M4 26c0-6 4-10 9.600-10s9.600 4 9.600 10c-3 2.400-16.200 2.400-19.200 0z" fill="#fff8ee" stroke="#d9b48a" stroke-width="2" stroke-linejoin="round"/><path d="M17 23c0-7 4.600-11 11-11s11 4 11 11c-3.400 2.600-18.600 2.600-22 0z" fill="#fff8ee" stroke="#d9b48a" stroke-width="2" stroke-linejoin="round"/><path d="M8 18.600l1 2.200M12 17l.4 2.400M24.600 14.600l1 2.400M29 13.200l.2 2.600M33.400 14.600l-.8 2.400" fill="none" stroke="#d9b48a" stroke-width="1.600" stroke-linecap="round"/>')},
+  jelly: {n: '果凍', s: '彈彈的', svg: kcSvg('<ellipse cx="20" cy="31" rx="15" ry="4.600" fill="#fff" stroke="#e3cfd8" stroke-width="2"/><path d="M9 30c0-9 2-17 11-17s11 8 11 17c-4 2.400-18 2.400-22 0z" fill="#ff9cc8" stroke="#e0609d" stroke-width="2.200" stroke-linejoin="round"/><path d="M13 27c0-4 .6-8 2.600-10.400" fill="none" stroke="#fff" stroke-width="2.200" stroke-linecap="round" opacity=".8"/><circle cx="20" cy="10.400" r="3.400" fill="#ff6f8a" stroke="#d9435f" stroke-width="1.600"/><path d="M20 7c0-2 1-3.400 3-4" fill="none" stroke="#78b84a" stroke-width="1.600" stroke-linecap="round"/>')},
+  friedrice: {n: '蛋炒飯', s: '有蛋也有菜', svg: kcSvg('<ellipse cx="20" cy="28" rx="17" ry="6.400" fill="#fff" stroke="#e3cfd8" stroke-width="2"/><path d="M7 27c0-8 5.400-13 13-13s13 5 13 13c-4 2.600-22 2.600-26 0z" fill="#fff3c4" stroke="#d9b48a" stroke-width="2" stroke-linejoin="round"/><circle cx="14" cy="21" r="1.700" fill="#ffd66b"/><circle cx="20" cy="18" r="1.700" fill="#ffd66b"/><circle cx="26" cy="22" r="1.700" fill="#ffd66b"/><circle cx="17" cy="24" r="1.400" fill="#78b84a"/><circle cx="23" cy="25" r="1.400" fill="#78b84a"/><circle cx="11" cy="25" r="1.300" fill="#ff9e4a"/><circle cx="29" cy="25.400" r="1.300" fill="#ff9e4a"/>')},
 };
-// 煮的時候講的三句：開始、煮到一半、好了。對話框只有一行，每句 14 個字以內
+// 煮的時候講的：[開始, 煮到一半, 好了, 煮到一半, 煮到一半]。煮到一半那句每次從三句裡隨機挑。
+// 對話框只有一行，每句 14 個字以內
 const KC_COOK = {
-  sloth: ['我來煮。慢慢煮。', '……要翻面了嗎。', '好了。應該好了。'],
-  egg: ['煮東西好累喔。', '鍋子，你自己顧。', '好了。我要躺了。'],
-  dog: ['汪！我會煮！', '好香！汪汪！', '煮好了！先聞一下！'],
-  moodeng: ['我來煮！！', '鍋子在跳！！', '好了！！我煮的！！'],
-  nyanko: ['本大爺親自下廚。', '火候剛好。哼。', '好了。先試吃一口。'],
-  dino: ['嘿嘿，我有秘方。', '秘方是……不告訴你。', '好了！很好吃喔！'],
-  snoopy: ['主廚上工了。', '這道菜有故事。', '完成。請鼓掌。'],
-  piggy: ['照食譜來，不會錯。', '火太大了，我早說。', '好了。成本很低。'],
+  sloth: ['我來煮。慢慢煮。', '……要翻面了嗎。', '好了。應該好了。', '慢慢翻。慢慢翻。', '香香的。我先聞一下。'],
+  egg: ['煮東西好累喔。', '鍋子，你自己顧。', '好了。我要躺了。', '火小一點，比較省力。', '……還沒好嗎。好累。'],
+  dog: ['汪！我會煮！', '好香！汪汪！', '煮好了！先聞一下！', '汪！鍋子在冒泡泡！', '我可以先吃一口嗎！'],
+  moodeng: ['我來煮！！', '鍋子在跳！！', '好了！！我煮的！！', '我煮得最快！！', '好燙！！不准笑！！'],
+  nyanko: ['本大爺親自下廚。', '火候剛好。哼。', '好了。先試吃一口。', '本大爺煮得不錯吧。', '試吃是廚師的工作。'],
+  dino: ['嘿嘿，我有秘方。', '秘方是……不告訴你。', '好了！很好吃喔！', '嘿嘿，偷偷加一點。', '吼～要好了要好了！'],
+  snoopy: ['主廚上工了。', '這道菜有故事。', '完成。請鼓掌。', '這一步是重點。', '主廚正在思考。'],
+  piggy: ['照食譜來，不會錯。', '火太大了，我早說。', '好了。成本很低。', '時間抓得剛剛好。', '不要浪費，懂嗎。'],
 };
-// 吃的時候講的。貓咪老師吃到饅頭另外一句
+// 吃的時候講的。吃到最喜歡的菜（KC_EAT_FAV，一隻一道）講另外一句
 const KC_EAT = {sloth: '好吃。我慢慢吃。', egg: '好吃。躺著吃可以嗎。', dog: '汪！好吃！還有嗎！', moodeng: '好吃！！再一個！！',
   nyanko: '哼，還可以。再來。', dino: '嘿嘿，一口就吃掉了。', snoopy: '美味。寫進小說裡。', piggy: '不錯，給你八分。'};
-const KC_EAT_FAV = {nyanko: {bun: '饅頭！這個好。'}};
+const KC_EAT_FAV = {
+  sloth: {toast: '吐司。像雲。好吃。'}, egg: {pudding: '布丁不用咬。最棒了。'}, dog: {dumpling: '汪！一口一個！還要！'},
+  moodeng: {jelly: '彈彈的！！跟我一樣！！'}, nyanko: {bun: '哼，是饅頭。這個好。'}, dino: {potato: '嘿嘿，我最會剝皮了。'},
+  snoopy: {pancake: '一層一層，像章節。'}, piggy: {friedrice: '剩飯變好吃，很省。'},
+};
+const kcFav = (d, dish) => !!(KC_EAT_FAV[d] && KC_EAT_FAV[d][dish]);
 const KC_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 11h16v2a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7z"/><rect x="2" y="9" width="20" height="2.400" rx="1.200"/><path d="M9 7c-1-1.400 1-2 0-3.600M15 7c-1-1.400 1-2 0-3.600" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round"/></svg>';
 
 function kcData(){
@@ -58,6 +71,7 @@ function kcCss(){
 .kc-d img{width:40px;height:40px;object-fit:contain}
 .kc-d b,.kc-f b{font-size:12px;font-weight:800;white-space:nowrap}
 .kc-f small{font-size:10.5px;opacity:.7;white-space:nowrap}
+.kc-fav{font-size:10.5px;font-weight:800;color:var(--p-a1d,#e0609d)}
 .kc-d.on,.kc-f.on{box-shadow:0 0 0 3px var(--p-sun,#ffd66b),0 2px 0 var(--p-edge,#ead9e2)}
 .kc-d:focus-visible,.kc-f:focus-visible{outline:3px solid var(--p-sun,#ffd66b);outline-offset:1px}
 .kc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -95,7 +109,8 @@ function kcCook(dish){
   // 先放進冰箱再演：演到一半換房間、按跳過，煮好的都不會不見
   k.n++; k.f.push(dish + '.' + it.id); save();
   $('#sheet').hidden = true;
-  const who = it.id, [a, b, c] = KC_COOK[who] || KC_COOK.sloth, stove = items.find(i => i.kind === 'furn' && i.id === 'stove');
+  const who = it.id, L = KC_COOK[who] || KC_COOK.sloth, [a, , c] = L, mids = [L[1], ...L.slice(3)], b = mids[Math.floor(Math.random() * mids.length)];
+  const stove = items.find(i => i.kind === 'furn' && i.id === 'stove');
   const steps = [...(stove ? [`m ${who} stove`] : []), `s ${who} ${a}`, 'n （鍋子冒煙了）', `a ${who} look`, `s ${who} ${b}`, 'w', `s ${who} ${c}`, `n （${d.n}放進冰箱了）`];
   const steam = stove ? kcSteam(stove) : null;
   const done = () => { if (steam) steam.remove(); };
@@ -125,8 +140,8 @@ function kcFridge(){
     body = `<p class="kc-lab">點一份拿出來</p><div class="kc-grid">${k.f.map((s, i) => { const f = kcFood(s), d = KC_DISH[f.dish];
       return `<button class="kc-f ${i === kcPick ? 'on' : ''}" data-kfood="${i}" aria-pressed="${i === kcPick}" aria-label="${d.n}${f.by ? '，' + DOLL_NAME[f.by] + '煮的' : ''}">${d.svg}<b>${d.n}</b><small>${f.by ? DOLL_NAME[f.by] + '煮的' : ''}</small></button>`; }).join('')}</div>`;
     if (kcPick >= 0){
-      const d = KC_DISH[kcFood(k.f[kcPick]).dish];
-      body += `<p class="kc-lab">${d.n}給誰吃</p><div class="kc-who">${who.map(i => `<button class="kc-d" data-keat="${i.id}"><img src="${SPR[i.id]}" alt=""><b>${DOLL_NAME[i.id]}</b></button>`).join('')}<button class="btn sm" data-keat="me">我自己吃</button></div>
+      const dish = kcFood(k.f[kcPick]).dish, d = KC_DISH[dish];
+      body += `<p class="kc-lab">${d.n}給誰吃</p><div class="kc-who">${who.map(i => `<button class="kc-d" data-keat="${i.id}" aria-label="${DOLL_NAME[i.id]}${kcFav(i.id, dish) ? '，最喜歡' + d.n : ''}"><img src="${SPR[i.id]}" alt=""><b>${DOLL_NAME[i.id]}</b>${kcFav(i.id, dish) ? '<small class="kc-fav">最喜歡</small>' : ''}</button>`).join('')}<button class="btn sm" data-keat="me">我自己吃</button></div>
         ${who.length ? '' : `<p class="kc-none">${kcSleepy() ? '這一間的娃娃都睡著了。' : '這一間沒有娃娃。'}可以自己吃，或帶一隻娃娃到冰箱這一間。</p>`}`;
     }
   }
