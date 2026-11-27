@@ -47,7 +47,7 @@ function tvData(){
    沒有 g 的舊信不猜是誰，不補。只看主存檔裡的信（搬到雲端舊信那邊的不讀）。補過記 t.pf = 1，之後不再找。 */
 function tvPicsFromMail(t){
   const l = S.mail && Array.isArray(S.mail.l) ? S.mail.l : null;
-  if (!l) return;
+  if (!l || !l.length) return;   // 信箱是空的（新裝置雲端還沒合併進來）先不記 pf，下次再找
   const has = new Set(t.pics.map(x => x && `${x.t}|${x.p}|${x.c}`)), add = [];
   l.forEach(o => {
     if (!o || typeof o.k !== 'string' || typeof o.t !== 'string') return;
@@ -209,7 +209,8 @@ function tvReturn(o){
     const c = t.cnt[d] = t.cnt[d] || {}; c[o.p] = (c[o.p] || 0) + 1;
     const k = TV_SOUV[o.sv[d]] ? o.sv[d] : '', bg = tvBagOf(o), n = o.pcs.length;
     // 後面三格（1127-25 加的）：這趟的行李、寄了幾張明信片、帶回來的土產。以前的紀錄只有前四格，看的時候就不寫這一行
-    const l = t.log[d] = t.log[d] || []; l.push(`${day}|${o.p}|${other}|${o.di[d] | 0}|${bg}|${n}|${k}`); if (l.length > 12) l.splice(0, l.length - 12);
+    // 第八格（2026-11-27）是這一趟的 id：兩趟同一天、同地方、內容一樣時，合併去重才不會併成一筆。全部都留，不砍
+    const l = t.log[d] = t.log[d] || []; l.push(`${day}|${o.p}|${other}|${o.di[d] | 0}|${bg}|${n}|${k}|${o.id || ''}`);
     // 土產可以有很多個（2026-11-27）：帶回來就多一個，不換幣。擁有幾個就是 t.sv[k]（以前換成幣的也算在裡面）
     let have = 0;
     if (k){
@@ -219,7 +220,6 @@ function tvReturn(o){
     }
     t.wel.push({d, p: o.p, sv: k, c: have, di: o.di[d] | 0, w: other, b: bg, n});
   });
-  if (t.wel.length > 12) t.wel.splice(0, t.wel.length - 12);
   // 紀念合照：背景是那個地方的其中一張（這一趟寄過的優先），進信箱、也收進旅行相簿
   const pc0 = o.pcs.length ? o.pcs[Math.floor(Math.random() * o.pcs.length)].c : Math.floor(Math.random() * 3), who = o.ds.slice(0, 8);
   t.pics.push({id: o.id, p: o.p, c: pc0, ds: who.join('+'), t: day});   // 全部都留（2026-11-27），不砍
@@ -317,9 +317,9 @@ function tvMerge(m, g){
   t.sv = obj(t.sv); Object.entries(obj(gt.sv)).forEach(([k, n]) => { t.sv[k] = Math.max(t.sv[k] || 0, n | 0); });
   t.back = obj(t.back); Object.entries(obj(gt.back)).forEach(([d, x]) => { t.back[d] = Math.max(t.back[d] || 0, +x || 0); });
   t.cnt = obj(t.cnt); Object.entries(obj(gt.cnt)).forEach(([d, c]) => { const mc = t.cnt[d] = obj(t.cnt[d]); Object.entries(obj(c)).forEach(([p, n]) => { mc[p] = Math.max(mc[p] || 0, n | 0); }); });
-  t.log = obj(t.log); Object.entries(obj(gt.log)).forEach(([d, l]) => { t.log[d] = [...new Set([...arr(t.log[d]), ...arr(l)])].sort().slice(-12); });
+  t.log = obj(t.log); Object.entries(obj(gt.log)).forEach(([d, l]) => { t.log[d] = [...new Set([...arr(t.log[d]), ...arr(l)])].sort(); });   // 全部都留（2026-11-27）
   const wk = w => JSON.stringify(w), seenW = new Set(arr(t.wel).map(wk));
-  t.wel = [...arr(t.wel), ...arr(gt.wel).filter(w => !seenW.has(wk(w)))].slice(-8);
+  t.wel = [...arr(t.wel), ...arr(gt.wel).filter(w => !seenW.has(wk(w)))];   // 不設上限：看過就清空
   t.free = [t.free || '', gt.free || ''].sort().pop(); if (!t.free) delete t.free;
   t.who = Object.assign({}, obj(gt.who), obj(t.who));
   // 護照的章：留比較早的那一天；更新信附的那張機票：有一邊收過就算收過（機票的張數在上面 inv 取多的）
@@ -604,13 +604,16 @@ function tvPassOpen(){
     <div class="ml-ft"><button class="btn" data-tv="album">旅行相簿</button><button class="btn" data-tv="bag">看行李</button></div>`);
   evOpen = false; alOpen = false;
 }
+function tvLogLi(d, x){
+  const [day, p, w, di, b, n, sv] = x.split('|'), P = TV_PLACES[p] || TV_PLACES.park, bl = tvBagLine(b, p, n);
+  return `<li>${md(day)}　${(TV_DIARY[d][+di] || TV_DIARY[d][0]).replace(/\{p\}/g, P.name)}${w === 'fam' ? '（全家一起）' : DOLL_NAME[w] ? `（和${DOLL_NAME[w]}一起）` : ''}${bl ? `<small class="tv-bl">${bl}${tvSouvLine(sv)}</small>` : ''}</li>`;
+}
+const tvLogMore = (d, n, all) => all > n ? `<li class="tv-lgm"><button class="btn sm" data-tvlog="${d}" data-n="${n}">看更早的（還有 ${all - n} 次）</button></li>` : '';
+// 相簿裡娃娃那一頁的旅行紀錄：全部都留（2026-11-27），先列最新 6 筆，按「看更早的」一次多 20 筆
 function tvRows(d){
   const t = tvData(), l = t.log[d] || [], o = tvTrip(d);
   if (!l.length && !o) return '';
-  return `<div class="al-sec">旅行</div><ul class="al-ln al-st">${o ? `<li>現在去${TV_PLACES[o.p].name}了，大概${tvWhen(o.t1)}回來</li>` : ''}${l.slice().reverse().slice(0, 6).map(x => {
-    const [day, p, w, di, b, n, sv] = x.split('|'), P = TV_PLACES[p] || TV_PLACES.park, bl = tvBagLine(b, p, n);
-    return `<li>${md(day)}　${(TV_DIARY[d][+di] || TV_DIARY[d][0]).replace(/\{p\}/g, P.name)}${w === 'fam' ? '（全家一起）' : DOLL_NAME[w] ? `（和${DOLL_NAME[w]}一起）` : ''}${bl ? `<small class="tv-bl">${bl}${tvSouvLine(sv)}</small>` : ''}</li>`;
-  }).join('')}</ul>`;
+  return `<div class="al-sec">旅行</div><ul class="al-ln al-st">${o ? `<li>現在去${TV_PLACES[o.p].name}了，大概${tvWhen(o.t1)}回來</li>` : ''}${l.slice().reverse().slice(0, 6).map(x => tvLogLi(d, x)).join('')}${tvLogMore(d, 6, l.length)}</ul>`;
 }
 const tvMapNote = () => tvData().out.map(o => `<p class="bk-note tv-mapn">${TV_BAG_ICON}${tvOutLine(o)}。</p>`).join('');
 // 相簿最上面多一排：紀念冊（js/memo.js 加的那顆搬下來）、旅行、小島（花和小客人，js/yard.js）
@@ -632,6 +635,14 @@ if (typeof openAlbum === 'function'){
 $('#sheet').addEventListener('click', e => {
   const p = e.target.closest('[data-tvp]'); if (p){ tvPack(p.dataset.tvp); return; }
   const by = e.target.closest('[data-tvbuy]'); if (by){ tvBuy(by.dataset.tvbuy); return; }
+  const lg = e.target.closest('[data-tvlog]');
+  if (lg){
+    // 在原本那一排後面接著多列 20 筆，不重畫整頁（捲到的地方不跳）
+    const d = lg.dataset.tvlog, n = +lg.dataset.n || 6, l = (tvData().log[d] || []).slice().reverse(), li = lg.closest('li');
+    li.insertAdjacentHTML('beforebegin', l.slice(n, n + 20).map(x => tvLogLi(d, x)).join(''));
+    li.insertAdjacentHTML('afterend', tvLogMore(d, n + 20, l.length)); li.remove();
+    return;
+  }
   const pic = e.target.closest('[data-tvpic]'); if (pic){ tvBig = tvBig && tvBig[0] === 'pic' && tvBig[1] === pic.dataset.tvpic ? null : ['pic', pic.dataset.tvpic]; tvAlbumOpen(); const bx = $('#sheet .tv-album'); if (bx) bx.scrollTop = 0; return; }
   const c = e.target.closest('[data-tvc]'); if (c){ const [pl, i] = c.dataset.tvc.split(':'); tvBig = tvBig && tvBig[0] === pl && tvBig[1] === +i ? null : [pl, +i]; tvAlbumOpen(); const bx = $('#sheet .tv-album'); if (bx) bx.scrollTop = 0; return; }
   const b = e.target.closest('[data-tv]'); if (!b) return;
