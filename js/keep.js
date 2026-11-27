@@ -160,7 +160,7 @@ async function keepCardSend(net, c){
   const back = await net.keepCardGet(o.id);
   if (!back || back.id !== o.id || !back.snap) throw new Error('讀回來對不上，這一張先不算');
 }
-// 一張明信片在雲端的樣子（規則只收這幾欄）
+// 一張明信片在雲端的樣子（規則只收這幾欄）。收到的時間 h 先不帶：雲端規則加上 h 以前，帶了整張會被擋（2026-11-27）
 const keepCard = c => { const o = {id: c.id, w: String(c.w || '朋友').slice(0, 24), t: /^\d{4}-\d{2}-\d{2}$/.test(c.t) ? c.t : todayStr(), msg: String(c.msg || '').slice(0, 80), snap: keepClone(c.snap), r: c.r ? 1 : 0}; if (typeof c.u === 'string' && c.u) o.u = c.u.slice(0, 64); return o; };
 async function keepMoveCards(cards, net, u){
   for (const c of cards){

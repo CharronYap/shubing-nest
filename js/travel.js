@@ -146,15 +146,15 @@ function tvPlan(now){
 function tvDeliver(o, pc){
   const t = tvData(), other = o.ds.find(d => d !== pc.d) || '';
   const k = `${pc.d}.pc.0#p=${o.p};c=${pc.c}` + (pc.fam ? `;f=${o.ds.join('-')};l=${pc.ls}` : (typeof pc.u === 'number' ? `;u=${pc.u}` : `;l=${pc.l | 0}`) + (other ? `;w=${other}` : ''));
-  tvMailPut(k, tvDate(pc.at));
+  tvMailPut(k, tvDate(pc.at), pc.at);
   t.cards[o.p] = (t.cards[o.p] || 0) | (1 << pc.c);
   // 相簿裡這一張要貼誰：全家福是全部，兩隻的是兩隻，一隻就是牠
   t.who[o.p + ':' + pc.c] = (pc.fam || o.ds.length > 1 ? o.ds.slice(0, 8) : [pc.d]).join('+');
 }
-// 往信箱放一封（滿了先收掉最舊的、看過也領過的）
-function tvMailPut(k, day){
+// 往信箱放一封（滿了先收掉最舊的、看過也領過的）。ms：寄到的那一刻，算信上的時間（和 day 同一個時間點）
+function tvMailPut(k, day, ms){
   const m = mailInit();
-  m.l.unshift({k, t: day, r: 0, a: null, g: 0});
+  m.l.unshift({k: typeof mailWithH === 'function' && ms ? mailWithH(k, mailHmOf(ms)) : k, t: day, r: 0, a: null, g: 0});
   mailTrim(m.l);   // 上限各類各算（js/mail.js）
 }
 function tvPutBack(d, h){
@@ -202,7 +202,7 @@ function tvReturn(o){
   // 紀念合照：背景是那個地方的其中一張（這一趟寄過的優先），進信箱、也收進旅行相簿
   const pc0 = o.pcs.length ? o.pcs[Math.floor(Math.random() * o.pcs.length)].c : Math.floor(Math.random() * 3), who = o.ds.slice(0, 8);
   t.pics.push({id: o.id, p: o.p, c: pc0, ds: who.join('+'), t: day}); if (t.pics.length > 30) t.pics.splice(0, t.pics.length - 30);
-  tvMailPut(`${who[0]}.pc.0#p=${o.p};c=${pc0};g=${who.join('-')}`, day);
+  tvMailPut(`${who[0]}.pc.0#p=${o.p};c=${pc0};g=${who.join('-')}`, day, o.t1);
   // 一起去過：每一對交情加一點（全家去的加少一點）；出門前在吵架的，回來就和好了
   for (let x = 0; x < o.ds.length; x++) for (let z = x + 1; z < o.ds.length; z++){
     const a = o.ds[x], b = o.ds[z];
