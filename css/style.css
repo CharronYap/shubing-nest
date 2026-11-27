@@ -226,10 +226,14 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .pcard .ok svg{width:26px;height:26px}
 
 /* 娃娃說話、頭上的小泡泡 */
-.say{position:absolute;transform:translate(-50%,-100%);background:#fff;color:var(--ink);border-radius:14px;padding:5px 10px;font-size:12px;font-weight:800;white-space:nowrap;z-index:450;box-shadow:0 3px 0 #ead9e2;pointer-events:none;animation:sayin .35s ease-out;transition:opacity .4s}
-.say::after{content:"";position:absolute;left:50%;bottom:-5px;width:10px;height:10px;background:#fff;transform:translateX(-50%) rotate(45deg);border-radius:2px}
+.say{position:absolute;transform:translate(-50%,-100%);background:#fff;color:var(--ink);border-radius:14px;padding:5px 10px;font-size:12px;font-weight:800;width:max-content;max-width:calc(100% - 12px);text-align:center;z-index:450;box-shadow:0 3px 0 #ead9e2;pointer-events:none;animation:sayin .35s ease-out;transition:opacity .4s}
+.say::after{content:"";position:absolute;left:calc(50% + var(--ax,0px));bottom:-5px;width:10px;height:10px;background:#fff;transform:translateX(-50%) rotate(45deg);border-radius:2px}
 .say.out{opacity:0}
 @keyframes sayin{from{opacity:0;transform:translate(-50%,-80%)}}
+/* 上面放不下的時候改放在娃娃腳下，小尖角朝上（位置由 js/main.js 的 sayFit 決定） */
+.say.dn{transform:translate(-50%,0);animation-name:sayin2}
+.say.dn::after{bottom:auto;top:-5px}
+@keyframes sayin2{from{opacity:0;transform:translate(-50%,-20%)}}
 .doll.has-ev::after{content:"";position:absolute;left:50%;top:-36%;width:max(26px,46%);aspect-ratio:1;transform:translateX(-50%);pointer-events:none;
   background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='%23ffc928' stroke='%23fff' stroke-width='2.4'/><g fill='%23fff'><circle cx='8' cy='12' r='1.7'/><circle cx='12' cy='12' r='1.7'/><circle cx='16' cy='12' r='1.7'/></g></svg>") center/contain no-repeat;
   animation:bob 2.6s ease-in-out infinite}

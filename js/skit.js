@@ -125,6 +125,8 @@ async function skitPlay(sc, replay){
   if (skitOn || VISIT) return;
   const run = skitOn = {sc, replay, skip: false, end: 0, endText: sc.end};
   $('#sheet').hidden = true;
+  room.querySelectorAll('.hide-chip').forEach(c => c.remove());
+  if (typeof trayState !== 'undefined' && trayState === 'f') try { trayTo('h', true); } catch (e) {}   // 收納架全開會蓋住大半間，降到一半再演
   skitScan();
   screen.classList.add('skit-on');
   skitBar(sc.title);

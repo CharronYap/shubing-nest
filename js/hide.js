@@ -41,12 +41,20 @@ function hideChip(it, text, fn){
   b.addEventListener('pointerdown', e => e.stopPropagation());
   b.addEventListener('click', e => { e.stopPropagation(); b.remove(); fn(); });
   room.appendChild(b);
+  // 娃娃站得高、泡泡改放到腳下的時候：小按鈕讓到泡泡下面
+  const s = room.querySelector('.say.dn');
+  // 用版面的數字算，不用畫面上量到的（兩個都還在跑出現的動畫，量到的位置會差幾 px）
+  const H = room.clientHeight;
+  if (s && H && Math.abs(b.offsetLeft - s.offsetLeft) < (b.offsetWidth + s.offsetWidth) / 2 && b.offsetTop < s.offsetTop + s.offsetHeight + 4)
+    b.style.top = Math.min(96, (s.offsetTop + s.offsetHeight + 6) / H * 100) + '%';
   setTimeout(() => b.remove(), 4200);
 }
 // 點娃娃：登入了才有。正在躲的那隻給「出來吧」，其他的（今天還沒躲過）給「躲起來」
 { const prev = onDollTap; onDollTap = function(it){
     prev(it);
     try {
+      // 正在演小劇場（包含點「！」開始演的那一下）：不冒出來，原本冒著的也收掉
+      if (typeof skitOn !== 'undefined' && skitOn){ room.querySelectorAll('.hide-chip').forEach(c => c.remove()); return; }
       // 點了之後開了面板（今天的小事）就不冒出來，免得被蓋在下面
       if (VISIT || !sNet() || hidePicking || !$('#sheet').hidden || (typeof asleep === 'function' && asleep(it.id))) return;
       const h = hideGet(), t = todayStr();

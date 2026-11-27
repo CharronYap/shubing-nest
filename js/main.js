@@ -128,8 +128,33 @@ function say(it, text){
   b.style.left = Math.max(half, Math.min(100 - half, it.x)) + '%';
   b.style.top = Math.max(6, roomY(it.y) - h - 2) + '%';
   room.appendChild(b);
+  try { sayFit(b, it, h); } catch (e) { console.info('[say]', e); }
   setTimeout(() => b.classList.add('out'), 1900);
   setTimeout(() => b.remove(), 2300);
+}
+/* 泡泡放上去之後量一次位置（2026-11-27）：
+   左右：整個泡泡留在畫面裡，小尖角還是指著娃娃。
+   上下：平常放在娃娃頭上。上緣會碰到上面那幾排按鈕、小劇場那一條、房間的木牌（各留 6px），娃娃自己被它們擋到，或超出房間上緣，就改放到娃娃腳下、小尖角朝上。
+   這幾樣都疊在泡泡上面，所以是泡泡讓開，不是把泡泡往上疊。 */
+const SAY_OVER = '#skitBar,.hud-g,.rsign.on';
+function sayFit(b, it, h){
+  const R = room.getBoundingClientRect(), w = b.offsetWidth, bh = b.offsetHeight;
+  if (!R.width || !R.height || !w) return;
+  const PAD = 6, TIP = 6, GAP = 6, px = R.width * it.x / 100;
+  const cx = w + PAD * 2 >= R.width ? R.width / 2 : Math.max(PAD + w / 2, Math.min(R.width - PAD - w / 2, px));
+  b.style.left = cx / R.width * 100 + '%';
+  const lim = Math.max(0, w / 2 - 13);
+  b.style.setProperty('--ax', Math.max(-lim, Math.min(lim, px - cx)).toFixed(1) + 'px');
+  const over = [...document.querySelectorAll(SAY_OVER)].filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden')
+    .map(e => { const q = e.getBoundingClientRect(); return {l: q.left - R.left, r: q.right - R.left, t: q.top - R.top, b: q.bottom - R.top}; })
+    .filter(o => o.l < cx + w / 2 + 4 && o.r > cx - w / 2 - 4).sort((a, c) => a.t - c.t);
+  const foot = R.height * (roomY(it.y) - h - 2) / 100, top = foot - bh, feet = R.height * roomY(it.y) / 100;   // foot：泡泡的下緣；feet：娃娃的腳
+  // 從泡泡上緣一路看到娃娃的腳：娃娃自己被那一條擋住一半的時候，泡泡也不留在那一條上面，免得看不出是誰在講
+  if (top >= 4 && !over.some(o => top < o.b + GAP && feet > o.t)){ b.style.top = foot / R.height * 100 + '%'; return; }
+  let y = R.height * (roomY(it.y) + 1.5) / 100 + TIP;
+  over.forEach(o => { if (y - TIP < o.b + GAP && y + bh > o.t) y = o.b + GAP + TIP; });
+  b.classList.add('dn');
+  b.style.top = Math.max(TIP, Math.min(y, R.height - bh - 4)) / R.height * 100 + '%';
 }
 const lastLine = {};
 function onDollTap(it){
