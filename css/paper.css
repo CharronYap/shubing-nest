@@ -344,6 +344,8 @@
 .look-paper .st-note{background:var(--p-paper);color:var(--p-ink);border-radius:3px;box-shadow:0 3px 0 var(--p-edge),0 7px 8px var(--p-shadow);font-family:var(--p-hand);font-weight:700}
 .look-paper .st-paper{background:var(--p-paper);color:var(--p-ink);box-shadow:0 3px 0 var(--p-edge),0 7px 8px var(--p-shadow);font-family:var(--p-hand);font-weight:700}
 .look-paper .st-note::before{background:var(--p-a1);border-radius:1px;opacity:.85}
+.look-paper .ns-stk .ns-more{background:var(--p-card);color:var(--p-ink);border-radius:5px;box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .ns-ln button{background:var(--p-card);border-radius:8px;box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
 .look-paper .fx-bag.on::after{background:var(--p-sun);box-shadow:0 2px 0 color-mix(in srgb,var(--p-sun) 60%,var(--p-ink))}
 .look-paper .tv-chip{display:inline-flex}
 .look-paper .tv-wel{background:var(--p-card)}

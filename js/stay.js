@@ -377,18 +377,8 @@ function stayMinePaint(){
 }
 function stayPaint(){
   room.querySelectorAll('.gst').forEach(e => e.remove());
+  if (typeof nsPaint === 'function') nsPaint();   // 過夜的紙條收在右下角那一疊（js/travel.js 的 nsPaint；去朋友家時拿掉）
   if (VISIT){ try { stayMinePaint(); } catch (e) { sQuiet('stay', e); } return; }
-  const o = stayOut();
-  if (o && o.from === roomId){
-    const n = document.createElement('button');
-    n.className = 'gst st-note'; n.setAttribute('aria-label', `${DOLL_NAME[o.d]}去過夜了`);
-    const old0 = !o.sit && !o.x && !o.y;   // 舊資料：坐在家具上出門、位置記成 0,0 的，紙條放房間中間
-    n.style.left = (typeof o.x === 'number' && !old0 ? o.x : 50) + '%'; n.style.top = roomY(typeof o.y === 'number' && !old0 ? o.y : 90) + '%';
-    n.style.zIndex = 60 + Math.round((o.y || 90) * 3);   // 牠原本坐在家具上的話，紙條貼在家具前面
-    n.innerHTML = `<span>去${txSlot(o.w)}家<br>過夜了</span>`;
-    n.onclick = stayTap;
-    room.appendChild(n);
-  }
   Object.keys(stIts).forEach(k => { if (!stGuests.some(g => g.id === k)) delete stIts[k]; });
   if (roomId !== 'living') return;
   stGuests.forEach(g => stayGuestEl(stayIt(g), `${txSlot(sText(g.fromName, 12) || '朋友')}家的${DOLL_NAME[g.doll]}`, stayLook(g.look), g));
