@@ -293,6 +293,8 @@
 .look-paper .ac-fa.rm{background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge)}
 .look-paper .ac-fa.rm[data-sure]{background:var(--p-a1d);color:var(--p-paper);box-shadow:none}
 .look-paper .ac-err,.look-paper .ac-st.failed{color:var(--p-a1d)}
+.look-paper .ac-ck li{background:var(--p-paperd);border-radius:8px}
+.look-paper .ac-ck-top{border-radius:8px}
 /* 相簿、小屋地圖、小窩指南裡零星的白底和粉紅 */
 .look-paper .al-tabs button.no,.look-paper .al-ln li.no{background:var(--p-paperd);color:var(--soft);box-shadow:none}
 .look-paper .al-tr span{box-shadow:none}

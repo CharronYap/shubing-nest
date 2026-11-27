@@ -583,10 +583,12 @@ function openAccount() {
       <p class="ac-note">把好友碼給朋友，對方輸入後就會出現在這裡。點朋友的名字，可以去他家看看。</p>
     </div>
     ${wallet ? '<div class="ac-fr ac-wl"></div>' : ''}
-    <button class="ac-link out" data-a="out">登出</button>`);
+    <button class="ac-link out" data-a="out">登出</button>
+    <button class="ac-link mini" data-a="check">檢查雲端</button>`);
   paintStatus();
   paintWallet();
   box.querySelector('[data-a=out]').onclick = signOut;
+  box.querySelector('[data-a=check]').onclick = e => cloudCheck(e.currentTarget);
   const f = box.querySelector('.ac-add'), err = box.querySelector('.ac-fr .ac-err');
   f.onsubmit = async e => {
     e.preventDefault();
@@ -709,6 +711,62 @@ async function loadFriends() {
   }
 }
 
+/* ---------- 檢查雲端（2026-11-27）----------
+   「全部都留」（js/keep.js）把舊的紀念冊、信、明信片搬到存檔底下的三個子集合。這三個地方平常很久才會用到一次，
+   所以在帳號面板最下面放一顆「檢查雲端」，按了實際各寫一筆、讀回來、刪掉，看雲端收不收，結果用一張面板顯示（方便截圖回報）。
+   - 測試用的月份文件是「現在的年月-9」（用 UTC 的年月，跟規則同一個算法），明信片的編號用 selftest 開頭。
+   - 不碰主存檔，不記進 memoM、lm、pcA，所以就算最後刪除失敗，留下的那一份遊戲也不會讀到。
+   - 那個位置如果已經有真的資料（不是之前檢查留下的），那一項跳過。
+   走 window.nestNet 那幾個函式，本機可以換成假的雲端來測。 */
+let checking = false;
+const checkOff = e => (typeof navigator !== 'undefined' && navigator.onLine === false) || ['unavailable', 'deadline-exceeded', 'auth/network-request-failed'].includes((e && e.code) || '') || /offline|network|failed to fetch/i.test(String((e && e.message) || ''));
+async function cloudCheck(btn) {
+  const net = window.nestNet, who = net && net.me;
+  if (checking || !who) return;
+  checking = true;
+  if (btn) { btn.disabled = true; btn.textContent = '檢查中…'; }
+  const ts = Date.now(), iso = new Date(ts).toISOString(), mid = iso.slice(0, 7) + '-9', day = iso.slice(0, 10);
+  const res = [];
+  let off = typeof navigator !== 'undefined' && navigator.onLine === false;
+  // 一個月份文件：先看那個位置有沒有真的資料 → 寫一筆 → 讀回來 → 整份刪掉
+  const month = async (name, kind, row, keyOf, max) => {
+    try {
+      const old = await net.keepGet(kind, mid);
+      if (Array.isArray(old) && old.some(r => !/^selftest/.test(String(keyOf(r)).split('|').pop()))) { res.push([name, 'skip', '']); return; }
+      const r = await net.keepMerge(kind, mid, [row], keyOf, max, 600000);
+      const back = r && r.ok ? await net.keepGet(kind, mid) : null;
+      if (!Array.isArray(back) || !back.some(x => keyOf(x) === keyOf(row))) { res.push([name, 'bad', r && r.full ? '放不下' : '讀回來沒有']); return; }
+      try { await net.keepDel(kind, mid); res.push([name, 'ok', '']); } catch (e) { res.push([name, 'ok', '測試用的那一份沒刪掉（' + ((e && e.code) || '不明') + '），不影響']); }
+    } catch (e) { if (checkOff(e)) off = true; res.push([name, 'bad', (e && e.code) || String((e && e.message) || e).slice(0, 60)]); }
+  };
+  if (!off) await month('紀念冊', 'memo', { id: 'selftest:' + ts, t: day, ts, u: who.uid, n: '檢查', k: 'selftest' }, r => r.id, 1000);
+  if (!off) await month('信', 'mail', { k: 'selftest.news.0#id=t' + ts, t: day, r: 1, a: null, g: 0 }, r => r.t + '|' + r.k, 500);
+  if (!off) {
+    const id = 'selftest' + ts;
+    try {
+      await net.keepCardPut({ id, w: '檢查', t: day, msg: '', snap: { rid: 'living', room: { wall: 'dots', floor: 'check', items: [] } }, r: 1 });
+      const back = await net.keepCardGet(id);
+      if (!back || back.id !== id) res.push(['明信片', 'bad', '讀回來沒有']);
+      else { try { await net.keepCardDel(id); res.push(['明信片', 'ok', '']); } catch (e) { res.push(['明信片', 'ok', '測試用的那一張沒刪掉（' + ((e && e.code) || '不明') + '），不影響']); } }
+    } catch (e) { if (checkOff(e)) off = true; res.push(['明信片', 'bad', (e && e.code) || String((e && e.message) || e).slice(0, 60)]); }
+  }
+  checking = false;
+  const p = n => String(n).padStart(2, '0'), d = new Date(ts), when = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  const word = { ok: '可以', bad: '不行', skip: '跳過' };
+  const allOk = !off && res.length === 3 && res.every(r => r[1] === 'ok');
+  open(`<div class="ac-hd">${USER_ICON}<b>檢查雲端</b></div>
+    ${off ? '<p class="ac-ck-top off">現在連不上，晚點再試</p>' : allOk ? '<p class="ac-ck-top ok">雲端都正常</p>' : ''}
+    ${off ? '' : `<ul class="ac-ck">${res.map(([n, s, why]) => `<li><b>${n}</b><span class="${s}">${word[s]}${s === 'bad' && why ? `（${esc(why)}）` : ''}</span>${s !== 'bad' && why ? `<small>${esc(why)}</small>` : s === 'skip' ? '<small>那個位置已經有資料，這一項沒有檢查</small>' : ''}</li>`).join('')}</ul>`}
+    <p class="ac-note ac-ck-ft">版本 ${esc(String(typeof NEST_V !== 'undefined' ? NEST_V : ''))}・${when}</p>
+    <div class="ac-row2">${me ? '<button class="ac-b ghost" data-a="back">回帳號</button>' : ''}<button class="ac-b" data-a="again">再檢查一次</button></div>`);
+  box.onclick = e => {
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    if (a.dataset.a === 'back') { box.onclick = null; openAccount(); }
+    else if (a.dataset.a === 'again') { box.onclick = null; cloudCheck(a); }
+  };
+}
+window.nestCloudCheck = () => cloudCheck(null);   // 也可以在 console 叫
+
 /* ---------- 給一般 script 用（js/nestgift.js 送娃娃） ---------- */
 // 沒登入時 me 是 null；登入好、存檔同步過一次之後發一個 nestnet 事件
 window.nestNet = {
@@ -732,7 +790,7 @@ window.nestNet = {
 // 第五版的雲端動作，原樣轉給 cloud.js
 ['bookAdd', 'bookMine', 'book', 'bookDel', 'waterAdd', 'waterMine', 'waters', 'waterDel', 'foundAdd', 'foundMine', 'founds', 'foundDel',
   'stayGo', 'stayMine', 'stayGuests', 'staySet', 'stayEnd', 'cardSend', 'cardsTo', 'cardDel',
-  'keepGet', 'keepMerge', 'keepCardPut', 'keepCardGet', 'keepCardDel', 'keepCards']   // 最後一排：全部都留（js/keep.js）
+  'keepGet', 'keepMerge', 'keepDel', 'keepCardPut', 'keepCardGet', 'keepCardDel', 'keepCards']   // 最後一排：全部都留（js/keep.js）
   .forEach(k => { window.nestNet[k] = (...a) => cloud[k](...a); });
 
 /* ---------- 開始 ---------- */

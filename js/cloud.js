@@ -430,6 +430,12 @@ export function createCloud(config, { emulator = false } = {}) {
         return { ok: true, n: l.length, added: add.length };
       });
     },
+    // 刪掉一個月份的文件（「檢查雲端」用完測試的那一份要刪；規則允許本人刪）
+    async keepDel(kind, mid) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.deleteDoc(F.doc(db, 'nestSaves', user.uid, kind, mid));
+    },
     async keepCardPut(c) {
       await ready;
       if (!user) throw new Error('not signed in');
