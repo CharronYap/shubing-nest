@@ -158,3 +158,40 @@ SK('g-class', '第一課', ['nyanko', 'dino', 'dog'], {}, ['s nyanko 今天本�
 SK('g-story', '念小說', ['snoopy', 'sloth', 'egg'], {}, ['s snoopy 我來念我的小說。', 's snoopy 第一章。', 'n （念了很久）', 's snoopy 完。有什麼感想。', 's sloth 第一句很好。', 's egg 後面我睡著了。'], '史努比念小說給大家聽，蛋黃哥睡著了。');
 SK('g-vote', '晚餐表決', ['piggy', 'dog', 'egg'], {}, ['s piggy 現在表決晚餐吃什麼。', 's dog 汪！都可以！', 's egg 不用嚼的。', 's piggy 這樣沒辦法統計。',
   {q: '你投哪一個？', o: [['都可以', ['s dog 汪！我們一樣！', 's piggy 兩票。通過。吃都可以。'], '晚餐表決的結果是：都可以。'], ['不用嚼的', ['s egg 有品味。', 's piggy 兩票。通過。喝湯。'], '晚餐表決的結果是不用嚼的，喝湯。']]}], '');
+
+/* ================= 家具第二、三批和天氣（2026-11-27，12 段） =================
+   甜點、森林露營、海邊、太空系列各 2 段，魚缸 1 段，下雨天 1 段，晚上 2 段。
+   家具的那幾段：演的娃娃要跟那件家具擺在同一間才會排到（家具一開始在哪一間看 furn2.js、furn3.js 的 room）。
+   家具搬得到別的房間，所以台詞不寫「浴室」「客廳」這種只對一間成立的話。 */
+
+/* ---------- 甜點系列（2 段） ---------- */
+SK('f-pudding', '會抖的桌子', ['dog', 'egg'], {furn: 'puddingtable'}, ['m dog puddingtable', 's dog 這張桌子是布丁耶！', 'a dog jump', 's dog 汪！我一跳它就抖！', 'm egg puddingtable', 's egg 抖的是我。被你震的。',
+  {q: '要讓皮蛋再跳嗎？', o: [['再跳一次', ['a dog jump', 's dog 汪！你們一起抖！', 's egg ……好累。抖也好累。'], '皮蛋一跳，布丁桌和蛋黃哥一起抖。'], ['請皮蛋坐好', ['s dog 好！我坐好了！', 's egg 謝謝。我繼續躺。'], '你請皮蛋坐好，蛋黃哥終於可以繼續躺。']]}], '');
+SK('f-cakecab', '用看的吃', ['nyanko', 'piggy'], {furn: 'cakecab'}, ['m nyanko cakecab', 's nyanko 這塊蛋糕在叫本大爺。', 'm piggy cakecab', 's piggy 那是擺好看的。', 's nyanko 擺著不吃，太浪費了。', 's piggy 蓋子打不開啦。', 'a nyanko look', 's nyanko ……那本大爺用看的吃。'], '貓咪老師打不開蛋糕櫃，改用看的吃蛋糕。');
+
+/* ---------- 森林露營系列（2 段） ---------- */
+SK('f-campfire', '烤棉花糖', ['dog', 'sloth'], {furn: 'campfire'}, ['m dog campfire', 's dog 我們來烤棉花糖！', 'm sloth campfire', 's sloth 這是燈耶。', 's dog 用想像的烤！汪！', 's sloth 好。我在烤了。', 'w', 's dog 我的好了！你的呢？', 's sloth ……焦了。我想太久。'], '薯餅在營火燈前烤想像的棉花糖，想太久烤焦了。');
+SK('f-minitent', '通關密語', ['dino', 'dog'], {furn: 'minitent'}, ['m dino minitent', 's dino 這裡是秘密基地。', 'm dog minitent', 's dog 汪！我也要進去！', 's dino 要說通關密語喔。',
+  {q: '要幫皮蛋猜嗎？', o: [['猜「拖鞋」', ['s dog 拖鞋！', 's dino 怎麼猜到的！進來！'], '皮蛋猜中秘密基地的密語：拖鞋。'], ['猜「葉子」', ['s dog 葉子！', 's dino 差一點。算你對！'], '皮蛋猜葉子，龍龍說差一點也算對。'], ['不幫牠猜', ['s dog 那我在門口等！', 'w', 's dino ……好啦，快進來。'], '皮蛋在帳篷門口等，龍龍還是讓牠進去了。']]}], '');
+
+/* ---------- 海邊系列（2 段） ---------- */
+SK('f-parasol', '在家度假', ['snoopy', 'piggy'], {furn: 'parasol'}, ['m snoopy parasol', 's snoopy 作家來海邊度假了。', 's snoopy 陽光，海浪，好舒服。', 'm piggy parasol', 's piggy 這裡是室內耶。', 's snoopy 噓。不要吵我度假。', 's piggy ……好啦。傘下分我一半。'], '史努比在遮陽傘下假裝度假，火腿也分到一半的位子。');
+SK('f-boatbed', '會漂走嗎', ['sloth', 'piggy'], {furn: 'boatbed'}, ['m sloth boatbed', 's sloth 這張床是一艘船耶。', 's sloth 睡著會漂走嗎。', 'm piggy boatbed', 's piggy 不會。地板沒有水。', 's sloth 那漂到夢裡呢。', 's piggy ……那我坐船頭看路。'], '薯餅怕小船床漂走，火腿說牠坐船頭幫忙看路。');
+
+/* ---------- 太空系列（2 段） ---------- */
+SK('f-telescope', '新星球', ['snoopy'], {furn: 'telescope'}, ['m snoopy telescope', 's snoopy 天文學家上工了。', 'a snoopy look', 's snoopy 發現一顆新星球！', 'n （望遠鏡對著天花板）', 's snoopy 要幫它取個名字。',
+  {q: '叫什麼好？', o: [['史努比星', ['s snoopy 很好。非常有品味。'], '史努比發現一顆新星球，取名史努比星。'], ['晚餐星', ['s snoopy 聽起來很好吃。', 's snoopy 今晚出發去探險。'], '史努比發現一顆新星球，取名晚餐星。'], ['天花板星', ['s snoopy ……你是不是看出來了。'], '你把新星球取名天花板星，史努比好像發現了。']]}], '');
+SK('f-rocketbed', '倒數', ['moodeng', 'egg'], {furn: 'rocketbed'}, ['m moodeng rocketbed', 's moodeng 火箭要起飛了！！', 's moodeng 誰要去太空！！', 'm egg rocketbed', 's egg 太空要走路嗎。', 's moodeng 不用！！用飄的！！', 's egg 那我去。', 's moodeng 三！！二！！一！！', 'a moodeng jump', 's egg 到了叫我。我先睡。'], '聽說太空不用走路，蛋黃哥就上了火箭床。');
+
+/* ---------- 魚缸（1 段） ---------- */
+SK('f-fishtank', '看魚', ['nyanko'], {furn: 'fishtank'}, ['m nyanko fishtank', 's nyanko 本大爺在看魚。', 's nyanko 不是想吃。是在看。', 'a nyanko look', 's nyanko ……牠們也一直看我。',
+  {q: '要跟牠說什麼？', o: [['魚只是在游泳', ['s nyanko 哼，我知道。', 's nyanko 本大爺再盯一下。'], '貓咪老師說牠不是想吃魚，只是盯著看。'], ['魚想跟你玩', ['s nyanko 本大爺很忙的。', 'a nyanko look', 's nyanko ……玩一下也行。'], '魚想跟貓咪老師玩，牠說玩一下也行。']]}], '');
+
+/* ---------- 下雨天（1 段） ---------- */
+SK('w-rain-moodeng', '雨在跳', ['moodeng'], {rain: true}, ['s moodeng 下雨了！！是水！！', 's moodeng 我要出去跳！！', 'a moodeng jump', 's moodeng 窗戶不讓我出去！！',
+  {q: '要怎麼陪牠？', o: [['一起在窗邊看雨', ['s moodeng 雨在跳！！跟我一樣！！', 'a moodeng jump', 's moodeng 我跳得比較高！！'], '下雨天，彈跳豬在窗邊跟雨比賽跳高。'], ['說雨停再出去', ['s moodeng 那雨快停！！', 's moodeng ……不對！！不准停！！'], '彈跳豬要雨快點停，又說不准停。']]}], '');
+
+/* ---------- 晚上（2 段） ---------- */
+SK('n-quiet', '誰最小聲', ['dino', 'moodeng'], {night: true}, ['m dino moodeng', 's dino 噓，晚上要小聲。', 's dino 來比誰最小聲。', 's moodeng 好！！我最小聲！！', 's dino ……你已經輸了。', 's moodeng 不公平！！（小聲）'], '晚上龍龍和彈跳豬比誰最小聲，彈跳豬一開口就輸了。');
+SK('n-nyanko', '宵夜', ['nyanko'], {night: true}, ['s nyanko 晚上肚子特別餓。', 's nyanko 這是常識。', 'a nyanko look', 's nyanko 所以要吃宵夜。',
+  {q: '要給牠什麼？', o: [['一小塊點心', ['s nyanko 哼，算你懂事。', 's nyanko 這塊本大爺收下了。'], '貓咪老師吃了宵夜，說你算懂事。'], ['一杯熱牛奶', ['s nyanko 那是小貓喝的吧。', 'a nyanko look', 's nyanko ……再一杯。'], '貓咪老師說熱牛奶是小貓喝的，還是喝了兩杯。']]}], '');
