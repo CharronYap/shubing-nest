@@ -115,7 +115,7 @@ function stayDiary(d, room){
 function stayLetter(d, w, note, room, uid){
   const t = todayStr(), u = typeof uid === 'string' && /^[\w-]{1,64}$/.test(uid) ? ';u=' + uid : '';
   const k = `${d}.trip.${stayDiary(d, room)}#w=${w}${u}${note ? ';x=' + encodeURIComponent(note) : ''}`;
-  const m = mailInit(), o = {k, t, r: 0, a: null, g: 0};
+  const m = mailInit(), o = {k: mailWithH(k, mailHmOf()), t, r: 0, a: null, g: 0};   // 日期是今天，時間也用現在（js/mail.js）
   m.l.unshift(o);
   if (typeof mailTrim === 'function') mailTrim(m.l);
   const ar = m.arch[d] = m.arch[d] || [];

@@ -116,7 +116,8 @@ async function cardRefresh(redraw){
   list.sort((a, b) => (a.t || 0) - (b.t || 0)).forEach(c => {
     if (!c || typeof c.id !== 'string') return;
     if (!m.pcd.includes(c.id) && cardOk(c)){
-      m.pc.unshift({id: c.id, w: sText(c.fromName, 12) || '朋友', t: ngDay(c.t), msg: sText(c.msg, CARD_LEN), snap: c.snap, r: 0, ...(typeof c.from === 'string' && /^[\w-]{1,64}$/.test(c.from) ? {u: c.from} : {})});   // u：寄的人的帳號，用來對「我的娃娃是不是正住在他家」
+      // h：收到的時間，用朋友寄出的那一刻（js/mail.js 的 mailWhen 畫成「11月27日 20:58」，2026-11-27 以前的沒有）
+      m.pc.unshift({id: c.id, w: sText(c.fromName, 12) || '朋友', t: ngDay(c.t), h: mailHmOf(c.t || Date.now()), msg: sText(c.msg, CARD_LEN), snap: c.snap, r: 0, ...(typeof c.from === 'string' && /^[\w-]{1,64}$/.test(c.from) ? {u: c.from} : {})});   // u：寄的人的帳號，用來對「我的娃娃是不是正住在他家」
       m.pcd.push(c.id); if (m.pcd.length > 40) m.pcd.splice(0, m.pcd.length - 40);
       changed = true;
     }
@@ -130,7 +131,7 @@ async function cardRefresh(redraw){
 function cardSection(){
   const pc = (S.mail && S.mail.pc) || [];
   return pc.map((c, i) => `<div class="ml pc ${c.r ? '' : 'unread'}">
-    <div class="ml-hd"><span class="pc-st">${CARD_ICON}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${md(c.t)}</small>${c.msg ? `<i>${txSlot(c.msg)}</i>` : ''}</span></div>
+    <div class="ml-hd"><span class="pc-st">${CARD_ICON}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${mailWhen(c.t, c.h)}</small>${c.msg ? `<i>${txSlot(c.msg)}</i>` : ''}</span></div>
     <div class="ml-ft"><button class="btn y sm" data-pc="open" data-i="${i}">看明信片</button><button class="btn sm" data-pc="del" data-i="${i}">丟掉</button></div></div>`).join('');
 }
 function cardOpen(i){ cardShow(cardMail().pc[i]); }
@@ -157,7 +158,7 @@ function cardShow(c, old){
   // 不比名字；舊的明信片沒有記寄的人是誰，判斷不出來就不顯示
   const so = typeof stayOut === 'function' ? stayOut() : null;
   const mine = so && c.u && so.to === c.u && s.room.items.some(i => i && i.kind === 'doll' && i.id === so.d && i.gn !== undefined) ? so.d : '';
-  top.innerHTML = `<b>${txSlot(c.w)}寄來的明信片</b><small>${md(c.t)}</small>${mine ? `<small class="pc-mine">你家的${DOLL_NAME[mine]}也在裡面喔</small>` : ''}`;
+  top.innerHTML = `<b>${txSlot(c.w)}寄來的明信片</b><small>${mailWhen(c.t, c.h)}</small>${mine ? `<small class="pc-mine">你家的${DOLL_NAME[mine]}也在裡面喔</small>` : ''}`;
   const bar = $('#vbar'), re = typeof letterOfCard === 'function' && sNet() ? letterOfCard(c) : null;
   bar.innerHTML = `${c.msg ? `<div class="pc-back"><p class="pc-msg">${txSlot(c.msg)}</p></div>` : '<p class="pc-none">這張沒有寫字。</p>'}
     <div class="vb-row pc-row${re ? ' pc-4' : ''}"><button class="btn pc-del">丟掉這張</button><button class="btn pc-save">存到手機</button>${re ? '<button class="btn pc-re">回信</button>' : ''}<button class="btn y vb-home">看完了</button></div>`;

@@ -81,7 +81,7 @@ async function ngClaim(id){
       const w = ngName(g.fromName), t = todayStr(), u = typeof g.from === 'string' && /^[\w-]{1,64}$/.test(g.from) ? ';u=' + g.from : '', k = `${g.doll}.gift.0#w=${w}${u};m=${Math.max(0, Math.min(5, g.line | 0))}${got === 'spare' ? ';e=1' : got === 'coin' ? ';e=2' : ''}${ngX(g) ? ';x=' + ngX(g) : ''}`;
       m.gin.push(id); if (m.gin.length > 60) m.gin.splice(0, m.gin.length - 60);
       // 變成一封看過的信，相簿「寫給你的信」會留下「從○○家來的」；不算在一天一封裡
-      m.l.unshift({k, t, r: 1, a: null, g: 0});
+      m.l.unshift({k: mailWithH(k, mailHmOf()), t, r: 1, a: null, g: 0});   // 日期是讓牠進來的這一天，時間也用現在（js/mail.js）
       if (typeof mailTrim === 'function') mailTrim(m.l);
       const ar = m.arch[g.doll] = m.arch[g.doll] || [];
       ar.push(`${t}|${k}`); if (ar.length > MAIL_ARCH) ar.splice(0, ar.length - MAIL_ARCH);

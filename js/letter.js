@@ -67,7 +67,7 @@ function letterReNote(p){
 // 信箱裡編號是 id 的那一封（朋友面板用）
 function letterById(id){
   if (!id) return null;
-  return ((S.mail && S.mail.l) || []).find(o => o && typeof o.k === 'string' && o.k.endsWith(';id=' + id)) || null;
+  return ((S.mail && S.mail.l) || []).find(o => o && typeof o.k === 'string' && mailBare(o.k).endsWith(';id=' + id)) || null;   // 新的信最後面多一個收到的時間 h（js/mail.js）
 }
 
 /* ---------- 寫信 ---------- */
@@ -145,7 +145,7 @@ async function letterRefresh(redraw){
       const re = LT_RE.includes(c.re) ? c.re : '', d = typeof c.d === 'string' && DOLLS.includes(c.d) ? c.d : '';
       const icon = (re === 'gift' || re === 'trip') && d ? d : 'sloth';
       const k = `${icon}.re.0#w=${ngName(c.fromName)};u=${c.from};x=${encodeURIComponent(msg)}${re ? ';rt=' + re : ''}${d ? ';rd=' + d : ''};id=${c.id}`;
-      m.l.unshift({k, t: ngDay(c.t), r: 0, a: null, g: 0});
+      m.l.unshift({k: mailWithH(k, mailHmOf(c.t || Date.now())), t: ngDay(c.t), r: 0, a: null, g: 0});   // 時間用朋友寄出的那一刻，和日期一樣
       memoAdd('letterIn', c.from, sText(c.fromName, 12) || '朋友', {id: 'li' + c.id, c: c.id, in: 1, d, m: msg});
       changed = true;
     }

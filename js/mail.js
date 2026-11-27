@@ -442,6 +442,22 @@ function mailInit(){
 // 小事做完一件（main.js 的 doEvent 會叫）
 function mailCount(e){ const m = mailInit(); e.d.forEach(d => m.n[d] = (m.n[d] || 0) + 1); }
 
+/* ---------- 收到的時間（2026-11-27） ----------
+   新收到的信和明信片，日期後面多一個時間（24 小時制、手機的時區），例如「11月27日 20:58」。以前收的沒有時間，就只寫日期。
+   信的時間放在代號 k 最後面的 h=20:58（t 還是 yyyy-mm-dd）；朋友寄的明信片放在那一張的 h（js/card.js）。
+   用代號認「是不是同一封」的地方（mailSameKey、更新信寄過沒、js/letter.js 的 letterById）都先拿掉 h 再比：
+   兩台裝置各收一次的同一封，時間不同也還是同一封。m.arch 記的代號不帶 h（合併時用字串去重複，帶了時間就會變兩筆）。 */
+const mailHmOf = x => { const d = new Date(x == null ? Date.now() : x); return isNaN(d) ? '' : d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); };
+const mailHmOk = s => typeof s === 'string' && /^\d{1,2}:[0-5]\d$/.test(s);
+const MAIL_H_RE = /[#;]h=(\d{1,2}:[0-5]\d)$/;
+const mailBare = k => (typeof k === 'string' ? k.replace(MAIL_H_RE, '') : k);
+const mailWithH = (k, h) => { const b = mailBare(k); return mailHmOk(h) ? b + (b.includes('#') ? ';' : '#') + 'h=' + h : b; };
+const mailHm = o => ((o && typeof o.k === 'string' && MAIL_H_RE.exec(o.k)) || [])[1] || '';
+// 「11月27日 20:58」；沒有時間就只有日期
+const mailWhen = (t, h) => md(t) + (mailHmOk(h) ? ' ' + h : '');
+// 同一天裡排先後用：補成兩位數的小時再比字串，沒有時間的排在有時間的後面
+const mailHmSort = h => (mailHmOk(h) ? h.padStart(5, '0') : '');
+
 const mailParse = k => {
   const [head, q = ''] = k.split('#'), [d, type, i] = head.split('.');
   const p = {};
@@ -453,8 +469,8 @@ function mailPiggyRoom(){
   Object.keys(MAIL_ROOM).forEach(r => (S.home[r] ? S.home[r].items : []).forEach(it => { if (it.kind === 'furn' && MAIL_FURN[it.id]) pool.push(`r=${r};f=${it.id}`); }));
   return pool.length ? pool[Math.floor(Math.random() * pool.length)] : 'r=living;f=sofa';
 }
-// 寄一封娃娃的信（news 也走這裡）。ai：AI 寫好的字（js/mailai.js），沒有就是用範本
-function mailAdd(d, type, q, today, ai){
+// 寄一封娃娃的信（news 也走這裡）。ai：AI 寫好的字（js/mailai.js），沒有就是用範本。hm：收到的時間，沒給就是現在
+function mailAdd(d, type, q, today, ai, hm){
   const m = mailInit();
   const n = type === 'news' ? 0 : MAIL_TPL[d][type].length;
   // 先挑這隻這種信還沒寫過的版本；都寫過了才重複，而且不跟上一封一樣
@@ -469,7 +485,7 @@ function mailAdd(d, type, q, today, ai){
   if (d === 'piggy' && type !== 'news' && !/(^|;)r=/.test(q || '')) parts.push(mailPiggyRoom());
   if (d === 'snoopy' && type !== 'news') parts.push(`c=${(m.arch.snoopy || []).length + 1}`);
   if (ai && typeof mailAiEnc === 'function') parts.push('ai=' + mailAiEnc(ai));
-  const k = `${d}.${type}.${i}${parts.length ? '#' + parts.join(';') : ''}`;
+  const k0 = `${d}.${type}.${i}${parts.length ? '#' + parts.join(';') : ''}`, k = mailWithH(k0, hm === undefined ? mailHmOf() : hm);
   let a = null;
   if (type === 'news') a = (MAIL_NEWS.find(x => 'id=' + x.id === q) || {}).a || null;
   if (type !== 'news' && m.att !== today && d !== 'nyanko' && Math.random() < MAIL_ATT_RATE){
@@ -482,7 +498,7 @@ function mailAdd(d, type, q, today, ai){
   mailTrim(m.l);   // 滿了先刪那一類最舊的「看過、附件也領了」的；都還沒看就留著（不會因為太久沒看而不見）
   if (type !== 'news'){
     const ar = m.arch[d] = m.arch[d] || [];
-    ar.push(`${today}|${k}`);
+    ar.push(`${today}|${k0}`);
     if (ar.length > MAIL_ARCH) ar.splice(0, ar.length - MAIL_ARCH);
     m.last = today;
   }
@@ -492,7 +508,7 @@ function mailAdd(d, type, q, today, ai){
    2026-11-27 使用者的信箱裡同一封更新信出現兩次：兩台裝置各在不同天寄了同一封，合併時是照「日期＋內容」比，日期不同就都留下來了。
    薯餅的更新信：同一個編號只留一封（不看日期）。其他的信：同一天、同一封才算重複（同一句話隔幾個月再寄一次是正常的）。
    留下來的那一封，「看過」「附件領過」只要有一邊是，就算是：附件不會因為重複多領一次，也不會變回沒領。js/account.js 合併存檔時用同一套（mailSameKey）。 */
-const mailSameKey = o => (/^[a-z]+\.news\./.test(o.k) ? o.k : o.t + '|' + o.k);
+const mailSameKey = o => { const k = mailBare(o.k); return /^[a-z]+\.news\./.test(k) ? k : o.t + '|' + k; };   // 不看收到的時間 h
 function mailDedupe(m){
   const seen = new Map(), keep = [];
   (m.l || []).forEach(o => {
@@ -522,11 +538,11 @@ function mailCheck(atOpen){
     if (n.id === 'yard2n' && m.s['news-yard2']) return;   // 收過附幣的那一封就不用再收這封
     if (n.id === 'coin1' && (!old || m.s['news-hi'])) return;   // 新玩家的 30 枚在歡迎信裡，不重複給
     m.s['news-' + n.id] = t;
-    if (m.l.some(o => o.k === 'sloth.news.0#id=' + n.id)) return;   // 信箱裡已經有這一封（另一台裝置寄過、合併進來的）：只補記，不再寄一次
+    if (m.l.some(o => mailBare(o.k) === 'sloth.news.0#id=' + n.id)) return;   // 信箱裡已經有這一封（另一台裝置寄過、合併進來的）：只補記，不再寄一次
     mailAdd('sloth', 'news', 'id=' + n.id, t); changed = true;
   });
   // 歡迎信：沒收過、也沒收過 coin1 的新玩家。最後寄，排在最上面
-  if (!old && !m.s['news-hi'] && !m.s['news-coin1']){ m.s['news-hi'] = t; if (!m.l.some(o => o.k === 'sloth.news.0#id=hi')) mailAdd('sloth', 'news', 'id=hi', t); changed = true; }
+  if (!old && !m.s['news-hi'] && !m.s['news-coin1']){ m.s['news-hi'] = t; if (!m.l.some(o => mailBare(o.k) === 'sloth.news.0#id=hi')) mailAdd('sloth', 'news', 'id=hi', t); changed = true; }
   const have = DOLLS.filter(d => DOLL_N[d] && met[d]);
   if (m.last !== t && have.length && !(typeof mailAiBusy !== 'undefined' && mailAiBusy)){
     let pick = null;
@@ -645,27 +661,29 @@ function mailCard(o, j, open, tag, old){
     if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : o.a === 'ticket' ? '附上一張' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
   }
   return `<div class="ml ${o.r ? '' : 'unread'} ${open ? 'open' : ''}">
-    <button class="ml-hd" data-ml${old ? 'x' : ''}="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${tag ? MAIL_CAT_NAME[mailCatOf(o)] + '・' : ''}${from}・${md(o.t)}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
+    <button class="ml-hd" data-ml${old ? 'x' : ''}="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${tag ? MAIL_CAT_NAME[mailCatOf(o)] + '・' : ''}${from}・${mailWhen(o.t, mailHm(o))}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
     ${open ? `<div class="ml-bd">${inner}</div>` : ''}</div>`;
 }
 let mlOpenIx = -1, mlOpenX = -1;   // 打開著的是第幾封：主存檔的、舊的那邊的
 // 朋友寄來的明信片（S.mail.pc）在信箱裡的一列：一張一列，點了開那一張（js/card.js 的 cardOpen）
 function mailPcRow(c, i, tag, old){
-  return `<div class="ml pc ${c.r ? '' : 'unread'}"><button class="ml-hd" data-mpc${old ? 'x' : ''}="${i}"><span class="pc-st">${typeof CARD_ICON !== 'undefined' ? CARD_ICON : ''}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${tag ? MAIL_CAT_NAME.pc + '・' : ''}${md(c.t)}</small><i>${c.msg ? txSlot(c.msg) : '這張沒有寫字。'}</i></span></button></div>`;
+  return `<div class="ml pc ${c.r ? '' : 'unread'}"><button class="ml-hd" data-mpc${old ? 'x' : ''}="${i}"><span class="pc-st">${typeof CARD_ICON !== 'undefined' ? CARD_ICON : ''}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${tag ? MAIL_CAT_NAME.pc + '・' : ''}${mailWhen(c.t, c.h)}</small><i>${c.msg ? txSlot(c.msg) : '這張沒有寫字。'}</i></span></button></div>`;
 }
 const mailPcs = () => (S.mail && Array.isArray(S.mail.pc) ? S.mail.pc : []);
 // 這一類裡有哪些：信（l 裡的第幾封）和朋友的明信片（pc 裡的第幾張），照日期新的在前
 function mailRowsOf(cat){
   const m = mailInit(), rows = [];
-  m.l.forEach((o, j) => { if (o && typeof o.k === 'string' && (cat === 'all' || mailCatOf(o) === cat)) rows.push({o, j, t: o.t || ''}); });
-  if (cat === 'all' || cat === 'pc') mailPcs().forEach((c, i) => { if (c) rows.push({c, i, t: c.t || ''}); });
+  m.l.forEach((o, j) => { if (o && typeof o.k === 'string' && (cat === 'all' || mailCatOf(o) === cat)) rows.push({o, j, t: o.t || '', h: mailHmSort(mailHm(o))}); });
+  if (cat === 'all' || cat === 'pc') mailPcs().forEach((c, i) => { if (c) rows.push({c, i, t: c.t || '', h: mailHmSort(c.h)}); });
   // 按「看更早的」讀回來的舊信、舊明信片（js/keep.js）：接在後面，主存檔裡已經有的不重複列
   if (cat !== 'news' && typeof mailOld !== 'undefined'){
     const haveL = new Set(m.l.map(mailSameKey)), haveC = new Set(mailPcs().map(c => c && c.id));
-    mailOld.forEach((o, j) => { if ((cat === 'all' || mailCatOf(o) === cat) && !haveL.has(mailSameKey(o))) rows.push({o, j, t: o.t || '', old: 1}); });
-    if (cat === 'all' || cat === 'pc') cardOld.forEach((c, i) => { if (!haveC.has(c.id)) rows.push({c, i, t: c.t || '', old: 1}); });
+    mailOld.forEach((o, j) => { if ((cat === 'all' || mailCatOf(o) === cat) && !haveL.has(mailSameKey(o))) rows.push({o, j, t: o.t || '', h: mailHmSort(mailHm(o)), old: 1}); });
+    if (cat === 'all' || cat === 'pc') cardOld.forEach((c, i) => { if (!haveC.has(c.id)) rows.push({c, i, t: c.t || '', h: mailHmSort(c.h), old: 1}); });
   }
-  return rows.map((r, n) => [r, n]).sort((a, b) => (a[0].t < b[0].t ? 1 : a[0].t > b[0].t ? -1 : a[1] - b[1])).map(x => x[0]);
+  // 日期新的在前；同一天再看時間（新的在前，沒有時間的在後），都一樣就照原本的順序
+  const cmp = (x, y) => (x < y ? 1 : x > y ? -1 : 0);
+  return rows.map((r, n) => [r, n]).sort((a, b) => cmp(a[0].t, b[0].t) || cmp(a[0].h, b[0].h) || a[1] - b[1]).map(x => x[0]);
 }
 const mailUnreadOf = cat => mailRowsOf(cat).filter(r => !r.old && !(r.o || r.c).r).length;
 function openMail(keep){

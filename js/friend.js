@@ -101,13 +101,16 @@ function frPaint(){
       const tap = card ? `data-frcard="${e.c}"` : letter && e.k === 'letterIn' ? `data-frlt="${e.c}"` : letter ? `data-frletter="${e.k === 'stayBack' ? 'trip' : 'gift'}.${e.d}" data-frw="${e.u}"` : e.k === 'bookIn' ? 'data-fr="book"' : '';
       // 過夜帶回來的紙條：直接寫在這一行（這一版以前記的沒有 m，從那封日記讀）
       let ee = e;
+      // 收到的時間（js/mail.js）：連到的那張明信片、那封信有記，而且是同一天的才加
+      const pc = card && ((S.mail.pc || []).find(c => c.id === e.c));
+      const hm = pc && pc.t === e.t ? pc.h : letter && letter.t === e.t ? mailHm(letter) : '';
       if (e.k === 'stayBack' && !e.m && letter){ try { const x = mailParse(letter.k).p.x; if (x) ee = {...e, m: mailDec(x)}; } catch (er) {} }
-      return `<div class="fr-it ${tap ? 'tap' : ''}" ${tap} ${tap ? 'role="button" tabindex="0"' : ''}><small>${md(e.t)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(ee)}${dot(e)}${card ? '<u>看明信片</u>' : letter ? '<u>打開看</u>' : ''}</p></div>`;
+      return `<div class="fr-it ${tap ? 'tap' : ''}" ${tap} ${tap ? 'role="button" tabindex="0"' : ''}><small>${mailWhen(e.t, hm)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(ee)}${dot(e)}${card ? '<u>看明信片</u>' : letter ? '<u>打開看</u>' : ''}</p></div>`;
     }).join('');
     // 信箱裡還有、紀念冊卻沒記到的明信片（這一版之前收到的）：照寄的人的名字列在這裡
     const known = new Set(frMemo().filter(e => e.k === 'cardIn').map(e => e.c));
     rows += ((S.mail && S.mail.pc) || []).filter(c => !known.has(c.id) && (frList.length === 1 || c.w === nm)).map(c =>
-      `<div class="fr-it tap" data-frcard="${c.id}" role="button" tabindex="0"><small>${md(c.t)}</small><span class="ic">${CARD_ICON}</span><p>收到${txSlot(c.w)}寄來的明信片${c.r ? '' : '<i class="fr-new"></i>'}<u>看明信片</u></p></div>`).join('');
+      `<div class="fr-it tap" data-frcard="${c.id}" role="button" tabindex="0"><small>${mailWhen(c.t, c.h)}</small><span class="ic">${CARD_ICON}</span><p>收到${txSlot(c.w)}寄來的明信片${c.r ? '' : '<i class="fr-new"></i>'}<u>看明信片</u></p></div>`).join('');
     if (rows && S.album && Array.isArray(S.album.memoM) && S.album.memoM.length) rows += '<p class="bk-note fr-old">更早的在紀念冊。</p>';   // 這裡只列主存檔裡最近的（js/keep.js）
     if (!rows) rows = `<p class="al-em">${txSlot(nm)}那邊還沒有東西來。他寄的明信片、送的娃娃、在你家訪客簿留的話，都會收在這裡。</p>`;
   } else {
