@@ -15,6 +15,7 @@ const MEMO_ICON = {
   friend: HEART(), cardOut: CARD_ICON, cardIn: CARD_ICON, giftOut: MAIL_ICON, giftIn: MAIL_ICON,
   stayOut: STAY_MOON, stayBack: STAY_MOON, guest: STAY_MOON, photoWith: typeof CAM_ICON !== 'undefined' ? CAM_ICON : STAY_MOON, bookIn: BOOK_ICON, bookOut: BOOK_ICON,
   hideFound: WANT_STAR, hideMiss: WANT_STAR, seekFound: WANT_STAR, waterIn: WATER_ICON, waterOut: WATER_ICON,
+  letterOut: MAIL_ICON, letterIn: MAIL_ICON,   // 回信（js/letter.js）
 };
 const memoList = () => (S.album.memo = Array.isArray(S.album.memo) ? S.album.memo : []);
 const memoDate = day => { const d = new Date((day | 0) * 864e5); return isNaN(d) || !(day > 0) ? todayStr() : d.toISOString().slice(0, 10); };
@@ -57,6 +58,8 @@ function memoText(e){
     case 'seekFound': return `在${w}家找到躲起來的${d}`;
     case 'waterIn': return `${w}來幫小島澆水`;
     case 'waterOut': return `幫${w}的小島澆水`;
+    case 'letterOut': return e.m ? `寫信給${w}：「${txSlot(e.m)}」` : `寄了一封信給${w}`;
+    case 'letterIn': return `收到${w}寫的信`;
   }
   return '';
 }
@@ -141,7 +144,7 @@ addEventListener('nestnet', () => { memoWrap(); memoStart(); });
 
 /* ---------- 今天誰來過 ---------- */
 const WHO_SAY = {
-  bookIn: () => '在訪客簿留了話', waterIn: () => '幫小島澆了水', guest: e => `帶${DOLL_NAME[e.d] || '娃娃'}來過夜`, cardIn: () => '寄了明信片',
+  bookIn: () => '在訪客簿留了話', waterIn: () => '幫小島澆了水', guest: e => `帶${DOLL_NAME[e.d] || '娃娃'}來過夜`, cardIn: () => '寄了明信片', letterIn: () => '寫了一封信給你',
   hideFound: e => `找到躲起來的${DOLL_NAME[e.d] || '娃娃'}`, hideMiss: e => `來找躲起來的${DOLL_NAME[e.d] || '娃娃'}，沒找到`,
 };
 async function whoShow(){

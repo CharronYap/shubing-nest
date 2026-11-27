@@ -28,6 +28,7 @@
 //   cloud.foundAdd(uid, day, {fromName, ok, n}) / cloud.foundMine(uid, day) / cloud.founds() / cloud.foundDel(id)            躲貓貓找的結果（js/hide.js）
 //   cloud.stayGo({to, doll, look, day, x, y, fromName}) / cloud.stayMine() / cloud.stayGuests() / cloud.staySet(uid, patch) / cloud.stayEnd(uid)   過夜
 //   cloud.cardSend({to, snap, msg, fromName}) / cloud.cardsTo() / cloud.cardDel(id)                                          明信片
+//   cloud.letterSend({to, msg, re, d, fromName}) / cloud.lettersTo() / cloud.letterDel(id)                                    回信（js/letter.js）
 //
 // SDK 從 Google 的 CDN 載（約 110 KB gzip），只有打開遊戲後才在背景載，不會拖慢開始。
 
@@ -405,6 +406,26 @@ export function createCloud(config, { emulator = false } = {}) {
     async cardDel(id) {
       await ready;
       await F.deleteDoc(F.doc(db, 'nestCards', id));
+    },
+    // ---------- 回信（nestLetters/{自動編號}）：只有字，re 是回哪一種信（gift/trip/pc/re），d 是那封信的娃娃 ----------
+    async letterSend({ to, msg, re, d, fromName }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      const o = { from: user.uid, fromName: String(fromName || user.name).slice(0, 24), to, msg: String(msg || '').slice(0, 100), t: Date.now() };
+      if (re) o.re = re;
+      if (d) o.d = String(d).slice(0, 12);
+      const r = await F.addDoc(F.collection(db, 'nestLetters'), o);
+      return r.id;
+    },
+    async lettersTo() {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestLetters'), F.where('to', '==', user.uid), F.limit(20)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    async letterDel(id) {
+      await ready;
+      await F.deleteDoc(F.doc(db, 'nestLetters', id));
     },
     // ---------- 全部都留（js/keep.js）：存檔底下的子集合，只有本人能讀寫 ----------
     //   nestSaves/{uid}/memo/{月份}、nestSaves/{uid}/mail/{月份} = {l:[…], t}；nestSaves/{uid}/cards/{明信片編號} = 一張明信片

@@ -111,9 +111,10 @@ function stayDiary(d, room){
   return pool.length ? pool[Math.floor(Math.random() * pool.length)] : 0;
 }
 // 寫一封過夜日記（信箱的 m.l，畫在朋友面板和信箱的「朋友家」），有紙條就一起放。回傳那封信
-function stayLetter(d, w, note, room){
-  const t = todayStr();
-  const k = `${d}.trip.${stayDiary(d, room)}#w=${w}${note ? ';x=' + encodeURIComponent(note) : ''}`;
+// uid：朋友的帳號，記在 ;u=，信下面的「回信」（js/letter.js）用它知道要寄給誰（2026-11-27 以前的信沒有）
+function stayLetter(d, w, note, room, uid){
+  const t = todayStr(), u = typeof uid === 'string' && /^[\w-]{1,64}$/.test(uid) ? ';u=' + uid : '';
+  const k = `${d}.trip.${stayDiary(d, room)}#w=${w}${u}${note ? ';x=' + encodeURIComponent(note) : ''}`;
   const m = mailInit(), o = {k, t, r: 0, a: null, g: 0};
   m.l.unshift(o);
   if (typeof mailTrim === 'function') mailTrim(m.l);
@@ -133,7 +134,7 @@ async function stayHome(diary){
   stayPutBack(o);
   delete S.album.out;
   if (diary || note){
-    stayLetter(o.d, o.w, note, room);
+    stayLetter(o.d, o.w, note, room, o.to);
     const tr = S.album.trips = S.album.trips || {}, l = tr[o.d] = tr[o.d] || [];
     l.push(`${o.t}|${o.w}`); if (l.length > 12) l.splice(0, l.length - 12);
     // 日記在朋友面板（登入了才有），信箱的「朋友家」那一類也有
@@ -165,7 +166,7 @@ function stayLateNote(doc){
     const ar = m.arch[d] || [], j = ar.lastIndexOf(`${hit.t}|${hit.k}`);
     if (j >= 0) ar[j] = `${hit.t}|${k}`;
     hit.k = k; hit.r = 0; delete hit.sn;
-  } else stayLetter(d, w, note, null);
+  } else stayLetter(d, w, note, null, doc.to);
   const back = memo.find(e => e.k === 'stayBack' && e.u === doc.to && e.d === d && e.t >= dep);
   if (back){ back.m = note; back.ts = Date.now(); }
   else if (typeof memoAdd === 'function') memoAdd('stayBack', doc.to, w, {id: 'sl' + (doc.day | 0) + d, d, m: note});

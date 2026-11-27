@@ -9,8 +9,8 @@
    只多一個數字 S.album.frSeen = 上次打開面板的時間（放在 album 裡，不用改規則）。新舊風格都能用。
    要放在 hud.js 前面載入（hud.js 會把 #palBtn 排進第二排）。 */
 const FR_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8.600" cy="8.400" r="3.600"/><circle cx="17" cy="9.400" r="2.800"/><path d="M1.800 19.600c.500-3.900 3.200-6.200 6.800-6.200s6.300 2.300 6.800 6.200c.100.600-.400 1.100-1 1.100H2.800c-.600 0-1.100-.500-1-1.100z"/><path d="M15.200 14.100c.600-.200 1.200-.300 1.800-.300 2.800 0 4.800 1.800 5.200 4.800.100.600-.400 1.100-1 1.100h-3.700c.100-.400.100-.800 0-1.300-.300-1.800-1.100-3.300-2.300-4.300z"/></svg>';
-const FR_IN = ['cardIn', 'giftIn', 'bookIn', 'guest', 'stayBack', 'waterIn', 'hideFound', 'hideMiss'];
-const FR_OUT = ['cardOut', 'giftOut', 'bookOut', 'stayOut', 'waterOut', 'seekFound'];
+const FR_IN = ['cardIn', 'giftIn', 'bookIn', 'guest', 'stayBack', 'waterIn', 'hideFound', 'hideMiss', 'letterIn'];
+const FR_OUT = ['cardOut', 'giftOut', 'bookOut', 'stayOut', 'waterOut', 'seekFound', 'letterOut'];
 let frTab = 'in', frWho = null, frList = null, frNewSince = 0, frHearts = 0, frBusy = false;
 const frMemo = () => (typeof memoList === 'function' ? memoList() : []);
 const frSeenAt = () => (S.album && S.album.frSeen) || 0;
@@ -22,6 +22,7 @@ function frUnread(){
   const seen = e => { try {
     if (e.k === 'cardIn' && e.c){ const c = ((S.mail && S.mail.pc) || []).find(x => x && x.id === e.c); return !!(c && c.r); }
     if (e.k === 'stayBack' && e.d){ const o = frLetter('trip', e.d, e.u); return !!(o && o.r); }
+    if (e.k === 'letterIn' && e.c && typeof letterById === 'function'){ const o = letterById(e.c); return !!(o && o.r); }   // 朋友寫的信（js/letter.js）
   } catch (err) {} return false; };
   return frMemo().filter(e => FR_IN.includes(e.k) && e.k !== 'giftIn' && (e.ts || 0) > t && !seen(e)).length + (typeof ngWaiting === 'function' ? ngWaiting() : 0);
 }
@@ -44,7 +45,7 @@ function frLetterOpen(o){
   const x = mailText(o.k);
   openSheet(`<div class="hd"><img class="st-hdimg" src="${SPR[x.d] || SPR.sloth}" alt=""><span>${x.title}</span></div>
     <div class="ml open fr-letter"><div class="ml-bd">${mailBodyHTML(x)}</div></div>
-    <div class="ml-ft"><button class="btn" data-fr="back">返回</button></div>`);
+    <div class="ml-ft"><button class="btn" data-fr="back">返回</button>${typeof letterBtn === 'function' ? letterBtn(o, () => frLetterOpen(o), true) : ''}</div>`);
   evOpen = false; alOpen = false;
 }
 
@@ -64,6 +65,7 @@ async function frOpen(tab){
   const jobs = [];
   if (typeof ngRefresh === 'function') jobs.push(ngRefresh(false));
   if (typeof cardRefresh === 'function') jobs.push(cardRefresh(false));
+  if (typeof letterRefresh === 'function') jobs.push(letterRefresh(false));
   if (net.book) jobs.push(net.book(net.me.uid).catch(e => sQuiet('fr', e)));
   if (net.heartsToday) jobs.push(net.heartsToday().then(n => { frHearts = n | 0; }).catch(e => sQuiet('fr', e)));
   await Promise.all(jobs.map(j => Promise.resolve(j).catch(() => {})));
@@ -95,8 +97,8 @@ function frPaint(){
     if (frHearts) rows += `<div class="fr-it"><small>今天</small><span class="ic">${HEART()}</span><p>收到 ${frHearts} 顆愛心</p></div>`;
     rows += memo.filter(e => FR_IN.includes(e.k)).map(e => {
       const card = e.k === 'cardIn' && e.c && ((S.mail.pc || []).some(c => c.id === e.c) || (typeof keepCardMaybe === 'function' && keepCardMaybe(e.c)));
-      const letter = (e.k === 'stayBack' && frLetter('trip', e.d, e.n)) || (e.k === 'giftIn' && frLetter('gift', e.d, e.n));
-      const tap = card ? `data-frcard="${e.c}"` : letter ? `data-frletter="${e.k === 'stayBack' ? 'trip' : 'gift'}.${e.d}" data-frw="${e.u}"` : e.k === 'bookIn' ? 'data-fr="book"' : '';
+      const letter = (e.k === 'stayBack' && frLetter('trip', e.d, e.n)) || (e.k === 'giftIn' && frLetter('gift', e.d, e.n)) || (e.k === 'letterIn' && typeof letterById === 'function' && letterById(e.c));
+      const tap = card ? `data-frcard="${e.c}"` : letter && e.k === 'letterIn' ? `data-frlt="${e.c}"` : letter ? `data-frletter="${e.k === 'stayBack' ? 'trip' : 'gift'}.${e.d}" data-frw="${e.u}"` : e.k === 'bookIn' ? 'data-fr="book"' : '';
       // 過夜帶回來的紙條：直接寫在這一行（這一版以前記的沒有 m，從那封日記讀）
       let ee = e;
       if (e.k === 'stayBack' && !e.m && letter){ try { const x = mailParse(letter.k).p.x; if (x) ee = {...e, m: mailDec(x)}; } catch (er) {} }
@@ -141,6 +143,8 @@ $('#sheet').addEventListener('click', async e => {
   if (bk && !frBusy){ frBusy = true; try { await ngBack(bk.dataset.frback); } finally { frBusy = false; } frPaint(); return; }
   const c = e.target.closest('[data-frcard]');
   if (c){ const i = (S.mail.pc || []).findIndex(x => x.id === c.dataset.frcard); if (i >= 0) cardOpen(i); else if (typeof keepCardOpen === 'function') keepCardOpen(c.dataset.frcard); return; }
+  const lr = e.target.closest('[data-frlt]');
+  if (lr){ frLetterOpen(typeof letterById === 'function' ? letterById(lr.dataset.frlt) : null); return; }
   const lt = e.target.closest('[data-frletter]');
   if (lt){ const [type, d] = lt.dataset.frletter.split('.'), f = (frList || []).find(p => p.uid === lt.dataset.frw); frLetterOpen(frLetter(type, d, f && f.name)); return; }
   const b = e.target.closest('[data-fr]'); if (!b) return;

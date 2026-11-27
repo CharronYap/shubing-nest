@@ -15,7 +15,7 @@
 // AI 寫的信（js/mailai.js）：key 後面多一段 ;ai=字，有這段就顯示它，沒有就照範本
 const MAIL_ARCH = 24;
 /* 分類（2026-11-27 使用者要的）：信箱上面一排分類鈕，全部｜娃娃的信｜小窩更新｜明信片｜朋友家。
-   每一封屬於哪一類看 key 的第二段：news = 小窩更新；gift（朋友送來的娃娃）、trip（過夜回來的日記）= 朋友家；pc（娃娃旅行寄回來的明信片）= 明信片；其他都是娃娃的信。
+   每一封屬於哪一類看 key 的第二段：news = 小窩更新；gift（朋友送來的娃娃）、trip（過夜回來的日記）、re（朋友寫的信，js/letter.js）= 朋友家；pc（娃娃旅行寄回來的明信片）= 明信片；其他都是娃娃的信。
    朋友寄來的明信片不在 l 裡，在 S.mail.pc（js/card.js），畫的時候一起排進「明信片」和「全部」。
    上限各類各算，免得更新信把娃娃的信擠掉：小窩更新不設上限；其他三類各 60 封。滿了只刪最舊的「看過、附件也領了」的，沒看的不會不見。
    兩台裝置合併存檔（js/account.js）也叫 mailTrim，用同一套。朋友寄來的明信片的上限在 js/card.js（CARD_KEEP），這裡不管。 */
@@ -23,7 +23,7 @@ const MAIL_CATS = [['all', '全部'], ['doll', '娃娃的信'], ['news', '小窩
 const MAIL_CAT_NAME = Object.fromEntries(MAIL_CATS);
 const MAIL_CAT_MAX = {doll: 60, pal: 60, pc: 60};
 const MAIL_EMPTY = {all: '還沒有信。娃娃們偶爾會寫信給你，不用特別等。', doll: '還沒有信。娃娃們偶爾會寫信給你，不用特別等。', news: '還沒有更新信。', pc: '還沒有明信片。朋友拍照後可以寄給你。', pal: '還沒有。娃娃去朋友家過夜回來，或朋友送娃娃來，都會放在這裡。'};
-const mailCatOf = o => { const t = (/^[a-z]+\.([a-z]+)\./.exec((o && o.k) || '') || [])[1]; return t === 'news' ? 'news' : t === 'gift' || t === 'trip' ? 'pal' : t === 'pc' ? 'pc' : 'doll'; };
+const mailCatOf = o => { const t = (/^[a-z]+\.([a-z]+)\./.exec((o && o.k) || '') || [])[1]; return t === 'news' ? 'news' : t === 'gift' || t === 'trip' || t === 're' ? 'pal' : t === 'pc' ? 'pc' : 'doll'; };
 let mailCat = 'all', mailCardBack = false;   // mailCat：同一次開著遊戲時記住上次選的那一類；mailCardBack：明信片是從信箱點開的，看完回信箱
 function mailTrim(l){
   if (!Array.isArray(l)) return l;
@@ -591,6 +591,9 @@ function mailText(k){
     // 旅行寄回來的明信片（js/travel.js）
     const r = tvMailText(d, p);
     return {d, type, title: r.title, body: r.body, from: r.from, pic: r.pic};
+  } else if (type === 're'){
+    // 朋友寫的信（js/letter.js）：只有他打的字，走 txSlot。最下面一行小字寫是回哪一封
+    return {d, type: 're', title: p.rt ? `${p.w || '朋友'}回信了` : `${p.w || '朋友'}寫給你的信`, body: txSlot(mailDec(p.x)), from: p.w || '朋友', note: typeof letterReNote === 'function' ? letterReNote(p) : '', zz: false};
   } else if (type === 'trip'){
     // 過夜日記（data.js 的 STAY_DIARY）＋主人塞的小紙條
     const e = ((typeof STAY_DIARY !== 'undefined' && STAY_DIARY[d]) || [])[i];
@@ -623,9 +626,9 @@ function mailBodyHTML(x){
     }
     return `<p>${l}</p>`;
   }).join('');
-  return `<div class="ml-tx ${x.d === 'moodeng' ? 'big' : ''} ${x.d === 'snoopy' ? 'novel' : ''}">${html}</div>`;
+  return `<div class="ml-tx ${x.d === 'moodeng' && x.type !== 're' ? 'big' : ''} ${x.d === 'snoopy' && x.type !== 're' ? 'novel' : ''}">${html}${x.note ? `<p class="ml-nt">${x.note}</p>` : ''}</div>`;
 }
-const mailSnip = x => x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' ? '一片葉子' : x.body.split('\n')[0].replace('[拖鞋]', '');
+const mailSnip = x => x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && x.type !== 're' ? '一片葉子' : x.body.split('\n')[0].replace('[拖鞋]', '');
 // old：這一封不在主存檔裡，是按「看更早的」讀回來的（js/keep.js），j 是它在 mailOld 裡的第幾封
 function mailCard(o, j, open, tag, old){
   const x = mailText(o.k);
@@ -633,9 +636,11 @@ function mailCard(o, j, open, tag, old){
   let inner = '';
   if (open){
     // 龍龍：先是一片葉子，點一下翻到背面
-    inner = x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && !o.f && !old
+    inner = x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && x.type !== 're' && !o.f && !old
       ? `<button class="ml-leaf" data-flip="${j}" aria-label="把葉子翻過來">${MAIL_LEAF}<small>點一下翻過來</small></button>`
       : (x.pic || '') + mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
+    // 朋友家的信（送來的娃娃、過夜的日記、朋友寫的信）：下面一顆「回信」（js/letter.js），找不到要寄給誰就不放
+    if (typeof letterBtn === 'function' && !inner.includes('data-flip')) inner += letterBtn(o, () => openMail(true));
     if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : o.a === 'ticket' ? '附上一張' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
   }
   return `<div class="ml ${o.r ? '' : 'unread'} ${open ? 'open' : ''}">
@@ -730,7 +735,7 @@ $('#sheet').addEventListener('click', e => {
 
 /* ---------- 房間右上角的信封 ---------- */
 // 朋友那邊來的（從朋友家來的娃娃的信、過夜的日記）。2026-11-27 起信箱也列（「朋友家」那一類），朋友面板（js/friend.js）照舊也列，兩邊是同一份資料
-const mailIsPal = o => /^[a-z]+\.(gift|trip)\./.test((o && o.k) || '');
+const mailIsPal = o => /^[a-z]+\.(gift|trip|re)\./.test((o && o.k) || '');
 function mailBadge(){
   const b = $('#mailBtn'); if (!b) return;
   // 全部沒看的：信、朋友家的、旅行和朋友寄來的明信片都算。朋友鈕上的數字照它自己的算法

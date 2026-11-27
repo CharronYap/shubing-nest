@@ -24,6 +24,9 @@ rules_version = '2';
 // 2026-11-27 全部都留（2026-11-27 14:50 已發布）：
 //   新的子集合 nestSaves/{uid}/memo/{月份}、nestSaves/{uid}/mail/{月份}、nestSaves/{uid}/cards/{明信片編號}，三個都只有本人能讀寫。
 //   放主存檔放不下的舊紀念冊、舊信、舊明信片。其他段落沒有動。說明在檔案最下面那一段。
+// 2026-11-27 回信（還沒發布）：
+//   新集合 nestLetters/{自動編號} = {from, fromName, to, msg, re, d, t}：朋友送來的娃娃、過夜的日記、明信片、回信下面可以回一封信，只有字。
+//   寫法跟 nestCards 一樣：寄的人是本人、不能寄給自己、收的人的好友名單裡要有寄的人；兩邊都讀得到、都能刪；不能改。其他段落沒有動。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
@@ -403,6 +406,35 @@ service cloud.firestore {
         && request.resource.data.to != request.auth.uid
         && okCardSnap(request.resource.data.snap)
         && request.resource.data.msg is string && request.resource.data.msg.size() <= 80
+        && request.resource.data.t is int
+        && nestFriendOf(request.resource.data.to, request.resource.data.from);
+      allow delete: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow update: if false;
+    }
+
+    // 回信：nestLetters/{自動編號}（2026-11-27 加）
+    //   msg 自己打的字，1～100 字；只有字，沒有圖
+    //   re 回的是哪一種：gift（送來的娃娃）、trip（過夜的日記）、pc（明信片）、re（回信），沒在回哪一封就不填
+    //   d 回的是哪一隻娃娃的信，12 字以內，可以不填
+    //   寄的人必須是本人、不能寄給自己，收的人自己的好友名單裡要有寄的人；寄的人和收的人都讀得到、都能刪；寄出後不能改
+    //   一天寄幾封只在遊戲畫面上擋，這裡不檢查
+    match /nestLetters/{lid} {
+      allow get: if request.auth != null
+        && (resource == null || resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow list: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'msg', 're', 'd', 't'])
+        && request.resource.data.keys().hasAll(['from', 'fromName', 'to', 'msg', 't'])
+        && request.resource.data.from == request.auth.uid
+        && okNestName(request.resource.data.fromName)
+        && request.resource.data.to is string && request.resource.data.to.size() <= 64
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.msg is string
+        && request.resource.data.msg.size() >= 1 && request.resource.data.msg.size() <= 100
+        && (!('re' in request.resource.data) || request.resource.data.re in ['gift', 'trip', 'pc', 're'])
+        && (!('d' in request.resource.data) || (request.resource.data.d is string && request.resource.data.d.size() <= 12))
         && request.resource.data.t is int
         && nestFriendOf(request.resource.data.to, request.resource.data.from);
       allow delete: if request.auth != null

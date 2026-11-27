@@ -78,7 +78,7 @@ async function ngClaim(id){
     const m = ngMail();
     if (!m.gin.includes(id)){
       const got = dollGain(g.doll);   // 'new' 第一隻、'spare' 留著當店員、'coin' 換成幣
-      const w = ngName(g.fromName), t = todayStr(), k = `${g.doll}.gift.0#w=${w};m=${Math.max(0, Math.min(5, g.line | 0))}${got === 'spare' ? ';e=1' : got === 'coin' ? ';e=2' : ''}${ngX(g) ? ';x=' + ngX(g) : ''}`;
+      const w = ngName(g.fromName), t = todayStr(), u = typeof g.from === 'string' && /^[\w-]{1,64}$/.test(g.from) ? ';u=' + g.from : '', k = `${g.doll}.gift.0#w=${w}${u};m=${Math.max(0, Math.min(5, g.line | 0))}${got === 'spare' ? ';e=1' : got === 'coin' ? ';e=2' : ''}${ngX(g) ? ';x=' + ngX(g) : ''}`;
       m.gin.push(id); if (m.gin.length > 60) m.gin.splice(0, m.gin.length - 60);
       // 變成一封看過的信，相簿「寫給你的信」會留下「從○○家來的」；不算在一天一封裡
       m.l.unshift({k, t, r: 1, a: null, g: 0});

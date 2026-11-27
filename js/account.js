@@ -789,7 +789,7 @@ window.nestNet = {
 };
 // 第五版的雲端動作，原樣轉給 cloud.js
 ['bookAdd', 'bookMine', 'book', 'bookDel', 'waterAdd', 'waterMine', 'waters', 'waterDel', 'foundAdd', 'foundMine', 'founds', 'foundDel',
-  'stayGo', 'stayMine', 'stayGuests', 'staySet', 'stayEnd', 'cardSend', 'cardsTo', 'cardDel',
+  'stayGo', 'stayMine', 'stayGuests', 'staySet', 'stayEnd', 'cardSend', 'cardsTo', 'cardDel', 'letterSend', 'lettersTo', 'letterDel',
   'keepGet', 'keepMerge', 'keepDel', 'keepCardPut', 'keepCardGet', 'keepCardDel', 'keepCards']   // 最後一排：全部都留（js/keep.js）
   .forEach(k => { window.nestNet[k] = (...a) => cloud[k](...a); });
 

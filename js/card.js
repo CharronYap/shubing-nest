@@ -158,10 +158,12 @@ function cardShow(c, old){
   const so = typeof stayOut === 'function' ? stayOut() : null;
   const mine = so && c.u && so.to === c.u && s.room.items.some(i => i && i.kind === 'doll' && i.id === so.d && i.gn !== undefined) ? so.d : '';
   top.innerHTML = `<b>${txSlot(c.w)}寄來的明信片</b><small>${md(c.t)}</small>${mine ? `<small class="pc-mine">你家的${DOLL_NAME[mine]}也在裡面喔</small>` : ''}`;
-  const bar = $('#vbar');
+  const bar = $('#vbar'), re = typeof letterOfCard === 'function' && sNet() ? letterOfCard(c) : null;
   bar.innerHTML = `${c.msg ? `<div class="pc-back"><p class="pc-msg">${txSlot(c.msg)}</p></div>` : '<p class="pc-none">這張沒有寫字。</p>'}
-    <div class="vb-row pc-row"><button class="btn pc-del">丟掉這張</button><button class="btn pc-save">存到手機</button><button class="btn y vb-home">看完了</button></div>`;
+    <div class="vb-row pc-row${re ? ' pc-4' : ''}"><button class="btn pc-del">丟掉這張</button><button class="btn pc-save">存到手機</button>${re ? '<button class="btn pc-re">回信</button>' : ''}<button class="btn y vb-home">看完了</button></div>`;
   bar.querySelector('.vb-home').onclick = cardClose;
+  // 回信（js/letter.js）：先關掉明信片，寫信那一頁的「返回」、寄完都回原本要回的地方
+  if (re) bar.querySelector('.pc-re').onclick = () => cardClose(back => letterOpen(re, back));
   // 丟掉：按兩次才真的丟（第一次只是問，三秒沒按就變回來），丟了就沒有了
   const del = bar.querySelector('.pc-del');
   del.onclick = () => {
@@ -180,15 +182,19 @@ function cardShow(c, old){
   };
   bar.hidden = false;
 }
-function cardClose(){
+// then：關掉之後不直接回去，把「回去」交給它（回信要先開寫信那一頁）。.vb-home 的 onclick 會傳 event 進來，不是函式就照舊
+function cardClose(then){
   if (!cardView) return;
   cardView = null;
   screen.classList.remove('incard');
   const top = document.getElementById('pcTop'); if (top) top.remove();
   visitClose();
   // 從信箱點開的回信箱（留在原本那一類）；其他的照舊回朋友面板（js/friend.js）
-  if (typeof mailCardBack !== 'undefined' && mailCardBack){ mailCardBack = false; openMail(); return; }
-  if (typeof frOpen === 'function' && typeof sNet === 'function' && sNet()) frOpen('in'); else openMail();
+  let back;
+  if (typeof mailCardBack !== 'undefined' && mailCardBack){ mailCardBack = false; back = () => openMail(); }
+  else if (typeof frOpen === 'function' && typeof sNet === 'function' && sNet()) back = () => frOpen('in');
+  else back = () => openMail();
+  if (typeof then === 'function') then(back); else back();
 }
 $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
