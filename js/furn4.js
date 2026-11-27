@@ -116,3 +116,72 @@ Object.assign(FURN_SERIES, {
 });
 // 收納架照房間列家具：新家具排在原本的後面
 Object.keys(FURN).forEach(id => { const f = FURN[id]; if (!f.season){ const l = ROOM_FURN[f.room] = ROOM_FURN[f.room] || []; if (!l.includes(id)) l.push(id); } });
+
+/* ================= 家具第五批：下雨天系列（2026-11-28，6 件，湊齊送彩虹長椅） =================
+   跟遊戲裡的下雨天和雨後的彩虹（js/sky.js）配在一起。畫法、線條粗細、配色照遊樂園那一批：黃色雨衣、藍色雨滴、彩虹的五個顏色。
+   - 客廳：雨傘燈（會亮）、雨鞋凳（可以坐）、雨衣掛架
+   - 臥室：彩虹地毯（鋪在地上）、雨滴風鈴（掛在牆上）
+   - 浴室：小水坑坐墊（可以坐）
+   - 湊齊送「彩虹長椅」（客廳，兩隻可以並排坐）：一樣是家具獎品，gift:1，扭蛋夾不到、小店不賣。
+   系列代號用 rainday（rainy 已經是 js/sky.js 給畫面用的 class 名字，避開比較不會搞混）。
+   名字只用常用字：雨鞋不寫成雨靴，小水坑不寫成水窪。 */
+// 一滴雨（中心在 x，尖的那頭在 y-8）：雨傘燈、雨滴風鈴共用
+const rdDrop = (x, y, s, c, d) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0-8C-2.600-4-5.400-1.200-5.400 2a5.400 5.400 0 0 0 10.800 0C5.400-1.200 2.600-4 0-8z" fill="${c}" ${st(d, 1.6 / s)}/>`;
+// 一朵小雲（左下角在 x,y）：彩虹地毯、彩虹長椅共用
+const rdCloud = (x, y, s) => `<path transform="translate(${x} ${y}) scale(${s})" d="M2 0C-1 0-2-3 0-4.600 0-7.400 3.400-8.400 5.400-6.600 6.600-9.400 11-9.400 12.400-6.400 15-7 17-5 16.400-2.600 18.400-1.600 18-0 16 0z" fill="#fff" ${st('#8fc6e6', 1.4 / s)}/>`;
+Object.assign(FURN, {
+  umbrellalamp:{room:'living',name:'雨傘燈',price:20,ser:'rainday',vb:[60,96],w:16,glow:[.5,.3],svg:()=>`
+    <ellipse cx="30" cy="90" rx="14" ry="4.500" fill="#8fd3ef" ${st('#4a9fd0',1.8)}/>
+    <rect x="28" y="36" width="4" height="54" rx="2" fill="#fff" ${st('#cfc3ca',1.4)}/>
+    <path d="M4 40C6 20 17 8 30 8s24 12 26 32c-4-4-9-4-13 0-4-4-9-4-13 0-4-4-9-4-13 0-4-4-9-4-13 0z" fill="#ffd66b" ${st('#d99a1c',2.200)}/>
+    <path d="M30 8c-5 6-7 18-7 31M30 8c5 6 7 18 7 31" ${st('#e8b52a',1.600)} fill="none"/>
+    <path d="M12 26c3-8 8-12 13-14" ${st('#fff',2)} fill="none" opacity=".8"/>
+    <circle cx="30" cy="7" r="2.600" fill="#ff9cc8" ${st('#e0609d',1.200)}/>
+    ${rdDrop(9, 52, .9, '#8fd3ef', '#4a9fd0')}${rdDrop(51, 54, .8, '#8fd3ef', '#4a9fd0')}`},
+  bootstool:{room:'living',name:'雨鞋凳',price:15,ser:'rainday',vb:[60,64],w:15,seats:[[.37,.1]],svg:()=>`
+    <path d="M10 8h24v32c0 3 2 5 5 5h10c5 0 8 3 8 8v3H10z" fill="#ffd66b" ${st('#d99a1c',2.200)}/>
+    <rect x="8" y="4" width="28" height="8" rx="4" fill="#ffe58f" ${st('#d99a1c',2)}/>
+    <rect x="8" y="55" width="51" height="6" rx="3" fill="#f2b880" ${st('#b9773f',1.800)}/>
+    <circle cx="17" cy="22" r="2.200" fill="#8fd3ef"/><circle cx="27" cy="30" r="2.200" fill="#8fd3ef"/><circle cx="18" cy="40" r="2.200" fill="#8fd3ef"/><circle cx="44" cy="50" r="2" fill="#8fd3ef"/>
+    <path d="M15 16v20" ${st('#fff',2.200)} fill="none" opacity=".8"/>`},
+  raincoatrack:{room:'living',name:'雨衣掛架',price:25,ser:'rainday',vb:[60,106],w:17,svg:()=>`
+    <ellipse cx="30" cy="100" rx="17" ry="4.500" fill="#e2b98e" ${st('#a8714f',1.800)}/>
+    <rect x="28" y="10" width="4" height="90" rx="2" fill="#c98f56" ${st('#9a6431',1.600)}/>
+    <circle cx="30" cy="9" r="3.400" fill="#c98f56" ${st('#9a6431',1.600)}/>
+    <path d="M29 18c-6 0-10 3-10 7M31 18c6 0 10 3 10 7" ${st('#9a6431',2)} fill="none"/>
+    <path d="M19 26c-5 1-9 4-10 9l-3 27c-.4 3 1.600 5 4.600 5h17c3 0 5-2 4.600-5l-3-27c-1-5-5-8-10-9z" fill="#ffd66b" ${st('#d99a1c',2.200)}/>
+    <path d="M13 26c0-6 3-9 6-9s6 3 6 9" fill="#ffe58f" ${st('#d99a1c',1.800)}/>
+    <path d="M19 30v34" ${st('#e8b52a',1.600)} fill="none"/><circle cx="22" cy="38" r="1.600" fill="#ff9e4a"/><circle cx="22" cy="47" r="1.600" fill="#ff9e4a"/><circle cx="22" cy="56" r="1.600" fill="#ff9e4a"/>
+    <path d="M35 31c0-5 3-8 7-8s7 3 7 8z" fill="#8fd3ef" ${st('#4a9fd0',2)}/><rect x="31" y="30" width="22" height="4.400" rx="2.200" fill="#8fd3ef" ${st('#4a9fd0',1.600)}/>`},
+  rainbowrug:{room:'bed',name:'彩虹地毯',price:20,ser:'rainday',vb:[124,46],w:46,floor:1,svg:()=>`
+    <path d="M4 42a58 36 0 0 1 116 0z" fill="#ff9cc8" ${st('#e0609d',2)}/>
+    <path d="M15 42a47 28 0 0 1 94 0z" fill="#ffd66b" ${st('#d99a1c',1.600)}/>
+    <path d="M26 42a36 20 0 0 1 72 0z" fill="#b8e986" ${st('#78b84a',1.600)}/>
+    <path d="M37 42a25 13 0 0 1 50 0z" fill="#8fd3ef" ${st('#4a9fd0',1.600)}/>
+    <path d="M48 42a14 7 0 0 1 28 0z" fill="#cbbfff" ${st('#9d8fe0',1.600)}/>
+    ${rdCloud(2, 44, .9)}${rdCloud(105, 44, .9)}`},
+  dropchime:{room:'bed',name:'雨滴風鈴',price:15,ser:'rainday',vb:[50,78],w:14,wall:1,svg:()=>`
+    <path d="M25 7V0" ${st('#9a6431',1.600)} fill="none"/>
+    <path d="M12 12v25M25 12v39M38 12v29" ${st('#cfc3ca',1.200)} fill="none"/>
+    <rect x="5" y="6" width="40" height="7" rx="3.500" fill="#c98f56" ${st('#9a6431',1.800)}/>
+    ${rdDrop(12, 44, 1, '#8fd3ef', '#4a9fd0')}${rdDrop(25, 58, 1.1, '#cbbfff', '#9d8fe0')}${rdDrop(38, 48, 1, '#8fd3ef', '#4a9fd0')}`},
+  puddlecushion:{room:'bath',name:'小水坑坐墊',price:15,ser:'rainday',vb:[80,40],w:22,seats:[[.5,.42]],svg:()=>`
+    <path d="M8 22c-4-8 6-14 18-14 6-4 18-4 24 0 12-1 24 4 22 12 4 6-4 14-18 13-8 4-22 4-30 0-12 1-20-4-16-11z" fill="#8fd3ef" ${st('#4a9fd0',2.200)}/>
+    <ellipse cx="40" cy="21" rx="17" ry="5.500" fill="none" ${st('#cdeeff',1.800)}/>
+    <ellipse cx="40" cy="21" rx="8" ry="2.600" fill="none" ${st('#cdeeff',1.600)}/>
+    <path d="M17 14c3-2 6-3 10-3" ${st('#fff',2)} fill="none" opacity=".8"/>`},
+  // ---------- 湊齊下雨天系列才送 ----------
+  rainbowbench:{room:'living',name:'彩虹長椅',gift:1,vb:[110,82],w:36,seats:[[.33,.62],[.67,.62]],svg:()=>`
+    <path d="M8 54a47 46 0 0 1 94 0h-8a39 38 0 0 0-78 0z" fill="#ff9cc8" ${st('#e0609d',1.800)}/>
+    <path d="M16 54a39 38 0 0 1 78 0h-8a31 30 0 0 0-62 0z" fill="#ffd66b" ${st('#d99a1c',1.600)}/>
+    <path d="M24 54a31 30 0 0 1 62 0h-8a23 22 0 0 0-46 0z" fill="#b8e986" ${st('#78b84a',1.600)}/>
+    <path d="M32 54a23 22 0 0 1 46 0h-8a15 14 0 0 0-30 0z" fill="#8fd3ef" ${st('#4a9fd0',1.600)}/>
+    <rect x="18" y="58" width="6" height="22" rx="2.500" fill="#c98f56" ${st('#9a6431',1.600)}/><rect x="86" y="58" width="6" height="22" rx="2.500" fill="#c98f56" ${st('#9a6431',1.600)}/>
+    <rect x="8" y="50" width="94" height="10" rx="5" fill="#f2b880" ${st('#b9773f',2.200)}/>
+    <path d="M14 53h82" ${st('#fff',1.800)} fill="none" opacity=".7"/>
+    ${rdCloud(0, 52, 1)}${rdCloud(92, 52, 1)}`},
+});
+Object.assign(FURN_SERIES, {
+  rainday:{name:'下雨天系列', ids:['umbrellalamp','bootstool','raincoatrack','rainbowrug','dropchime','puddlecushion'], gift:{kind:'furn', id:'rainbowbench', name:'彩虹長椅'}},
+});
+Object.keys(FURN).forEach(id => { const f = FURN[id]; if (!f.season){ const l = ROOM_FURN[f.room] = ROOM_FURN[f.room] || []; if (!l.includes(id)) l.push(id); } });
