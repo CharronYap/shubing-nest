@@ -253,7 +253,7 @@ function gm4Css(){
 .gm4-s{cursor:pointer;outline:none}
 .gm4-s .hit{fill:transparent}
 .gm4-s .st{fill:#fff3c4;stroke:#d99a00;stroke-width:.5;stroke-linejoin:round}
-.gm4-s text{font:700 3.6px sans-serif;fill:#5a4a52;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.gm4-s text{font:700 3.6px var(--f-head);fill:#5a4a52;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .gm4-s.on .st{fill:#ffd75e}
 .gm4-s.nx .st{fill:#fff;stroke:#ffd75e;stroke-width:.9}
 .gm4-s.nx .ring{fill:none;stroke:#ffd75e;stroke-width:.6;opacity:.8;transform-box:fill-box;transform-origin:center;animation:gm4Ring 1.2s ease-out infinite}
