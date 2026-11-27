@@ -1235,6 +1235,24 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .tv-got .tile,.tv-sv .tile{width:44px;height:44px;flex:none;cursor:default;display:grid;place-items:center}
 .tv-got .tile svg,.tv-sv .tile svg{width:74%;height:74%}
 .tv-got small,.tv-none{font-size:12px;color:var(--soft);line-height:1.45}
+/* 歡迎回家（2026-11-27）：同一趟一張卡。標題一次、這一趟的合照、一隻一行日記（全家的頭像小一點）、行李一次、土產在最下面 */
+.tv-trip{display:block;padding:12px}
+.tv-trip>b{display:block;font-size:15px;font-weight:900;margin:0 2px 8px}
+.tv-wph{display:block;width:56%;margin:0 auto 10px;padding:0;border:0;background:none;cursor:pointer}
+.tv-wph .tvpc{border-width:3px}
+.tv-wds{display:grid;gap:6px;margin-bottom:6px}
+.tv-wd{display:flex;align-items:flex-start;gap:8px}
+.tv-wd img{width:34px;height:34px;object-fit:contain;flex:none}
+.tv-wd p{margin:0;padding-top:6px;font-size:14px;line-height:1.5}
+.tv-trip.fam .tv-wds{gap:2px}
+.tv-trip.fam .tv-wd img{width:26px;height:26px}
+.tv-trip.fam .tv-wd p{padding-top:2px;font-size:13px;line-height:1.45}
+.tv-trip .tv-bl{margin:2px 2px 6px}
+.tv-gots{display:grid;gap:4px}
+.tv-trip .tv-got .tile{width:36px;height:36px}
+.tv-wc[hidden]{display:none}
+.ml-ft.tv-wft{justify-content:flex-end}
+.ml-ft.tv-wft .tv-wprev{margin-right:auto;padding:6px 12px;font-size:12px}
 /* 旅行相簿 */
 .tv-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .tv-th{display:grid;gap:3px;border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:center}
@@ -1429,7 +1447,7 @@ span.yd-kind{cursor:default}
 #screen{touch-action:pan-x pan-y;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 :where(#screen) :where(button,[role=button],.tap,.tab,.tile,a,label,select){touch-action:manipulation}   /* 零權重：原本設 none 的（娃娃機的鈕、收納架拖出來的格子）照舊 */
 #screen img,#screen svg{-webkit-user-drag:none}
-#screen .ml-bd,#screen .pc-msg,#screen .bk-tx,#screen .bk-note,#screen .al-ln,#screen .tv-wel p,#screen .tv-bl,#screen .tv-got small,#screen .tv-none,
+#screen .ml-bd,#screen .pc-msg,#screen .bk-tx,#screen .bk-note,#screen .al-ln,#screen .tv-wel p,#screen .tv-wd p,#screen .tv-bl,#screen .tv-got small,#screen .tv-none,
 #screen input,#screen textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 /* 1127-25 這一趟帶了什麼：回家通知、相簿的旅行紀錄各一行 */
 .tv-bl{display:block;font-size:12px;color:var(--soft);line-height:1.45;margin:0 0 4px}

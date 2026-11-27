@@ -141,7 +141,12 @@ function tvPlan(now){
   // 土產：一隻一樣，沒拿過的優先；沒帶點心的那一趟不一定有
   const taken = [];
   ds.forEach(d => {
-    o.di[d] = Math.floor(Math.random() * TV_DIARY[d].length);
+    // 回家日記：照地方抽（traveldata.js 的 tvDiaryOf），避開這隻上一次去同一個地方抽到的那一句
+    const dl = tvDiaryOf(p, d).length, last = (t.log[d] || []).slice().reverse().find(x => x.split('|')[1] === p), avoid = last ? +last.split('|')[3] : -1;
+    const skip = dl > 1 && avoid >= 0 && avoid < dl;
+    let di = Math.floor(Math.random() * (skip ? dl - 1 : dl));
+    if (skip && di >= avoid) di++;
+    o.di[d] = di;
     if (!abroad && !food && Math.random() >= .4) return;
     const fresh = P.sv.filter(k => !t.sv[k] && !taken.includes(k)), left = P.sv.filter(k => !taken.includes(k)), pool = fresh.length ? fresh : left.length ? left : P.sv;   // 全家去的時候人比土產多，會重複（重複的回家換成幣）
     const k = pool[Math.floor(Math.random() * pool.length)]; if (k){ o.sv[d] = k; taken.push(k); }
@@ -218,7 +223,8 @@ function tvReturn(o){
       FURN_OWN[fid] = 1; if (typeof newFurnAdd === 'function') newFurnAdd(fid);
       have = t.sv[k] = (t.sv[k] || 0) + 1;
     }
-    t.wel.push({d, p: o.p, sv: k, c: have, di: o.di[d] | 0, w: other, b: bg, n});
+    // o：這一趟的 id（歡迎回家照這個把同一趟併成一張卡、找合照）；fam：全家出門（2026-11-27）
+    t.wel.push(Object.assign({d, p: o.p, sv: k, c: have, di: o.di[d] | 0, w: other, b: bg, n, o: o.id || ''}, o.fam ? {fam: 1} : {}));
   });
   // 紀念合照：背景是那個地方的其中一張（這一趟寄過的優先），進信箱、也收進旅行相簿
   const pc0 = o.pcs.length ? o.pcs[Math.floor(Math.random() * o.pcs.length)].c : Math.floor(Math.random() * 3), who = o.ds.slice(0, 8);
@@ -446,7 +452,7 @@ function nsList(){
     if (o.fam){ if (roomId === 'living') fam.push({t: `全家出門了<br>去${tvDest(o.p)}`, line: tvOutLine(o), go: () => tvNoteTap(o.ds[0])}); return; }
     o.ds.forEach(d => {
       const h = o.hm[d]; if (!h || h.r !== roomId) return;
-      l.push({t: `${DOLL_NAME[d]}<br>去${tvDest(o.p)}了`, line: `${DOLL_NAME[d]}去${tvWhere(o.p)}了，大概${tvWhen(o.t1)}回來`, go: () => tvNoteTap(d)});
+      l.push({t: `${DOLL_NAME[d]}<br>去${tvDest(o.p)}了`, line: `${DOLL_NAME[d]}去${tvWhere(o.p)}了，大概${tvWhen(o.t1)}回來`, go: () => tvNoteTap(d), o, d});
     });
   });
   const so = typeof stayOut === 'function' ? stayOut() : null;
@@ -469,7 +475,15 @@ function nsPaint(){
   room.appendChild(b);
 }
 function nsOpen(){
-  const l = nsList(); if (!l.length) return;
+  // 清單卡上，同一趟（同一個 o）在這一間的幾隻合成一行：「蛋黃哥和史努比去法國…」，跟歡迎回家的合卡一樣；紙條疊照舊一隻一張
+  const l = [];
+  nsList().forEach(x => {
+    const y = x.o && l.find(z => z.o === x.o);
+    if (!y){ l.push(x.o ? Object.assign({}, x, {ds: [x.d]}) : x); return; }
+    y.ds.push(x.d);
+    y.line = `${tvNames(y.ds)}去${tvWhere(x.o.p)}了，大概${tvWhen(x.o.t1)}回來`;
+  });
+  if (!l.length) return;
   if (l.length === 1){ l[0].go(); return; }
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>出門的</span></div>
     <ul class="ns-ln">${l.map((x, i) => `<li><button type="button" data-ns="${i}">${x.line}</button></li>`).join('')}</ul>`);
@@ -572,16 +586,70 @@ function tvWelcome(){
   const t = tvData(); if (!t.wel.length || VISIT) return;
   // 封面還在、或別的面板開著：等一下再說
   if (($('#cover') && !$('#cover').hidden) || !$('#sheet').hidden){ tvWelT = setTimeout(tvWelcome, 2500); return; }
-  const rows = t.wel.map(w => {
+  const diary = w => { const l = tvDiaryOf(w.p, w.d); return (l[w.di] || l[0] || '').replace(/\{p\}/g, (TV_PLACES[w.p] || TV_PLACES.park).name); };
+  const unitOf = s => (s.unit || '一個').replace(/^一/, '');
+  // 舊的（沒有 o 的）一筆一張，照原本的畫法
+  const oldCard = w => {
     const P = TV_PLACES[w.p] || TV_PLACES.park, s = TV_SOUV[w.sv];
-    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來${s.unit || '一個'}${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : w.c > 1 ? `現在有 ${w.c} ${(s.unit || '一個').replace(/^一/, '')}了，都在收納架的紀念品那一頁。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這趟沒有帶東西回來。</small>';
+    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來${s.unit || '一個'}${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : w.c > 1 ? `現在有 ${w.c} ${unitOf(s)}了，都在收納架的紀念品那一頁。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這趟沒有帶東西回來。</small>';
     const bl = tvBagLine(w.b, w.p, w.n);
-    return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.abroad ? P.country : P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${(TV_DIARY[w.d][w.di] || TV_DIARY[w.d][0]).replace(/\{p\}/g, P.name)}」</p>${bl ? `<small class="tv-bl">${bl}</small>` : ''}${got}</div></div>`;
-  }).join('');
-  openSheet(`<div class="hd">${TV_BAG_ICON}<span>回家了</span></div><div class="tv-box">${rows}</div>
-    <div class="ml-ft"><button class="btn y" data-tv="welok">好</button><button class="btn" data-tv="album">旅行相簿</button></div>`);
+    return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.abroad ? P.country : P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${diary(w)}」</p>${bl ? `<small class="tv-bl">${bl}</small>` : ''}${got}</div></div>`;
+  };
+  // 同一趟（2026-11-27）：標題一次、一隻一行日記、行李一次、這一趟的合照、土產列在最下面
+  const tripCard = g => {
+    const w0 = g[0], P = TV_PLACES[w0.p] || TV_PLACES.park, fam = g.some(w => w.fam || w.w === 'fam');
+    const who = fam ? '大家' : tvNames(g.map(w => w.d).filter(d => DOLL_NAME[d]));
+    const x = t.pics.find(q => q.id === w0.o && TV_PLACES[q.p] && (TV_CARDS[q.p] || [])[q.c]);
+    const pic = x ? `<button class="tv-wph" data-tvwpic="${x.id}" aria-label="看這一趟的合照">${tvCardHTML(x.p, x.c, String(x.ds).split('+'), true)}</button>` : '';
+    const rows = g.map(w => `<div class="tv-wd"><img src="${SPR[w.d]}" alt="${DOLL_NAME[w.d] || ''}"><p>「${diary(w)}」</p></div>`).join('');
+    const bl = tvBagLine(w0.b, w0.p, w0.n);
+    // 土產：同一樣的併成一行（「蛋黃哥和薯餅各帶回來…」），一隻的那張不寫名字
+    const sv = [];
+    g.forEach(w => { if (!TV_SOUV[w.sv]) return; const e = sv.find(z => z.k === w.sv); if (e){ e.ds.push(w.d); e.c = Math.max(e.c, w.c | 0); e.dup = e.dup || w.dup; } else sv.push({k: w.sv, ds: [w.d], c: w.c | 0, dup: w.dup}); });
+    const one = g.length === 1 && sv.length === 1;
+    const got = sv.length ? sv.map(z => {
+      const s = TV_SOUV[z.k], by = one ? '' : tvNames(z.ds) + (z.ds.length > 1 ? '各' : '');
+      const tail = z.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : one ? (z.c > 1 ? `現在有 ${z.c} ${unitOf(s)}了，都在收納架的紀念品那一頁。` : '放在收納架的紀念品那一頁，每一間都能擺。') : z.c > 1 ? `現在有 ${z.c} ${unitOf(s)}了。` : '';
+      return `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(z.k))}</span><small>${by}帶回來${s.unit || '一個'}${s.name}。${tail}</small></div>`;
+    }).join('') + (one ? '' : '<small class="tv-none">都放在收納架的紀念品那一頁，每一間都能擺。</small>') : '<small class="tv-none">這趟沒有帶東西回來。</small>';
+    return `<div class="ev tv-wel tv-trip${fam ? ' fam' : ''}"><b>${who}從${P.abroad ? P.country : P.name}回來了</b>${pic}<div class="tv-wds">${rows}</div>${bl ? `<small class="tv-bl">${bl}</small>` : ''}<div class="tv-gots">${got}</div></div>`;
+  };
+  // 照 o 分組，照第一次出現的順序；沒有 o 的各自一組
+  const groups = [];
+  t.wel.forEach(w => { const g = w.o ? groups.find(z => z[0].o === w.o) : null; if (g) g.push(w); else groups.push([w]); });
+  const cards = groups.map(g => (g[0].o ? tripCard(g) : oldCard(g[0])));
+  const N = cards.length;
+  if (N === 1){
+    openSheet(`<div class="hd">${TV_BAG_ICON}<span>回家了</span></div><div class="tv-box">${cards[0]}</div>
+      <div class="ml-ft"><button class="btn y" data-tv="welok">好</button><button class="btn" data-tv="album">旅行相簿</button></div>`);
+  } else {
+    // 一次回來好幾趟：一張一張翻，上面寫第幾張；手機左右滑也可以
+    openSheet(`<div class="hd">${TV_BAG_ICON}<span>回家了</span><small class="pc-left tv-wpg">1／${N}</small></div>
+      <div class="tv-box tv-wcs">${cards.map((c, i) => `<div class="tv-wc"${i ? ' hidden' : ''}>${c}</div>`).join('')}</div>
+      <div class="ml-ft tv-wft"><button class="btn sm tv-wprev" data-tvw="prev">上一張</button><button class="btn y" data-tvw="next">下一張</button></div>`);
+    tvWelGo(0);
+    const bx = $('#sheet .tv-wcs');
+    let sx = null, sy = 0;
+    bx.addEventListener('touchstart', e => { if (e.touches.length !== 1){ sx = null; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive: true});
+    bx.addEventListener('touchend', e => {
+      if (sx === null) return;
+      const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) tvWelGo(tvWelI + (dx < 0 ? 1 : -1));
+    }, {passive: true});
+  }
   t.wel = []; save();
   evOpen = false; alOpen = false;
+}
+let tvWelI = 0;
+function tvWelGo(i){
+  const cs = [...document.querySelectorAll('#sheet .tv-wc')], n = cs.length; if (!n) return;
+  tvWelI = Math.max(0, Math.min(n - 1, i));
+  cs.forEach((c, k) => { c.hidden = k !== tvWelI; });
+  const pg = $('#sheet .tv-wpg'); if (pg) pg.textContent = `${tvWelI + 1}／${n}`;
+  const pv = $('#sheet .tv-wprev'), nx = $('#sheet [data-tvw="next"]');
+  if (pv) pv.style.visibility = tvWelI ? '' : 'hidden';
+  if (nx) nx.textContent = tvWelI === n - 1 ? '好' : '下一張';
+  const bx = $('#sheet .tv-wcs'); if (bx) bx.scrollTop = 0;
 }
 
 /* ---------- 相簿：旅行那一本、每一隻那一頁的幾行、小屋地圖下面的一行 ---------- */
@@ -632,7 +700,8 @@ function tvPassOpen(){
 }
 function tvLogLi(d, x){
   const [day, p, w, di, b, n, sv] = x.split('|'), P = TV_PLACES[p] || TV_PLACES.park, bl = tvBagLine(b, p, n);
-  return `<li>${md(day)}　${(TV_DIARY[d][+di] || TV_DIARY[d][0]).replace(/\{p\}/g, P.name)}${w === 'fam' ? '（全家一起）' : DOLL_NAME[w] ? `（和${DOLL_NAME[w]}一起）` : ''}${bl ? `<small class="tv-bl">${bl}${tvSouvLine(sv)}</small>` : ''}</li>`;
+  const dl = tvDiaryOf(p, d);
+  return `<li>${md(day)}　${(dl[+di] || dl[0] || '').replace(/\{p\}/g, P.name)}${w === 'fam' ? '（全家一起）' : DOLL_NAME[w] ? `（和${DOLL_NAME[w]}一起）` : ''}${bl ? `<small class="tv-bl">${bl}${tvSouvLine(sv)}</small>` : ''}</li>`;
 }
 const tvLogMore = (d, n, all) => all > n ? `<li class="tv-lgm"><button class="btn sm" data-tvlog="${d}" data-n="${n}">看更早的（還有 ${all - n} 次）</button></li>` : '';
 // 相簿裡娃娃那一頁的旅行紀錄：全部都留（2026-11-27），先列最新 6 筆，按「看更早的」一次多 20 筆
@@ -669,6 +738,10 @@ $('#sheet').addEventListener('click', e => {
     li.insertAdjacentHTML('afterend', tvLogMore(d, n + 20, l.length)); li.remove();
     return;
   }
+  // 歡迎回家卡片上的合照：打開旅行相簿，直接開那一張大圖
+  const wp = e.target.closest('[data-tvwpic]'); if (wp){ tvBig = ['pic', wp.dataset.tvwpic]; tvPicN = 30; tvAlbumOpen(); const bx = $('#sheet .tv-album'); if (bx) bx.scrollTop = 0; return; }
+  const wv = e.target.closest('[data-tvw]');
+  if (wv){ const n = document.querySelectorAll('#sheet .tv-wc').length; if (wv.dataset.tvw === 'prev') tvWelGo(tvWelI - 1); else if (tvWelI >= n - 1) $('#sheet').hidden = true; else tvWelGo(tvWelI + 1); return; }
   const pic = e.target.closest('[data-tvpic]'); if (pic){ tvBig = tvBig && tvBig[0] === 'pic' && tvBig[1] === pic.dataset.tvpic ? null : ['pic', pic.dataset.tvpic]; tvAlbumOpen(); const bx = $('#sheet .tv-album'); if (bx) bx.scrollTop = 0; return; }
   const c = e.target.closest('[data-tvc]'); if (c){ const [pl, i] = c.dataset.tvc.split(':'); tvBig = tvBig && tvBig[0] === pl && tvBig[1] === +i ? null : [pl, +i]; tvAlbumOpen(); const bx = $('#sheet .tv-album'); if (bx) bx.scrollTop = 0; return; }
   const b = e.target.closest('[data-tv]'); if (!b) return;
