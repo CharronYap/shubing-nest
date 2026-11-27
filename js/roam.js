@@ -204,7 +204,7 @@ document.addEventListener('visibilitychange', roamStart);   // 頁面在背景�
 // 玩家抓起一隻在外面晃的娃娃：從牠現在的位置開始拖（先把那個位置暫時當成家）
 let roamGrab = null;
 room.addEventListener('pointerdown', e => {
-  const el = e.target.closest && e.target.closest('.it'); if (!el) return;
+  const el = (typeof dollUnder === 'function' && dollUnder(e)) || (e.target.closest && e.target.closest('.it')); if (!el) return;   // 被家具、背包蓋住的娃娃也算（room.js 的 dollUnder）
   const it = items.find(i => String(i.uid) === el.dataset.u); if (!it) return;
   if (it.kind !== 'doll'){ roamHold = Date.now() + 15000; return; }
   if (VISIT) return;

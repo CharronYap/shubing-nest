@@ -244,7 +244,7 @@ if (typeof rvEl === 'function'){ const prev = rvEl; rvEl = function(uid, v){
   }; }
 // 點牠、抓起牠：轉回正面看你（在自己家、在朋友家都一樣）
 room.addEventListener('pointerdown', e => {
-  const el = e.target.closest && e.target.closest('.doll'); if (!el) return;
+  const el = (typeof dollUnder === 'function' && dollUnder(e)) || (e.target.closest && e.target.closest('.doll')); if (!el) return;
   spinTouch = Date.now();
   el.classList.remove('flipx');
   if (SPS.get(el)) spinTo(el, 0, {rest: false});

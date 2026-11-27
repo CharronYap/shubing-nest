@@ -233,7 +233,8 @@ async function photoShoot(){
     if (winEl){ const b = boxIn(winEl, R), im = await svgImg(winEl, b.w * s, b.h * s, 'win'); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); chk('窗戶'); }
     // 房間固定的構造（門、磁磚、流理台、通往隔壁的門口…，js/rooms.js 的 .fx）：照片要跟畫面一樣
     // 門口上的箭頭和隔壁那一間的圖示是按鈕（class ph-no）：拍照時先藏起來，門本身留著
-    for (const fx of room.querySelectorAll('.fx svg')){
+    // 背包（js/travel.js）掛在牆上、圖層在家具和娃娃上面：不在這裡畫，放到下面照 z-index 的那一段
+    for (const fx of room.querySelectorAll('.fx:not(.fx-bag) svg')){
       const hid = [...fx.querySelectorAll('.ph-no')]; hid.forEach(e => e.setAttribute('display', 'none'));
       try { const b = boxIn(fx, R), im = await svgImg(fx, b.w * s, b.h * s); if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h); }
       finally { hid.forEach(e => e.removeAttribute('display')); }
@@ -245,7 +246,7 @@ async function photoShoot(){
   const fx = {pose: true, jump: Math.random() < .5};
   // 這一間看得到的娃娃都要入鏡（2026-11-27 使用者說朋友帶來過夜的玩偶拍不到）：自己的、朋友家來過夜的客人（.gst.st-guest，穿著牠出門時的衣服）、
   // 從隔壁房間來串門子的（.rv）。客人頭上的名牌、紙條不畫。前後順序照畫面上的
-  const els = [...room.querySelectorAll('.it,.drop,.gst.st-guest,.rv')].filter(e => e.offsetParent !== null)
+  const els = [...room.querySelectorAll('.it,.drop,.gst.st-guest,.rv,.fx-bag')].filter(e => e.offsetParent !== null)
     .map((e, i) => ({e, i, z: +getComputedStyle(e).zIndex || 0})).sort((a, b) => a.z - b.z || a.i - b.i);
   const inShot = new Set(), guests = [];
   for (const {e} of els){
@@ -262,7 +263,7 @@ async function photoShoot(){
       const svg = e.querySelector('svg'); if (!svg) continue;
       const b = boxIn(svg, R), im = await svgImg(svg, b.w * s, b.h * s);
       if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h);
-      chk(it ? it.id : 'drop');
+      chk(it ? it.id : e.classList.contains('fx-bag') ? 'fx-bag' : 'drop');
     }
   }
 

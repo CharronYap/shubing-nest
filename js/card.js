@@ -48,7 +48,10 @@ function cardSnap(){
   if (typeof stGuests !== 'undefined' && roomId === 'living' && !VISIT){
     room.querySelectorAll('.gst.st-guest').forEach(el => {
       const g = stGuests.find(x => String(x.id) === el.dataset.pu); if (!g || !SPR[g.doll]) return;
-      snap.room.items.push({uid: u++, kind: 'doll', id: g.doll, x: Math.round(parseFloat(el.style.left) || +g.x || 50), y: Math.round(+g.y || 85), sit: null, seat: 0, look: stayLook(g.look), gn: sText(g.fromName, 12) || ''});
+      // 坐在家具上的客人：快照裡也坐著（家具的 uid 跟畫面上一樣）；那一格已經有別隻就站著
+      const it = typeof stIts !== 'undefined' ? stIts[g.id] : null;
+      const sit = it && it.sit && snap.room.items.some(o => o.uid === it.sit && o.kind === 'furn') && !snap.room.items.some(o => o.kind === 'doll' && o.sit === it.sit && o.seat === it.seat) ? it.sit : null;
+      snap.room.items.push({uid: u++, kind: 'doll', id: g.doll, x: Math.round(parseFloat(el.style.left) || +g.x || 50), y: sit ? Math.round(it.y) : Math.round(+g.y || 85), sit, seat: sit ? it.seat : 0, look: stayLook(g.look), gn: sText(g.fromName, 12) || ''});
     });
   }
   return snap;

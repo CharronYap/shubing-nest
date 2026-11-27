@@ -359,7 +359,7 @@ function yardBookOpen(){
     <div class="yd-box yd-book"><div class="al-sec">花<small>${y.kinds.length} / 12 種</small></div><div class="yd-grid">${fl}</div>
       <div class="al-sec">小客人<small>${Object.keys(y.gs).filter(g => YD_GUESTS[g]).length} / 12 種</small></div><div class="yd-grid">${gs}</div>
       <p class="bk-note">新的花是小客人帶來的。點心盤放不一樣的點心，來的客人也不一樣；有幾種只在晚上來。</p></div>
-    <div class="ml-ft"><button class="btn" data-yd="go">去小島</button><button class="btn" data-yd="album">回相簿</button></div>`);
+    <div class="ml-ft"><button class="btn" data-yd="go">去小島</button><button class="btn" data-yd="album">返回</button></div>`);
   evOpen = false; alOpen = false;
 }
 

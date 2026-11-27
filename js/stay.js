@@ -255,10 +255,32 @@ const stIts = {};
 const stClampX = v => Math.max(8, Math.min(92, +v || 50)), stClampY = v => Math.max(56, Math.min(98, +v || 85));
 const ST_HI_KEY = 'shubingNest.gHi';
 function stayHiGet(){ try { const o = JSON.parse(localStorage.getItem(ST_HI_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+/* 客人坐家具（2026-11-27）：雲端不加欄位（nestStays 主人只能改 note、x、y），坐下時 x、y 直接寫座位的位置（room.js 的 seatPos）。
+   畫的時候反過來找：x、y 跟這間某個家具的座位差不到 1，就當成坐在那裡；對不上（家具被搬走、被別隻坐了）就站著，y 夾回地板 */
+function staySeatAt(x, y, me){
+  if (roomId !== 'living' || typeof seatPos !== 'function') return null;
+  for (const f of items){
+    if (f.kind !== 'furn' || !FURN[f.id] || !FURN[f.id].seats) continue;
+    for (let k = 0; k < FURN[f.id].seats.length; k++){
+      const [sx, sy] = seatPos(f, k);
+      if (Math.abs(sx - x) >= 1 || Math.abs(sy - y) >= 1) continue;
+      // 那一格已經有別隻（自家坐著的、別的客人坐著的）：不疊上去，站著
+      if (items.some(o => o.kind === 'doll' && o.sit === f.uid && o.seat === k) || Object.values(stIts).some(o => o.uid !== me && o.sit === f.uid && o.seat === k)) return null;
+      return [f, k];
+    }
+  }
+  return null;
+}
+// 照雲端上的 x、y 擺回牠的家：坐著的就坐回那一格
+function stayHome(it, x, y){
+  const s = typeof x === 'number' && typeof y === 'number' ? staySeatAt(x, y, it.uid) : null;
+  if (s){ const [sx, sy] = seatPos(s[0], s[1]); it.sit = s[0].uid; it.seat = s[1]; it.x = sx; it.y = sy + .5; }
+  else { it.sit = null; it.seat = 0; it.x = stClampX(x); it.y = stClampY(y); }
+}
 function stayIt(g){
   const it = stIts[g.id] = stIts[g.id] || {kind: 'doll', uid: 'g' + g.id, guest: 1};
   it.id = g.doll; it.g = g;
-  if (!it.drag){ it.x = stClampX(g.x); it.y = stClampY(g.y); }
+  if (!it.drag) stayHome(it, +g.x, +g.y);
   // 剛到的那一天、今天還沒有人跟牠打過招呼（js/roam2.js 的 guestTalk）
   it.hi = () => (it.g.day | 0) === nestDayN() && stayHiGet()[it.g.id] !== it.g.day;
   it.hiDone = () => { const h = stayHiGet(), keep = {}; stGuests.forEach(x => { if (h[x.id] !== undefined) keep[x.id] = h[x.id]; }); keep[it.g.id] = it.g.day; try { localStorage.setItem(ST_HI_KEY, JSON.stringify(keep)); } catch (e) {} };
@@ -277,11 +299,18 @@ function stayGuestEl(it, tag, look, g){
   el.dataset.gu = it.uid; el.dataset.d = it.id; el.dataset.pd = it.id;   // pd、pn、pu：拍照（js/photo.js）要知道這是誰家的哪一隻
   if (g){ el.dataset.pn = sText(g.fromName, 12) || '朋友'; el.dataset.pu = g.id; }
   el.innerHTML = `<span class="st-tag">${tag}</span><span class="body">${dollPic(it.id, look)}</span>`;
-  const place = () => { el.style.left = it.x + '%'; el.style.top = roomY(it.y) + '%'; el.style.width = sizeOf(it)[0] + '%'; el.style.zIndex = zOf(it); };
+  const place = () => {
+    // 坐著的：家具被搬過就跟著座位走，被收走就站起來
+    if (it.sit && !it.drag){ const f = items.find(o => o.uid === it.sit && o.kind === 'furn'); if (f){ const [x, y] = seatPos(f, it.seat); it.x = x; it.y = y + .5; } else { it.sit = null; it.y = stClampY(it.y); } }
+    el.style.left = it.x + '%'; el.style.top = roomY(it.y) + '%'; el.style.width = sizeOf(it)[0] + '%'; el.style.zIndex = it.drag ? 500 : zOf(it);
+    el.classList.toggle('sit', !!it.sit); el.classList.toggle('breathe', !it.sit);
+  };
   place();
   const hold = ms => { if (typeof roamHold !== 'undefined') roamHold = Math.max(roamHold, Date.now() + ms); };
   // 拖：從牠現在晃到的地方開始，放開才寫上雲端（一次）；沒拖：冒愛心、打開牠的小視窗
-  let d0 = null, moved = false;
+  // 拖的時候跟自家的娃娃一樣（js/room.js 的 onMove）：家具上空著的座位會亮，靠近就貼上去預覽，放開就坐上去
+  let d0 = null, moved = false, hot = null;
+  const unDrag = () => { room.classList.remove('dragdoll'); if (typeof clearSeats === 'function') clearSeats(); hot = null; };
   el.addEventListener('pointerdown', e => { d0 = pt(e); moved = false; try { el.setPointerCapture(e.pointerId); } catch (err) {} hold(1500); });
   el.addEventListener('pointermove', e => {
     if (!d0 || !g) return;
@@ -292,22 +321,38 @@ function stayGuestEl(it, tag, look, g){
       const st = typeof RS !== 'undefined' ? RS[it.uid] : null;
       if (st){ clearTimeout(st.timer); st.busy = false; st.x = null; st.y = null; st.sit = null; }
       el.style.transition = ''; const b = el.querySelector('.body'); if (b) b.classList.remove('roam-hop');
-      el.classList.remove('sit'); el.classList.add('breathe');
+      it.sit = null;
+      room.classList.add('dragdoll'); if (typeof showSeats === 'function') showSeats(it);
     }
-    it.x = Math.max(8, Math.min(92, px)); it.y = Math.max(56, Math.min(98, roomV(py)));
+    // 找最近的座位用手指的位置，不用夾過的：書櫃頂這種高的座位在地板範圍上面，夾過就搆不到
+    const fx = px, fy = roomV(py);
+    it.x = Math.max(8, Math.min(92, fx)); it.y = Math.max(56, Math.min(98, fy));
+    let bd = 10; hot = null;
+    room.querySelectorAll('.seat').forEach(s => { const d = Math.hypot(+s.dataset.x - fx, (+s.dataset.y - fy) * .85); if (d < bd){ bd = d; hot = s; } s.classList.remove('hot'); });
+    if (hot){ hot.classList.add('hot'); it.x = +hot.dataset.x; it.y = +hot.dataset.y + .5; }
     place(); hold(2500);
   });
   el.addEventListener('pointerup', () => {
     if (!d0) return; d0 = null;
     if (moved && g){
       it.drag = 0;
-      g.x = Math.round(it.x); g.y = Math.round(it.y); it.x = g.x; it.y = g.y; place();
-      if (typeof roamSt === 'function'){ const st = roamSt(it); st.rest = Date.now() + 60000; st.trips = 0; }   // 放到新的地方：那裡是新的家，先待一分鐘
+      const f = hot ? items.find(o => o.uid === +hot.dataset.f && o.kind === 'furn') : null, k = hot ? +hot.dataset.k : 0;
+      unDrag();
+      if (f){
+        // 坐上去：雲端記座位的位置（不四捨五入到整數，重新打開才對得上）
+        const [sx, sy] = seatPos(f, k);
+        g.x = Math.round(sx * 100) / 100; g.y = Math.round(sy * 100) / 100;
+        it.sit = f.uid; it.seat = k; place();
+      } else { it.sit = null; g.x = Math.round(it.x); g.y = Math.round(it.y); it.x = g.x; it.y = g.y; place(); }
+      if (typeof roamSt === 'function'){
+        const st = roamSt(it); st.rest = Date.now() + 60000; st.trips = 0;   // 放到新的地方：那裡是新的家，先待一分鐘
+        if (f){ st.x = null; st.y = null; st.sit = f.uid; st.seat = k; if (typeof roamApply === 'function') roamApply(it, el); }
+      }
       const net = sNet(); if (net) net.staySet(g.id, {x: g.x, y: g.y}).catch(e => sQuiet('stay', e));
     } else if (g){ stayHeart(it, el); stayGuestOpen(g); }
     else { stayHeart(it, el); const L = typeof ROAM_LINES !== 'undefined' && ROAM_LINES[it.id]; if (L && typeof roamSay === 'function') roamSay(it, L[Math.floor(Math.random() * L.length)]); }
   });
-  el.addEventListener('pointercancel', () => { d0 = null; if (moved && g){ it.drag = 0; it.x = stClampX(g.x); it.y = stClampY(g.y); place(); } });
+  el.addEventListener('pointercancel', () => { d0 = null; if (moved && g){ it.drag = 0; unDrag(); stayHome(it, +g.x, +g.y); place(); } });
   room.appendChild(el);
   if (typeof asleep === 'function') el.classList.toggle('sleep', asleep(it.id));
   if (typeof spinMount === 'function') try { spinMount(el, it.id); } catch (e) {}
@@ -324,7 +369,8 @@ function stayMinePaint(){
     return;
   }
   const g = v.stDoc; if (!g || roomId !== 'living') return;
-  const it = v.stIt = v.stIt || {kind: 'doll', uid: 'gmine', guest: 1, mine: 1, id: g.doll, x: stClampX(g.x), y: stClampY(g.y), hi: () => !v.stHi, hiDone: () => { v.stHi = 1; }};
+  const it = v.stIt = v.stIt || {kind: 'doll', uid: 'gmine', guest: 1, mine: 1, id: g.doll, hi: () => !v.stHi, hiDone: () => { v.stHi = 1; }};
+  if (it.x === undefined) stayHome(it, +g.x, +g.y);   // 主人讓牠坐在家具上的話，在他家看到的也是坐著
   stayGuestEl(it, `你家的${DOLL_NAME[g.doll]}`, stayLook(g.look), null);
 }
 function stayPaint(){

@@ -81,6 +81,7 @@ if (typeof stayPaint === 'function'){ const prev = stayPaint; stayPaint = functi
       const els = room.querySelectorAll('.gst.st-guest');
       stGuests.forEach((g, i) => {
         const el = els[i]; if (!el) return;
+        if (typeof stIts !== 'undefined' && stIts[g.id] && stIts[g.id].sit) return;   // 坐在家具上的客人不移
         const x = Math.max(8, Math.min(92, +g.x || 50)), y = Math.max(56, Math.min(98, +g.y || 85));
         if (!seenHidden(g.doll, x, y)) return;
         const p = seenSpot(g.doll, x, y); if (!p) return;

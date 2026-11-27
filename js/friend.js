@@ -44,7 +44,7 @@ function frLetterOpen(o){
   const x = mailText(o.k);
   openSheet(`<div class="hd"><img class="st-hdimg" src="${SPR[x.d] || SPR.sloth}" alt=""><span>${x.title}</span></div>
     <div class="ml open fr-letter"><div class="ml-bd">${mailBodyHTML(x)}</div></div>
-    <div class="ml-ft"><button class="btn" data-fr="back">回朋友</button></div>`);
+    <div class="ml-ft"><button class="btn" data-fr="back">返回</button></div>`);
   evOpen = false; alOpen = false;
 }
 

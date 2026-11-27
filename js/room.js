@@ -114,6 +114,29 @@ function startDrag(e,u){
   drag={it,el,sx:e.clientX,sy:e.clientY,dx:it.x-px,dy:roomY(it.y)-py,moved:false,seatHot:null,ro:false};
   el.addEventListener('pointermove',onMove);el.addEventListener('pointerup',onUp);el.addEventListener('pointercancel',onUp);
 }
+/* 娃娃被東西蓋住也拿得起來（2026-11-27）：手指按在某隻娃娃的框裡，最上面卻是家具（前面擺了高家具）、
+   門邊的背包、過夜或旅行的紙條，就先拿娃娃。最上面本來就是娃娃（自己的、來過夜的客人）照舊；
+   房間裡的按鈕（撿東西、信箱、相機、小店）照舊；去朋友家、選躲藏的家具時不搶。
+   roam.js、spin.js 按下去時也用 dollUnder 找娃娃（away.js 已經有一個 dollAt，不能同名），所以這一道要等它們都掛好之後才掛（DOMContentLoaded） */
+function dollUnder(e){
+  if('__doll' in e)return e.__doll;
+  let pick=null;const t=e.target;
+  if(!VISIT&&!(typeof hidePicking!=='undefined'&&hidePicking)&&t&&t.closest&&room.contains(t)&&!t.closest('.doll')&&t.closest('.it,.fx,.st-note')){
+    let bz=-1;
+    room.querySelectorAll('.it.doll').forEach(el=>{
+      const img=el.querySelector('.body img');if(!img)return;
+      const r=img.getBoundingClientRect();
+      if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)return;
+      const z=+getComputedStyle(el).zIndex||0;if(z>bz){bz=z;pick=el;}
+    });
+  }
+  e.__doll=pick;return pick;
+}
+addEventListener('DOMContentLoaded',()=>room.addEventListener('pointerdown',e=>{
+  const el=dollUnder(e);if(!el)return;
+  const it=items.find(i=>String(i.uid)===el.dataset.u);if(!it)return;
+  e.stopPropagation();startDrag(e,it.uid);
+},true));
 function limits(it){
   if(it.kind==='furn'&&FURN[it.id].wall)return [10,90,12,44];
   const [w]=sizeOf(it);return [Math.max(4,w/2-2),Math.min(96,100-w/2+2),56,95];
@@ -283,7 +306,6 @@ function renderTray(){
     h+=trayLocked([...lw,...lf],([k,id])=>`<button class="tile lock" data-${k}="${id}" aria-label="${k==='wall'?'壁紙':'地板'}，還沒有，${trayHow(k,id)[1]}"><span class="sw ${k==='wall'?'w':'f'}-${id}"></span><small class="how">${trayHow(k,id)[0]}</small></button>`);
   }
   box.innerHTML=h;
-  if(typeof trayFit==='function'&&trayState!=='c')trayFit();
 }
 /* ---------- 剛拿到的家具：標「新」、帶你去擺 ----------
    「新」只記在這台裝置（localStorage），不進存檔：拿到時記一筆，擺過一次就拿掉 */
@@ -309,7 +331,7 @@ function furnGo(id){
   $('#sheet').hidden=true;
   if(typeof setPage==='function')setPage('room');
   const show=()=>{
-    setTray(false);tab=FURN[id]&&(FURN[id].souv||FURN[id].season)?'keep':'furn';Object.keys(trayShut).forEach(k=>{trayShut[k]=false;});renderTray();if(typeof layout==='function')layout();
+    setTray(false);tab=FURN[id]&&(FURN[id].souv||FURN[id].season)?'keep':'furn';Object.keys(trayShut).forEach(k=>{trayShut[k]=false;});renderTray();
     const t=$('#items').querySelector(`[data-furn="${id}"]`);if(!t)return;
     const box=$('#items');box.scrollTop=Math.max(0,t.offsetTop-box.offsetTop-box.clientHeight/2+t.offsetHeight/2);
     t.classList.remove('flashme');void t.offsetWidth;t.classList.add('flashme');setTimeout(()=>t.classList.remove('flashme'),2200);
@@ -328,90 +350,84 @@ function freeSpot(it){
 }
 $('#items').addEventListener('click',e=>{
   if(e.target.closest('[data-traymore]')){trayMore[tab]=!trayMore[tab];renderTray();return;}
-  if(e.target.closest('[data-trayset]')){seriesOpen();return;}
+  if(e.target.closest('[data-trayset]')){trayKeep=true;try{seriesOpen();}finally{trayKeep=false;}return;}   // 「看全部」不收
   const tg=e.target.closest('[data-traygrp]');if(tg){trayShut[tg.dataset.traygrp]=!trayShut[tg.dataset.traygrp];renderTray();return;}
-  const n0=items.length;setTimeout(()=>{if(trayState==='f'&&items.length>n0)trayTo('h',true);},0);   // 全開時擺了東西進房間：抽屜降到一半，讓出房間
   const t=e.target.closest('.tile');if(!t)return;
+  // 選了東西就收起來（擺進房間、收回、搬過來、換壁紙地板、點外出或旅行中的）；點還沒有的那格只跳提示，不收
   if(t.dataset.doll){const id=t.dataset.doll;if(!DOLL_N[id]){toast('還沒來，'+trayHow('doll',id)[1]);return;}
     const w=whereDoll(id);
-    if(w===roomId){removeItem(items.find(i=>i.kind==='doll'&&i.id===id).uid);return;}
-    if(w==='out'){if(typeof stayTap==='function')stayTap();return;}
-    if(w==='trip'){if(typeof tvNoteTap==='function')tvNoteTap(id);return;}   // 去旅行了（js/travel.js）
+    if(w===roomId){removeItem(items.find(i=>i.kind==='doll'&&i.id===id).uid);trayDone();return;}
+    if(w==='out'){trayDone();if(typeof stayTap==='function')stayTap();return;}
+    if(w==='trip'){trayDone();if(typeof tvNoteTap==='function')tvNoteTap(id);return;}   // 去旅行了（js/travel.js）
     if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
-    const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();}
+    const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();trayDone(it.uid);}
   else if(t.dataset.furn){const id=t.dataset.furn;if(!FURN_OWN[id]){toast(trayHow('furn',id)[1]);return;}
-    const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);return;}
+    const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);trayDone();return;}
     const f=FURN[id];if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去小島，小島沒有牆壁');return;}
     const w=whereFurn(id);if(w){removeItem(home[w].items.find(i=>i.kind==='furn'&&i.id===id).uid,home[w].items);toast(`從${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[w])||'別間'}搬過來了`);}
     const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
-    if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();}
-  else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast(trayHow('wall',t.dataset.wall)[1]);return;}cur().wall=t.dataset.wall;paintRoom();renderTray();}
-  else if(t.dataset.floor){if(!FLOOR_OWN[t.dataset.floor]){toast(trayHow('floor',t.dataset.floor)[1]);return;}cur().floor=t.dataset.floor;paintRoom();renderTray();}
+    if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();trayDone(it.uid);}
+  else if(t.dataset.wall){if(!WALL_OWN[t.dataset.wall]){toast(trayHow('wall',t.dataset.wall)[1]);return;}cur().wall=t.dataset.wall;paintRoom();renderTray();trayDone();}
+  else if(t.dataset.floor){if(!FLOOR_OWN[t.dataset.floor]){toast(trayHow('floor',t.dataset.floor)[1]);return;}cur().floor=t.dataset.floor;paintRoom();renderTray();trayDone();}
 });
-document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;renderTray();if(trayState==='c')trayTo('h');}));
-/* 收納架是一個可以上下拖的抽屜，三段高度（2026-11-27，使用者的 iPhone 上第二排被切掉、很難用）：
-   - 收起（c）：只剩把手和分頁列。
-   - 一半（h，預設）：完整露出兩排。
-   - 全開（f）：往上蓋到上面那幾排按鈕下面，裡面自己上下捲，一次看得到很多格。
-   拖把手在三段之間換（放開時照拖的方向和距離決定），點把手輪流切；點分頁時如果是收著的就打開到一半。
-   記住上次的高度，只記在這台裝置（個人設定，不上雲端）。
-   全開時是浮在房間上面的（不擠房間）：抽屜原本佔的位置用 #traySpace 墊著，房間的大小跟「一半」時一樣，不會跟著跳。
-   全開時點一格把東西擺進房間，抽屜會自己降到一半讓出房間。 */
-const TRAY_KEY='shubingNest.trayMin';
-let trayState='h';
-const traySpace=document.createElement('div');traySpace.id='traySpace';traySpace.hidden=true;tray.after(traySpace);
-// 「一半」的高度：剛好兩排格子（照現在格子的大小算），加上上面一行小標題的位置
-function trayFit(){
-  const box=$('#items'),tiles=[...box.querySelectorAll('.tile')];
-  let need=0;
-  if(tiles.length){
-    // 找出第二排格子的下緣（每一組小標題會換行，所以照格子實際的位置算，不是照個數）
-    const tops=[...new Set(tiles.map(t=>t.offsetTop))].sort((a,b)=>a-b),row=tops[Math.min(1,tops.length-1)];
-    const last=tiles.filter(t=>t.offsetTop===row)[0];
-    need=last.offsetTop-box.offsetTop+last.offsetHeight+14;
-  }
-  if(!need)need=Math.round((box.clientWidth-44)/5)*2+48;
-  // 很矮的畫面：最多佔畫面的一半多一點，房間至少留得下
-  const cap=Math.round(screen.clientHeight*.56);
-  const v=Math.max(120,Math.min(need,cap))+'px';
-  if(box.style.getPropertyValue('--tray-two')!==v){box.style.setProperty('--tray-two',v);if(typeof layout==='function'&&typeof RATIO!=='undefined')try{layout();}catch(e){}}   // 高度變了，房間跟著重排
+// 收起來；有剛擺進房間的那一件就讓它閃一下，讓人知道它在哪
+function trayDone(u){
+  if(trayState==='f')trayTo('c');
+  if(u===undefined)return;
+  setTimeout(()=>{const el=room.querySelector(`.it[data-u="${u}"]`);if(!el)return;el.classList.remove('pop','placed-flash');void el.offsetWidth;el.classList.add('placed-flash');setTimeout(()=>el.classList.remove('placed-flash'),1800);},120);
 }
-function trayTo(st,keep){
-  if(!['c','h','f'].includes(st))st='h';
-  const was=trayState;
-  if(st==='f'&&was!=='f'){
-    // 先量「一半」時抽屜佔多高，墊在原位；再量上面那幾排按鈕的下緣，全開就蓋到那裡
-    tray.classList.remove('min','full');trayFit();
-    const cs=getComputedStyle(tray);
-    traySpace.style.height=(tray.offsetHeight+parseFloat(cs.marginTop)+parseFloat(cs.marginBottom))+'px';
-    const page=tray.offsetParent||tray.parentNode,pr=page.getBoundingClientRect(),hud=document.getElementById('hud'),top=document.querySelector('.top');
-    const edge=Math.max(hud?hud.getBoundingClientRect().bottom:0,top?top.getBoundingClientRect().bottom:0);
-    tray.style.setProperty('--tray-top',Math.max(60,Math.round(edge-pr.top+8))+'px');
-  }
+document.querySelectorAll('.tab[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;renderTray();if(trayState==='c')trayTo('f');}));
+/* 收納架是可以上下拖的抽屜，兩段（2026-11-27 改，原本三段，使用者選了「點一下全開」）：
+   - 收著（c，預設，重開遊戲也是收著）：只剩把手和分頁列。
+   - 全開（f）：往上蓋到上面那幾排按鈕下面，裡面自己上下捲。
+   點把手、往上拖、點分頁、#trayOpen、furnGo 打開；點把手、往下拖、點房間空白處、選了東西（trayDone）收起。
+   以前記在這台裝置的高度不再用：記過 h 或 f 的一律當成收著（js/main.js）。
+   房間的大小照「收著」排，打開收起都不重排房間：全開是浮在房間上面的，抽屜收著時佔的位置用 #traySpace 墊著。 */
+const TRAY_KEY='shubingNest.trayMin';
+let trayState='c',trayKeep=false;
+const traySpace=document.createElement('div');traySpace.id='traySpace';traySpace.hidden=true;tray.after(traySpace);
+// 全開要量的：收著時抽屜佔多高（墊在原位），和上面那幾排按鈕的下緣（全開蓋到那裡）。只量、不重排房間
+function trayFit(){
+  const full=tray.classList.contains('full');
+  if(full){tray.classList.remove('full');tray.classList.add('min');}
+  const cs=getComputedStyle(tray);
+  traySpace.style.height=(tray.offsetHeight+parseFloat(cs.marginTop)+parseFloat(cs.marginBottom))+'px';
+  if(full){tray.classList.add('full');tray.classList.remove('min');}
+  const page=tray.offsetParent||tray.parentNode,pr=page.getBoundingClientRect(),hud=document.getElementById('hud'),top=document.querySelector('.top');
+  const edge=Math.max(hud?hud.getBoundingClientRect().bottom:0,top?top.getBoundingClientRect().bottom:0);
+  tray.style.setProperty('--tray-top',Math.max(60,Math.round(edge-pr.top+8))+'px');
+}
+let trayLaid=false;
+function trayTo(st){
+  st=st==='f'?'f':'c';
+  if(st==='f'&&trayState!=='f'){tray.classList.add('min');trayFit();}
   trayState=st;
   tray.classList.toggle('min',st==='c');tray.classList.toggle('full',st==='f');
   traySpace.hidden=st!=='f';
   tray.dataset.st=st;
-  const gp=$('#grip');if(gp)gp.setAttribute('aria-label',st==='c'?'收納架收著，點一下打開':st==='h'?'收納架開一半，點一下全開':'收納架全開，點一下收起');
-  if(st!=='c')trayFit();
-  if(!keep)try{localStorage.setItem(TRAY_KEY,st);}catch(e){}
-  if(typeof layout==='function'&&typeof RATIO!=='undefined')try{layout();}catch(e){}
+  const gp=$('#grip');if(gp)gp.setAttribute('aria-label',st==='c'?'收納架收著，點一下打開':'收納架全開，點一下收起');
+  // 收著和全開時房間的位置一樣，不用重排；只有第一次（從載入時的樣子變成收著）排一次
+  if(!trayLaid&&typeof layout==='function'&&typeof RATIO!=='undefined'){trayLaid=true;try{layout();}catch(e){}}
 }
-// 舊的叫法還有人用：setTray(true) 收起、setTray(false) 打開（已經開著就不動）
-function setTray(min){if(min)trayTo('c');else if(trayState==='c')trayTo('h');}
-// 把手：往上拖開大一段、往下拖收一段（拖得遠就跳兩段），沒什麼動就當作點一下、輪流切
+// 舊的叫法還有人用：setTray(true) 收起、setTray(false) 打開
+function setTray(min){trayTo(min?'c':'f');}
+// 把手：往上拖打開、往下拖收起，沒什麼動就當作點一下、開關切換
 let gripY=null;
 $('#grip').addEventListener('pointerdown',e=>{gripY=e.clientY;try{$('#grip').setPointerCapture(e.pointerId);}catch(x){}});
 $('#grip').addEventListener('pointerup',e=>{
   if(gripY===null)return;const dy=e.clientY-gripY;gripY=null;
-  const order=['c','h','f'],i=order.indexOf(trayState);
-  if(Math.abs(dy)<12)trayTo(order[(i+1)%3]);
-  else trayTo(order[Math.max(0,Math.min(2,i+(dy<0?1:-1)*(Math.abs(dy)>200?2:1)))]);
+  if(Math.abs(dy)<12)trayTo(trayState==='f'?'c':'f');else trayTo(dy<0?'f':'c');
 });
 $('#grip').addEventListener('pointercancel',()=>{gripY=null;});
-$('#grip').addEventListener('click',e=>{if(!e.detail){const order=['c','h','f'];trayTo(order[(order.indexOf(trayState)+1)%3]);}});   // 鍵盤按的
-$('#trayOpen').addEventListener('click',()=>trayTo('h'));
-const trayRefit=()=>{if(trayState==='f'){trayState='h';trayTo('f',true);}else if(trayState==='h')trayFit();};
+$('#grip').addEventListener('click',e=>{if(!e.detail)trayTo(trayState==='f'?'c':'f');});   // 鍵盤按的
+$('#trayOpen').addEventListener('click',()=>trayTo('f'));
+// 點房間空白的地方收起來（家具、娃娃、門、背包、地上的東西這些可以點的不算）
+room.addEventListener('click',e=>{
+  if(trayState!=='f'||VISIT)return;
+  if(e.target.closest('.it,.gst,.rv,.drop,.fx,button,a,.tvx,.seat,[data-go]'))return;
+  trayTo('c');
+});
+const trayRefit=()=>{if(trayState==='f')trayFit();};
 addEventListener('resize',trayRefit);
 addEventListener('load',()=>setTimeout(trayRefit,60));   // 上面那幾排按鈕是後面的檔案才排好的，全部載完再量一次
 
@@ -419,7 +435,7 @@ addEventListener('load',()=>setTimeout(trayRefit,60));   // 上面那幾排按�
 const SET=CLOUD_SET;
 const X='<button class="x" aria-label="關閉"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button>';
 function renderSet(){$('#setdots').innerHTML=SET.map(id=>`<i class="${FURN_OWN[id]?'on':''}"></i>`).join('');}
-function openSheet(html){const s=$('#sheet');if(typeof trayState!=='undefined'&&trayState==='f')try{trayTo('h',true);}catch(e){}s.innerHTML=X+html;s.hidden=false;s.querySelector('.x').onclick=()=>s.hidden=true;return s;}
+function openSheet(html){const s=$('#sheet');if(typeof trayState!=='undefined'&&trayState==='f'&&!trayKeep)try{trayTo('c');}catch(e){}s.innerHTML=X+html;s.hidden=false;s.querySelector('.x').onclick=()=>s.hidden=true;return s;}
 $('#setb').addEventListener('click',()=>{
   openSheet(`<div class="hd"><span class="cl"></span>${SET.filter(i=>FURN_OWN[i]).length} / ${SET.length}</div>
   <div class="row">${SET.map(id=>`<div class="tile ${FURN_OWN[id]?'':'lock'}">${furnSVG(id)}${FURN_OWN[id]?'':LOCK}</div>`).join('')}</div>
@@ -464,10 +480,9 @@ function layout(){
   const r=area.getBoundingClientRect();
   if(!r.width||!r.height)return;
   const [w,h,ratio]=fitStage(r.width,r.height);
-  // 牆的高度用收納架打開時的牆高：收著的時候先打開量一下房間有多高，再收回去（同一刻做完，畫面不會閃）
-  let oh=h;
-  if(tray.classList.contains('min')){tray.classList.remove('min');const o=area.getBoundingClientRect();tray.classList.add('min');if(o.height)oh=fitStage(o.width,o.height)[1];}
-  const wall=Math.min(.52,.52*oh/h);
+  // 房間一律照收納架收著時排（全開是浮在上面的）。牆的高度跟以前收納架開一半時一樣：那時房間大約是寬:高 0.74，
+  // 牆佔 52%；現在房間比較長，牆照那個高度算，多出來的給地板。以前三段時要先打開量一次，現在照寬度算就好
+  const wall=Math.min(.52,.52*Math.min(h,w/.74)/h);
   stage.style.width=w+'px';stage.style.height=h+'px';
   room.style.setProperty('--wh',(wall*100)+'%');
   if(Math.abs(ratio-RATIO)>.001||Math.abs(wall-WALL)>.001){

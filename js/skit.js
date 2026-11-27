@@ -144,7 +144,7 @@ async function skitPlay(sc, replay){
   const run = skitOn = {sc, replay, skip: false, end: 0, endText: sc.end};
   $('#sheet').hidden = true;
   room.querySelectorAll('.hide-chip').forEach(c => c.remove());
-  if (typeof trayState !== 'undefined' && trayState === 'f') try { trayTo('h', true); } catch (e) {}   // 收納架全開會蓋住大半間，降到一半再演
+  if (typeof trayState !== 'undefined' && trayState === 'f') try { trayTo('c'); } catch (e) {}   // 收納架全開會蓋住房間，收起來再演
   skitScan();
   screen.classList.add('skit-on');
   skitBar(sc.title);
@@ -209,7 +209,7 @@ function skitReplay(id){
   });
   walk(sc.steps, '');
   openSheet(`<div class="hd"><span>${sc.title}</span></div><div class="sk-box">${out.join('')}<p class="bk-note">${sc.cast.map(d => DOLL_NAME[d]).join('、')}都在同一間的時候按「重看」，牠們會再演一次。</p></div>
-    <div class="ml-ft"><button class="btn" data-skback="${sc.cast[0]}">回相簿</button></div>`);
+    <div class="ml-ft"><button class="btn" data-skback="${sc.cast[0]}">返回</button></div>`);
 }
 $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('[data-skit]'); if (b){ skitReplay(b.dataset.skit); return; }

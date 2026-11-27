@@ -25,7 +25,7 @@ r.classList.add('look-paper');var h=new Date().getHours();if(h>=19||h<5)r.classL
      小窩指南最下面會顯示這個字；開著的頁面回到前景時會抓一次 index.html 比對，不一樣就問要不要換上（js/version.js）。
      NEST_JS 是載入順序，不能亂動：traveldata、abroad（裡面有土產的家具定義）一定要在 main 前面，main 一開始就會畫房間。 -->
 <script>
-var NEST_V='1127-25';
+var NEST_V='1127-26';
 var NEST_JS=['data','social','furn2','furn3','sky','looks','save','season','wardrobe','room','rooms','paper','yard','traveldata','abroad','claw','main','album','gift','away','pals','visit','photo','trip','mailai','mail','earn','games','shop','furnfx','nestgift','book','want','water','stay','card','roamdata','roam','roam2','skitdata','skit','spin','memo','hide','seen','friend','keep','travel','hud','guide','music','cover','version'];
 (function(){var v='?v='+NEST_V,h='';
 ['css/style.css','css/cover.css','css/paper.css','css/account.css'].forEach(function(f){h+='<link rel="stylesheet" href="'+f+v+'">'});
@@ -59,7 +59,7 @@ document.write(h)})();
           </div>
         </div>
       </div>
-      <div class="tray" id="tray">
+      <div class="tray min" id="tray" data-st="c">
         <button class="grip" id="grip" aria-label="收起收納架"><i></i></button>
         <button class="trayopen" id="trayOpen" aria-label="打開收納架" aria-expanded="true"><svg viewBox="0 0 24 24"><path d="M3.5 10h17l-1.4 9.2a2 2 0 0 1-2 1.8H6.9a2 2 0 0 1-2-1.8z" fill="currentColor"/><path d="M2.5 7.5A1.5 1.5 0 0 1 4 6h16a1.5 1.5 0 0 1 1.5 1.5V10h-19z" fill="#ffc2dc"/><rect x="9" y="12.5" width="6" height="2.6" rx="1.3" fill="#ff8fbf"/><path d="M7 6c.4-1.8 1.6-3 3-3M17 6c-.4-1.8-1.6-3-3-3" fill="none" stroke="#ffc2dc" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         <div class="tabs">

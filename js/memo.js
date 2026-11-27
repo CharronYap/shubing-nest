@@ -89,7 +89,7 @@ function memoOpen(uid){
       ${typeof memoOldMore === 'function' && memoOldMore() ? '<div class="ml-ft mm-more"><button class="btn sm" data-mmold="1">看更早的</button></div>' : ''}
       <p class="bk-note">${sNet() ? '全部都留著。只存在你自己的存檔裡，朋友那邊有他自己的一本。' : '全部都留在這台裝置裡。登入之後會搬到雲端，換手機也看得到。'}</p>
     </div>
-    <div class="ml-ft"><button class="btn" data-mmback="1">回相簿</button></div>`);
+    <div class="ml-ft"><button class="btn" data-mmback="1">返回</button></div>`);
   evOpen = false; alOpen = false;
 }
 $('#sheet').addEventListener('click', e => {

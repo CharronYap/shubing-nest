@@ -187,7 +187,7 @@ function earnMsOpen(){
   const e = earnData(), L = earnMsList();
   openSheet(`<div class="hd">${EARN_ICON}<span>里程碑 ${L.filter(m => e.ms.includes(m.k)).length} / ${L.length}</span></div>
     <div class="er-box er-ms">${L.map(m => `<div class="er-it ${e.ms.includes(m.k) ? 'off' : ''}"><span class="tx2"><b>${m.t}</b><small>${e.ms.includes(m.k) ? '領過了' : `${m.n} 枚`}</small></span>${e.ms.includes(m.k) ? CK : ''}</div>`).join('')}</div>
-    <div class="ml-ft"><button class="btn" data-erb="1">回上一頁</button></div>`);
+    <div class="ml-ft"><button class="btn" data-erb="1">返回</button></div>`);
 }
 
 /* ---------- 接到「現在可以賺幣的事」那張清單 ---------- */

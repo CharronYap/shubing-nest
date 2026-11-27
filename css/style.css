@@ -54,6 +54,10 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .it>svg{display:block;width:100%;height:auto;pointer-events:none}
 .it.drag{cursor:grabbing;filter:drop-shadow(0 6px 8px rgba(80,40,70,.25))}
 .it.pop{animation:pop .45s ease-out}
+/* 收納架選了東西收起來後，剛擺進房間的那一件閃一下（js/room.js 的 trayDone） */
+.it.placed-flash{animation:itflash .55s ease-in-out 3}
+@keyframes itflash{0%,100%{filter:none}50%{filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 7px var(--pink))}}
+@media (prefers-reduced-motion:reduce){.it.placed-flash{animation:none;filter:drop-shadow(0 0 5px var(--pink))}}
 @keyframes pop{0%{opacity:0;scale:.6}70%{opacity:1;scale:1.06}100%{scale:1}}
 
 .doll .body{display:block;width:100%;transform-origin:50% 100%}
@@ -103,7 +107,7 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .grip{display:block;width:100%;height:20px;border:0;background:none;padding:7px 0 0;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
 .grip i{display:block;width:44px;height:5px;margin:0 auto;border-radius:3px;background:#ecd6e3}
 .grip:focus-visible{outline:3px solid var(--pink);outline-offset:-3px;border-radius:12px}
-/* 收納架是可以上下拖的抽屜：收起（.min，只剩把手和分頁列）／一半（預設，兩排）／全開（.full，浮在房間上面）。js/room.js 的 trayTo */
+/* 收納架是可以上下拖的抽屜，兩段：收著（.min，只剩把手和分頁列，預設）／全開（.full，浮在房間上面）。js/room.js 的 trayTo */
 #roomPage{position:relative}
 .trayopen{display:none}
 .tray.min .items{display:none}
@@ -119,8 +123,8 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .setb .dots{display:flex;gap:3px}
 .setb .dots i{width:7px;height:7px;border-radius:50%;background:#e8e1f8}
 .setb .dots i.on{background:var(--lav2)}
-/* 一半的高度剛好兩排（--tray-two 由 js 照格子的大小算）；裡面自己捲，不帶著整頁動；最後一排下面留一點空白 */
-.items{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:6px 10px 18px;max-height:var(--tray-two,200px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start}
+/* 收著時不顯示；全開時裡面自己捲，不帶著整頁動；最後一排下面留一點空白 */
+.items{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:6px 10px 18px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start}
 .tile{position:relative;aspect-ratio:1;border-radius:16px;border:2px solid #f3e7ef;background:linear-gradient(#fff,#fbf6ff);display:grid;place-items:center;cursor:pointer;padding:6px;min-width:0}
 .tile>svg,.tile>img,.tile>.sw{width:86%;height:86%;object-fit:contain;pointer-events:none}
 .tile .sw{border-radius:10px;border:2px solid #fff;box-shadow:0 0 0 1px #eee}
@@ -1121,8 +1125,12 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 /* =====================================================================
    旅行（js/travel.js）：門邊的背包、紙條、行李、明信片、旅行相簿
    ===================================================================== */
-.fx-bag{z-index:6}
-.fx-bag.on::after{content:"";position:absolute;right:-6%;top:-4%;width:26%;aspect-ratio:1;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px #fff}
+/* 背包掛在門上方的牆上：比所有家具、掛飾、娃娃、紙條都上面（那些最高三百多），在夜晚的暗色（.nightov 400）下面，晚上一起變暗；
+   拖曳中的東西（500）經過時可以蓋過去。拖娃娃時其他構造會變淡（.room.dragdoll .fx），背包照常 */
+.fx-bag{z-index:390}
+.room.dragdoll .fx.fx-bag{opacity:1}
+/* 金色小圓點放在袋身右邊，不跟頂上露出的點心疊在一起 */
+.fx-bag.on::after{content:"";position:absolute;right:-12%;top:50%;width:26%;aspect-ratio:1;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px #fff}
 .tv-note{position:absolute}
 .tv-box{display:grid;gap:8px;padding:2px;max-height:calc(100dvh - 230px);overflow-y:auto;overscroll-behavior:contain}
 .tv-box .al-sec{margin:6px 2px 2px;display:flex;align-items:baseline;gap:8px}

@@ -381,12 +381,16 @@ function tvMailText(d, q){
   return {title: `${P.name}的明信片`, body, from: duo ? tvNames(ds) : DOLL_NAME[d], pic: tvCardHTML(q.p, c, ds) + `<p class="tvpc-cap">${P.name}・${card.name}${ds.length > 1 && !duo ? `（和${DOLL_NAME[q.w]}一起）` : ''}</p>`};
 }
 
-/* ---------- 背包（客廳門邊，固定在那裡）和原本位置的紙條 ---------- */
+/* ---------- 背包（掛在客廳門左邊牆上的掛勾，固定在那裡）和原本位置的紙條 ---------- */
 function tvBagSVG(){
   const pk = tvPacked(), pal = window.PAPER ? window.PAPER.tone() : null;
   const c = pal ? {a: pal.a2, b: pal.a2d || pal.a2, s: pal.sun, w: pal.wood, p: pal.paper, k: pal.ink} : {a: '#7fc4d8', b: '#4a9fd0', s: '#ffd75e', w: '#a8714f', p: '#fff', k: '#6b2d4a'};
   const ol = pal ? '' : ` stroke="${c.b}" stroke-width="2" stroke-linejoin="round"`;
-  return `<svg viewBox="0 0 60 66"><path d="M22 14c0-10 16-10 16 0" fill="none" stroke="${c.w}" stroke-width="3.400" stroke-linecap="round"/>
+  // 門邊的掛勾（2026-11-27）：牆上一小片底座，伸出一根往上彎的勾子，提帶掛在勾子上
+  return `<svg viewBox="0 -18 60 84"><rect x="25" y="-17" width="10" height="9" rx="2.500" fill="${c.w}"/>
+    <circle cx="30" cy="-14.500" r="1.100" fill="${c.k}" opacity=".35"/>
+    <path d="M18 17L30-4l12 21" fill="none" stroke="${c.w}" stroke-width="3.400" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M30-10v5c0 3.500 5 3.500 5 0v-2" fill="none" stroke="${c.k}" stroke-opacity=".55" stroke-width="2.400" stroke-linecap="round"/>
     ${pk ? `<circle cx="22" cy="14" r="7" fill="${c.p}"/><rect x="18" y="14" width="8" height="6" fill="${c.k}"/><circle cx="38" cy="13" r="6" fill="${c.s}"/>` : ''}
     <path d="M10 ${pk ? 20 : 24}c0-5 4-8 9-8h22c5 0 9 3 9 8v32c0 5-4 8-9 8H19c-5 0-9-3-9-8z" fill="${c.a}"${ol}/>
     <path d="M10 ${pk ? 24 : 28}h40v10c0 3-2 5-5 5H15c-3 0-5-2-5-5z" fill="${c.b}"/>
@@ -399,7 +403,9 @@ function tvRoomPaint(){
   if (roomId === 'living'){
     const b = document.createElement('button');
     b.className = 'fx fx-bag tvx' + (tvPacked() ? ' on' : ''); b.setAttribute('aria-label', tvPacked() ? '行李（準備好了）' : '行李');
-    b.setAttribute('style', 'left:66.500%;width:11%;bottom:calc(100% - var(--wh,52%) - 3.6%)');
+    // 門（js/rooms.js 的 fx-door）在 left 79%、寬 15%，左緣 71.5%；背包掛在門左邊的牆上，中心 64%、寬 11%，右緣 69.5% 不碰門框。
+    // 門圖 60×100，高 = 寬的 25%；背包圖 60×84，高 = 寬的 15.4%。底部對齊門的一半高度（往上 12.5%寬）＝自己高度的 81%。圖層見 css 的 .fx-bag
+    b.setAttribute('style', 'left:64%;width:11%;bottom:calc(100% - var(--wh,52%));transform:translate(-50%,-81%)');
     b.innerHTML = tvBagSVG();
     b.onclick = () => tvBagOpen();
     room.appendChild(b);
@@ -558,7 +564,7 @@ function tvAlbumOpen(){
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>旅行</span><small class="pc-left">明信片 ${total} / ${all.length * 3}</small></div>
     <div class="tv-box tv-album">${t.out.length ? `<ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : ''}${big}${picRow}${pages}${abroad}
       <p class="bk-note">明信片是牠們路上寄回來的，信箱裡看得到背面寫的話。合照是回家前拍的。土產每一間都能擺。</p></div>
-    <div class="ml-ft"><button class="btn" data-tv="bag">看行李</button><button class="btn" data-tv="back">回相簿</button></div>`);
+    <div class="ml-ft"><button class="btn" data-tv="bag">看行李</button><button class="btn" data-tv="back">返回</button></div>`);
   evOpen = false; alOpen = false;
 }
 /* 護照：出國的地方一國一頁。第一次有娃娃從那裡回來，蓋一個章（章上是那個地標的小圖、國家、那一天）；還沒去過的是一個虛線的圈 */
