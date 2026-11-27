@@ -105,19 +105,21 @@ function render(){
   room.querySelectorAll('.it').forEach(e=>{if(!alive.has(e.dataset.u))e.remove();});
   items.forEach(it=>{
     if(it.kind==='furn'?!FURN[it.id]:!SPR[it.id])return;   // 不認得的跳過不畫（平常 roomQuarantine 已經先拿開了，這裡再保險一次）
+    try{
     const el=elFor(it);const [w]=sizeOf(it);
     el.style.left=it.x+'%';el.style.top=roomY(it.y)+'%';el.style.width=w+'%';el.style.zIndex=zOf(it);
     if(it.kind==='doll'){
       el.classList.toggle('sit',!!it.sit);el.classList.toggle('breathe',!it.sit);
       el.querySelector('.body').style.animationDelay=(-(it.uid*0.7)%3.2)+'s';
     }
+    }catch(e){console.error('[room] 這一件畫不出來，先跳過',it,e);}   // 一件出錯不要讓後面的都沒畫，房間看起來像空的
   });
   renderGlow();
   if(!VISIT){renderTray();renderSet();afterRender();}else{if(typeof paintSleep==='function')paintSleep();if(typeof stayPaint==='function')stayPaint();}   // 去朋友家、看明信片時：自己家的客人和紙條不要留在畫面上
 }
 function renderGlow(){
   room.querySelectorAll('.glow').forEach(g=>g.remove());
-  items.filter(i=>i.kind==='furn'&&FURN[i.id].glow).forEach(l=>{
+  items.filter(i=>i.kind==='furn'&&FURN[i.id]&&FURN[i.id].glow).forEach(l=>{
     const [w,h]=sizeOf(l);const [gx,gy]=FURN[l.id].glow;
     const g=document.createElement('div');g.className='glow';g.style.left=(l.x+(gx-.5)*w)+'%';g.style.top=(roomY(l.y)-(1-gy)*h)+'%';room.appendChild(g);
   });
