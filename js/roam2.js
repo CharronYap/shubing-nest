@@ -26,41 +26,55 @@ function roamMeet(it, st){
   roamHopTo(it, Math.max(10, Math.min(90, ox + (ox > 50 ? -10 : 10))), Math.max(58, Math.min(94, oy + 1)), () => roamTogether(it, o));
   return true;
 }
+/* 其中一隻是來過夜的客人（js/stay.js）時講什麼（2026-11-27，台詞在 js/roamdata.js）：
+   1. 客人剛到的那一天，第一隻靠近牠的先打招呼（那一隻講 GUEST_HI，客人回 GUEST_BACK），每位客人每天一次；
+   2. 兩隻同一種：SAME_TALK；
+   3. 其他：回 null，用原本的 PAIR_TALK（客人當成那一種娃娃）。
+   回傳 {hi, say:[先講的, 句子, 後講的, 句子], done}。有客人的互動不加交情、不吵架（交情是家裡娃娃之間的）。 */
+function guestTalk(a, b){
+  const g = a.guest ? a : b, h = g === a ? b : a, one = L => L[Math.floor(Math.random() * L.length)];
+  if (typeof g.hi === 'function' && g.hi() && GUEST_HI[h.id] && GUEST_BACK[g.id]) return {hi: 1, say: [h, one(GUEST_HI[h.id]), g, one(GUEST_BACK[g.id])], done: g.hiDone};
+  if (a.id === b.id && SAME_TALK[a.id]){ const [x, y] = one(SAME_TALK[a.id]); return {say: [h, x, g, y]}; }
+  return null;
+}
 function roamTogether(a, b){
-  if (!items.includes(a) || !items.includes(b) || roamPaused()) return;   // 走到一半玩家開了面板、或小劇場開演了：這次就不互動
-  const k = palKey(a.id, b.id), sa = roamSt(a), sb = roamSt(b);
+  if (!roamHas(a) || !roamHas(b) || roamPaused()) return;   // 走到一半玩家開了面板、或小劇場開演了：這次就不互動
+  const k = palKey(a.id, b.id), sa = roamSt(a), sb = roamSt(b), gst = !!(a.guest || b.guest), bump = n => { if (!gst) palBump(a.id, b.id, n); };
   sa.next = sb.next = Date.now() + 7000;
-  if (fightOf(a.id, b.id)){ roamSay(a, FIGHT_LINE[a.id]); setTimeout(() => { if (items.includes(b)) roamSay(b, FIGHT_LINE[b.id]); }, 2000); return; }
+  if (!gst && fightOf(a.id, b.id)){ roamSay(a, FIGHT_LINE[a.id]); setTimeout(() => { if (items.includes(b)) roamSay(b, FIGHT_LINE[b.id]); }, 2000); return; }
+  const gt = gst ? guestTalk(a, b) : null;
   const seats = roamSeats(a, f => !FURN[f.id].own);
   const pick = [['talk', 5], ['jump', 2], ['chase', 2], ['seat', seats.length ? 1 : 0]];
   let r = Math.random() * pick.reduce((n, p) => n + p[1], 0), act = 'talk';
   for (const [n, w] of pick){ r -= w; if (r <= 0){ act = n; break; } }
+  if (gt && gt.hi) act = 'talk';   // 還沒打過招呼：先打招呼
   if (act === 'talk'){
-    const L = PAIR_TALK[k]; if (!L) return;
-    const [who, l1, l2] = L[Math.floor(Math.random() * L.length)], first = who === a.id ? a : b, second = first === a ? b : a;
+    let first, second, l1, l2;
+    if (gt){ [first, l1, second, l2] = gt.say; if (gt.done) gt.done(); }
+    else { const L = PAIR_TALK[k]; if (!L) return; const [who, x1, x2] = L[Math.floor(Math.random() * L.length)]; first = who === a.id ? a : b; second = first === a ? b : a; l1 = x1; l2 = x2; }
     roamSay(first, l1);
     setTimeout(() => {
-      if (!items.includes(second) || roamPaused()) return;
-      roamSay(second, l2); palBump(a.id, b.id, 2);
+      if (!roamHas(second) || roamPaused()) return;
+      roamSay(second, l2); bump(2);
       // 偶爾吵起來：一天最多一次，同時只有一對
       const f = S.album.fight;
-      if (!VISIT && !fightNow() && !(f && f.d === todayStr()) && Math.random() < .05) setTimeout(() => fightStart(a, b), 2400);
+      if (!gst && !VISIT && !fightNow() && !(f && f.d === todayStr()) && Math.random() < .05) setTimeout(() => fightStart(a, b), 2400);
     }, 2200);
-  } else if (act === 'jump'){ roamIdle(a, 'jump'); roamIdle(b, 'jump'); palBump(a.id, b.id, 1); }
+  } else if (act === 'jump'){ roamIdle(a, 'jump'); roamIdle(b, 'jump'); bump(1); }
   else if (act === 'chase'){
     const [x, y] = roamPos(a), tx = Math.max(12, Math.min(88, x + (x > 50 ? -1 : 1) * rnd(20, 34))), ty = Math.max(62, Math.min(92, y + rnd(-10, 10)));
     roamHopTo(a, tx, ty);
-    setTimeout(() => { if (items.includes(b) && !roamPaused() && !sb.busy) roamHopTo(b, Math.max(10, Math.min(90, tx + (tx > 50 ? -9 : 9))), ty); }, 700);
-    palBump(a.id, b.id, 1);
+    setTimeout(() => { if (roamHas(b) && !roamPaused() && !sb.busy) roamHopTo(b, Math.max(10, Math.min(90, tx + (tx > 50 ? -9 : 9))), ty); }, 700);
+    bump(1);
   } else {
     const [f, s] = seats[Math.floor(Math.random() * seats.length)];
     roamSitOn(a, f, s);
     setTimeout(() => {
-      if (!items.includes(b) || roamPaused() || sb.busy) return;
+      if (!roamHas(b) || roamPaused() || sb.busy) return;
       const [x, y] = seatPos(f, s);
       roamHopTo(b, Math.max(10, Math.min(90, x + (x > 50 ? -11 : 11))), Math.max(58, Math.min(94, y + 4)), () => roamSay(b, SEAT_LINE[b.id]));
     }, 500);
-    palBump(a.id, b.id, 1);
+    bump(1);
   }
 }
 function fightStart(a, b){
@@ -198,7 +212,7 @@ function roamIn(r, rm){
   roamAct = function(it, st, canMove){
     if (canMove && !REDUCE){
       if (Math.random() < .25 && roamMeet(it, st)) return;
-      if (Math.random() < .07 && roamVisit(it)) return;
+      if (!it.guest && Math.random() < .07 && roamVisit(it)) return;   // 客人只在客廳，不串門子
     }
     act(it, st, canMove);
   };

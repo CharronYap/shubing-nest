@@ -156,7 +156,8 @@ function nightKey(){ const t = new Date(); if (t.getHours() < WAKE_AT) t.setDate
 function paintSleep(){
   room.querySelectorAll('.doll').forEach(el => {
     const it = items.find(i => String(i.uid) === el.dataset.u);
-    el.classList.toggle('sleep', !!it && asleep(it.id));
+    const gd = !it && el.classList.contains('st-guest') ? el.dataset.pd : '';   // 來過夜的客人（js/stay.js）晚上也睡
+    el.classList.toggle('sleep', it ? asleep(it.id) : !!gd && asleep(gd));
   });
 }
 function dreamOf(d){

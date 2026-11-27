@@ -665,6 +665,8 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .st-hdimg{width:30px;height:30px;object-fit:contain}
 .gst{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%}
 .st-guest{touch-action:none;cursor:grab}
+.st-guest.st-mine{cursor:pointer}
+.st-guest.sit .st-tag,.st-guest.sleep .st-tag{margin-bottom:0}
 .st-tag{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:2px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;padding:2px 8px;border-radius:999px;background:#fff;border:2px solid #ffd3e6;color:var(--pink2);font-size:11px;font-weight:900;pointer-events:none}
 .st-note{width:15%;min-width:54px;aspect-ratio:1;border:0;padding:6px 4px;background:#fff8c9;box-shadow:0 2px 0 #e6d98a,0 4px 8px rgba(80,40,70,.12);transform:translate(-50%,-100%) rotate(-4deg);font:inherit;font-size:11px;font-weight:800;line-height:1.35;color:#7a5a12;cursor:pointer;display:grid;place-items:center;text-align:center}
 .st-note::before{content:"";position:absolute;left:50%;top:-5px;width:44%;height:10px;transform:translateX(-50%) rotate(3deg);background:rgba(255,156,200,.7);border-radius:2px}
@@ -1103,6 +1105,12 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .fr-new{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pink);margin-left:6px;vertical-align:1px}
 .fr-letter{margin:0}
 .ml-pal{margin:4px 2px 0}
+/* 信箱的分類鈕：排成一排，排不下左右滑，不換行 */
+.ml-cats{flex-wrap:nowrap;gap:5px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;margin:0 -2px 8px;padding:2px}
+.ml-cats::-webkit-scrollbar{display:none}
+.ml-cats .ng-chip{position:relative;flex:none;white-space:nowrap;padding:5px 9px;font-size:13px}
+.ml-cats .ng-chip b{position:absolute;right:-1px;top:-2px;width:9px;height:9px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 1.5px #fff}
+.ml.pc button.ml-hd{cursor:pointer}
 .palb .bd{position:absolute;right:-6px;top:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--pink);color:#fff;font-size:11px;font-weight:900;display:grid;place-items:center;border:2px solid #fff;padding:0 4px;line-height:1}
 .palb.wig svg{animation:wig 2.6s ease-in-out infinite;transform-origin:50% 80%}
 @media (prefers-reduced-motion:reduce){.palb.wig svg{animation:none}}

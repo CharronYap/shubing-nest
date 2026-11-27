@@ -155,12 +155,7 @@ function tvDeliver(o, pc){
 function tvMailPut(k, day){
   const m = mailInit();
   m.l.unshift({k, t: day, r: 0, a: null, g: 0});
-  while (m.l.length > MAIL_MAX){
-    let j = -1;
-    for (let x = m.l.length - 1; x >= 0; x--) if (m.l[x].r && (!m.l[x].a || m.l[x].g)){ j = x; break; }
-    if (j < 0) break;
-    m.l.splice(j, 1);
-  }
+  mailTrim(m.l);   // 上限各類各算（js/mail.js）
 }
 function tvPutBack(d, h){
   if (!DOLL_N[d] || !h || RIDS.some(r => home[r] && home[r].items.some(i => i.kind === 'doll' && i.id === d))) return;

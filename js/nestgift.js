@@ -82,6 +82,7 @@ async function ngClaim(id){
       m.gin.push(id); if (m.gin.length > 60) m.gin.splice(0, m.gin.length - 60);
       // 變成一封看過的信，相簿「寫給你的信」會留下「從○○家來的」；不算在一天一封裡
       m.l.unshift({k, t, r: 1, a: null, g: 0});
+      if (typeof mailTrim === 'function') mailTrim(m.l);
       const ar = m.arch[g.doll] = m.arch[g.doll] || [];
       ar.push(`${t}|${k}`); if (ar.length > MAIL_ARCH) ar.splice(0, ar.length - MAIL_ARCH);
       save();

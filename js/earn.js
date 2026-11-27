@@ -16,7 +16,7 @@ function earnList(){
   }
   const m = S.mail;
   const coins = m ? m.l.filter(o => o.a && !o.g && o.a.startsWith('coin-')).reduce((n, o) => n + (+o.a.slice(5) || 0), 0) : 0;
-  if (coins) L.push({ic: MAIL_ICON, t: '信箱裡有幣還沒收', s: `${coins} 枚`, go: () => { setPage('room'); openMail(); }});
+  if (coins) L.push({ic: MAIL_ICON, t: '信箱裡有幣還沒收', s: `${coins} 枚`, go: () => { setPage('room'); if (typeof mailCat !== 'undefined') mailCat = 'all'; openMail(); }});
   if (!S.day.free) L.push({ic: CLAW_ICON, t: '今天第一次夾娃娃', s: '不用幣', go: () => { $('#sheet').hidden = true; setPage('claw'); }});
   if (typeof earnMore === 'function') earnMore(L);   // 第二步的小遊戲、店員、收成接在這裡
   return L;

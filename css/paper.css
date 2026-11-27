@@ -283,6 +283,8 @@
 .look-paper .pc-back{border:0;border-radius:10px;background:var(--p-paper);background-image:repeating-linear-gradient(transparent 0 25px,var(--p-edge) 25px 26px);box-shadow:0 3px 0 var(--p-edge);color:var(--p-ink)}
 .look-paper .pc-st{background:var(--p-card);border-color:var(--p-a2);color:var(--p-a2)}
 .look-paper .ml.pc,.look-paper .ml.pc.unread{border-color:transparent}
+.look-paper .ml-cats .ng-chip{font-size:13.5px}
+.look-paper .ml-cats .ng-chip b{background:var(--p-a1);box-shadow:0 0 0 1.5px var(--p-paper)}
 /* 帳號視窗：好友那一段的分隔線、清單、加回去和移除 */
 .look-paper .ac-fr{border-top-color:var(--p-edge)}
 .look-paper .ac-list li{border-bottom-color:var(--p-edge)}
