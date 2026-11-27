@@ -6,8 +6,12 @@
    - 信箱裡留最近 10 張，舊的自動收掉；也可以自己收掉。
    不懲罰、不催人：明信片不會過期，沒看也不會怎樣。
    別人打的字和名字一律走 txSlot（textContent）。
-   雲端：nestCards/{自動編號} = {from, fromName, to, snap, msg, t}。收的人打開時抄進自己的存檔，再刪雲端那筆。
-   存檔（都放在 S.mail 裡）：pc = [{id, w:名字, t:'日期', msg, snap, r:看過}]（最多 CARD_KEEP 張，而且全部加起來不超過 CARD_BYTES，見 cardTrim）、pcd = [抄過的編號]（最多 40 個）、pcn = {d:'日期', n:今天寄了幾張} */
+   雲端：nestCards/{自動編號} = {from, fromName, to, snap 或 tv, msg, t}。收的人打開時抄進自己的存檔，再刪雲端那筆。
+   旅行明信片寄一份給朋友（2026-11-28 第二批 04a）：信箱、旅行相簿的大圖多一顆「寄一份給朋友」（js/travel.js 的 tvSendBtn），
+     一樣走這裡選朋友、寫一句話、共用一天 3 張。寄的不是房間，是 tv = {p:地方, c:第幾張, ds:'娃娃+娃娃', k:'pc' 或 'pic'（合照）}，
+     snap、tv 二選一（firestore.rules 的 okCardFace）。收的人放在信箱「明信片」和「朋友家」，打開就在信箱裡展開（js/mail.js 的 mailTvRow），
+     正面照這份自己畫，背面只有寄的人寫的話。
+   存檔（都放在 S.mail 裡）：pc = [{id, w:名字, t:'日期', msg, snap 或 tv, r:看過}]（最多 CARD_KEEP 張，而且全部加起來不超過 CARD_BYTES，見 cardTrim）、pcd = [抄過的編號]（最多 40 個）、pcn = {d:'日期', n:今天寄了幾張} */
 const CARD_DAY = 3, CARD_KEEP = 30, CARD_LEN = 80;   // CARD_KEEP：2026-11-27 從 10 提到 30（跟 js/account.js 合併那邊一樣），「全部都留」做好之前先這樣
 const CARD_BYTES = 250000;   // 收到的明信片全部序列化後最多這麼大（整份存檔上限 1 MiB，明信片帶房間快照，不能讓它佔太多）
 const cardBytes = pc => { const s = JSON.stringify(pc); try { return new TextEncoder().encode(s).length; } catch (e) { return s.length * 3; } };
@@ -58,10 +62,11 @@ function cardSnap(){
 }
 
 /* ---------- 寄 ---------- */
-function cardCompose(snap){
-  if (!sNet()) return;
-  cardDraft = {snap, to: null, msg: '', friends: null};
+// tv：寄的是旅行明信片（js/travel.js），不是房間。沒登入也打開，畫面上就是「還沒有好友」那一句
+function cardCompose(snap, tv){
+  cardDraft = {snap: tv ? null : snap, tv: tv || null, to: null, msg: '', friends: sNet() ? null : []};
   cardPaint();
+  if (!sNet()) return;
   sNet().friends().then(l => { if (cardDraft){ cardDraft.friends = l || []; if ($('#sheet .pc-box')) cardPaint(); } }).catch(() => { if (cardDraft){ cardDraft.friends = []; if ($('#sheet .pc-box')) cardPaint(); } });
 }
 function cardPaint(){
@@ -78,7 +83,7 @@ function cardPaint(){
     ${d.friends.some(f => f.hasMe === false) ? '<small class="bk-note">灰色的朋友還沒加你為好友，等他加你之後才能寄給他。</small>' : ''}
     <div class="al-sec">寫一句話</div>
     <input class="tx-in pc-in" type="text" maxlength="${CARD_LEN}" placeholder="想跟朋友說的話" aria-label="明信片上的話，${CARD_LEN} 字以內">
-    <small class="bk-note">明信片上是剛剛拍的這間房間。只有收到的朋友看得到。</small>`;
+    <small class="bk-note">${d.tv ? '寄的是這張明信片的正面，背面只有你寫的這句話。只有收到的朋友看得到。' : '明信片上是剛剛拍的這間房間。只有收到的朋友看得到。'}</small>`;
   const ok = left > 0 && d.friends && d.friends.length;
   openSheet(`<div class="hd">${CARD_ICON}<span>寄明信片</span>${left > 0 ? `<small class="pc-left">今天還能寄 ${left} 張</small>` : ''}</div><div class="pc-box">${body}</div>
     ${ok ? `<div class="ml-ft"><button class="btn y" data-pc="send" ${d.to ? '' : 'disabled'}>寄出</button></div>` : ''}`);
@@ -93,17 +98,22 @@ async function cardSend(){
   const f = (d.friends || []).find(x => x.uid === d.to);
   if (!f || f.hasMe === false){ cardBusy = false; return; }
   try {
-    await net.cardSend({to: d.to, snap: d.snap, msg: sText(d.msg, CARD_LEN), fromName: net.me.name});
+    await net.cardSend({to: d.to, ...(d.tv ? {tv: d.tv} : {snap: d.snap}), msg: sText(d.msg, CARD_LEN), fromName: net.me.name});
     cardMail().pcn.n++; save();
     cardDraft = null; $('#sheet').hidden = true;
-    toast(`明信片寄給${sText(f && f.name, 12) || '朋友'}了`);
+    toast(d.tv ? '寄出去了' : `明信片寄給${sText(f && f.name, 12) || '朋友'}了`);
   } catch (e) { sQuiet('card', e); toast(sErr(e)); }
   cardBusy = false;
 }
 
 /* ---------- 收 ---------- */
 // 朋友那份擺法：格式不對的不收；裡面的家具、娃娃到要畫的時候再用 visitClean 濾
+// 旅行明信片（tv）：長度照規則的 okTvSnap；地方、卡片、娃娃這台認不認得，到畫的時候再看（不認得就寫要更新遊戲）
+const cardTvOk = t => !!(t && typeof t === 'object' && typeof t.p === 'string' && t.p.length >= 1 && t.p.length <= 20 && Number.isInteger(t.c) && t.c >= 0 && t.c <= 50
+  && typeof t.ds === 'string' && t.ds.length >= 1 && t.ds.length <= 120 && (t.k === 'pc' || t.k === 'pic'));
+const cardTvOf = t => ({p: t.p, c: t.c, ds: t.ds, k: t.k});
 function cardOk(c){
+  if (c && c.tv) return !c.snap && cardTvOk(c.tv);
   const s = c && c.snap;
   return !!(s && typeof s === 'object' && s.room && typeof s.room === 'object' && Array.isArray(s.room.items) && s.room.items.length <= 300);
 }
@@ -117,7 +127,7 @@ async function cardRefresh(redraw){
     if (!c || typeof c.id !== 'string') return;
     if (!m.pcd.includes(c.id) && cardOk(c)){
       // h：收到的時間，用朋友寄出的那一刻（js/mail.js 的 mailWhen 畫成「11月27日 20:58」，2026-11-27 以前的沒有）
-      m.pc.unshift({id: c.id, w: sText(c.fromName, 12) || '朋友', t: ngDay(c.t), h: mailHmOf(c.t || Date.now()), msg: sText(c.msg, CARD_LEN), snap: c.snap, r: 0, ...(typeof c.from === 'string' && /^[\w-]{1,64}$/.test(c.from) ? {u: c.from} : {})});   // u：寄的人的帳號，用來對「我的娃娃是不是正住在他家」
+      m.pc.unshift({id: c.id, w: sText(c.fromName, 12) || '朋友', t: ngDay(c.t), h: mailHmOf(c.t || Date.now()), msg: sText(c.msg, CARD_LEN), ...(c.tv ? {tv: cardTvOf(c.tv)} : {snap: c.snap}), r: 0, ...(typeof c.from === 'string' && /^[\w-]{1,64}$/.test(c.from) ? {u: c.from} : {})});   // u：寄的人的帳號，用來對「我的娃娃是不是正住在他家」
       m.pcd.push(c.id); if (m.pcd.length > 40) m.pcd.splice(0, m.pcd.length - 40);
       changed = true;
     }
@@ -138,6 +148,9 @@ function cardOpen(i){ cardShow(cardMail().pc[i]); }
 // old：這一張不在主存檔裡，是從舊的那邊讀回來的（js/keep.js）
 function cardShow(c, old){
   if (!c || VISIT) return;
+  // 旅行明信片：不用擺房間，在信箱裡展開那一張（紀念冊、朋友面板點到的也走這裡）
+  if (c.tv){ if (typeof mailOpenTv === 'function') mailOpenTv(c, old); return; }
+  if (!c.snap || !c.snap.room){ toast('這張明信片打不開'); return; }   // 壞掉的資料：不要整個卡住
   if (!c.r && !old){ c.r = 1; save(); mailBadge(); }
   const s = c.snap, rid = RIDS.includes(s.rid) ? s.rid : 'living';
   // 借「去朋友家」那一套把房間擺出來：三間都放同一份，只看得到這一間

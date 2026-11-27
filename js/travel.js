@@ -392,6 +392,14 @@ function tvCardHTML(p, c, ds, big){
    下面一行小字；從信箱存的再加背面寫的話、署名和日期。右下角小小的「薯餅的小窩」。新風格、舊外觀存出來一樣。
    畫布的保護照拍照那套（js/photo.js）：每一樣圖先試畫，讀不回來就跳過、記在 skipped。字用 js/cvfont.js：背面的話用粉圓，其他用源泉 */
 const tvSaveBtn = o => `<button class="btn sm tv-save" data-tvsave="${encodeURIComponent(JSON.stringify(o))}">存成照片</button>`;
+// 寄一份給朋友（2026-11-28 第二批 04a）：放在「存成照片」右邊。只寄地方、第幾張、誰、是不是合照，朋友那邊自己畫；選朋友、寫字走 js/card.js 的 cardCompose
+const tvSendBtn = o => (o && TV_CARDS[o.p] && TV_CARDS[o.p][o.c] && (o.ds || []).length ? `<button class="btn sm tv-send" data-tvsend="${encodeURIComponent(JSON.stringify({p: o.p, c: o.c, ds: o.ds.join('+'), k: o.big ? 'pic' : 'pc'}))}">寄一份給朋友</button>` : '');
+function tvSendClick(b){
+  if (typeof cardCompose !== 'function') return;
+  let t; try { t = JSON.parse(decodeURIComponent(b.dataset.tvsend)); } catch (e) { return; }
+  if (!t || !TV_CARDS[t.p] || !TV_CARDS[t.p][t.c]) return;
+  cardCompose(null, {p: t.p, c: +t.c, ds: String(t.ds).slice(0, 120), k: t.k === 'pic' ? 'pic' : 'pc'});
+}
 const tvPlain = s => String(s || '').replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 // 一行太長就照畫布量出來的寬度斷開；句號、逗號這類不放在下一行開頭，留在上一行尾巴（右邊有留空，凸出一點點沒關係）
 function tvWrap(ctx, t, w){
@@ -764,8 +772,8 @@ function tvAlbumOpen(){
   const pics = tvPicAll().reverse().filter(x => TV_PLACES[x.p] && TV_CARDS[x.p][x.c]);
   const pk = x => String(x.ds).split('+');
   let big = '';
-  if (tvBig && tvBig[0] === 'pic'){ const x = pics.find(q => q.id === tvBig[1]); if (x){ const cap = `${md(x.t)}・${pk(x).length > 2 ? '大家' : tvNames(pk(x).filter(d => DOLL_NAME[d]))}在${TV_PLACES[x.p].name}`; big = `<div class="tv-big">${tvCardHTML(x.p, x.c, pk(x), true)}<div class="tv-caprow"><p class="tvpc-cap">${cap}</p>${tvSaveBtn({p: x.p, c: x.c, ds: pk(x), big: true, cap})}</div></div>`; } }
-  else if (tvBig && ((t.cards[tvBig[0]] || 0) & (1 << tvBig[1]))) { const [bp, bc] = tvBig, cap = `${TV_PLACES[bp].name}・${TV_CARDS[bp][bc].name}`; big = `<div class="tv-big">${tvCardHTML(bp, bc, tvWhoOf(bp, bc))}<div class="tv-caprow"><p class="tvpc-cap">${cap}</p>${tvSaveBtn({p: bp, c: bc, ds: tvWhoOf(bp, bc), cap})}</div></div>`; }
+  if (tvBig && tvBig[0] === 'pic'){ const x = pics.find(q => q.id === tvBig[1]); if (x){ const cap = `${md(x.t)}・${pk(x).length > 2 ? '大家' : tvNames(pk(x).filter(d => DOLL_NAME[d]))}在${TV_PLACES[x.p].name}`; big = `<div class="tv-big">${tvCardHTML(x.p, x.c, pk(x), true)}<div class="tv-caprow"><p class="tvpc-cap">${cap}</p>${tvSaveBtn({p: x.p, c: x.c, ds: pk(x), big: true, cap})}${tvSendBtn({p: x.p, c: x.c, ds: pk(x), big: true})}</div></div>`; } }
+  else if (tvBig && ((t.cards[tvBig[0]] || 0) & (1 << tvBig[1]))) { const [bp, bc] = tvBig, cap = `${TV_PLACES[bp].name}・${TV_CARDS[bp][bc].name}`; big = `<div class="tv-big">${tvCardHTML(bp, bc, tvWhoOf(bp, bc))}<div class="tv-caprow"><p class="tvpc-cap">${cap}</p>${tvSaveBtn({p: bp, c: bc, ds: tvWhoOf(bp, bc), cap})}${tvSendBtn({p: bp, c: bc, ds: tvWhoOf(bp, bc)})}</div></div>`; }
   const picRow = pics.length ? `<div class="al-sec">合照<small>每一趟回家前拍一張</small></div><div class="tv-pics">${pics.slice(0, tvPicN).map(x => `<button class="tv-th" data-tvpic="${x.id}" aria-label="${md(x.t)}在${TV_PLACES[x.p].name}的合照">${tvCardHTML(x.p, x.c, pk(x), true)}<small>${md(x.t)}・${TV_PLACES[x.p].short || TV_PLACES[x.p].name.replace('山上的', '')}</small></button>`).join('')}</div>${pics.length > tvPicN ? `<button class="btn sm tv-more" data-tv="more">再看 ${Math.min(30, pics.length - tvPicN)} 張${pics.length - tvPicN > 30 && !tvOldMore() ? `<small>還有 ${pics.length - tvPicN} 張</small>` : ''}</button>` : tvOldMore() ? '<button class="btn sm tv-more" data-tv="older">看更早的</button>' : ''}` : '';
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>旅行</span><small class="pc-left">明信片 ${total} / ${all.length * 3}</small></div>
     <div class="tv-box tv-album">${t.out.length ? `<ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : ''}${big}${picRow}${pages}${abroad}
@@ -837,6 +845,7 @@ const tvMapNote = () => tvData().out.map(o => `<p class="bk-note tv-mapn">${TV_B
 /* ---------- 按鈕 ---------- */
 $('#sheet').addEventListener('click', e => {
   const sv = e.target.closest('[data-tvsave]'); if (sv){ tvSaveClick(sv); return; }
+  const sd = e.target.closest('[data-tvsend]'); if (sd){ tvSendClick(sd); return; }
   const p = e.target.closest('[data-tvp]'); if (p){ tvPack(p.dataset.tvp); return; }
   const by = e.target.closest('[data-tvbuy]'); if (by){ tvBuy(by.dataset.tvbuy); return; }
   const lg = e.target.closest('[data-tvlog]');

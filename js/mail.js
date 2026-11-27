@@ -16,7 +16,7 @@
 const MAIL_ARCH = 24;
 /* 分類（2026-11-27 使用者要的）：信箱上面一排分類鈕，全部｜娃娃的信｜小窩更新｜明信片｜朋友家。
    每一封屬於哪一類看 key 的第二段：news = 小窩更新；gift（朋友送來的娃娃）、trip（過夜回來的日記）、re（朋友寫的信，js/letter.js）= 朋友家；pc（娃娃旅行寄回來的明信片）= 明信片；其他都是娃娃的信。
-   朋友寄來的明信片不在 l 裡，在 S.mail.pc（js/card.js），畫的時候一起排進「明信片」和「全部」。
+   朋友寄來的明信片不在 l 裡，在 S.mail.pc（js/card.js），畫的時候一起排進「明信片」和「全部」；朋友分的旅行明信片（有 tv 的）「朋友家」也列。
    上限各類各算，免得更新信把娃娃的信擠掉：小窩更新不設上限；其他三類各 60 封。滿了只刪最舊的「看過、附件也領了」的，沒看的不會不見。
    兩台裝置合併存檔（js/account.js）也叫 mailTrim，用同一套。朋友寄來的明信片的上限在 js/card.js（CARD_KEEP），這裡不管。 */
 const MAIL_CATS = [['all', '全部'], ['doll', '娃娃的信'], ['news', '小窩更新'], ['pc', '明信片'], ['pal', '朋友家']];
@@ -659,8 +659,8 @@ function mailCard(o, j, open, tag, old){
     // 龍龍：先是一片葉子，點一下翻到背面
     inner = x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && x.type !== 're' && !o.f && !old
       ? `<button class="ml-leaf" data-flip="${j}" aria-label="把葉子翻過來">${MAIL_LEAF}<small>點一下翻過來</small></button>`
-      : (x.pic || '') + (x.type === 'pc' && x.pic && x.sv && typeof tvSaveBtn === 'function' ? `<div class="tv-caprow">${tvSaveBtn({...x.sv, body: x.body, from, date: /^\d{4}-/.test(o.t || '') ? o.t.slice(0, 4) + '年' + md(o.t) : ''})}</div>` : '') + mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
-    // 旅行的明信片：照片下面、背面的字上面一顆「存成照片」（js/travel.js 的 tvCardShot）
+      : (x.pic || '') + (x.type === 'pc' && x.pic && x.sv && typeof tvSaveBtn === 'function' ? `<div class="tv-caprow">${tvSaveBtn({...x.sv, body: x.body, from, date: /^\d{4}-/.test(o.t || '') ? o.t.slice(0, 4) + '年' + md(o.t) : ''})}${typeof tvSendBtn === 'function' ? tvSendBtn(x.sv) : ''}</div>` : '') + mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
+    // 旅行的明信片：照片下面、背面的字上面一顆「存成照片」（js/travel.js 的 tvCardShot），右邊一顆「寄一份給朋友」（tvSendBtn）
     // 朋友家的信（送來的娃娃、過夜的日記、朋友寫的信）：下面一顆「回信」（js/letter.js），找不到要寄給誰就不放
     if (typeof letterBtn === 'function' && !inner.includes('data-flip')) inner += letterBtn(o, () => openMail(true));
     if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : o.a === 'ticket' ? '附上一張' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
@@ -669,22 +669,54 @@ function mailCard(o, j, open, tag, old){
     <button class="ml-hd" data-ml${old ? 'x' : ''}="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${tag ? MAIL_CAT_NAME[mailCatOf(o)] + '・' : ''}${from}・${mailWhen(o.t, mailHm(o))}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
     ${open ? `<div class="ml-bd">${inner}</div>` : ''}</div>`;
 }
-let mlOpenIx = -1, mlOpenX = -1;   // 打開著的是第幾封：主存檔的、舊的那邊的
+let mlOpenIx = -1, mlOpenX = -1, mlOpenPc = '';   // 打開著的是第幾封：主存檔的、舊的那邊的；mlOpenPc：打開著的那張朋友分的旅行明信片（編號）
 // 朋友寄來的明信片（S.mail.pc）在信箱裡的一列：一張一列，點了開那一張（js/card.js 的 cardOpen）
 function mailPcRow(c, i, tag, old){
+  if (c.tv) return mailTvRow(c, i, tag, old);
   return `<div class="ml pc ${c.r ? '' : 'unread'}"><button class="ml-hd" data-mpc${old ? 'x' : ''}="${i}"><span class="pc-st">${typeof CARD_ICON !== 'undefined' ? CARD_ICON : ''}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${tag ? MAIL_CAT_NAME.pc + '・' : ''}${mailWhen(c.t, c.h)}</small><i>${c.msg ? txSlot(c.msg) : '這張沒有寫字。'}</i></span></button></div>`;
 }
+/* 朋友分你一份的旅行明信片（2026-11-28 第二批 04a，js/card.js 的 tv）：跟信一樣在信箱裡點開、收起來，不用另開一頁。
+   正面照 tv 自己畫（收的人沒有的娃娃也畫）；這台不認得的地方、卡片或娃娃（對方版本比較新）就寫一行要更新遊戲。
+   背面只有寄的人寫的那句話和署名，娃娃原本寫的話不帶過來 */
+function mailTvRow(c, i, tag, old){
+  const t = c.tv, open = mlOpenPc === c.id, w = txSlot(c.w || '朋友');
+  const ds = String(t.ds || '').split('+').filter(d => SPR[d] && DOLL_NAME[d]);
+  const P = typeof TV_PLACES !== 'undefined' ? TV_PLACES[t.p] : null, card = P && TV_CARDS[t.p] ? TV_CARDS[t.p][+t.c] : null;
+  const ok = !!(card && ds.length && ds.length === String(t.ds).split('+').length && typeof tvCardHTML === 'function');
+  let inner = '';
+  if (open){
+    const who = ds.length > 2 ? '大家' : tvNames(ds), did = t.k === 'pic' ? '拍的' : '寄回來的';
+    const cap = ok ? `${who}在${P.name}${did}，${w}分你一份` : '';
+    const sv = ok && typeof tvSaveBtn === 'function' ? tvSaveBtn({p: t.p, c: +t.c, ds, big: t.k === 'pic', cap: `${who}在${P.name}${did}，${c.w || '朋友'}分你一份`, body: c.msg || '', from: c.w || '朋友', date: /^\d{4}-/.test(c.t || '') ? c.t.slice(0, 4) + '年' + md(c.t) : ''}) : '';
+    inner = (ok ? tvCardHTML(t.p, +t.c, ds, t.k === 'pic') + `<div class="tv-caprow"><p class="tvpc-cap">${cap}</p>${sv}</div>` : '<div class="ml-tx"><p class="ml-nt">這張明信片要更新遊戲才看得到</p></div>')
+      + `<div class="ml-tx"><p>${c.msg ? txSlot(c.msg) : '這張沒有寫字。'}</p></div><p class="ml-sg">${w}</p>`;
+    // 回信（js/letter.js）：跟房間明信片同一種「回：你寄的明信片」
+    const re = !VISIT && typeof letterOfCard === 'function' && typeof sNet === 'function' && sNet() ? letterOfCard(c) : null;
+    if (re && typeof ltKey === 'function') inner += `<div class="lt-row"><button class="btn sm lt-btn" data-ltr="${ltKey(re, () => openMail(true))}">回信</button></div>`;
+  }
+  return `<div class="ml pc ${c.r ? '' : 'unread'} ${open ? 'open' : ''}"><button class="ml-hd" data-mpt${old ? 'x' : ''}="${i}" aria-expanded="${open}"><span class="pc-st">${typeof CARD_ICON !== 'undefined' ? CARD_ICON : ''}</span><span><b>${w}分你一張明信片</b><small>${tag ? MAIL_CAT_NAME.pal + '・' : ''}${mailWhen(c.t, c.h)}</small>${open ? '' : `<i>${c.msg ? txSlot(c.msg) : '這張沒有寫字。'}</i>`}</span></button>${open ? `<div class="ml-bd">${inner}</div>` : ''}</div>`;
+}
+// 紀念冊、朋友面板點到一張旅行明信片（js/card.js 的 cardShow 轉過來）：信箱開到「朋友家」，展開那一張
+function mailOpenTv(c, old){
+  if (!c || !c.tv) return;
+  if (!old && !c.r){ c.r = 1; save(); mailBadge(); }
+  mailCat = 'pal'; mlOpenIx = -1; mlOpenX = -1; mlOpenPc = c.id;
+  openMail(true);
+  const card = $('#sheet .ml.open'); if (card) card.scrollIntoView({block: 'nearest'});
+}
+// 朋友的明信片放在哪幾類：房間的在「明信片」；旅行明信片「明信片」「朋友家」都有。兩樣都沒有的壞資料不列
+const mailPcIn = (c, cat) => !!c && (c.snap || c.tv) && (cat === 'all' || cat === 'pc' || (cat === 'pal' && !!c.tv));
 const mailPcs = () => (S.mail && Array.isArray(S.mail.pc) ? S.mail.pc : []);
 // 這一類裡有哪些：信（l 裡的第幾封）和朋友的明信片（pc 裡的第幾張），照日期新的在前
 function mailRowsOf(cat){
   const m = mailInit(), rows = [];
   m.l.forEach((o, j) => { if (o && typeof o.k === 'string' && (cat === 'all' || mailCatOf(o) === cat)) rows.push({o, j, t: o.t || '', h: mailHmSort(mailHm(o))}); });
-  if (cat === 'all' || cat === 'pc') mailPcs().forEach((c, i) => { if (c) rows.push({c, i, t: c.t || '', h: mailHmSort(c.h)}); });
+  mailPcs().forEach((c, i) => { if (mailPcIn(c, cat)) rows.push({c, i, t: c.t || '', h: mailHmSort(c.h)}); });
   // 按「看更早的」讀回來的舊信、舊明信片（js/keep.js）：接在後面，主存檔裡已經有的不重複列
   if (cat !== 'news' && typeof mailOld !== 'undefined'){
     const haveL = new Set(m.l.map(mailSameKey)), haveC = new Set(mailPcs().map(c => c && c.id));
     mailOld.forEach((o, j) => { if ((cat === 'all' || mailCatOf(o) === cat) && !haveL.has(mailSameKey(o))) rows.push({o, j, t: o.t || '', h: mailHmSort(mailHm(o)), old: 1}); });
-    if (cat === 'all' || cat === 'pc') cardOld.forEach((c, i) => { if (!haveC.has(c.id)) rows.push({c, i, t: c.t || '', h: mailHmSort(c.h), old: 1}); });
+    cardOld.forEach((c, i) => { if (mailPcIn(c, cat) && !haveC.has(c.id)) rows.push({c, i, t: c.t || '', h: mailHmSort(c.h), old: 1}); });
   }
   // 日期新的在前；同一天再看時間（新的在前，沒有時間的在後），都一樣就照原本的順序
   const cmp = (x, y) => (x < y ? 1 : x > y ? -1 : 0);
@@ -693,7 +725,7 @@ function mailRowsOf(cat){
 const mailUnreadOf = cat => mailRowsOf(cat).filter(r => !r.old && !(r.o || r.c).r).length;
 function openMail(keep){
   const m = mailInit();
-  if (!keep){ mlOpenIx = -1; mlOpenX = -1; }
+  if (!keep){ mlOpenIx = -1; mlOpenX = -1; mlOpenPc = ''; }
   if (!MAIL_CAT_NAME[mailCat]) mailCat = 'all';
   const rows = mailRowsOf(mailCat), all = mailCat === 'all';
   const total = mailUnreadOf('all'), unread = rows.filter(r => !r.old && !(r.o || r.c).r).length, todo = rows.filter(r => !r.old && r.o && r.o.a && !r.o.g).length;
@@ -728,17 +760,22 @@ $('#sheet').addEventListener('click', e => {
     openMail();
   } else if (b.dataset.mpc !== undefined){
     if (typeof cardOpen === 'function'){ mailCardBack = true; cardOpen(+b.dataset.mpc); }
+  } else if (b.dataset.mpt !== undefined || b.dataset.mptx !== undefined){
+    // 旅行明信片：在信箱裡展開、收起來（主存檔的那張打開算看過）
+    const c = b.dataset.mpt !== undefined ? mailPcs()[+b.dataset.mpt] : cardOld[+b.dataset.mptx];
+    if (c){ mlOpenPc = mlOpenPc === c.id ? '' : c.id; mlOpenIx = -1; mlOpenX = -1; if (b.dataset.mpt !== undefined && !c.r){ c.r = 1; save(); mailBadge(); } openMail(true); }
+    const card = $('#sheet .ml.open'); if (card) card.scrollIntoView({block: 'nearest'});
   } else if (b.dataset.mpcx !== undefined){
     const c = cardOld[+b.dataset.mpcx]; if (c && typeof cardShow === 'function'){ mailCardBack = true; cardShow(c, true); }
   } else if (b.dataset.mlx !== undefined){
-    const j = +b.dataset.mlx; mlOpenX = mlOpenX === j ? -1 : j; mlOpenIx = -1; openMail(true);
+    const j = +b.dataset.mlx; mlOpenX = mlOpenX === j ? -1 : j; mlOpenIx = -1; mlOpenPc = ''; openMail(true);
     const card = $('#sheet .ml.open'); if (card) card.scrollIntoView({block: 'nearest'});
   } else if (b.dataset.mall === 'old'){
     b.disabled = true; const box = $('#sheet .ml-box'), top = box ? box.scrollTop : 0;
     mailOlder(mailCat).then(() => { if ($('#sheet .ml-box') && !$('#sheet').hidden){ openMail(true); const x = $('#sheet .ml-box'); if (x) x.scrollTop = top; } });
   } else if (b.dataset.ml !== undefined){
     const j = +b.dataset.ml;
-    mlOpenIx = mlOpenIx === j ? -1 : j; mlOpenX = -1;
+    mlOpenIx = mlOpenIx === j ? -1 : j; mlOpenX = -1; mlOpenPc = '';
     m.l[j].r = 1; save(); mailBadge(); openMail(true);
     const card = $('#sheet .ml.open'); if (card) card.scrollIntoView({block: 'nearest'});
   } else if (b.dataset.flip !== undefined){

@@ -184,10 +184,10 @@ async function keepCardSend(net, c){
   const o = keepCard(c);
   await net.keepCardPut(o);
   const back = await net.keepCardGet(o.id);
-  if (!back || back.id !== o.id || !back.snap) throw new Error('讀回來對不上，這一張先不算');
+  if (!back || back.id !== o.id || !(back.snap || back.tv)) throw new Error('讀回來對不上，這一張先不算');
 }
-// 一張明信片在雲端的樣子（規則只收這幾欄）。收到的時間 h（'20:58'）2026-11-27 21:21 規則發布後才帶；以前收的沒有 h
-const keepCard = c => { const o = {id: c.id, w: String(c.w || '朋友').slice(0, 24), t: /^\d{4}-\d{2}-\d{2}$/.test(c.t) ? c.t : todayStr(), msg: String(c.msg || '').slice(0, 80), snap: keepClone(c.snap), r: c.r ? 1 : 0}; if (typeof c.u === 'string' && c.u) o.u = c.u.slice(0, 64); if (typeof c.h === 'string' && /^\d{1,2}:[0-5]\d$/.test(c.h)) o.h = c.h; return o; };
+// 一張明信片在雲端的樣子（規則只收這幾欄；tv 是旅行明信片，js/card.js，跟 snap 二選一）。收到的時間 h（'20:58'）2026-11-27 21:21 規則發布後才帶；以前收的沒有 h
+const keepCard = c => { const o = {id: c.id, w: String(c.w || '朋友').slice(0, 24), t: /^\d{4}-\d{2}-\d{2}$/.test(c.t) ? c.t : todayStr(), msg: String(c.msg || '').slice(0, 80), ...(c.tv ? {tv: {p: c.tv.p, c: c.tv.c, ds: c.tv.ds, k: c.tv.k}} : {snap: keepClone(c.snap)}), r: c.r ? 1 : 0}; if (typeof c.u === 'string' && c.u) o.u = c.u.slice(0, 64); if (typeof c.h === 'string' && /^\d{1,2}:[0-5]\d$/.test(c.h)) o.h = c.h; return o; };
 async function keepMoveCards(cards, net, u){
   for (const c of cards){
     const key = 'cards:' + c.id;
@@ -304,7 +304,7 @@ async function keepCardFind(id){
 }
 async function keepCardOpen(id){
   if ((S.mail && (S.mail.pcx || []).includes(id)) || typeof cardShow !== 'function'){ toast('這張明信片已經不在了'); return; }
-  try { const c = await keepCardFind(id); if (c && c.snap) cardShow(c, true); else toast('這張明信片已經不在了'); }
+  try { const c = await keepCardFind(id); if (c && (c.snap || c.tv)) cardShow(c, true); else toast('這張明信片已經不在了'); }
   catch (e) { sQuiet('keep', e); toast('現在讀不到這張，晚點再試'); }
 }
 // 主存檔裡沒有、但可能搬出去了的明信片（紀念冊那一行要不要做成可以點）

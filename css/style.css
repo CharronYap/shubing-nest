@@ -1279,11 +1279,12 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .tvpc-d img{position:relative;display:block;width:100%;height:auto}
 .tvpc-cap{margin:6px 2px 2px;font-size:12px;font-weight:800;color:var(--soft);text-align:right}
 .ml-bd .tvpc{margin:2px 0 0}
-/* 明信片「存成照片」：信箱裡在照片下面靠右；相簿大圖在小字那一行的右邊 */
+/* 明信片「存成照片」「寄一份給朋友」：信箱裡在照片下面靠右；相簿大圖在小字那一行的右邊 */
 .tv-caprow{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:6px 0 2px}
 .tv-caprow .tvpc-cap{margin:0 2px}
 .tv-save{flex:none}
 .tv-save[disabled]{filter:grayscale(1);opacity:.55;cursor:default}
+.tv-send{flex:none}
 /* 回家 */
 .tv-wel{align-items:flex-start;padding:10px}
 .tv-wel>img{width:56px;height:56px;object-fit:contain;flex:none}

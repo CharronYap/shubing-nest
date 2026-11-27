@@ -27,7 +27,7 @@
 //   cloud.waterAdd(uid, day, {fromName, plot}) / cloud.waterMine(uid, day) / cloud.waters() / cloud.waterDel(id)             幫朋友澆水
 //   cloud.foundAdd(uid, day, {fromName, ok, n}) / cloud.foundMine(uid, day) / cloud.founds() / cloud.foundDel(id)            躲貓貓找的結果（js/hide.js）
 //   cloud.stayGo({to, doll, look, day, x, y, fromName}) / cloud.stayMine() / cloud.stayGuests() / cloud.staySet(uid, patch) / cloud.stayEnd(uid)   過夜
-//   cloud.cardSend({to, snap, msg, fromName}) / cloud.cardsTo() / cloud.cardDel(id)                                          明信片
+//   cloud.cardSend({to, snap 或 tv, msg, fromName}) / cloud.cardsTo() / cloud.cardDel(id)                                    明信片（tv：旅行明信片，js/card.js）
 //   cloud.letterSend({to, msg, re, d, fromName}) / cloud.lettersTo() / cloud.letterDel(id)                                    回信（js/letter.js）
 //   cloud.chatSend(uid, {m, s}) / chatRecent(uid) / chatOlder(uid, cur) / chatSince(uid, ts) / chatMeta(uid) / chatMetas() / chatSeen(uid) / chatDel(uid, id)   朋友聊天（js/chat.js）
 //
@@ -404,11 +404,12 @@ export function createCloud(config, { emulator = false } = {}) {
       await F.deleteDoc(F.doc(db, 'nestStays', uid));
     },
     // ---------- 明信片（nestCards/{自動編號}） ----------
-    async cardSend({ to, snap, msg, fromName }) {
+    // snap（房間）、tv（旅行明信片）只寫一個，規則（okCardFace）兩個都有、都沒有都擋
+    async cardSend({ to, snap, tv, msg, fromName }) {
       await ready;
       if (!user) throw new Error('not signed in');
       const r = await F.addDoc(F.collection(db, 'nestCards'), {
-        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), to, snap, msg: String(msg || '').slice(0, 80), t: Date.now(),
+        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), to, ...(tv ? { tv } : { snap }), msg: String(msg || '').slice(0, 80), t: Date.now(),
       });
       return r.id;
     },
