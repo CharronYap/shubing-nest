@@ -1,5 +1,4 @@
 /* 封面：粉色房間、小房子標題、沙發上的娃娃、薯餅開始鍵 */
-@font-face{font-family:"GenSenRounded";src:url("../fonts/gensen-rounded-heavy.woff2") format("woff2");font-weight:400 1000;font-display:block}
 .cover{position:absolute;inset:0;z-index:700;overflow:hidden;isolation:isolate;font-family:"GenSenRounded","PingFang TC","Noto Sans TC",sans-serif;font-weight:900;color:var(--ink);
   --k:1;--floor:calc(250px * var(--k));
   background:radial-gradient(circle,rgba(255,255,255,.55) 2.2px,transparent 2.6px) 0 0/26px 26px,linear-gradient(#ffe9f1,#ffd6e6);

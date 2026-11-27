@@ -187,7 +187,7 @@ localStorage.removeItem('shubingNest.v1'); location.reload();
 
 ## 字型
 
-封面標題用「源泉圓體」（GenSen Rounded）Heavy，SIL Open Font License 1.1，授權全文在 `fonts/OFL.txt`。
+封面標題、帳號按鈕和合照下面的字用「源泉圓體」（GenSen Rounded 2 TW）Heavy，SIL Open Font License 1.1，授權全文在 `fonts/OFL.txt`。整套字切成很多個小檔放在 `fonts/gensen/`，`css/gensen.css` 每一段各寫 `unicode-range`，瀏覽器只下載畫面上用到的那幾段；`gensen-00` 是封面原本就用得到的字。這兩個是 `~/Desktop/GitHub收藏/薯餅小窩/工具/源泉圓體/split.py` 產生的，不要手改。
 
 ## 注意
 

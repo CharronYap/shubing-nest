@@ -243,6 +243,12 @@ function drawDoll(ctx, el, R, it, fx){
 }
 
 /* ---------- 拍一張 ---------- */
+// 要畫的字先載好（2026-11-28）：源泉圓體整套切成很多段（css/gensen.css），畫布不會自己去下載，
+// 地名、朋友的名字、火腿那句用到哪幾段，要先叫瀏覽器載。超過 3 秒或載不到就照畫（那幾個字會用後面的系統字）
+function photoFonts(fonts, text){
+  const all = Promise.all(fonts.map(f => document.fonts.load(f, text).catch(e => console.warn('合照的字沒載到', e))));
+  return Promise.race([all, new Promise(r => setTimeout(r, 3000))]);
+}
 async function photoShoot(){
   const R = room.getBoundingClientRect(), W = R.width, H = R.height;
   if (!W || !H) return null;
@@ -255,7 +261,7 @@ async function photoShoot(){
   photoBad = [];
   let dirty = '';
   const chk = name => { if (!dirty && !photoClean(c)){ dirty = name; photoNote('畫完' + name + '之後'); } };
-  try { await document.fonts.load('900 40px "GenSenRounded"'); } catch (e) {}
+  await photoFonts(['900 40px "GenSenRounded"'], 'z');   // 睡覺的 z 也是源泉圓體；一樣最多等 3 秒
 
   // 白邊
   ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, PH.W, PH.H);
@@ -329,20 +335,22 @@ async function photoShoot(){
   const up = guests.length ? 12 : 0;   // 有朋友家的娃娃入鏡時下面多一行，上面兩行往上讓一點
   const by = PH.pad + PH.ph, font = (w, z) => `${w} ${z}px "GenSenRounded","PingFang TC","Noto Sans TC",sans-serif`;
   const d = new Date();
+  const place = `${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`;
+  const quip = inShot.has('piggy') ? PIGGY_QUIPS[Math.floor(Math.random() * PIGGY_QUIPS.length)] : '';
+  const gline = guests.length ? '和' + guests.slice(0, 2).map(g => `${g.n}家的${DOLL_NAME[g.d]}`).join('、') + (guests.length > 2 ? `和另外 ${guests.length - 2} 隻` : '') : '';
+  await photoFonts([font(900, 42), font(800, 26)], `薯餅的小窩${place}「${quip}」火腿${gline}`);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   const pt = window.PAPER ? window.PAPER.tone() : null;   // 新風格（js/paper.js）：標題用主色深一階、小字用墨色
   ctx.fillStyle = pt ? pt.a1d : '#e14f93'; ctx.font = font(900, 42); ctx.fillText('薯餅的小窩', PH.pad + 6, by + 66 - up);
-  ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 26); ctx.fillText(`${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`, PH.pad + 8, by + 110 - up);
-  let quip = '';
-  if (inShot.has('piggy')){
-    quip = PIGGY_QUIPS[Math.floor(Math.random() * PIGGY_QUIPS.length)];
+  ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 26); ctx.fillText(place, PH.pad + 8, by + 110 - up);
+  if (quip){
     ctx.save(); ctx.translate(PH.W - PH.pad - 8, by + 78); ctx.rotate(-3 * Math.PI / 180);
     ctx.textAlign = 'right'; ctx.fillStyle = pt ? '#23264a' : '#6b2d4a'; ctx.font = font(900, 30); ctx.fillText(`「${quip}」`, 0, 0);
     ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22); ctx.fillText('火腿', -10, 38);
     ctx.restore();
   }
   // 有朋友家的娃娃入鏡：白邊多一行小字
-  if (guests.length){ ctx.textAlign = 'left'; ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22); ctx.fillText('和' + guests.slice(0, 2).map(g => `${g.n}家的${DOLL_NAME[g.d]}`).join('、') + (guests.length > 2 ? `和另外 ${guests.length - 2} 隻` : ''), PH.pad + 8, by + 131, 560); }
+  if (guests.length){ ctx.textAlign = 'left'; ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22); ctx.fillText(gline, PH.pad + 8, by + 131, 560); }
   chk('字');
   return {canvas: c, dolls: [...inShot], guests, skipped: photoBad.slice(), dirty};
 }
