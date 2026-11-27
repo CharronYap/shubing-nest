@@ -410,7 +410,7 @@ function mergeSave(remote, guest) {
   }
   // 紀念冊、娃娃送的小禮物、過夜去過哪、看過的小劇場、處理過的躲貓貓結果：兩邊都留
   const memoIds = new Set((ma.memo || []).map(e => e && e.id));
-  const memo = [...(ma.memo || []), ...(ga.memo || []).filter(e => e && !memoIds.has(e.id))].sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : (b.ts || 0) - (a.ts || 0))).slice(0, 100);
+  const memo = [...(ma.memo || []), ...(ga.memo || []).filter(e => e && !memoIds.has(e.id))].sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : (b.ts || 0) - (a.ts || 0))).slice(0, typeof MEMO_MAX === 'number' ? MEMO_MAX : 1000);   // 上限跟 js/memo.js 同一個數字
   if (memo.length) ma.memo = memo;
   for (const k of ['gifts', 'trips']) {
     const src = ga[k] || {}; if (!Object.keys(src).length) continue;

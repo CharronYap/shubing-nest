@@ -6,11 +6,11 @@
    今天誰來過：打開小窩時，朋友在你上次看過之後來過，跳一張小卡片。一天最多一次，沒有人來就不跳。
      愛心照舊不寫是誰，只寫收到幾顆。
    存檔（都放在 S.album 裡，不用改雲端規則）：
-     memo = [{id, t:'日期', ts, u:朋友的 uid, n:朋友的名字, k:哪一種, in:1（對方做的事）, d:娃娃, m:對方寫的字, c:明信片編號}]  新的在前，最多 100 筆
+     memo = [{id, t:'日期', ts, u:朋友的 uid, n:朋友的名字, k:哪一種, in:1（對方做的事）, d:娃娃, m:對方寫的字, c:明信片編號}]  新的在前，最多 MEMO_MAX 筆（2026-11-27 從 100 改成 1000；兩台裝置合併時 js/account.js 用同一個數字）
      who  = '上次跳卡片的日期'   whoT = 上次跳卡片的時間   whoH = {d:'日期', n:那天已經講過幾顆愛心}
    做法：這些玩法都透過 window.nestNet 讀寫雲端，所以在那一層包一次，寫成功、或讀到對方留下的東西時順手記一筆；
         同一件事用 id 認，讀到幾次都只記一次。朋友的名字和寫的字一律走 txSlot（textContent）。 */
-const MEMO_MAX = 100;
+const MEMO_MAX = 1000;
 const MEMO_ICON = {
   friend: HEART(), cardOut: CARD_ICON, cardIn: CARD_ICON, giftOut: MAIL_ICON, giftIn: MAIL_ICON,
   stayOut: STAY_MOON, stayBack: STAY_MOON, guest: STAY_MOON, photoWith: typeof CAM_ICON !== 'undefined' ? CAM_ICON : STAY_MOON, bookIn: BOOK_ICON, bookOut: BOOK_ICON,

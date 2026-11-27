@@ -121,6 +121,24 @@ async function skitRun(run, steps){
     }
   }
 }
+// 開演前：身體被上面那一條擋到（或整隻在那一條上面）的演員，先跳到那一條下面一點，站定了才開始講。
+// 跟演出時的走位一樣只動畫面、不存位置，演完照原本的方式回家。動畫關閉時不跳，直接放過去。不是演員的不管
+async function skitClear(run, cast){
+  const bar = $('#skitBar'), R = room.getBoundingClientRect();
+  if (!bar || !R.height) return;
+  const line = (bar.getBoundingClientRect().bottom - R.top + 8) / R.height * 100;   // 頭頂最高只能到這裡（房間高度的 %）
+  const jobs = [];
+  cast.forEach(d => {
+    const it = skitDoll(d); if (!it) return;
+    const [x, y] = roamPos(it), hOf = v => sizeOf({kind: 'doll', id: it.id, x, y: v})[1];
+    if (roomY(y) - hOf(y) >= line) return;
+    let v = y; for (let i = 0; i < 4; i++) v = roomV(line + hOf(v));   // 越往下娃娃越大，多算幾次才準
+    v = Math.min(96, v);
+    if (REDUCE){ const st = roamSt(it); clearTimeout(st.timer); st.busy = false; st.sit = null; st.x = x; st.y = v; const el = elFor(it); if (el){ el.style.transition = ''; roamApply(it, el); } return; }
+    jobs.push(new Promise(res => { roamHopTo(it, x, v, res); const t0 = Date.now(), iv = setInterval(() => { const st = RS[it.uid]; if (!st || !st.busy || Date.now() - t0 > 6000 || skitOn !== run){ clearInterval(iv); res(); } }, 120); }));
+  });
+  if (jobs.length){ await Promise.all(jobs); await skitSleep(250); }
+}
 async function skitPlay(sc, replay){
   if (skitOn || VISIT) return;
   const run = skitOn = {sc, replay, skip: false, end: 0, endText: sc.end};
@@ -132,6 +150,8 @@ async function skitPlay(sc, replay){
   skitBar(sc.title);
   // 正在動的先停下來
   sc.cast.forEach(d => { const it = skitDoll(d), st = it && RS[it.uid]; if (st){ clearTimeout(st.timer); st.busy = false; } });
+  try { await skitClear(run, sc.cast); } catch (e) { console.info('[skit]', e); }
+  if (skitOn !== run) return;      // 跳到一半換房間了
   await skitRun(run, sc.steps);
   if (skitOn !== run) return;      // 中途換房間了
   skitEnd(run);
