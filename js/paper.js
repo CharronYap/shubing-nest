@@ -11,7 +11,7 @@
    - 紙纖維紋理是一張小圖（img/paper/fiber.png），用色彩增值疊在牆、地板、收納架這些不會動的底上。
    - 娃娃的照片不重畫，當貼紙貼上去，腳下一塊橢圓的影子（不用濾鏡，娃娃在動的時候不會卡）。
    - 顏色直接寫進圖裡（不是用 CSS 變數），這樣拍照把家具轉成圖的時候顏色還在；天色換了就把家具重畫一次。
-   字用 LXGW WenKai TC 的子集（fonts/，在 css/paper.css 宣告），只有新風格的畫面會載。
+   字用 LXGW WenKai TC（fonts/lxgw/ 分段，在 css/lxgw.css 宣告），只有新風格的畫面會載。
    色票：晚上「夜燈」、白天「夜燈的白天」，清晨和傍晚取兩組中間。壁紙和地板：每一款對應一張色紙加一層很淡的花紋（見 PWALL、PFLOOR）。
    放在 rooms.js 後面、main.js 前面載入：main.js 第一次畫房間之前，這裡要先把畫法換掉。 */
 const PAPER_ON = (() => { try { return new URLSearchParams(location.search).get('look') !== 'old'; } catch (e) { return true; } })();

@@ -1,11 +1,9 @@
 /* 新風格：紙雕立體・夜燈（js/paper.js）。2026-11-26 起是預設；網址加 ?look=old 就沒有 .look-paper、.screen.ppon 這兩個 class，這個檔的樣式一條都不會套上去。
    .screen.ppon = 新風格、而且現在在房間那一頁（五間房間都算；小島、娃娃機不算）。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
-   字：LXGW WenKai TC（SIL OFL 1.1，授權文字在 fonts/OFL-LXGW-WenKai-TC.txt）。放的是只含遊戲用得到的字的子集（約 425 KB，Medium 字重），
-   不連外部的字型服務。只有新風格的畫面用到這個字，瀏覽器才會去載它；加了 ?look=old 的人不會下載。
-   遊戲的文字改了之後要重做子集，不然新的字會退回系統字：做法在 ~/Desktop/GitHub收藏/薯餅小窩/工具/字型子集/說明.md。
-   玩家自己打的字、朋友的名字不在子集裡，退回系統的楷體或一般字。 */
-/* font-weight 寫成一段範圍：遊戲裡很多地方要粗體，這樣瀏覽器不會自己把字加粗糊掉 */
-@font-face{font-family:"LXGW WenKai TC";src:url("../fonts/lxgw-wenkai-tc-medium-subset.woff2") format("woff2");font-weight:400 900;font-style:normal;font-display:swap}
+   字：LXGW WenKai TC（SIL OFL 1.1，授權文字在 fonts/OFL-LXGW-WenKai-TC.txt），Medium 字重，不連外部的字型服務。
+   2026-11-27 起整套字切成很多段放在 fonts/lxgw/，@font-face 寫在 css/lxgw.css（程式產生的）。第一次打開只下載遊戲自己用得到的字那一段（lxgw-00），
+   玩家打的字、朋友的名字用到哪段才下載哪段，所以也是手寫字。只有新風格的畫面用到這個字，加了 ?look=old 的人不會下載。
+   遊戲的文字改了之後要重跑，不然新的字會晚一點才出來（要多下載一段）：做法在 ~/Desktop/GitHub收藏/薯餅小窩/工具/字型子集/說明.md。 */
 .screen.ppon{
   --p-hand:"LXGW WenKai TC","Klee One","Klee","Kaiti TC","BiauKai","DFKai-SB","標楷體",serif;
   --p-fiber:url("../img/paper/fiber.png");
@@ -328,7 +326,14 @@
    數字跟 js/paper.js 的 TONES 一樣（改色票時兩邊一起改）；js 載好後會把真正的顏色寫在 #screen 上，蓋過這裡。
    pp-n0：index.html 最前面那段程式在晚上先掛上的。
    ===================================================================== */
-.look-paper{--bg:#eeecee}
+.look-paper{--bg:#eeecee;
+  --p-hand:"LXGW WenKai TC","Klee One","Klee","Kaiti TC","BiauKai","DFKai-SB","標楷體",serif}
+/* 2026-11-27：整個網頁的字都換成手寫字（不只房間和面板），掛在畫面外面的視窗、提示、名字也跟著換。
+   封面照舊（.cover 自己寫了字體，不受這條影響）；圖示裡畫的「春」字是圖的一部分，不換。 */
+.look-paper body{font-family:var(--p-hand)}
+/* 按鈕、輸入框瀏覽器預設不跟著外面的字（Chrome 會變 Arial），這裡讓它們跟著；:where 讓這條很弱，有自己寫字體的地方照舊 */
+.look-paper :where(button,input,select,textarea){font-family:inherit}
+.look-paper .yd-z{font-family:var(--p-hand)}
 .look-paper.pp-n0{--bg:#232844}
 .look-paper .screen{--p-sky:#a9c8ea;--p-hill:#3f6f93;--p-hill2:#6f9fc0;--p-sun:#ffd36e;--p-cloud:#ffffff;--p-wall:#dfe3f0;--p-wall2:#c9cfe6;--p-floor:#cdb5c9;--p-wood:#8a5a45;--p-wood2:#623f30;
   --p-a1:#ff8a66;--p-a2:#3f9aa5;--p-leaf:#4c9a78;--p-ink:#23264a;--p-paper:#fbf6ea;--p-sea:#3f86b8;--p-sand:#e9dccb;--p-rug:#b9bde0;
