@@ -1,7 +1,7 @@
 /* 雲端帳號：封面左上角的帳號按鈕、登入／帳號視窗 */
 .cover .cv-acct{position:absolute;top:calc(19px + var(--sat,0px));left:74px;z-index:9;height:40px;max-width:calc(100% - 158px);
   display:flex;align-items:center;gap:6px;padding:0 14px 0 10px;border:0;border-radius:20px;cursor:pointer;
-  font:900 15px/1 var(--f-head);color:var(--ink);
+  font:900 15px/1 var(--f-body);color:var(--ink);
   background:radial-gradient(circle at 40% 30%,#fff,#ffeaf3);box-shadow:0 4px 0 #f0b8cf,0 8px 10px rgba(80,30,60,.16)}
 .cover .cv-acct[hidden]{display:none}
 .cover .cv-acct:active{transform:translateY(2px);box-shadow:0 2px 0 #f0b8cf,0 4px 6px rgba(80,30,60,.14)}

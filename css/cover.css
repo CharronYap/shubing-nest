@@ -1,5 +1,5 @@
 /* 封面：粉色房間、小房子標題、沙發上的娃娃、薯餅開始鍵 */
-.cover{position:absolute;inset:0;z-index:700;overflow:hidden;isolation:isolate;font-family:var(--f-head);font-weight:900;color:var(--ink);
+.cover{position:absolute;inset:0;z-index:700;overflow:hidden;isolation:isolate;font-family:var(--f-body);font-weight:900;color:var(--ink);
   --k:1;--floor:calc(250px * var(--k));
   background:radial-gradient(circle,rgba(255,255,255,.55) 2.2px,transparent 2.6px) 0 0/26px 26px,linear-gradient(#ffe9f1,#ffd6e6);
   transition:opacity .45s ease}
