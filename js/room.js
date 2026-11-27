@@ -38,10 +38,16 @@ function sizeOf(it){
 }
 // 座位可以在家具旁邊（sx 小於 0 或大於 1，例如拖鞋架、點心櫃），家具靠邊擺時不讓座位跑出房間
 function seatPos(f,k){const [w,h]=sizeOf(f);const [sx,sy]=FURN[f.id].seats[k];return [Math.max(7,Math.min(93,f.x+(sx-.5)*w)),roomV(roomY(f.y)-(1-sy)*h)];}
-function syncSeated(){items.forEach(d=>{if(d.kind==='doll'&&d.sit){const f=items.find(o=>o.uid===d.sit);if(!f){d.sit=null;return;}const [x,y]=seatPos(f,d.seat);d.x=x;d.y=y+.5;}});}
+// 娃娃坐的那件：要是這間裡有座位的家具，座位號碼也要在範圍內。存檔裡指到別隻娃娃、沒有座位的家具、不存在的座位時，
+// 以前會在這裡丟出例外，整間房間畫不出來（2026-11-27 過夜回家後臥室整片深藍）。不合的就站回地上
+function seatOf(d){
+  const f=d.sit!=null?items.find(o=>o.uid===d.sit&&o.kind==='furn'&&o!==d):null,sv=f&&FURN[f.id]&&FURN[f.id].seats;
+  return sv&&Array.isArray(sv[d.seat|0])?f:null;
+}
+function syncSeated(){items.forEach(d=>{if(d.kind==='doll'&&d.sit){const f=seatOf(d);if(!f){d.sit=null;d.seat=0;if(!d.x&&!d.y){d.x=50;d.y=90;}return;}d.seat=d.seat|0;const [x,y]=seatPos(f,d.seat);d.x=x;d.y=y+.5;}});}
 function zOf(it){
   if(it.kind==='furn'){const f=FURN[it.id];if(f.floor)return 6;if(f.wall)return 8;return 20+Math.round(it.y*3);}
-  if(it.sit){const f=items.find(o=>o.uid===it.sit);return zOf(f)+1+it.seat;}
+  if(it.sit){const f=items.find(o=>o.uid===it.sit&&o.kind==='furn');if(f)return zOf(f)+1+(it.seat|0);}
   return 20+Math.round(it.y*3)+1;
 }
 
@@ -51,6 +57,7 @@ let quiet=false;
    那一筆不會不見：存檔的時候照樣寫回去（房間的 toJSON），之後這一版認得了就會回來。js/main.js 開始時叫一次。 */
 function roomQuarantine(){
   try{furnDedupe();}catch(e){console.info('[room]',e);}
+  try{uidRepair();}catch(e){console.info('[room]',e);}
   const rooms=[...Object.keys(home).map(r=>home[r]),home.yard].filter((r,i,a)=>r&&Array.isArray(r.items)&&a.indexOf(r)===i);
   let n=0;
   rooms.forEach(rm=>{
@@ -62,6 +69,21 @@ function roomQuarantine(){
     n+=lost.length;
   });
   if(n)console.info('[room] 有 '+n+' 樣這一版不認得的東西，先不畫（存檔裡留著）');
+  return n;
+}
+/* 編號（uid）檢查：同一間裡兩樣東西同一個編號、或下一個要發的編號比房間裡已經有的還小，
+   之後新放進來的娃娃就可能跟家具撞號，坐的位置會指錯東西。開始時叫一次（roomQuarantine）。
+   撞號的換一個新的；娃娃坐的位置指的是家具，所以撞號時先換娃娃的 */
+function uidRepair(){
+  const rooms=[...Object.keys(home).map(r=>home[r]),home.yard].filter((r,i,a)=>r&&Array.isArray(r.items)&&a.indexOf(r)===i);
+  let max=0,n=0;
+  rooms.forEach(rm=>rm.items.forEach(i=>{if(i&&typeof i.uid==='number'&&i.uid>max)max=i.uid;}));
+  if(!(uid>max))uid=max+1;
+  rooms.forEach(rm=>{
+    const seen=new Set(),list=rm.items.filter(Boolean);
+    [...list.filter(i=>i.kind==='furn'),...list.filter(i=>i.kind!=='furn')].forEach(i=>{if(seen.has(i.uid)){i.uid=uid++;n++;}seen.add(i.uid);});
+  });
+  if(n)console.info('[room] 有 '+n+' 樣東西編號重複，換了新的編號');
   return n;
 }
 function elFor(it){
@@ -514,12 +536,14 @@ function renderNav(){
   const rn=$('#nav .rnav'),on=$('#nav .on');if(rn&&on&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=on.offsetLeft-rn.offsetLeft-rn.clientWidth/2+on.offsetWidth/2;   // 房間多的時候，讓現在這間留在看得到的地方
 }
 function slide(dir,swap){
-  if(REDUCE){swap();return;}
+  // 換房間出錯（例如存檔裡某一筆畫不出來）也要把畫面淡回來，不能停在透明；錯誤記到 console
+  const run=()=>{try{swap();}catch(e){console.error('[room] 換房間時出錯',e);}};
+  if(REDUCE){run();return;}
   // 連點時先把還在跑的動畫收掉，不然會疊在一起
   stage.getAnimations().forEach(a=>a.cancel());
   const out=stage.animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${-dir*16}%)`,opacity:0}],{duration:170,easing:'ease-in',fill:'forwards'});
   out.onfinish=()=>{
-    swap();
+    run();
     // 淡出停在透明，要取消掉，淡入播完才會留在看得到的狀態
     out.cancel();
     stage.animate([{transform:`translateX(${dir*16}%)`,opacity:0},{transform:'translateX(0)',opacity:1}],{duration:260,easing:'ease-out'});
@@ -530,7 +554,7 @@ function load(){
   items=cur().items;quiet=true;
   room.querySelectorAll('.it,.drop,.say').forEach(e=>e.remove());
   $('#sheet').hidden=true;
-  paintRoom();render();renderNav();quiet=false;
+  try{paintRoom();render();}finally{renderNav();quiet=false;}
 }
 // goingTo：正在切過去、還沒換好的房間。連點時用它判斷，不然點回原房間會被略過
 let goingTo=null;
