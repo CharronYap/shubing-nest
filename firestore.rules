@@ -21,6 +21,9 @@ rules_version = '2';
 //   寫法跟 water 一樣：只有好友能建、一人一天一筆、不能改；主人能讀全部、能刪；找的人只能讀自己那一筆。
 //   其他段落沒有動。這個檔案跟主控台上的一樣。
 //   保險：規則被換回舊版時躲貓貓的讀寫會被擋，遊戲那邊安靜處理（js/hide.js、js/cloud.js saveRoom 會拿掉 hide 再寫）。
+// 2026-11-27 全部都留（2026-11-27 14:50 已發布）：
+//   新的子集合 nestSaves/{uid}/memo/{月份}、nestSaves/{uid}/mail/{月份}、nestSaves/{uid}/cards/{明信片編號}，三個都只有本人能讀寫。
+//   放主存檔放不下的舊紀念冊、舊信、舊明信片。其他段落沒有動。說明在檔案最下面那一段。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
@@ -405,6 +408,82 @@ service cloud.firestore {
       allow delete: if request.auth != null
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
       allow update: if false;
+    }
+
+    // ---------- 全部都留（2026-11-27 14:50 已發布）----------
+    // 整份存檔是一份文件（nestSaves/{uid}，上限 1 MiB），紀念冊、收到的明信片、信箱的信不能無限放在裡面。
+    // 主存檔只留最近的（紀念冊 200 筆、明信片 30 張、信箱每一類 60 封），較舊的搬到存檔底下的三個子集合：
+    //   nestSaves/{uid}/memo/{月份}  = {l: [那個月的紀念冊紀錄], t: 更新時間}
+    //   nestSaves/{uid}/mail/{月份}  = {l: [那個月的信], t: 更新時間}
+    //   nestSaves/{uid}/cards/{明信片編號} = 一張明信片（一張比較大，一張一份文件）
+    // 三個都只有本人能讀、能寫、能刪；別人（包括好友）看不到。平常打開遊戲不讀，按「看更早的」或點到舊的那一筆才讀。
+    // 月份的文件名字：yyyy-mm，同一個月太多放不下時接 -2 ～ -9（例：2026-11、2026-11-2）。
+    //   年份從 2026 到現在這一年，月份 01 ～ 12：不能寫未來的月份，一個帳號能開的文件數量有上限。
+    // 規則沒有迴圈，清單裡每一筆的欄位驗不到，只能驗：只有 l 和 t 兩欄、l 是清單、筆數上限、t 是整數；
+    //   另外抽查清單的第一筆和最後一筆是不是一筆紀錄的樣子（有編號、有日期、長度在範圍內）。
+    //   資料只有本人讀得到，亂寫只會弄壞自己的舊紀錄；整份文件的大小 Firestore 自己擋在 1 MiB。
+    function okKeepMonth(mid) {
+      return mid.matches('^20[0-9]{2}-(0[1-9]|1[0-2])(-[2-9])?$')
+        && int(mid.split('-')[0]) >= 2026
+        && int(mid.split('-')[0]) <= request.time.year();
+    }
+    // 紀念冊的一筆：{id, t:'日期', ts, u:朋友的帳號, n:朋友的名字, k:哪一種, in, d:娃娃, m:對方寫的字, c:明信片編號}
+    function okMemoRow(e) {
+      return e is map
+        && e.keys().hasOnly(['id', 't', 'ts', 'u', 'n', 'k', 'in', 'd', 'm', 'c'])
+        && e.id is string && e.id.size() >= 1 && e.id.size() <= 80
+        && e.t is string && e.t.size() <= 10
+        && e.u is string && e.u.size() <= 64
+        && e.k is string && e.k.size() <= 20
+        && (!('n' in e) || (e.n is string && e.n.size() <= 24))
+        && (!('m' in e) || (e.m is string && e.m.size() <= 80))
+        && (!('c' in e) || (e.c is string && e.c.size() <= 80))
+        && (!('d' in e) || (e.d is string && e.d.size() <= 20));
+    }
+    // 信箱的一封：{k:信的代號（朋友打的字、AI 寫的字編碼後也在裡面）, t:'日期', r:看過, a:附件, g:附件領了, f:龍龍的葉子翻過了}
+    function okMailRow(o) {
+      return o is map
+        && o.keys().hasOnly(['k', 't', 'r', 'a', 'g', 'f'])
+        && o.k is string && o.k.size() >= 3 && o.k.size() <= 6000
+        && o.t is string && o.t.size() <= 10
+        && (!('a' in o) || o.a == null || (o.a is string && o.a.size() <= 40));
+    }
+    function okKeepDoc(d, max) {
+      return d.keys().hasOnly(['l', 't']) && d.keys().hasAll(['l', 't'])
+        && d.l is list && d.l.size() >= 1 && d.l.size() <= max
+        && d.t is int;
+    }
+    match /nestSaves/{uid}/memo/{mid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && okKeepMonth(mid)
+        && okKeepDoc(request.resource.data, 1000)
+        && okMemoRow(request.resource.data.l[0])
+        && okMemoRow(request.resource.data.l[request.resource.data.l.size() - 1]);
+    }
+    match /nestSaves/{uid}/mail/{mid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && okKeepMonth(mid)
+        && okKeepDoc(request.resource.data, 500)
+        && okMailRow(request.resource.data.l[0])
+        && okMailRow(request.resource.data.l[request.resource.data.l.size() - 1]);
+    }
+    // 收到的明信片：一張一份，文件名字就是明信片的編號。內容跟主存檔 mail.pc 裡的一張一樣，快照沿用 okCardSnap
+    //   {id 編號, w 寄的人的名字, t '日期', msg 寫的字（80 字以內）, snap 房間的快照, r 看過了沒, u 寄的人的帳號（舊的明信片沒有）}
+    match /nestSaves/{uid}/cards/{cid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && cid.matches('^[A-Za-z0-9_-]{1,64}$')
+        && request.resource.data.keys().hasOnly(['id', 'w', 't', 'msg', 'snap', 'r', 'u'])
+        && request.resource.data.keys().hasAll(['id', 'w', 't', 'snap'])
+        && request.resource.data.id == cid
+        && request.resource.data.w is string && request.resource.data.w.size() <= 24
+        && request.resource.data.t is string && request.resource.data.t.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && (!('msg' in request.resource.data) || (request.resource.data.msg is string && request.resource.data.msg.size() <= 80))
+        && okCardSnap(request.resource.data.snap)
+        && (!('r' in request.resource.data) || request.resource.data.r is int)
+        && (!('u' in request.resource.data) || (request.resource.data.u is string && request.resource.data.u.size() <= 64));
     }
 
     // 其他東西一律不能讀寫

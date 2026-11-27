@@ -13,6 +13,7 @@ const CARD_BYTES = 250000;   // 收到的明信片全部序列化後最多這麼
 const cardBytes = pc => { const s = JSON.stringify(pc); try { return new TextEncoder().encode(s).length; } catch (e) { return s.length * 3; } };
 // 整理收到的明信片：超過張數就丟最舊的；還是太大，從最舊、看過的開始拿掉，沒看過的不拿。有動到就回 true
 function cardTrim(m){
+  if (typeof keepLater === 'function'){ keepLater(); return false; }   // 全部都留（js/keep.js）：不丟，超過的由它搬走
   let ch = false;
   if (m.pc.length > CARD_KEEP){ m.pc.length = CARD_KEEP; ch = true; }
   while (m.pc.length && cardBytes(m.pc) > CARD_BYTES){
@@ -129,9 +130,11 @@ function cardSection(){
     <div class="ml-hd"><span class="pc-st">${CARD_ICON}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${md(c.t)}</small>${c.msg ? `<i>${txSlot(c.msg)}</i>` : ''}</span></div>
     <div class="ml-ft"><button class="btn y sm" data-pc="open" data-i="${i}">看明信片</button><button class="btn sm" data-pc="del" data-i="${i}">丟掉</button></div></div>`).join('');
 }
-function cardOpen(i){
-  const c = cardMail().pc[i]; if (!c || VISIT) return;
-  if (!c.r){ c.r = 1; save(); mailBadge(); }
+function cardOpen(i){ cardShow(cardMail().pc[i]); }
+// old：這一張不在主存檔裡，是從舊的那邊讀回來的（js/keep.js）
+function cardShow(c, old){
+  if (!c || VISIT) return;
+  if (!c.r && !old){ c.r = 1; save(); mailBadge(); }
   const s = c.snap, rid = RIDS.includes(s.rid) ? s.rid : 'living';
   // 借「去朋友家」那一套把房間擺出來：三間都放同一份，只看得到這一間
   const v = visitClean({home: Object.fromEntries(RIDS.map(r => [r, s.room])), look: s.look});
@@ -162,6 +165,7 @@ function cardOpen(i){
     if (!del.dataset.sure){ del.dataset.sure = '1'; del.textContent = '真的要丟掉嗎？再按一次'; setTimeout(() => { if (del.isConnected){ delete del.dataset.sure; del.textContent = '丟掉這張'; } }, 3000); return; }
     const m = cardMail(), k = m.pc.indexOf(c);
     if (k >= 0) m.pc.splice(k, 1);
+    if (typeof keepCardGone === 'function') keepCardGone(c.id, !!old);   // 舊的那邊（這台裝置、雲端）也要刪，不然會又跑回來
     save(); mailBadge();
     cardClose();
     toast('這張明信片丟掉了');
@@ -189,7 +193,7 @@ $('#sheet').addEventListener('click', e => {
   const a = b.dataset.pc; if (!a) return;
   if (a === 'send') cardSend();
   else if (a === 'open') cardOpen(+b.dataset.i);
-  else if (a === 'del'){ const m = cardMail(); m.pc.splice(+b.dataset.i, 1); save(); mailBadge(); openMail(true); }
+  else if (a === 'del'){ const m = cardMail(), c = m.pc[+b.dataset.i]; m.pc.splice(+b.dataset.i, 1); if (c && typeof keepCardGone === 'function') keepCardGone(c.id, false); save(); mailBadge(); openMail(true); }
 });
 addEventListener('nestnet', () => cardRefresh(true));
 document.addEventListener('visibilitychange', () => { if (!document.hidden) cardRefresh(true); });
