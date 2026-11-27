@@ -506,12 +506,13 @@ service cloud.firestore {
         && okMailRow(request.resource.data.l[request.resource.data.l.size() - 1]);
     }
     // 收到的明信片：一張一份，文件名字就是明信片的編號。內容跟主存檔 mail.pc 裡的一張一樣，快照沿用 okCardSnap
-    //   {id 編號, w 寄的人的名字, t '日期', msg 寫的字（80 字以內）, snap 房間的快照, r 看過了沒, u 寄的人的帳號（舊的明信片沒有）}
+    //   {id 編號, w 寄的人的名字, t '日期', msg 寫的字（80 字以內）, snap 房間的快照, r 看過了沒, u 寄的人的帳號（舊的明信片沒有）,
+    //    h 收到的時間 '20:58'（2026-11-27 起才有）}
     match /nestSaves/{uid}/cards/{cid} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
         && cid.matches('^[A-Za-z0-9_-]{1,64}$')
-        && request.resource.data.keys().hasOnly(['id', 'w', 't', 'msg', 'snap', 'r', 'u'])
+        && request.resource.data.keys().hasOnly(['id', 'w', 't', 'msg', 'snap', 'r', 'u', 'h'])
         && request.resource.data.keys().hasAll(['id', 'w', 't', 'snap'])
         && request.resource.data.id == cid
         && request.resource.data.w is string && request.resource.data.w.size() <= 24
@@ -519,7 +520,8 @@ service cloud.firestore {
         && (!('msg' in request.resource.data) || (request.resource.data.msg is string && request.resource.data.msg.size() <= 80))
         && okCardSnap(request.resource.data.snap)
         && (!('r' in request.resource.data) || request.resource.data.r is int)
-        && (!('u' in request.resource.data) || (request.resource.data.u is string && request.resource.data.u.size() <= 64));
+        && (!('u' in request.resource.data) || (request.resource.data.u is string && request.resource.data.u.size() <= 64))
+        && (!('h' in request.resource.data) || (request.resource.data.h is string && request.resource.data.h.matches('^[0-9]{1,2}:[0-5][0-9]$')));
     }
 
     // 朋友聊天：nestChats/{cid}，cid = 兩個人的帳號排序後用 _ 接起來（帳號裡沒有 _），例如 aaa_bbb
