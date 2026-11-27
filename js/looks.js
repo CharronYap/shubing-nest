@@ -311,8 +311,8 @@ function outfitSvg(id, layer, who = 'sloth') {
 }
 
 // ---------- 小窩加的 ----------
-// 龍龍：蛋蛋島沒有這隻，照小窩 img/dino.png 量
-TOY_FACE.dino = { x: 0.5, top: 0.03, eyes: 0.36, cheeks: 0.5, w: 0.62 };
+// 龍龍：蛋蛋島沒有這隻，照小窩的 img/dino.png 量（2026-11-28 換成 3D 掃描的新圖後重量；臉偏左，因為取景是 3/4 側面）
+TOY_FACE.dino = { x: 0.39, top: 0.08, eyes: 0.6, cheeks: 0.7, w: 0.5 };
 // 彈跳豬：小窩的圖只有頭，蝴蝶結照蛋蛋島會掉到下巴外面，改戴在右耳旁邊
 ACCESSORY_TUNING.moodeng.bow = { offsetX: 0.02, offsetY: 0.06, scale: 0.78, rot: 18 };
 return { TOY_FACE, ACCESSORY_PLACE, ACCESSORY_TUNING, accTune, ACCESSORY_SVG, OUTFITS, OUTFIT_FIT, outfitSvg, outfitSkipped };
