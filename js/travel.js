@@ -190,13 +190,14 @@ function tvReturn(o){
     const k = TV_SOUV[o.sv[d]] ? o.sv[d] : '', bg = tvBagOf(o), n = o.pcs.length;
     // 後面三格（1127-25 加的）：這趟的行李、寄了幾張明信片、帶回來的土產。以前的紀錄只有前四格，看的時候就不寫這一行
     const l = t.log[d] = t.log[d] || []; l.push(`${day}|${o.p}|${other}|${o.di[d] | 0}|${bg}|${n}|${k}`); if (l.length > 12) l.splice(0, l.length - 12);
-    let dup = 0;
+    // 土產可以有很多個（2026-11-27）：帶回來就多一個，不換幣。擁有幾個就是 t.sv[k]（以前換成幣的也算在裡面）
+    let have = 0;
     if (k){
       const fid = tvSouvId(k);
-      if (FURN_OWN[fid]){ dup = 1; S.coins += TV_SOUV_COIN; } else { FURN_OWN[fid] = 1; if (typeof newFurnAdd === 'function') newFurnAdd(fid); }
-      t.sv[k] = (t.sv[k] || 0) + 1;
+      FURN_OWN[fid] = 1; if (typeof newFurnAdd === 'function') newFurnAdd(fid);
+      have = t.sv[k] = (t.sv[k] || 0) + 1;
     }
-    t.wel.push({d, p: o.p, sv: k, dup, di: o.di[d] | 0, w: other, b: bg, n});
+    t.wel.push({d, p: o.p, sv: k, c: have, di: o.di[d] | 0, w: other, b: bg, n});
   });
   if (t.wel.length > 12) t.wel.splice(0, t.wel.length - 12);
   // 紀念合照：背景是那個地方的其中一張（這一趟寄過的優先），進信箱、也收進旅行相簿
@@ -526,7 +527,7 @@ function tvWelcome(){
   if (($('#cover') && !$('#cover').hidden) || !$('#sheet').hidden){ tvWelT = setTimeout(tvWelcome, 2500); return; }
   const rows = t.wel.map(w => {
     const P = TV_PLACES[w.p] || TV_PLACES.park, s = TV_SOUV[w.sv];
-    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來${s.unit || '一個'}${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這趟沒有帶東西回來。</small>';
+    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來${s.unit || '一個'}${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : w.c > 1 ? `現在有 ${w.c} ${(s.unit || '一個').replace(/^一/, '')}了，都在收納架的紀念品那一頁。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這趟沒有帶東西回來。</small>';
     const bl = tvBagLine(w.b, w.p, w.n);
     return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.abroad ? P.country : P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${(TV_DIARY[w.d][w.di] || TV_DIARY[w.d][0]).replace(/\{p\}/g, P.name)}」</p>${bl ? `<small class="tv-bl">${bl}</small>` : ''}${got}</div></div>`;
   }).join('');

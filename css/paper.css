@@ -341,6 +341,7 @@
 /* 手機最上面狀態列後面那條淡淡的深色、收納架上「新」的小紅點 */
 @media (max-width:480px){ .look-paper .screen::before{background:linear-gradient(color-mix(in srgb,var(--p-ink) 40%,transparent),color-mix(in srgb,var(--p-ink) 8%,transparent))} }
 .look-paper .tile .nw{background:var(--p-a1);color:var(--p-paper);border-radius:5px;box-shadow:0 0 0 2px var(--p-card)}
+.look-paper .tile .cnt{background:color-mix(in srgb,var(--p-paper) 92%,transparent);color:var(--p-a2);border-radius:4px;font-family:var(--p-hand)}
 /* 封面的開始鍵：拿掉亮面的反光和白邊 */
 .look-paper .cover .cv-go>span::before{display:none}
 .look-paper .cover .cv-go svg{stroke:var(--p-ink);filter:none}

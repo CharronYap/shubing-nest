@@ -356,7 +356,8 @@ function mergeSave(remote, guest) {
       const g = guest.home[r];
       if (m.home[r] || !g || !Array.isArray(g.items)) return;
       const room = JSON.parse(JSON.stringify(g));
-      room.items = room.items.filter(i => i && !placed.has(i.kind + ':' + i.id));
+      // 旅行的土產可以有很多個，不在這裡挑掉；擺得比擁有的多時 furnDedupe 會收起來
+      room.items = room.items.filter(i => i && (i.kind === 'furn' && /^tvs_/.test(i.id) || !placed.has(i.kind + ':' + i.id)));
       room.items.forEach(i => { placed.add(i.kind + ':' + i.id); if (i.sit && !room.items.some(f => f.uid === i.sit)) i.sit = null; });
       m.home[r] = room;
     });

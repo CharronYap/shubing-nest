@@ -225,6 +225,17 @@ let tab='doll';
 const LOCK='<span class="lk"><svg viewBox="0 0 10 12"><rect x="1" y="5" width="8" height="6.5" rx="1.6" fill="currentColor"/><path d="M3 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>';
 const CK=`<span class="ck">${CKS}</span>`;
 function whereFurn(id){for(const r of RIDS){if(home[r].items.some(i=>i.kind==='furn'&&i.id===id))return r;}return null;}
+/* 旅行的土產可以有很多個（2026-11-27 使用者說「紀念品可以有很多不要變成幣」）：
+   擁有幾個照 S.album.tv.sv（每帶回來一次 +1，以前換成幣的那幾趟也算），其他家具一件一個。
+   whereFurn 照舊回第一個找到的房間；要算個數的用下面兩個 */
+const isSouv=id=>/^tvs_/.test(id)||!!(FURN[id]&&FURN[id].souv);
+function furnOwnN(id){
+  if(!FURN_OWN[id])return 0;if(!isSouv(id))return 1;
+  const sv=typeof S!=='undefined'&&S.album&&S.album.tv&&S.album.tv.sv;
+  return Math.max(1,(sv&&+sv[id.replace(/^tvs_/,'')])|0);
+}
+const furnIn=(r,id)=>(home[r]&&Array.isArray(home[r].items)?home[r].items:[]).filter(i=>i&&i.kind==='furn'&&i.id===id);
+const furnPlacedN=id=>RIDS.reduce((n,r)=>n+furnIn(r,id).length,0);
 function whereDoll(id){if(typeof S!=='undefined'&&S.album&&S.album.out&&S.album.out.d===id)return 'out';if(typeof S!=='undefined'&&S.yard&&S.yard.stay&&S.yard.stay[id])return 'yard';for(const r of RIDS){if(home[r].items.some(i=>i.kind==='doll'&&i.id===id))return r;}return null;}
 /* 收納架（2026-11-27 重新整理，使用者說分類亂）：四個分頁 娃娃｜家具｜牆和地板｜紀念品。
    - 每一頁「已經有的」在前面；「還沒有的」收在最下面一排「還沒有的 N 樣」，預設收起來，點了才展開，展開後每一格寫怎麼拿。
@@ -238,14 +249,15 @@ const trayShut={};   // 家具那一頁哪幾組收起來了
 // 這一間放不放得下：掛牆上的不放小島（小島沒有牆）。已經擺在小島上的照樣列出來，才收得回去
 const furnFits=id=>!(roomId==='yard'&&FURN[id].wall&&whereFurn(id)!=='yard');
 /* 一件家具同時只在一間。兩台裝置的房間合在一起時（js/account.js 的 mergeSave 會留著這台剛買的房間）可能同一件出現在兩間：
-   留前面那一間的，後面的拿掉，坐在上面的娃娃站回地上。開始的時候跟「不認得的東西」一起檢查 */
+   留前面那一間的，後面的拿掉，坐在上面的娃娃站回地上。開始的時候跟「不認得的東西」一起檢查。
+   旅行的土產可以有很多個：同一種最多留擁有的個數（furnOwnN，至少 1），超過的才拿掉 */
 function furnDedupe(){
   const seen={};let n=0;
   RIDS.forEach(r=>{const rm=home[r];if(!rm||!Array.isArray(rm.items))return;
-    rm.items.filter(i=>i&&i.kind==='furn').forEach(i=>{if(!seen[i.id]){seen[i.id]=1;return;}
+    rm.items.filter(i=>i&&i.kind==='furn').forEach(i=>{const cap=isSouv(i.id)?Math.max(1,furnOwnN(i.id)):1;seen[i.id]=(seen[i.id]||0)+1;if(seen[i.id]<=cap)return;
       rm.items.forEach(d=>{if(d.sit===i.uid){d.sit=null;d.y=Math.min(95,(+d.y||85)+8);}});
       rm.items.splice(rm.items.indexOf(i),1);n++;});});
-  if(n)console.info('[room] 有 '+n+' 件家具同時擺在兩間，留一間的');
+  if(n)console.info('[room] 有 '+n+' 件家具擺得比擁有的還多，多的收起來');
   return n;
 }
 const TRAY_SEASON={lny:'過年',spring:'春天',summer:'夏天',moon:'中秋',hallo:'萬聖節',winter:'冬天',anniv:'週年'};
@@ -315,8 +327,10 @@ function renderTray(){
   } else if(tab==='keep'){
     // 紀念品：旅行的土產、節日的東西。有了才列在上面；每一間都能擺
     const all=Object.keys(FURN).filter(id=>(FURN[id].souv||FURN[id].season)&&furnFits(id)),own=all.filter(id=>FURN_OWN[id]);
-    const tile=id=>{const w=whereFurn(id),here=w===roomId,away=w&&!here;
-      return `<button class="tile ${here?'placed':''} ${away?'away':''}" data-furn="${id}" aria-label="${FURN[id].name}${here?'，擺在這一間':away?'，擺在別間，點了搬過來':''}">${furnSVG(id)}${here?CK:''}${away?`<span class="rm">${ICON[w]||''}</span>`:''}${!w&&nw.includes(id)?'<span class="nw">新</span>':''}</button>`;};
+    // 土產可以有很多個：右下角寫「×N」（只有 1 個不寫）；這一間有擺就打勾，別間有擺就標那一間
+    const tile=id=>{const n=furnOwnN(id),hn=furnIn(roomId,id).length,ow=RIDS.find(r=>r!==roomId&&furnIn(r,id).length),here=hn>0,away=!!ow,isNew=nw.includes(id)&&(isSouv(id)||!here&&!away);
+      const lab=n>1?`，有 ${n} 個${here?`，這一間擺了 ${hn} 個`:''}${away?'，別間也有擺':''}`:here?'，擺在這一間':away?'，擺在別間，點了搬過來':'';
+      return `<button class="tile ${here?'placed':''} ${away&&!here?'away':''}" data-furn="${id}" aria-label="${FURN[id].name}${lab}${isNew?'，新的':''}">${furnSVG(id)}${here?CK:''}${away?`<span class="rm${here?' rm2':''}">${ICON[ow]||''}</span>`:''}${isNew?'<span class="nw">新</span>':''}${n>1?`<small class="cnt">×${n}</small>`:''}</button>`;};
     const sv=own.filter(id=>FURN[id].souv),se=own.filter(id=>FURN[id].season);
     if(sv.length)h+=trayGrp('旅行帶回來的')+sv.map(tile).join('');
     if(se.length)h+=trayGrp('節日的')+se.map(tile).join('');
@@ -337,11 +351,13 @@ const NEWF_KEY='shubingNest.newFurn';
 function newFurnList(){
   let l=[];try{l=JSON.parse(localStorage.getItem(NEWF_KEY)||'[]');}catch(e){}
   if(!Array.isArray(l))l=[];
-  const keep=l.filter(id=>FURN[id]&&FURN_OWN[id]&&!whereFurn(id));   // 擺出來了、或不認得的，就不算新
+  // 擺出來了、或不認得的，就不算新。土產可以有很多個：全部都擺出去了才不算新（擺一個時 newFurnDel 會拿掉）
+  const keep=l.filter(id=>FURN[id]&&FURN_OWN[id]&&(isSouv(id)?furnPlacedN(id)<furnOwnN(id):!whereFurn(id)));
   if(keep.length!==l.length){try{localStorage.setItem(NEWF_KEY,JSON.stringify(keep));}catch(e){}}
   return keep;
 }
 function newFurnAdd(id){const l=newFurnList();if(!l.includes(id)){l.push(id);try{localStorage.setItem(NEWF_KEY,JSON.stringify(l.slice(-40)));}catch(e){}}}
+function newFurnDel(id){let l=[];try{l=JSON.parse(localStorage.getItem(NEWF_KEY)||'[]');}catch(e){}if(Array.isArray(l)&&l.includes(id)){try{localStorage.setItem(NEWF_KEY,JSON.stringify(l.filter(x=>x!==id)));}catch(e){}}}
 const furnName=id=>FURN[id]?(FURN[id].name||(typeof FURN_NAME!=='undefined'&&FURN_NAME[id])||'家具'):'家具';
 // 小店、獎品卡家具名字下面的小字。以前寫是哪一間用的；現在每一間都能擺（2026-11-27）
 function furnRoomTag(id){
@@ -386,8 +402,23 @@ $('#items').addEventListener('click',e=>{
     if(w){const o=home[w].items.find(i=>i.kind==='doll'&&i.id===id);removeItem(o.uid,home[w].items);}
     const it={uid:uid++,kind:'doll',id,x:50,y:92,sit:null,seat:0};[it.x,it.y]=freeSpot(it);items.push(it);render();trayDone(it.uid);}
   else if(t.dataset.furn){const id=t.dataset.furn;if(!FURN_OWN[id]){toast(trayHow('furn',id)[1]);return;}
+    const f=FURN[id];
+    // 雲端存檔一間最多 300 樣（firestore.rules、js/account.js 的 checkSave），超過就存不上去
+    const full=()=>{if(items.length<300)return false;toast('這一間放滿了，先收一些再擺');return true;};
+    if(isSouv(id)){
+      // 土產：還有沒擺出去的，就在這一間多擺一個；都擺出去了，從別間搬一個過來；全部都在這一間，收回最後擺的那個
+      const mine=items.filter(i=>i.kind==='furn'&&i.id===id),ow=RIDS.find(r=>r!==roomId&&furnIn(r,id).length);
+      if(furnPlacedN(id)>=furnOwnN(id)&&!ow){if(mine.length){removeItem(mine[mine.length-1].uid);trayDone();}return;}
+      if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去小島，小島沒有牆壁');return;}
+      if(full())return;
+      if(furnPlacedN(id)>=furnOwnN(id)){const l=furnIn(ow,id);removeItem(l[l.length-1].uid,home[ow].items);toast(`從${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[ow])||'別間'}搬過來了`);}
+      newFurnDel(id);
+      const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
+      if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();trayDone(it.uid);return;
+    }
     const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);trayDone();return;}
-    const f=FURN[id];if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去小島，小島沒有牆壁');return;}
+    if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去小島，小島沒有牆壁');return;}
+    if(full())return;
     const w=whereFurn(id);if(w){removeItem(home[w].items.find(i=>i.kind==='furn'&&i.id===id).uid,home[w].items);toast(`從${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[w])||'別間'}搬過來了`);}
     const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
     if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();trayDone(it.uid);}

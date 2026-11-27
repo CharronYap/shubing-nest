@@ -850,6 +850,8 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .pz-row{display:flex;align-items:center;gap:10px}
 .pz-row .pz-go{padding:10px 16px}
 .tile .nw{position:absolute;right:3px;top:3px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#ff6f8a;color:#fff;font-size:11px;font-weight:900;line-height:18px;text-align:center;box-shadow:0 0 0 2px #fff}
+.tile .cnt{position:absolute;right:3px;bottom:3px;padding:0 4px;border-radius:7px;background:rgba(255,255,255,.92);color:var(--pink2);font-size:11px;font-weight:900;line-height:15px;pointer-events:none}
+.tile .rm.rm2{left:auto;right:3px;top:auto;bottom:20px}
 .tile.flashme{animation:flashme .55s ease-in-out 4}
 @keyframes flashme{0%,100%{box-shadow:0 0 0 0 rgba(255,111,176,0)}50%{box-shadow:0 0 0 4px var(--pink)}}
 @media (prefers-reduced-motion:reduce){.tile.flashme{animation:none;box-shadow:0 0 0 3px var(--pink)}}
