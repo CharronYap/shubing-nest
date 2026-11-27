@@ -273,7 +273,8 @@ function staySeatAt(x, y, me){
   return null;
 }
 // 照雲端上的 x、y 擺回牠的家：坐著的就坐回那一格
-function stayHome(it, x, y){
+// （2026-11-27 從 stayHome 改名：跟上面娃娃回家的 stayHome(diary) 同名，後面這個蓋掉前面那個，過夜的娃娃全都回不了家）
+function stayGuestPlace(it, x, y){
   const s = typeof x === 'number' && typeof y === 'number' ? staySeatAt(x, y, it.uid) : null;
   if (s){ const [sx, sy] = seatPos(s[0], s[1]); it.sit = s[0].uid; it.seat = s[1]; it.x = sx; it.y = sy + .5; }
   else { it.sit = null; it.seat = 0; it.x = stClampX(x); it.y = stClampY(y); }
@@ -281,7 +282,7 @@ function stayHome(it, x, y){
 function stayIt(g){
   const it = stIts[g.id] = stIts[g.id] || {kind: 'doll', uid: 'g' + g.id, guest: 1};
   it.id = g.doll; it.g = g;
-  if (!it.drag) stayHome(it, +g.x, +g.y);
+  if (!it.drag) stayGuestPlace(it, +g.x, +g.y);
   // 剛到的那一天、今天還沒有人跟牠打過招呼（js/roam2.js 的 guestTalk）
   it.hi = () => (it.g.day | 0) === nestDayN() && stayHiGet()[it.g.id] !== it.g.day;
   it.hiDone = () => { const h = stayHiGet(), keep = {}; stGuests.forEach(x => { if (h[x.id] !== undefined) keep[x.id] = h[x.id]; }); keep[it.g.id] = it.g.day; try { localStorage.setItem(ST_HI_KEY, JSON.stringify(keep)); } catch (e) {} };
@@ -353,7 +354,7 @@ function stayGuestEl(it, tag, look, g){
     } else if (g){ stayHeart(it, el); stayGuestOpen(g); }
     else { stayHeart(it, el); const L = typeof ROAM_LINES !== 'undefined' && ROAM_LINES[it.id]; if (L && typeof roamSay === 'function') roamSay(it, L[Math.floor(Math.random() * L.length)]); }
   });
-  el.addEventListener('pointercancel', () => { d0 = null; if (moved && g){ it.drag = 0; unDrag(); stayHome(it, +g.x, +g.y); place(); } });
+  el.addEventListener('pointercancel', () => { d0 = null; if (moved && g){ it.drag = 0; unDrag(); stayGuestPlace(it, +g.x, +g.y); place(); } });
   room.appendChild(el);
   if (typeof asleep === 'function') el.classList.toggle('sleep', asleep(it.id));
   if (typeof spinMount === 'function') try { spinMount(el, it.id); } catch (e) {}
@@ -371,7 +372,7 @@ function stayMinePaint(){
   }
   const g = v.stDoc; if (!g || roomId !== 'living') return;
   const it = v.stIt = v.stIt || {kind: 'doll', uid: 'gmine', guest: 1, mine: 1, id: g.doll, hi: () => !v.stHi, hiDone: () => { v.stHi = 1; }};
-  if (it.x === undefined) stayHome(it, +g.x, +g.y);   // 主人讓牠坐在家具上的話，在他家看到的也是坐著
+  if (it.x === undefined) stayGuestPlace(it, +g.x, +g.y);   // 主人讓牠坐在家具上的話，在他家看到的也是坐著
   stayGuestEl(it, `你家的${DOLL_NAME[g.doll]}`, stayLook(g.look), null);
 }
 function stayPaint(){
