@@ -166,6 +166,18 @@ function tvPutBack(d, h){
   if (f && !home[h.r].items.some(x => x.kind === 'doll' && x.sit === f.uid && (x.seat || 0) === (h.seat || 0))){ it.sit = f.uid; it.seat = h.seat || 0; }
   home[h.r].items.push(it);
 }
+/* 這一趟帶了什麼（1127-25）：回家通知和旅行紀錄都寫一行。
+   行李記成 點心,護身符,道具 用 , 接；沒帶是 -。沒帶行李一定只去公園、寄一張明信片（tvPlan），寫法照固定那一句 */
+const tvBagOf = o => [o.food, o.charm, ...tvToolList(o.tool)].filter(id => id && TV_GOODS[id]).join(',') || '-';
+const TV_ZH_N = ['', '一', '兩', '三', '四', '五'];
+function tvBagLine(b, p, n){
+  if (b === undefined || b === '') return '';   // 以前的紀錄沒記行李
+  const ids = String(b).split(',').filter(id => TV_GOODS[id]), P = TV_PLACES[p] || TV_PLACES.park, cards = TV_ZH_N[+n] || String(+n || 0);
+  if (!ids.length) return `這趟沒帶行李，只去了${P.name}，寄了${cards}張明信片。`;
+  const nm = ids.map(id => TV_GOODS[id].name);
+  return `這趟帶了${nm.length > 1 ? nm.slice(0, -1).join('、') + '和' + nm[nm.length - 1] : nm[0]}，寄了${cards}張明信片。`;
+}
+function tvSouvLine(k){ const s = TV_SOUV[k]; return s ? `帶回來${s.unit || '一個'}${s.name}。` : '這趟沒有帶東西回來。'; }
 function tvReturn(o){
   const t = tvData(), day = tvDate(o.t1);
   t.out.splice(t.out.indexOf(o), 1);
@@ -175,15 +187,16 @@ function tvReturn(o){
     tvPutBack(d, o.hm[d]);
     t.back[d] = o.t1;
     const c = t.cnt[d] = t.cnt[d] || {}; c[o.p] = (c[o.p] || 0) + 1;
-    const l = t.log[d] = t.log[d] || []; l.push(`${day}|${o.p}|${other}|${o.di[d] | 0}`); if (l.length > 12) l.splice(0, l.length - 12);
-    const k = TV_SOUV[o.sv[d]] ? o.sv[d] : '';
+    const k = TV_SOUV[o.sv[d]] ? o.sv[d] : '', bg = tvBagOf(o), n = o.pcs.length;
+    // 後面三格（1127-25 加的）：這趟的行李、寄了幾張明信片、帶回來的土產。以前的紀錄只有前四格，看的時候就不寫這一行
+    const l = t.log[d] = t.log[d] || []; l.push(`${day}|${o.p}|${other}|${o.di[d] | 0}|${bg}|${n}|${k}`); if (l.length > 12) l.splice(0, l.length - 12);
     let dup = 0;
     if (k){
       const fid = tvSouvId(k);
       if (FURN_OWN[fid]){ dup = 1; S.coins += TV_SOUV_COIN; } else { FURN_OWN[fid] = 1; if (typeof newFurnAdd === 'function') newFurnAdd(fid); }
       t.sv[k] = (t.sv[k] || 0) + 1;
     }
-    t.wel.push({d, p: o.p, sv: k, dup, di: o.di[d] | 0, w: other});
+    t.wel.push({d, p: o.p, sv: k, dup, di: o.di[d] | 0, w: other, b: bg, n});
   });
   if (t.wel.length > 12) t.wel.splice(0, t.wel.length - 12);
   // 紀念合照：背景是那個地方的其中一張（這一趟寄過的優先），進信箱、也收進旅行相簿
@@ -507,8 +520,9 @@ function tvWelcome(){
   if (($('#cover') && !$('#cover').hidden) || !$('#sheet').hidden){ tvWelT = setTimeout(tvWelcome, 2500); return; }
   const rows = t.wel.map(w => {
     const P = TV_PLACES[w.p] || TV_PLACES.park, s = TV_SOUV[w.sv];
-    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來${s.unit || '一個'}${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這次沒有帶東西回來。</small>';
-    return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.abroad ? P.country : P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${(TV_DIARY[w.d][w.di] || TV_DIARY[w.d][0]).replace(/\{p\}/g, P.name)}」</p>${got}</div></div>`;
+    const got = s ? `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(w.sv))}</span><small>帶回來${s.unit || '一個'}${s.name}。${w.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : '放在收納架的紀念品那一頁，每一間都能擺。'}</small></div>` : '<small class="tv-none">這趟沒有帶東西回來。</small>';
+    const bl = tvBagLine(w.b, w.p, w.n);
+    return `<div class="ev tv-wel"><img src="${SPR[w.d]}" alt=""><div><b>${DOLL_NAME[w.d]}從${P.abroad ? P.country : P.name}回來了${w.w === 'fam' ? '<small>全家一起</small>' : DOLL_NAME[w.w] ? `<small>和${DOLL_NAME[w.w]}一起</small>` : ''}</b><p>「${(TV_DIARY[w.d][w.di] || TV_DIARY[w.d][0]).replace(/\{p\}/g, P.name)}」</p>${bl ? `<small class="tv-bl">${bl}</small>` : ''}${got}</div></div>`;
   }).join('');
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>回家了</span></div><div class="tv-box">${rows}</div>
     <div class="ml-ft"><button class="btn y" data-tv="welok">好</button><button class="btn" data-tv="album">旅行相簿</button></div>`);
@@ -566,8 +580,8 @@ function tvRows(d){
   const t = tvData(), l = t.log[d] || [], o = tvTrip(d);
   if (!l.length && !o) return '';
   return `<div class="al-sec">旅行</div><ul class="al-ln al-st">${o ? `<li>現在去${TV_PLACES[o.p].name}了，大概${tvWhen(o.t1)}回來</li>` : ''}${l.slice().reverse().slice(0, 6).map(x => {
-    const [day, p, w, di] = x.split('|'), P = TV_PLACES[p] || TV_PLACES.park;
-    return `<li>${md(day)}　${(TV_DIARY[d][+di] || TV_DIARY[d][0]).replace(/\{p\}/g, P.name)}${w === 'fam' ? '（全家一起）' : DOLL_NAME[w] ? `（和${DOLL_NAME[w]}一起）` : ''}</li>`;
+    const [day, p, w, di, b, n, sv] = x.split('|'), P = TV_PLACES[p] || TV_PLACES.park, bl = tvBagLine(b, p, n);
+    return `<li>${md(day)}　${(TV_DIARY[d][+di] || TV_DIARY[d][0]).replace(/\{p\}/g, P.name)}${w === 'fam' ? '（全家一起）' : DOLL_NAME[w] ? `（和${DOLL_NAME[w]}一起）` : ''}${bl ? `<small class="tv-bl">${bl}${tvSouvLine(sv)}</small>` : ''}</li>`;
   }).join('')}</ul>`;
 }
 const tvMapNote = () => tvData().out.map(o => `<p class="bk-note tv-mapn">${TV_BAG_ICON}${tvOutLine(o)}。</p>`).join('');

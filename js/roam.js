@@ -47,7 +47,20 @@ function roamApply(it, el){
   if (f && FURN[f.id].own === it.id && !it.guest) el.classList.add('sp-' + f.id);
   return true;
 }
+/* 同一個位置不能有兩隻：自己晃去坐的那隻，碰到存檔裡坐在那裡的（玩家剛拖上去、旅行或過夜回來坐回原位）
+   或另一隻也晃去坐同一格的，就讓晃去的那隻起來回家。不然兩隻畫在同一個點、層級一樣，後面那隻整個被蓋住 */
+function roamUnstack(){
+  const all = roamEvery();
+  all.forEach((o, i) => {
+    const st = RS[o.uid]; if (!st || st.sit === null) return;
+    const k = st.seat || 0;
+    // 兩隻都是晃去的：排前面的留著，後面的起來
+    const clash = all.some((p, j) => p !== o && ((p.sit === st.sit && (p.seat || 0) === k) || (j < i && RS[p.uid] && RS[p.uid].sit === st.sit && (RS[p.uid].seat || 0) === k)));
+    if (clash) roamHome(o);
+  });
+}
 function roamPaint(){
+  roamUnstack();
   room.querySelectorAll('.it.doll').forEach(el => { const it = items.find(i => String(i.uid) === el.dataset.u); if (it) roamApply(it, el); });
   roamGuests().forEach(it => roamApply(it, elFor(it)));
 }

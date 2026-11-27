@@ -216,3 +216,8 @@ startStep('娃娃機', initClaw);
 startStep('收納架的高度', () => { let st = 'h'; try { const v = localStorage.getItem(TRAY_KEY); st = v === '1' ? 'c' : v === 'c' || v === 'f' ? v : 'h'; } catch (e) {} trayTo(st, true); });
 // 開著過了午夜：換新的一天
 setInterval(() => { if (S.day.date !== todayStr()){ planDay(); grantCoins(); renderEvBadge(); markDolls(); } }, 60000);
+
+/* 1127-25 手機防誤觸：iOS Safari 的雙指縮放不看 touch-action（css/style.css 的 #screen），遊戲畫面裡另外擋 gesturestart。
+   只擋 #screen 裡面，畫面外照樣能縮放；也不動 viewport。圖片、按鈕不能被拖走（輸入框裡的字照樣能拖） */
+['gesturestart', 'gesturechange'].forEach(ty => document.addEventListener(ty, e => { if (e.target instanceof Element && e.target.closest('#screen')) e.preventDefault(); }, {passive: false}));
+$('#screen').addEventListener('dragstart', e => { if (!(e.target instanceof Element && e.target.closest('input,textarea'))) e.preventDefault(); });

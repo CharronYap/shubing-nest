@@ -154,7 +154,8 @@ function removeItem(u,list=items){
 function showSeats(d){
   items.filter(f=>f.kind==='furn'&&FURN[f.id].seats).forEach(f=>{
     FURN[f.id].seats.forEach((_,k)=>{
-      if(items.some(o=>o!==d&&o.sit===f.uid&&o.seat===k))return;
+      // 自己晃去坐的、來過夜的客人坐著的位置也不亮（js/roam.js 的 roamSeatTaken）：不然放上去兩隻會疊在同一格，後面那隻整個被蓋住
+      if(items.some(o=>o!==d&&o.sit===f.uid&&o.seat===k)||(typeof roamSeatTaken==='function'&&roamSeatTaken(f,k,d.uid)))return;
       const [x,y]=seatPos(f,k);const s=document.createElement('div');s.className='seat';
       s.style.left=x+'%';s.style.top=(roomY(y)-3)+'%';s.dataset.x=x;s.dataset.y=y;s.dataset.f=f.uid;s.dataset.k=k;room.appendChild(s);
     });
