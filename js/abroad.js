@@ -1,4 +1,4 @@
-/* 出國旅行第一批（2026-11-27）：吉隆坡雙峰塔、台北101、富士山和河口湖、巴黎艾菲爾鐵塔。玩法在 js/travel.js，國內四個地方在 js/traveldata.js。
+/* 出國旅行。第一批（2026-11-27）：吉隆坡雙峰塔、台北101、富士山和河口湖、巴黎艾菲爾鐵塔。第二批（同一天）：曼谷鄭王廟、比薩斜塔、伊斯坦堡聖索菲亞、雷克雅維克哈爾格林姆教堂，說明在下面第二批的畫圖工具那一段。玩法在 js/travel.js，國內四個地方在 js/traveldata.js。
    畫的東西照「出國旅行_在地查證.md」裡標「確定」的：
    - 雙峰塔：兩座一樣高，天橋在塔身一半偏下，塔身一圈一圈、越往上越細，頂端細長尖塔上有一顆圓環的球。名稱寫「雙峰塔」。
    - 台北101：下面一段往上收，上面八節、每節上寬下窄往外斜，藍綠色，頂端尖塔。不畫煙火。
@@ -89,7 +89,121 @@ function abEiffel(x, y0, H, flat){
 // 修剪過的樹（公園裡一排一排的）
 const abClip = (x, y, k = 1, c = TV_C.leaf) => `<rect x="${x - 1.6 * k}" y="${y - 12 * k}" width="${3.2 * k}" height="${12 * k}" fill="${TV_C.wood2}"/>` + tvSh(`<rect x="${x - 9 * k}" y="${y - 30 * k}" width="${18 * k}" height="${20 * k}" rx="${7 * k}"/>`, c, 1.6 * k);
 
-/* ---------- 四個地方 ----------
+/* ---------- 第二批（2026-11-27）的畫圖工具：鄭王廟、比薩斜塔、聖索菲亞、哈爾格林姆教堂 ----------
+   照「出國旅行_在地查證.md」後半標「確定」的畫。三個是宗教建築：只畫外觀，不畫裡面、神像、人；娃娃站在地上或公園裡，不爬到建築上。
+   這一批都不畫：船、極光、鬱金香、海鷗、貓；冰島地上不畫積雪（遠山的山頂有雪）。畫法、顏色的做法、明信片的版面跟第一批一樣。 */
+Object.assign(AB_C, {prang: '#f7f3ea', prang2: '#dfd8cb', prang3: '#b5ac9c', gold: '#fff3cc', gold2: '#f4d98f', gold3: '#c9a45e', dawnp: '#f3c7c2', dawno: '#f9dab6', dawny: '#fdecd2', river: '#a9c4d8',
+  marble: '#f8f6f1', marble2: '#e0ddd5', marble3: '#b1aea6', warm: '#fae4b4', warm2: '#ebc790', warm3: '#c39a74',
+  rose: '#dca896', rose2: '#c68d7b', rose3: '#a46b5d', lead: '#aeb5be', lead2: '#8f97a3', brick: '#b9624c', brick2: '#95483a', sil: '#8a5564', sil2: '#6c4158',
+  conc: '#f0f2f3', conc2: '#d7dce1', conc3: '#a7b0ba', road: '#b9bfca'});
+// 鄭王廟的塔：下面寬、一層一層往上收、頂端是尖的。x 中心、y0 地面、H 整座高。遠看是白色偏淺灰。
+// near：近看，塔身上有彩色瓷片拼的小花，中間是又窄又陡的階梯
+function abPrang(x, y0, H, c, c2, c3, near){
+  const W = H * .58, FL = [TV_C.a1, TV_C.teal, TV_C.sun, AB_C.pink2, TV_C.leaf, TV_C.sea], lw = Math.max(.8, H * .008);
+  let s = '', y = y0, k = 0;
+  const band = (w, h, sh) => { y -= h; const r = `<rect x="${x - w / 2}" y="${y}" width="${w}" height="${h + .5}"/>`;
+    s += (sh ? tvSh(r, c2, 1.4) : r.replace('/>', ` fill="${c2}"/>`)) + `<rect x="${x - w * .3}" y="${y}" width="${w * .6}" height="${h + .5}" fill="${c}"/><rect x="${x - w / 2}" y="${y + h - lw}" width="${w}" height="${lw}" fill="${c3}" opacity=".6"/>`;
+    if (near){ const n = Math.max(2, Math.round(w / 9)); for (let i = 0; i < n; i++){ const fx = x - w / 2 + (i + .5) * w / n, fy = y + h * .45; s += `<circle cx="${fx}" cy="${fy}" r="1.900" fill="${FL[(k + i) % FL.length]}"/><circle cx="${fx}" cy="${fy}" r=".700" fill="${TV_C.paper}"/>`; } k += 2; } };
+  band(W, H * .06, true); band(W * .86, H * .06); band(W * .72, H * .06);   // 三層平台
+  [[.6, .1], [.54, .09], [.48, .085], [.42, .08], [.37, .075], [.32, .07], [.28, .065]].forEach(([w, h]) => band(W * w, H * h));   // 塔身一段一段往上收
+  const a = W * .13, th = H * .15;
+  s += `<path d="M${x - a} ${y + .5}Q${x - a * .9} ${y - th * .55} ${x} ${y - th}Q${x + a * .9} ${y - th * .55} ${x + a} ${y + .5}z" fill="${c2}"/><path d="M${x - a * .45} ${y + .5}Q${x - a * .4} ${y - th * .5} ${x} ${y - th}Q${x + a * .4} ${y - th * .5} ${x + a * .45} ${y + .5}z" fill="${c}"/><rect x="${x - Math.max(.5, W * .012)}" y="${y0 - H}" width="${Math.max(1, W * .024)}" height="${H - (y0 - y) - th + 1}" fill="${c3}"/>`;
+  const sw = W * .09, st = H * .42;
+  s += `<path d="M${x - sw / 2} ${y0}L${x - sw * .3} ${y0 - st}h${sw * .6}L${x + sw / 2} ${y0}z" fill="${c3}" opacity="${near ? .75 : .5}"/>`;
+  if (near) for (let yy = y0 - 3; yy > y0 - st; yy -= 3.4) s += `<rect x="${x - sw * .42}" y="${yy}" width="${sw * .84}" height=".800" fill="${TV_C.paper}" opacity=".7"/>`;
+  return s;
+}
+// 隔著河看的整座廟：中間一座大塔，四個角各一座小塔（後面兩座小一點、顏色淡一點）
+const abWat = (y0, H, c, c2, c3) => abPrang(150 - H * .38, y0 - 1, H * .4, c2, c2, c3) + abPrang(150 + H * .38, y0 - 1, H * .4, c2, c2, c3) + abPrang(150 - H * .68, y0, H * .46, c, c2, c3) + abPrang(150 + H * .68, y0, H * .46, c, c2, c3) + abPrang(150, y0, H, c, c2, c3);
+// 比薩斜塔：圓柱形的鐘塔，八層。最下面一層是貼在牆上的拱，中間六層是一圈一圈鏤空的拱廊，最上面放鐘的那一層細一圈。
+// x 底的中心、y0 地面、H 高、deg 歪幾度（實際大約 4 度，畫 5 度以上才看得出來）。正的是往右歪。
+// 塔在大教堂的東南邊、往遠離大教堂的方向歪：三張明信片大教堂都在左、塔在右，所以都往右歪
+function abPisa(x, y0, H, c, c2, c3, deg = 5){
+  const W = H * .27, h0 = H * .19, g = H * .1, lw = Math.max(.7, H * .007), n0 = 5, b0 = W / n0, n = 7, bw = W * .96 / n;
+  let s = tvSh(`<rect x="${x - W / 2}" y="${y0 - h0}" width="${W}" height="${h0}"/>`, c, 1.6);
+  for (let i = 0; i < n0; i++){ const bx = x - W / 2 + i * b0 + b0 * .16, r = b0 * .34; s += `<path d="M${bx} ${y0 - 1}v${-h0 * .58}a${r} ${r} 0 0 1 ${r * 2} 0v${h0 * .58}z" fill="${c2}"/>`; }
+  s += `<rect x="${x - W * .07}" y="${y0 - h0 * .42}" width="${W * .14}" height="${h0 * .42}" rx="${W * .05}" fill="${c3}"/>`;
+  for (let i = 0; i < 6; i++){ const y = y0 - h0 - (i + 1) * g;
+    s += `<rect x="${x - W * .48}" y="${y}" width="${W * .96}" height="${g + .4}" fill="${c}"/>`;
+    for (let j = 0; j < n; j++){ const bx = x - W * .48 + j * bw + bw * .18, r = bw * .32; s += `<path d="M${bx} ${y + g}v${-g * .42}a${r} ${r} 0 0 1 ${r * 2} 0v${g * .42}z" fill="${c3}" opacity=".7"/>`; }
+    s += `<rect x="${x - W / 2}" y="${y + g - lw * 1.6}" width="${W}" height="${lw * 1.6}" fill="${c2}"/>`; }
+  const yt = y0 - h0 - 6 * g, bh = H * .13, tw = W * .76;
+  s += `<rect x="${x - W / 2}" y="${yt - lw}" width="${W}" height="${lw * 2}" fill="${c2}"/><rect x="${x - tw / 2}" y="${yt - bh}" width="${tw}" height="${bh}" fill="${c}"/>`;
+  for (let j = 0; j < 4; j++){ const b = tw / 4, bx = x - tw / 2 + j * b + b * .2, r = b * .3; s += `<path d="M${bx} ${yt - lw}v${-bh * .5}a${r} ${r} 0 0 1 ${r * 2} 0v${bh * .5}z" fill="${c3}" opacity=".75"/>`; }
+  s += `<rect x="${x - tw * .53}" y="${yt - bh - lw * 1.4}" width="${tw * 1.06}" height="${lw * 2}" fill="${c2}"/>`;
+  // 圓柱：一邊亮、一邊暗
+  s += `<rect x="${x + W * .26}" y="${yt}" width="${W * .24}" height="${h0 + 6 * g}" fill="${c3}" opacity=".28"/><rect x="${x + tw * .26}" y="${yt - bh}" width="${tw * .24}" height="${bh}" fill="${c3}" opacity=".28"/>`;
+  return `<g transform="rotate(${deg} ${x} ${y0})">${s}</g>`;
+}
+// 旁邊的大教堂：只畫成一棟白色的大建築，有一個圓頂，不畫細節。x 左邊、y0 地面、w 長
+function abDuomo(x, y0, w, c, c2, c3){
+  const h = w * .2;
+  return `<rect x="${x + w * .63}" y="${y0 - h * 2.25}" width="${w * .14}" height="${h * .5}" fill="${c2}"/>` + tvSh(`<path d="M${x + w * .615} ${y0 - h * 2.22}a${w * .085} ${w * .1} 0 0 1 ${w * .17} 0z"/>`, c2, 1) + `<rect x="${x + w * .696}" y="${y0 - h * 2.22 - w * .135}" width="${Math.max(1, w * .008)}" height="${w * .04}" fill="${c3}"/>`
+    + tvSh(`<rect x="${x + w * .02}" y="${y0 - h * 1.7}" width="${w * .86}" height="${h * 1.7}"/>`, c, 1.6) + `<rect x="${x + w * .02}" y="${y0 - h * 1.7}" width="${w * .86}" height="${h * .13}" fill="${c2}"/>`
+    + `<rect x="${x + w * .6}" y="${y0 - h * 1.9}" width="${w * .2}" height="${h * 1.9}" fill="${c}"/><path d="M${x + w * .59} ${y0 - h * 1.88}L${x + w * .7} ${y0 - h * 2.12}L${x + w * .81} ${y0 - h * 1.88}z" fill="${c2}"/>`
+    + `<rect x="${x + w * .88}" y="${y0 - h * 1.3}" width="${w * .12}" height="${h * 1.3}" rx="${w * .02}" fill="${c2}"/>`
+    + tvSh(`<rect x="${x}" y="${y0 - h}" width="${w * .9}" height="${h}"/>`, c, 1.2) + `<rect x="${x}" y="${y0 - h}" width="${w * .9}" height="${h * .12}" fill="${c2}"/>`
+    + `<path d="M${x} ${y0}V${y0 - h * 1.7}L${x + w * .07} ${y0 - h * 2.08}L${x + w * .14} ${y0 - h * 1.7}V${y0}z" fill="${c}"/><path d="M${x} ${y0 - h * 1.7}L${x + w * .07} ${y0 - h * 2.08}L${x + w * .14} ${y0 - h * 1.7}" fill="none" stroke="${c2}" stroke-width="${Math.max(1, w * .01)}"/>`
+    + [.45, .85, 1.25].map(k => `<rect x="${x}" y="${y0 - h * k}" width="${w * .14}" height="${Math.max(.8, w * .006)}" fill="${c3}" opacity=".6"/>`).join('')
+    + Array.from({length: 9}, (_, i) => `<rect x="${x + w * (.2 + i * .075)}" y="${y0 - h * .7}" width="${w * .018}" height="${h * .42}" rx="${w * .009}" fill="${c3}" opacity=".5"/>`).join('');
+}
+// 廣場外面的舊城牆：一道矮矮的牆，上面有一格一格的缺口
+const abWall = (y, c, c2) => `<rect x="0" y="${y - 10}" width="300" height="12" fill="${c}"/>` + Array.from({length: 34}, (_, i) => `<rect x="${i * 9}" y="${y - 13}" width="5" height="3.500" fill="${c}"/>`).join('') + `<rect x="0" y="${y - 3}" width="300" height="1.200" fill="${c2}" opacity=".6"/>`;
+// 聖索菲亞：中間一個很大的扁圓頂，下面的建築又寬又厚，外面是一塊一塊的扶壁；四個角各一座尖塔，高度不一樣，其中一座是紅磚砌的。
+// x 中心、y0 地面、W 寬。flat：傍晚的剪影（暖色，兩個深淺）
+function abSophia(x, y0, W, flat){
+  const h = W * .2, P = flat ? {w: AB_C.sil, w2: AB_C.sil2, w3: AB_C.sil2, d: AB_C.sil2, d2: AB_C.sil2, m: AB_C.sil, m2: AB_C.sil2, br: AB_C.sil, br2: AB_C.sil2, cap: AB_C.sil2}
+    : {w: AB_C.rose, w2: AB_C.rose2, w3: AB_C.rose3, d: AB_C.lead, d2: AB_C.lead2, m: AB_C.lit2, m2: AB_C.lit3, br: AB_C.brick, br2: AB_C.brick2, cap: AB_C.lead2};
+  const tower = (mx, mh, brick) => { const mw = Math.max(2.2, W * .028), c = brick ? P.br : P.m, c2 = brick ? P.br2 : P.m2, top = y0 - mh * .84;
+    return `<rect x="${mx - mw / 2}" y="${top}" width="${mw}" height="${mh * .84}" fill="${c}"/><rect x="${mx + mw * .12}" y="${top}" width="${mw * .38}" height="${mh * .84}" fill="${c2}" opacity=".6"/><rect x="${mx - mw * .95}" y="${y0 - mh * .62}" width="${mw * 1.9}" height="${Math.max(1.4, mw * .5)}" rx=".600" fill="${c2}"/><path d="M${mx - mw * .64} ${top + .4}L${mx} ${y0 - mh}L${mx + mw * .64} ${top + .4}z" fill="${P.cap}"/>`; };
+  let s = tower(x - W * .36, W * .6) + tower(x + W * .35, W * .65);   // 後面兩座
+  s += `<path d="M${x - W * .44} ${y0 - h * .95}a${W * .13} ${h * .62} 0 0 1 ${W * .26} 0z" fill="${P.d2}"/><path d="M${x + W * .18} ${y0 - h * .95}a${W * .13} ${h * .62} 0 0 1 ${W * .26} 0z" fill="${P.d2}"/>`;   // 兩邊的半圓頂
+  s += tvSh(`<rect x="${x - W * .23}" y="${y0 - h * 1.78}" width="${W * .46}" height="${h * 1.78}"/>`, P.w, 1.6);
+  s += `<path d="M${x - W * .17} ${y0 - h * .98}v${-h * .3}a${W * .17} ${h * .4} 0 0 1 ${W * .34} 0v${h * .3}z" fill="${P.w2}"/>`;
+  if (!flat) s += Array.from({length: 7}, (_, i) => `<rect x="${x - W * .13 + i * W * .26 / 6 - W * .008}" y="${y0 - h * 1.26}" width="${W * .016}" height="${h * .14}" rx="${W * .008}" fill="${P.w3}"/>`).join('');
+  s += `<rect x="${x - W * .2}" y="${y0 - h * 1.94}" width="${W * .4}" height="${h * .18}" fill="${P.w2}"/>`;
+  if (!flat) s += Array.from({length: 11}, (_, i) => `<rect x="${x - W * .183 + i * W * .0352}" y="${y0 - h * 1.9}" width="${W * .014}" height="${h * .1}" fill="${P.w3}"/>`).join('');
+  s += tvSh(`<path d="M${x - W * .2} ${y0 - h * 1.93}a${W * .2} ${h * .62} 0 0 1 ${W * .4} 0z"/>`, P.d, 1.2)
+    + `<path d="M${x + W * .2} ${y0 - h * 1.93}a${W * .2} ${h * .62} 0 0 0 ${-W * .2} ${-h * .62}Q${x + W * .1} ${y0 - h * 2.3} ${x + W * .1} ${y0 - h * 1.93}z" fill="${P.d2}" opacity=".7"/><rect x="${x - Math.max(.5, W * .004)}" y="${y0 - h * 2.66}" width="${Math.max(1, W * .008)}" height="${h * .12}" fill="${P.d2}"/>`;
+  s += tvSh(`<rect x="${x - W * .43}" y="${y0 - h}" width="${W * .86}" height="${h}"/>`, P.w, 1.6) + `<rect x="${x - W * .43}" y="${y0 - h}" width="${W * .86}" height="${h * .09}" fill="${P.w2}"/>`;
+  if (!flat) s += [-.27, -.07, .25].map(k => `<rect x="${x + W * k}" y="${y0 - h * .66}" width="${W * .022}" height="${h * .3}" rx="${W * .011}" fill="${P.w3}"/><rect x="${x + W * (k + .04)}" y="${y0 - h * .66}" width="${W * .022}" height="${h * .3}" rx="${W * .011}" fill="${P.w3}"/>`).join('')
+    + `<path d="M${x + W * .03} ${y0}v${-h * .34}a${W * .03} ${W * .03} 0 0 1 ${W * .06} 0v${h * .34}z" fill="${P.w3}"/>`;
+  [-.38, -.2, .12, .3].forEach(k => { s += `<path d="M${x + W * k} ${y0}V${y0 - h * 1.22}l${W * .08} ${h * .16}V${y0}z" fill="${P.w2}"/>` + (flat ? '' : `<rect x="${x + W * k}" y="${y0 - h * .52}" width="${W * .08}" height="${h * .06}" fill="${P.w3}" opacity=".7"/>`); });   // 扶壁
+  return s + tower(x - W * .5, W * .72) + tower(x + W * .5, W * .58, true);   // 前面兩座，右邊這座是紅磚的
+}
+// 公園中間的噴水池：圓形的水池加幾道水柱。lit：傍晚打了燈
+const abFount = (x, y, rx, lit) => { const ry = rx * .27;
+  return (lit ? `<ellipse cx="${x}" cy="${y - ry}" rx="${rx * 1.5}" ry="${rx * .95}" fill="${TV_C.glow}" opacity=".08"/><ellipse cx="${x}" cy="${y - ry}" rx="${rx * 1.05}" ry="${rx * .62}" fill="${TV_C.glow}" opacity=".1"/>` : '')
+    + tvSh(`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/>`, lit ? '#8f7389' : AB_C.stone, 2) + `<ellipse cx="${x}" cy="${y - ry * .12}" rx="${rx * .86}" ry="${ry * .72}" fill="${lit ? AB_C.gold2 : TV_C.teal}"/><ellipse cx="${x - rx * .1}" cy="${y - ry * .2}" rx="${rx * .6}" ry="${ry * .4}" fill="${lit ? TV_C.glow : TV_C.teall}" opacity=".6"/>`
+    + [[-.5, .7], [-.25, 1.05], [0, 1.5], [.25, 1.05], [.5, .7]].map(([k, hh]) => { const jx = x + rx * k, jh = rx * .5 * hh; return `<path d="M${jx} ${y - ry * .1}q${-rx * .09} ${-jh * .8} 0 ${-jh}q${rx * .09} ${jh * .2} 0 ${jh}z" fill="${lit ? TV_C.glow : TV_C.paper}" opacity=".92"/><ellipse cx="${jx}" cy="${y - ry * .1}" rx="${rx * .1}" ry="${ry * .14}" fill="${lit ? TV_C.glow : TV_C.paper}" opacity=".7"/>`; }).join('');
+};
+// 公園的長椅：x 中心、y 椅面、w 寬
+const abBench = (x, y, w) => [-.42, .42].map(k => `<rect x="${x + w * k - 2}" y="${y - 23}" width="4" height="40" rx="1.500" fill="${TV_C.ink}" opacity=".7"/>`).join('')
+  + tvSh(`<rect x="${x - w / 2}" y="${y - 25}" width="${w}" height="7" rx="2"/>`, TV_C.wood, 1.4) + tvSh(`<rect x="${x - w / 2}" y="${y - 14}" width="${w}" height="7" rx="2"/>`, TV_C.wood, 1.4)
+  + tvSh(`<rect x="${x - w / 2 - 3}" y="${y}" width="${w + 6}" height="6" rx="2"/>`, '#a06c52', 1.6);
+// 哈爾格林姆教堂：中間一座很高的塔，左右兩邊是一根一根直的柱子，從外面往中間越來越高，整個正面像一座往上收的山。x 中心、y0 地面、H 高
+function abHallgrim(x, y0, H, c, c2, c3){
+  const tw = H * .15, n = 10, cw = H * .031, lw = Math.max(.8, H * .008);
+  let s = '';
+  for (let i = n; i >= 1; i--){ const hc = H * (.09 + .5 * Math.pow(1 - i / (n + .6), 1.45));
+    [-1, 1].forEach(d => { const cx = x + d * (tw / 2 + (i - .5) * cw); s += `<rect x="${cx - cw / 2}" y="${y0 - hc}" width="${cw + .3}" height="${hc}" fill="${i % 2 ? c : c2}"/><rect x="${cx - cw / 2}" y="${y0 - hc}" width="${cw + .3}" height="${lw}" fill="${c3}" opacity=".5"/>`; }); }
+  s += tvSh(`<path d="M${x - tw / 2} ${y0}V${y0 - H * .72}h${tw * .1}V${y0 - H * .82}h${tw * .12}V${y0 - H * .89}L${x} ${y0 - H}L${x + tw * .28} ${y0 - H * .89}V${y0 - H * .82}h${tw * .12}V${y0 - H * .72}h${tw * .1}V${y0}z"/>`, c, 1.6);
+  s += `<rect x="${x + tw * .2}" y="${y0 - H * .72}" width="${tw * .3}" height="${H * .72}" fill="${c2}" opacity=".7"/><rect x="${x + tw * .14}" y="${y0 - H * .82}" width="${tw * .26}" height="${H * .1}" fill="${c2}" opacity=".7"/>`
+    + [-.22, 0, .22].map(k => `<rect x="${x + tw * k - tw * .05}" y="${y0 - H * .805}" width="${tw * .1}" height="${H * .06}" rx="${tw * .03}" fill="${c3}"/>`).join('')
+    + `<circle cx="${x}" cy="${y0 - H * .665}" r="${tw * .19}" fill="${c3}"/><circle cx="${x}" cy="${y0 - H * .665}" r="${tw * .135}" fill="${TV_C.paper}"/>`   // 小圓鐘
+    + `<rect x="${x - tw * .06}" y="${y0 - H * .58}" width="${tw * .12}" height="${H * .36}" rx="${tw * .06}" fill="${c3}" opacity=".85"/>`
+    + `<path d="M${x - tw * .2} ${y0}v${-H * .07}a${tw * .2} ${tw * .2} 0 0 1 ${tw * .4} 0v${H * .07}z" fill="${c3}"/>`;
+  return s;
+}
+// 街上的小房子：彩色的牆、斜屋頂
+const abHouse = (x, y, w, h, wall, roof) => tvSh(`<path d="M${x} ${y}V${y - h}L${x + w / 2} ${y - h - w * .32}L${x + w} ${y - h}V${y}z"/>`, wall, 1.4)
+  + `<path d="M${x - w * .06} ${y - h + 1}L${x + w / 2} ${y - h - w * .37}L${x + w * 1.06} ${y - h + 1}h${-w * .08}L${x + w / 2} ${y - h - w * .26}L${x + w * .02} ${y - h + 1}z" fill="${roof}"/>`
+  + [.2, .6].map(k => `<rect x="${x + w * k}" y="${y - h * .74}" width="${w * .2}" height="${h * .32}" fill="${TV_C.paper}"/><rect x="${x + w * k}" y="${y - h * .74}" width="${w * .2}" height="${h * .32}" fill="${TV_C.sky}" opacity=".5"/>`).join('');
+// 從高的地方看下去的小房子：只看到彩色的屋頂和一點點牆
+const abTop = (x, y, w, col) => `<rect x="${x}" y="${y}" width="${w * .8}" height="${w * .24}" fill="${TV_C.paper}"/><path d="M${x + w * .8} ${y}l${w * .2} ${-w * .26}v${w * .24}l${-w * .2} ${w * .26}z" fill="${AB_C.stone2}"/>`
+  + tvSh(`<path d="M${x} ${y}l${w * .2} ${-w * .3}h${w * .8}l${-w * .2} ${w * .3}z"/>`, col, 1) + `<path d="M${x + w * .1} ${y - w * .15}h${w * .8}" stroke="${TV_C.paper}" stroke-width=".800" opacity=".45"/>`;
+
+/* ---------- 八個地方（第一批四個、第二批四個） ----------
    name：寫在明信片、紙條、相簿上的名字；short：收納架格子裡的短字；country：護照那一頁的國家；stamp：護照上蓋的章中間畫什麼（24×24 的小圖）；
    fav：特別愛去的娃娃；sv：土產（一樣）；cards：三張明信片；lines：每隻娃娃兩句；duo：兩隻一起去的對話 */
 const TV_ABROAD = {
@@ -269,6 +383,175 @@ const TV_ABROAD = {
       ['nyanko', 'piggy', '野餐的麵包本大爺吃了三個。', '四個。草地上的屑屑我數過了。'],
       ['moodeng', 'dog', '我跳起來快要摸到第一層了！', '我在下面幫牠加油！加油了一百次！'],
       ['sloth', 'snoopy', '我看鐵塔看了一個下午。', '我在旁邊寫了一個下午。寫的都是牠看鐵塔。'],
+    ]},
+  /* ----- 第二批 ----- */
+  bangkok: {name: '鄭王廟', short: '鄭王廟', country: '泰國', city: '曼谷', fav: ['moodeng'],
+    stamp: '<path d="M12 2.500l1.300 4 .900 5.500 2.300 2v7h-9v-7l2.300-2 .900-5.500zM4.500 21v-5l1.200-3 1.200 3M17.100 16l1.200-3 1.200 3v5M3 21h18" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linejoin="round" stroke-linecap="round"/>',
+    sv: {flowermag: {name: '瓷片小花磁鐵', vb: [36, 36], w: 6, svg: () => tvSh('<circle cx="18" cy="18" r="16"/>', TV_C.paper, 1.2) + `<circle cx="18" cy="18" r="14" fill="none" stroke="${AB_C.prang2}" stroke-width="1"/>`
+      + [TV_C.a1, TV_C.teal, TV_C.sun, AB_C.pink2, TV_C.leaf, TV_C.sea].map((c, i) => `<g transform="rotate(${i * 60} 18 18)"><ellipse cx="18" cy="9.800" rx="4.100" ry="5.800" fill="${c}"/><path d="M14.600 10.500l6.800-1.600" stroke="${TV_C.paper}" stroke-width=".800"/></g>`).join('')
+      + `<circle cx="18" cy="18" r="4.300" fill="${TV_C.sun}"/><circle cx="18" cy="18" r="1.900" fill="${TV_C.a1d}"/>`}},
+    cards: [
+      {name: '清晨的對岸', at: [22, 97, 24], svg: () => { const wat = abWat(122, 100, AB_C.prang, AB_C.prang2, AB_C.prang3);
+        return `<rect width="300" height="200" fill="${AB_C.dawny}"/><rect width="300" height="52" fill="${AB_C.dawnp}"/><rect y="52" width="300" height="40" fill="${AB_C.dawno}"/>
+        <circle cx="240" cy="104" r="15" fill="#fff6dc"/>${tvSh('<rect x="26" y="34" width="72" height="8" rx="4"/>', '#f9dcd2', 1)}${tvSh('<rect x="196" y="60" width="84" height="7" rx="3.500"/>', '#fde8d0', 1)}
+        ${[[18, .5], [44, .42], [226, .4], [256, .5], [284, .44]].map(([x, k]) => tvTree(x, 124, k, '#5f9480', '#86b39c')).join('')}
+        ${tvSh('<rect x="72" y="115" width="156" height="8" rx="1"/>', AB_C.prang2, 1)}${wat}
+        ${tvSh('<path d="M0 121c60-3 240-3 300 0v6H0z"/>', '#7ba58f', 1)}
+        <rect y="126" width="300" height="74" fill="${AB_C.river}"/><rect y="126" width="300" height="30" fill="${AB_C.dawno}" opacity=".55"/>
+        <g transform="translate(0 250) scale(1 -1)" opacity=".3">${wat}</g>
+        ${[[60, 140, 44], [190, 150, 60], [110, 164, 70], [236, 172, 40]].map(([x, y, w]) => `<rect x="${x}" y="${y}" width="${w}" height="2" rx="1" fill="${TV_C.paper}" opacity=".45"/>`).join('')}
+        ${tvSh('<path d="M0 186c80-8 220-8 300 0v14H0z"/>', AB_C.stone, 2)}`; }},
+      {name: '站在塔下面', at: [67, 97, 23], svg: () => `<rect width="300" height="200" fill="${TV_C.sky}"/><rect y="120" width="300" height="80" fill="${TV_C.sky2}"/>${tvCloud(4, 44, .8)}${tvCloud(210, 26, .9)}${tvCloud(236, 96, .6)}
+        ${abPrang(20, 184, 84, AB_C.prang, AB_C.prang2, AB_C.prang3, true)}${abPrang(268, 184, 84, AB_C.prang, AB_C.prang2, AB_C.prang3, true)}
+        ${abPrang(112, 186, 178, AB_C.prang, AB_C.prang2, AB_C.prang3, true)}
+        ${tvSh('<path d="M0 184c80-5 220-5 300 0v16H0z"/>', AB_C.stone, 1.5)}<path d="M0 191h300" stroke="${AB_C.stone2}" stroke-width="1.200"/>`},
+      {name: '晚上打了燈', at: [78, 97, 24], svg: () => { const wat = abWat(120, 104, AB_C.gold, AB_C.gold2, AB_C.gold3);
+        return `<rect width="300" height="200" fill="${TV_C.night}"/>${tvStars(14)}<ellipse cx="150" cy="88" rx="124" ry="78" fill="${TV_C.glow}" opacity=".06"/><ellipse cx="150" cy="92" rx="92" ry="58" fill="${TV_C.glow}" opacity=".07"/>
+        ${[[20, .5], [48, .4], [250, .42], [280, .5]].map(([x, k]) => tvTree(x, 122, k, '#232b4c', TV_C.night2)).join('')}
+        ${tvSh('<rect x="70" y="113" width="160" height="8" rx="1"/>', AB_C.gold3, 1)}${wat}
+        <path d="M0 119c60-3 240-3 300 0v7H0z" fill="#232b4c"/>
+        <rect y="124" width="300" height="76" fill="#27325a"/>
+        <g transform="translate(0 246) scale(1 -1)" opacity=".26">${wat}</g>
+        ${[[150, 138, 40], [150, 150, 54], [146, 164, 36], [156, 176, 26], [88, 144, 18], [212, 146, 18]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="2.400" fill="${AB_C.gold2}" opacity=".3"/>`).join('')}
+        <path d="M0 186c80-8 220-8 300 0v14H0z" fill="${TV_C.night3}"/>`; }},
+    ],
+    lines: {
+      sloth: ['隔著河看塔。太陽慢慢爬上來，塔一點一點亮起來。我跟它差不多慢。', '遠遠看是白色的。走到很近，才看到上面有一朵一朵的小花。我走了很久才看到。'],
+      egg: ['階梯好陡。我看了一眼，決定待在下面。', '這裡整年都是夏天。我找到一塊有影子的地方，就不動了。'],
+      dog: ['一座大的！四座小的！我繞著跑了一圈，五座都看到了！', '塔上面有好多小花，太陽一照亮亮的！我一直看一直看！'],
+      moodeng: ['塔在河的另一邊！我想跳過去，河太寬了。', '大塔旁邊有四座小塔，一個角一座。那我要當第五座。'],
+      nyanko: ['花是用碎掉的瓷片拼的。本大爺以前打破的碗，早知道留著。', '晚上塔打了燈，從對岸看很亮。本大爺多看了兩眼，就兩眼。'],
+      dino: ['我躲在小塔後面。小塔有四座，牠們找了三座才找到我。嘿嘿。', '清晨第一道太陽先照到塔，再照到我。我本來躲得好好的。'],
+      snoopy: ['它的名字有黎明的意思。我的小說第一句就寫清晨，寫完又睡著了。', '越往上越細，最上面是尖的。我的故事也要這樣收尾。'],
+      piggy: ['一座大塔，四個角各一座小塔，一共五座。我數過了，沒有錯。', '塔上的花是瓷片和貝殼拼的。遠看是白的，近看是彩色的，這個要走近才知道。'],
+    },
+    duo: [
+      ['moodeng', 'sloth', '我們隔著河看塔，我跳了一百下！', '我數到第七下，太陽就出來了。'],
+      ['piggy', 'dog', '階梯很陡，在下面看就好。', '我在下面跑了五圈！五座塔一座一圈！'],
+      ['nyanko', 'dino', '晚上塔會打燈，本大爺要坐最前面。', '我躲在牠後面。燈很亮，牠的影子把我遮住了。嘿嘿。'],
+    ]},
+  pisa: {name: '比薩斜塔', short: '斜塔', country: '義大利', city: '比薩', fav: ['dino'],
+    stamp: '<g transform="rotate(7 12 21)"><path d="M8.300 21V7h7.400v14zM8.300 11h7.400M8.300 14.500h7.400M8.300 18h7.400M9.600 7V4h4.800v3" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linejoin="round"/></g><path d="M4 21h17" stroke="currentColor" stroke-width="1.500" stroke-linecap="round"/>',
+    sv: {pisatoy: {name: '歪歪的小塔', vb: [34, 46], w: 7, svg: () => tvSh('<rect x="4" y="39" width="26" height="5" rx="2.200"/>', TV_C.wood, 1)
+      + `<g transform="rotate(8 16 39)">` + tvSh('<rect x="10" y="10" width="12" height="29" rx="1"/>', AB_C.marble, 1.2) + [14, 19, 24, 29, 34].map(y => `<rect x="10" y="${y}" width="12" height="1" fill="${AB_C.marble3}"/>` + [11.200, 14.100, 17, 19.900].map(x => `<rect x="${x}" y="${y - 3.4}" width="1.500" height="3.400" rx=".700" fill="${AB_C.marble3}" opacity=".8"/>`).join('')).join('')
+      + `<rect x="11.500" y="5" width="9" height="5" fill="${AB_C.marble2}"/><rect x="10.800" y="4.300" width="10.400" height="1.200" fill="${AB_C.marble3}"/><rect x="19" y="10" width="3" height="29" fill="${AB_C.marble3}" opacity=".3"/></g>`}},
+    cards: [
+      {name: '草地看過去', at: [20, 96, 24], svg: () => `<rect width="300" height="200" fill="${TV_C.sky}"/>${tvCloud(20, 36, .9)}${tvCloud(132, 16, .7)}<circle cx="270" cy="28" r="13" fill="${TV_C.sun}"/>
+        ${abWall(116, AB_C.stone2, AB_C.stone3)}
+        ${abPisa(230, 124, 102, AB_C.marble, AB_C.marble2, AB_C.marble3, 7)}${abDuomo(34, 124, 162, AB_C.marble, AB_C.marble2, AB_C.marble3)}
+        ${tvSh('<path d="M0 122c80-3 220-3 300 0v78H0z"/>', TV_C.leaf, 2)}
+        ${[[-60, 40], [90, 150], [200, 250], [310, 400]].map(([a, b]) => `<path d="M${150 + (a - 150) * .3} 124L${150 + (b - 150) * .3} 124L${b} 200L${a} 200z" fill="${TV_C.leafl}" opacity=".45"/>`).join('')}
+        <path d="M178 124h9l70 76h-44z" fill="${TV_C.sand}"/>`},
+      {name: '伸手扶一下', at: [74, 97, 26], svg: () => `<rect width="300" height="200" fill="${TV_C.sky}"/><rect y="110" width="300" height="60" fill="${TV_C.sky2}"/>${tvCloud(182, 30, .9)}${tvCloud(20, 58, .7)}
+        ${abWall(162, AB_C.stone2, AB_C.stone3)}${abDuomo(-74, 168, 150, AB_C.marble, AB_C.marble2, AB_C.marble3)}
+        ${abPisa(122, 170, 156, AB_C.marble, AB_C.marble2, AB_C.marble3, 6)}
+        ${tvSh('<path d="M0 166c80-4 220-4 300 0v34H0z"/>', TV_C.leaf, 2)}<path d="M0 178c90-4 210-4 300 0v8c-90-4-210-4-300 0z" fill="${TV_C.leafl}" opacity=".5"/>`},
+      {name: '傍晚的斜塔', at: [24, 96, 24], svg: () => `<rect width="300" height="200" fill="${AB_C.dusk3}"/><rect width="300" height="54" fill="${AB_C.dusk1}"/><rect y="54" width="300" height="46" fill="${AB_C.dusk2}"/>
+        <circle cx="38" cy="112" r="16" fill="#fde9b8"/>${tvSh('<rect x="150" y="38" width="80" height="8" rx="4"/>', '#f7d6c4', 1)}${tvSh('<rect x="40" y="66" width="70" height="7" rx="3.500"/>', '#fbe3c8', 1)}
+        ${abWall(122, '#8f7180', '#7a5868')}
+        ${abDuomo(44, 128, 150, '#f3d9c4', '#ddb9a8', '#b48c84')}${abPisa(228, 128, 108, AB_C.warm, AB_C.warm2, AB_C.warm3, 7)}
+        ${tvSh('<path d="M0 126c80-3 220-3 300 0v74H0z"/>', TV_C.leafd, 2)}
+        <path d="M216 128h29l55 26v14z" fill="#1b2140" opacity=".16"/><path d="M0 150c90-5 210-5 300 0v10c-90-5-210-5-300 0z" fill="${TV_C.leaf}" opacity=".5"/>`},
+    ],
+    lines: {
+      sloth: ['塔是歪的。我歪著頭看，它就直了。這樣看了一個下午。', '草地很平，很大一片。我躺下來，塔看起來更歪了。'],
+      egg: ['它歪歪的也沒有倒。我躺著也沒有怎樣。我們差不多。', '草地是綠的，修得很平。很好躺，我不走了。'],
+      dog: ['塔歪了！我跑過去想把它推回來！推不動！', '好大一片草地！我從這邊跑到那邊，回頭看，塔還是歪的！'],
+      moodeng: ['我學它歪歪地站，站了三秒就倒了。它站了好久好久。', '一共八層，我跳一下數一層。最上面那層比較細，是放鐘的。'],
+      nyanko: ['本大爺伸手扶了一下。塔沒有倒，這是本大爺的功勞。', '旁邊的大教堂比塔還大，大家卻只看塔。本大爺懂那種心情。'],
+      dino: ['歪歪的塔！好奇怪！我最喜歡奇怪的東西了。嘿嘿。', '我躲在塔後面，身體也跟著歪一邊，這樣就看不到我了。'],
+      snoopy: ['一座歪了很久的塔。我的小說主角也要有一個這樣的毛病。', '傍晚塔的一邊被照成暖黃色。我寫下來了，字也寫歪了。'],
+      piggy: ['大概歪四度，高五十六公尺左右。我站在旁邊，用看的就知道。', '白色大理石，一共八層。它其實是旁邊那座大教堂的鐘樓，很多人不知道。'],
+    },
+    duo: [
+      ['dino', 'dog', '塔歪歪的，一定藏著祕密。', '我幫牠聞了一圈！只有草的味道！'],
+      ['nyanko', 'piggy', '本大爺一隻手就把塔扶住了。', '你的手離塔還有很遠。我站在旁邊都看到了。'],
+      ['sloth', 'egg', '我們在草地上躺著看塔。', '躺著看，它就直了。換我們歪了。'],
+    ]},
+  istanbul: {name: '聖索菲亞', short: '聖索菲亞', country: '土耳其', city: '伊斯坦堡', fav: ['sloth', 'nyanko'],
+    stamp: '<path d="M4 21V6.500L4.800 4l.800 2.500V21M18.400 21V6.500l.800-2.500.800 2.500V21M7.500 21v-6h9v6M8 15a4 4.200 0 0 1 8 0M3 21h18" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linejoin="round" stroke-linecap="round"/>',
+    sv: {glasslamp: {name: '彩色玻璃小燈', unit: '一盞', vb: [30, 46], w: 6, svg: () => `<circle cx="15" cy="4.500" r="3" fill="none" stroke="${AB_C.gold3}" stroke-width="1.800"/><rect x="14.200" y="7" width="1.600" height="5" fill="${AB_C.gold3}"/>`
+      + tvSh('<path d="M9.500 15c0-4 11-4 11 0z"/>', AB_C.gold3, 1) + tvSh('<circle cx="15" cy="26" r="11.500"/>', TV_C.teal, 1.4)
+      + [[15, 18, TV_C.sun], [9.500, 21.500, TV_C.a1], [20.500, 21.500, AB_C.pink2], [15, 25.500, TV_C.paper], [7.500, 27.500, TV_C.sun], [22.500, 27.500, TV_C.a1], [11, 31.500, AB_C.pink2], [19, 31.500, TV_C.sun], [15, 34.500, TV_C.a1]].map(([x, y, c]) => `<path d="M${x} ${y - 3}l2.600 3-2.600 3-2.600-3z" fill="${c}"/>`).join('')
+      + tvSh('<path d="M11 37h8l-1.500 5h-5z"/>', AB_C.gold3, 1) + `<circle cx="15" cy="43.500" r="1.600" fill="${AB_C.gold3}"/>`}},
+    cards: [
+      {name: '公園的噴水池', at: [16, 97, 24], svg: () => `<rect width="300" height="200" fill="${TV_C.sky}"/>${tvCloud(10, 26, .8)}${tvCloud(228, 16, .8)}
+        ${abSophia(150, 130, 178)}
+        ${tvSh('<path d="M0 128c80-4 220-4 300 0v72H0z"/>', TV_C.leafl, 2)}
+        ${tvTree(20, 152, .9, TV_C.leafd, TV_C.leaf)}${tvTree(280, 152, .95)}${tvTree(50, 138, .45)}${tvTree(252, 138, .45, TV_C.leafd, TV_C.leaf)}
+        <ellipse cx="150" cy="174" rx="96" ry="26" fill="${TV_C.sand}"/><path d="M118 196h64l14 4h-92z" fill="${TV_C.sand}"/>
+        ${abFount(150, 172, 56)}`},
+      {name: '公園的長椅', at: [66, 91, 24], svg: () => `<rect width="300" height="200" fill="${TV_C.sky}"/>${tvCloud(206, 24, .9)}${tvCloud(250, 70, .6)}
+        ${abSophia(112, 118, 164)}
+        ${tvSh('<path d="M0 116c80-4 220-4 300 0v84H0z"/>', TV_C.leafl, 2)}
+        ${tvTree(236, 140, .9)}${tvTree(284, 152, 1.1, TV_C.leafd, TV_C.leaf)}${tvTree(8, 146, .8, TV_C.leafd, TV_C.leaf)}
+        <path d="M0 170c80-6 220-6 300 0v30H0z" fill="${TV_C.sand}"/>
+        ${abBench(198, 176, 168)}`},
+      {name: '傍晚的噴水池', at: [83, 97, 24], svg: () => `<rect width="300" height="200" fill="#f6c796"/><rect width="300" height="54" fill="#9483bd"/><rect y="54" width="300" height="44" fill="#e99d8c"/>
+        ${tvSh('<rect x="18" y="30" width="76" height="8" rx="4"/>', '#b7a3cf', 1)}${tvSh('<rect x="204" y="70" width="80" height="7" rx="3.500"/>', '#f4b6a6', 1)}
+        ${abSophia(150, 132, 182, true)}
+        ${tvSh('<path d="M0 130c80-4 220-4 300 0v70H0z"/>', '#5a4060', 2)}
+        ${tvTree(20, 154, .9, '#4a3352', '#5a4060')}${tvTree(280, 154, .95, '#4a3352', '#5a4060')}${tvTree(52, 140, .45, '#4a3352', '#5a4060')}
+        <ellipse cx="150" cy="176" rx="96" ry="24" fill="#6d5373"/>
+        ${abFount(150, 174, 56, true)}`},
+    ],
+    lines: {
+      sloth: ['公園有長椅。我坐下來看大圓頂，看到噴水池的燈都亮了。', '四座尖塔不一樣高。我一座一座慢慢比，比到第三座，天就黑了。'],
+      egg: ['有長椅。很好。今天的行程就是這張長椅。', '圓頂好大，扁扁的。跟我有點像，我看了很安心。'],
+      dog: ['噴水池！水一直往上噴！我繞著跑了好多圈！', '四個角各有一座尖尖的塔！有一座是紅色的磚頭！我發現的！'],
+      moodeng: ['噴水池的水跳得比我高。我不服氣，又跳了十下。', '外面的牆一塊一塊的，好厚。我在旁邊跳，它動都不動。'],
+      nyanko: ['本大爺在公園慢慢走了一圈，又一圈。長椅每一張都坐過了。', '四座尖塔有一座是紅磚砌的，跟另外三座不一樣。本大爺一眼就看出來。'],
+      dino: ['我躲在噴水池後面。水噴起來的時候看不到我，停下來就被看到了。', '那麼大的圓頂，下面一定可以躲很多隻我。我在公園裡想了很久。'],
+      snoopy: ['一個大圓頂，四座尖塔。我坐在長椅上，把它寫成故事裡的城堡。', '傍晚噴水池亮起來。我寫了三行，都在寫水的聲音。'],
+      piggy: ['圓頂的直徑大概三十一公尺。這麼大的圓頂，要靠外面那些厚厚的牆撐著。', '尖塔四座，高度都不一樣，三座石頭的、一座紅磚的。要看仔細才會發現。'],
+    },
+    duo: [
+      ['sloth', 'nyanko', '我們在長椅上坐了一整天。', '本大爺是在欣賞建築。牠是在睡覺。'],
+      ['dog', 'moodeng', '噴水池的水噴好高！', '我跳起來跟它比！輸了三次，贏了零次。'],
+      ['piggy', 'snoopy', '四座尖塔，高度都不一樣。', '我本來寫「四座一樣的塔」。好吧，改掉。'],
+    ]},
+  reykjavik: {name: '哈爾格林姆教堂', short: '冰島教堂', country: '冰島', city: '雷克雅維克', fav: ['snoopy'],
+    stamp: '<path d="M10.800 21V6L12 2.500 13.200 6v15M8.500 21v-9M6.300 21v-6M4.200 21v-3.500M15.500 21v-9M17.700 21v-6M19.800 21v-3.500M3 21h18" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linejoin="round" stroke-linecap="round"/>',
+    sv: {woolhat: {name: '毛線帽', unit: '一頂', vb: [36, 36], w: 7, svg: () => tvSh('<path d="M5 27c0-20 26-20 26 0z"/>', TV_C.a1, 1.4) + tvSh('<circle cx="18" cy="8" r="5.200"/>', TV_C.sun, 1)
+      + `<path d="M7 21l3-3.400 3 3.400 3-3.400 3 3.400 3-3.400 3 3.400 3-3.400 1.500 1.700" fill="none" stroke="${TV_C.paper}" stroke-width="1.600" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 24.200h18" stroke="${TV_C.sun}" stroke-width="1.600" stroke-linecap="round" stroke-dasharray=".2 3"/>`
+      + tvSh('<rect x="3" y="26" width="30" height="7.500" rx="3.700"/>', TV_C.a1d, 1.2) + [7, 11, 15, 19, 23, 27].map(x => `<rect x="${x}" y="27.500" width="1.200" height="4.500" rx=".600" fill="${TV_C.paper}" opacity=".5"/>`).join('')}},
+    cards: [
+      {name: '一路往上的街', at: [36, 98, 22], svg: () => { const WL = [TV_C.a1d, TV_C.hill, TV_C.sun, TV_C.leaf, TV_C.paper, TV_C.teal, AB_C.pink2, TV_C.sea], RF = [TV_C.wood2, AB_C.steel3, TV_C.rockd, TV_C.wood];
+        const row = [[98, 124, 30, 18], [76, 137, 40, 25], [48, 155, 52, 33], [10, 181, 68, 44], [-46, 212, 84, 56]];
+        return `<rect width="300" height="200" fill="${TV_C.sky}"/>${tvCloud(14, 22, .8)}${tvCloud(216, 40, .9)}
+        ${abHallgrim(150, 116, 104, AB_C.conc, AB_C.conc2, AB_C.conc3)}
+        <path d="M0 115h300v85H0z" fill="${AB_C.stone}"/><path d="M135 115h30l70 85H65z" fill="${AB_C.road}"/><path d="M149 115h2l4 85h-10z" fill="${TV_C.paper}" opacity=".35"/>
+        ${row.map(([x, y, w, h], i) => abHouse(x, y, w, h, WL[(i * 3) % WL.length], RF[i % RF.length]) + abHouse(300 - x - w, y, w, h, WL[(i * 3 + 1) % WL.length], RF[(i + 2) % RF.length])).join('')}`; }},
+      {name: '教堂的正面', at: [17, 97, 23], svg: () => `<rect width="300" height="200" fill="${TV_C.sky}"/><rect y="140" width="300" height="60" fill="${TV_C.sky2}"/>${tvCloud(16, 34, .9)}${tvCloud(226, 22, .8)}${tvCloud(238, 92, .6)}
+        ${abHouse(2, 174, 34, 20, TV_C.a1d, TV_C.wood2)}${abHouse(40, 174, 30, 17, TV_C.sun, AB_C.steel3)}${abHouse(74, 174, 26, 15, TV_C.teal, TV_C.rockd)}${abHouse(244, 174, 26, 16, TV_C.hill, TV_C.rockd)}${abHouse(272, 174, 32, 20, TV_C.leaf, TV_C.wood2)}
+        ${abHallgrim(174, 176, 164, AB_C.conc, AB_C.conc2, AB_C.conc3)}
+        ${tvSh('<path d="M0 174c80-4 220-4 300 0v26H0z"/>', AB_C.stone, 1.5)}<path d="M0 184h300M0 193h300" stroke="${AB_C.stone2}" stroke-width="1"/>${[40, 120, 200, 280].map(x => `<rect x="${x}" y="184" width="1" height="9" fill="${AB_C.stone2}"/>`).join('')}`},
+      {name: '塔頂看出去', at: [18, 98, 22], svg: () => { const RC = [TV_C.a1d, TV_C.hill, TV_C.leaf, TV_C.sun, AB_C.steel3, TV_C.teal, TV_C.a1]; let h = '';
+        // 觀景台是開放給遊客上去的：最下面兩成是觀景台的地板，娃娃站在地板上；矮牆在娃娃後面，屋頂在矮牆外面
+        for (let r = 0; r < 3; r++){ const w = 20 + r * 6, y = 100 + r * 17, st = w * 1.3; for (let i = 0, x = -14 - (r % 2) * w * .55; x < 310; i++, x += st){ h += abTop(x, y, w, RC[(i * 3 + r * 2) % RC.length]); if ((i + r) % 4 === 1) h += `<circle cx="${x + w * 1.12}" cy="${y - w * .1}" r="${w * .16}" fill="${TV_C.leaf}"/>`; } }
+        return `<rect width="300" height="200" fill="${TV_C.sky2}"/><rect width="300" height="34" fill="${TV_C.sky}"/>${tvCloud(20, 14, .7)}${tvCloud(232, 22, .6)}
+        <path d="M0 64c24-12 60-16 104-4v6H0z" fill="${TV_C.hill}" opacity=".7"/>
+        <path d="M92 64l46-30h46l14 6h42l44 24z" fill="${TV_C.hill}"/><path d="M129 40l9-6h46l14 6h42l9 6-9 3-9-4-12 5-11-5-14 4-12-5-15 5-13-4-11 5z" fill="${AB_C.snow}"/>
+        <rect y="62" width="300" height="28" fill="${TV_C.sea}"/><rect y="75" width="300" height="15" fill="${TV_C.seal}"/>
+        <path d="M0 86c40-6 80 2 120-2 50-6 110 4 180-2v78H0z" fill="#cfd5db"/>
+        ${h}
+        ${tvSh('<rect x="-4" y="142" width="308" height="20"/>', AB_C.conc2, -1.6)}${tvSh('<rect x="-6" y="138" width="312" height="5.500" rx="1.500"/>', AB_C.conc, 1)}${[38, 112, 188, 262].map(x => `<rect x="${x}" y="143.500" width="1.200" height="18.500" fill="${AB_C.conc3}" opacity=".7"/>`).join('')}
+        <rect y="161" width="300" height="39" fill="${AB_C.stone}"/><rect y="161" width="300" height="2.400" fill="${AB_C.conc3}" opacity=".55"/><path d="M0 176h300M0 189h300" stroke="${AB_C.stone2}" stroke-width="1"/>${[[60, 163, 176], [180, 163, 176], [120, 176, 189], [240, 176, 189], [30, 189, 200], [150, 189, 200], [270, 189, 200]].map(([x, y1, y2]) => `<rect x="${x}" y="${y1}" width="1" height="${y2 - y1}" fill="${AB_C.stone2}"/>`).join('')}`; }},
+    ],
+    lines: {
+      sloth: ['街一路往上，教堂在最上面。我走得很慢，還好它很高，一直看得到。', '兩邊的柱子一根比一根高。我從最矮的看到最高的，看了很久。'],
+      egg: ['上坡。我在街的最下面看就好，反正很遠也看得到。', '這裡有點冷。我把自己縮起來，變成一顆更圓的蛋。'],
+      dog: ['街的最上面有一座好高的塔！我一路跑上去！中間都沒有停！', '從塔頂看出去，屋頂紅的藍的綠的！後面還有海！'],
+      moodeng: ['兩邊的柱子像樓梯，一階一階往上。我在下面跟著跳，一階跳一下。', '很遠就看得到它。我走到哪裡回頭，它都在。它是不是在跟著我。'],
+      nyanko: ['本大爺圍了圍巾。風很大，圍巾一直抖。本大爺站得很直。', '柱子是照著這裡的石頭柱子設計的。本大爺聽了一遍就記住了。'],
+      dino: ['兩邊那麼多根柱子，我躲在其中一根後面。牠們一根一根找，找了好久。嘿嘿。', '遠遠的山，山頂是白的。它也戴了帽子躲起來。'],
+      snoopy: ['全城最顯眼的地方。我站在前面抬頭看，決定小說的最後一幕就在這裡。', '從塔頂看出去，一片彩色的屋頂，再過去是海。這一頁我寫得特別慢。'],
+      piggy: ['塔大概七十四公尺，是混凝土蓋的。在這座城裡，走到哪裡都看得到它。', '柱子從外面往中間越來越高，像一座往上收的山。設計的人有想過。'],
+    },
+    duo: [
+      ['snoopy', 'dog', '我要把這座塔寫進小說的最後一章。', '我先跑到前面幫你看！好高！脖子都仰酸了！'],
+      ['moodeng', 'piggy', '柱子一階一階的，我可以跳上去嗎？', '不行。在下面數就好，我陪你數。'],
+      ['egg', 'nyanko', '好冷。我不想動。', '本大爺的圍巾分你一半。只有一半。'],
     ]},
 };
 
