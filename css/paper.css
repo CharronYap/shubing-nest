@@ -33,7 +33,7 @@
 /* 晚上窗邊一圈暖光（漸層，不是濾鏡） */
 .screen.ppon .win::before{content:"";position:absolute;inset:-34% -30%;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--p-sun) 30%,transparent),transparent);opacity:0;z-index:-1;transition:opacity .6s}
 .screen.ppon.night .win::before{opacity:1}
-.screen.ppon .lsw{filter:none;left:17%}
+.screen.ppon .lsw{filter:none;left:17%;top:max(calc(var(--wh,52%)*.29),92px)}
 .screen.ppon .room.off .lsw .nub{fill:var(--p-paperd)}
 .screen.ppon .nightov{background:color-mix(in srgb,var(--p-ink) 55%,transparent)}
 .screen.ppon.night .room.off .nightov{background:color-mix(in srgb,var(--p-ink) 80%,transparent)}
@@ -139,6 +139,16 @@
 .look-paper .sheet .x,.look-paper .ac-x{border-radius:8px;background:var(--p-paperd);color:var(--p-ink)}
 .look-paper .sheet .hd{color:var(--p-a1d);font-size:19px}
 .look-paper .over{background:color-mix(in srgb,var(--p-ink) 46%,transparent)}
+/* 本子的小卡（js/hud.js）：跟面板同一張紙，小一號 */
+.look-paper .bks-pop{background:linear-gradient(color-mix(in srgb,var(--p-paper) 66%,transparent),color-mix(in srgb,var(--p-paper) 66%,transparent)),var(--p-fiber),var(--p-paper);
+  background-size:auto,192px 192px,auto;background-blend-mode:normal,multiply,normal;color:var(--p-ink);border-radius:12px;box-shadow:0 4px 0 var(--p-edge),0 12px 20px var(--p-shadow);font-family:var(--p-hand)}
+.look-paper .bks-it{color:var(--p-ink);border-radius:9px;font-family:var(--p-hand)}
+.look-paper .bks-it:active{background:color-mix(in srgb,var(--p-sun) 24%,transparent)}
+@media (hover:hover){.look-paper .bks-it:hover{background:color-mix(in srgb,var(--p-paperd) 70%,transparent)}}
+.look-paper .bks-ic{border-radius:8px;background:var(--p-paperd);color:var(--p-a1d);box-shadow:0 2px 0 var(--p-edge)}
+.look-paper .bks-tx b{font-size:16px;font-weight:700}
+.look-paper .bks-tx small{font-size:12.5px;color:var(--soft)}
+.look-paper .bks-it.off .bks-ic{box-shadow:none}
 .look-paper .pcard,.look-paper .gm-card{background:var(--p-paper);color:var(--p-ink);border:0;border-radius:16px;box-shadow:0 5px 0 var(--p-edge),0 14px 24px var(--p-shadow)}
 .look-paper .pcard .pic{background:var(--p-paperd);border-radius:16px}
 .look-paper .pcard h3{color:var(--p-a1d)}

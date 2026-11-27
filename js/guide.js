@@ -44,7 +44,7 @@ const GUIDE = [
   {c: 'doll', ic: STAY_MOON, t: '娃娃的夢', s: '晚上娃娃會睡覺。點睡著的娃娃，看牠夢到什麼。'},
   {c: 'doll', ic: gdDoll('dog'), t: '你不在的時候', s: '隔一陣子回來，地上會有牠們留下的小東西，撿起來有幣。'},
   {c: 'doll', ic: typeof TV_BAG_ICON !== 'undefined' ? TV_BAG_ICON : ICON.living, t: '旅行', s: '客廳門邊的背包放點心、護身符、道具，放好就不用管。誰想出門會自己背走，路上寄明信片，回家帶土產。', go: () => { gdRoom('living'); if (typeof tvBagOpen === 'function') setTimeout(tvBagOpen, 300); }},
-  {c: 'doll', ic: gdDoll('snoopy'), t: '旅行相簿', s: '相簿上面的「旅行」。四個地方各 3 張明信片、2 種土產，還有誰去過幾次。', go: () => { if (typeof tvAlbumOpen === 'function') tvAlbumOpen(); }},
+  {c: 'doll', ic: gdDoll('snoopy'), t: '旅行相簿', s: '主畫面相簿旁邊那一疊書，點「旅行」。四個地方各 3 張明信片、2 種土產，還有誰去過幾次。', go: () => { if (typeof tvAlbumOpen === 'function') tvAlbumOpen(); }},
   // ---- 賺幣和買東西
   {c: 'coin', ic: COIN, t: '現在可以賺幣的事', s: '點上面的幣就會列出來，點了直接過去。', go: () => earnOpen(false)},
   {c: 'coin', ic: COIN, t: '每天的幣', s: `每天第一次打開送 ${typeof DAILY_COINS !== 'undefined' ? DAILY_COINS : 20} 枚，沒來也不會被扣。`},
@@ -54,7 +54,7 @@ const GUIDE = [
   {c: 'coin', ic: ICON.yard, t: '小島收成', s: '花開了點一下就收，樹每天三顆果子。拿去火腿的小店，一個 1 枚。', go: () => gdRoom('yard')},
   {c: 'coin', ic: WANT_STAR, t: '里程碑', s: '第一次做到某些事會有幣，補發不會漏。', go: () => earnMsOpen()},
   // ---- 朋友（都要登入）
-  {c: 'pal', ic: FR_ICON, t: '朋友', s: '上面第二排右邊那顆。去朋友家、寄明信片、送娃娃、去過夜都從這裡；朋友那邊來的東西也都收在這裡。', go: () => { setPage('room'); frOpen(); }, lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
+  {c: 'pal', ic: FR_ICON, t: '朋友', s: '上面第三排右邊那顆。去朋友家、寄明信片、送娃娃、去過夜都從這裡；朋友那邊來的東西也都收在這裡。', go: () => { setPage('room'); frOpen(); }, lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
   {c: 'pal', ic: gdDoll('sloth'), t: '帳號和好友', s: '登入之後進度存在雲端，換手機也在。用好友碼加朋友。', go: gdAcct, btn: '開帳號'},
   {c: 'pal', ic: ICON.living, t: '去朋友家', s: '朋友面板最上面的「去他家」。可以看他的每一間。', go: () => { setPage('room'); frOpen(); }, btn: '開朋友', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
   {c: 'pal', ic: HEART(), t: '愛心', s: '在朋友家點娃娃，留一顆愛心。你收到的愛心可以換幣。', go: () => { setPage('room'); frOpen(); }, btn: '開朋友', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
@@ -64,7 +64,7 @@ const GUIDE = [
   {c: 'pal', ic: WATER_ICON, t: '幫忙澆水', s: '去朋友家的小島幫他澆水。朋友也會來幫你，一次 1 枚。', go: () => { setPage('room'); frOpen(); }, btn: '開朋友', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
   {c: 'pal', ic: STAY_MOON, t: '過夜', s: '讓一隻娃娃去朋友家住一晚，隔天牠帶日記回來。從朋友面板的「去過夜」。', go: () => { setPage('room'); frOpen(); }, btn: '開朋友', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
   {c: 'pal', ic: gdDoll('dino'), t: '躲貓貓', s: '點一隻娃娃選「躲起來」，再點一件家具。朋友來你家有 3 次機會找牠，找到兩邊各 1 枚。', go: () => gdRoom(roomId === 'yard' ? 'living' : null), lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
-  {c: 'pal', ic: ALB_ICON, t: '兩個人的紀念冊', s: '跟朋友一起做過的事，照時間排：明信片、送的娃娃、過夜、訪客簿、躲貓貓、澆水。', go: () => { setPage('room'); memoOpen(); }, lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
+  {c: 'pal', ic: ALB_ICON, t: '兩個人的紀念冊', s: '主畫面相簿旁邊那一疊書裡。跟朋友一起做過的事，照時間排：明信片、送的娃娃、過夜、訪客簿、躲貓貓、澆水。', go: () => { setPage('room'); memoOpen(); }, lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
   {c: 'pal', ic: HEART(), t: '今天誰來過', s: '朋友在你不在的時候來過，打開小窩會跳一張小卡片告訴你，一天最多一次。'},
   {c: 'pal', ic: CARD_ICON, t: '明信片', s: '拍完照可以寄給朋友，或從朋友面板直接寄現在這一間。收到的也在朋友面板。', go: () => { setPage('room'); frOpen(); }, btn: '開朋友', lock: gdNeedLogin, lockGo: gdAcct, lockBtn: '去登入'},
 ];

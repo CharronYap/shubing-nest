@@ -347,7 +347,9 @@ function ydGuestTap(){
 }
 
 /* ---------- 圖鑑：花和小客人 ---------- */
-function yardBookOpen(){
+let ydBookPlate = false;   // 這一次是從點心盤面板點「花和小客人」進來的：返回回點心盤面板；從主畫面的本子進來就直接關掉
+function yardBookOpen(from){
+  ydBookPlate = from === 'plate';
   const y = S.yard;
   const fl = Object.keys(YD_FLOWERS).map(k => (y.kinds.includes(k)
     ? `<span class="tile yd-kind">${ydFlowerSVG(k, 3)}<small>${YD_FLOWERS[k].name}</small><i>${y.fl[k] ? `收過 ${y.fl[k]} 朵` : '還沒收過'}</i></span>`
@@ -508,9 +510,9 @@ $('#sheet').addEventListener('click', e => {
   const k = e.target.closest('[data-ydk]'); if (k){ const [kind, i] = k.dataset.ydk.split(':'); ydPlant(kind, +i); return; }
   const sn = e.target.closest('[data-ydsn]'); if (sn){ ydPlateSet(sn.dataset.ydsn); return; }
   const b = e.target.closest('[data-yd]'); if (!b) return;
-  if (b.dataset.yd === 'book') yardBookOpen();
+  if (b.dataset.yd === 'book') yardBookOpen('plate');   // 只剩點心盤面板有這顆
   else if (b.dataset.yd === 'go'){ $('#sheet').hidden = true; setPage('room'); goRoom('yard'); }
-  else if (b.dataset.yd === 'album'){ if (typeof openAlbum === 'function') openAlbum(); }
+  else if (b.dataset.yd === 'album'){ if (ydBookPlate){ ydPlateTap(); if ($('#sheet .yd-book')) $('#sheet').hidden = true; } else $('#sheet').hidden = true; }   // 返回
 });
 // 賺幣清單用（js/earn.js）：小島現在有沒有東西可以收
 const yardReady = () => { const y = S.yard; if (!y || y.v !== 2) return false; return y.bed.some(b => ydStage(b) === 3) || y.tree.d !== todayStr() || y.tree.n > 0 || y.drop.length > 0 || y.left.length > 0; };

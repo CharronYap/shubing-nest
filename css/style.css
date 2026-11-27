@@ -83,7 +83,8 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .glow{position:absolute;width:56%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,226,150,.85),rgba(255,210,120,.35) 40%,rgba(255,200,120,0) 70%);mix-blend-mode:screen;pointer-events:none;z-index:401;opacity:0;transition:opacity .6s}
 .room.off .glow{opacity:1}
 /* 牆上的電燈開關，在窗戶左邊；疊在暗色上面，關了燈也點得到 */
-.lsw{position:absolute;left:24%;top:calc(var(--wh,52%)*.29);width:7%;transform:translateX(-50%);z-index:402;border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 2px 0 rgba(120,60,90,.18))}
+.lsw{position:absolute;left:24%;top:max(calc(var(--wh,52%)*.29),108px);  /* 108px：上面第二排按鈕底下留 10px，不貼著本子鈕（紙感的按鈕底比較窄，paper.css 另外寫） */
+  width:7%;transform:translateX(-50%);z-index:402;border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;filter:drop-shadow(0 2px 0 rgba(120,60,90,.18))}
 .lsw svg{display:block;width:100%;height:auto}
 .lsw .nub{transition:transform .18s ease}
 .room.off .lsw .nub{transform:translateY(9.5px);fill:#b9a6c9}
@@ -975,6 +976,23 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .hud-r,.hud-m{margin-left:auto}   /* 左邊那組不在時，右邊這組還是靠右 */
 .inyard #camBtn{visibility:hidden}
 .incard .hudwrap,.incard #homeBtn{display:none!important}
+/* 本子：相簿旁邊那一顆點了，從按鈕下面彈出的小卡（js/hud.js bksOpen）。紙感的樣子在 css/paper.css */
+.hud-a{position:relative}
+.bks-pop{position:absolute;left:0;top:calc(100% + 8px);width:224px;display:grid;gap:2px;padding:6px;border-radius:16px;background:#fff;
+  box-shadow:0 3px 0 #ead9e2,0 10px 22px rgba(150,96,128,.22);pointer-events:auto;z-index:3;animation:bksIn .16s ease-out}
+.bks-pop[hidden]{display:none}
+@keyframes bksIn{from{opacity:0;transform:translateY(-5px)}}
+.bks-it{display:flex;align-items:center;gap:10px;width:100%;margin:0;padding:7px 8px;border:0;border-radius:12px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.bks-it:active{background:#fff0f6}
+@media (hover:hover){.bks-it:hover{background:#fff5f9}}
+.bks-ic{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:#fff0f6;color:var(--pink)}
+.bks-ic svg{width:20px;height:20px}
+.bks-tx{display:grid;gap:1px;min-width:0}
+.bks-tx b{font-size:15px;line-height:1.25}
+.bks-tx small{font-size:12px;line-height:1.3;color:var(--soft)}
+.bks-it.off .bks-ic{background:#f2eef0;color:var(--soft);filter:grayscale(1);opacity:.6}
+.bks-it.off .bks-tx{opacity:.55}
+@media (prefers-reduced-motion:reduce){.bks-pop{animation:none}}
 @container (max-width:340px){
   .top{gap:4px}.topr{gap:4px}
   .mc-a{width:24px}.mapc .mc-m.rmap{padding:0 9px 0 7px;font-size:13px}
@@ -1142,7 +1160,6 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .vb-hide svg{color:#e8a013}
 @media (prefers-reduced-motion:reduce){.hide-chip,.doll.hiding .body,.it.hide-no,.hidepop .body{animation:none}}
 /* ---------- 紀念冊、今天誰來過（js/memo.js） ---------- */
-.al-memo{margin-left:auto;margin-right:34px}
 .mm-box{display:grid;gap:7px}
 .mm-it{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:14px;border:2px solid #f3e7ef;background:#fff}
 .mm-it small{flex:none;width:62px;font-size:11.5px;font-weight:800;color:var(--soft)}
@@ -1294,10 +1311,6 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .tv-big{margin-bottom:4px}
 .tv-mapn{display:flex;align-items:center;gap:6px}
 .tv-mapn svg{width:16px;height:16px;flex:none;color:var(--pink)}
-.al-tv{margin-left:6px;margin-right:34px}
-.al-memo+.al-tv{margin-left:6px}
-.hd .al-memo:has(+.al-tv){margin-right:0}
-.hd .al-tv:first-of-type{margin-left:auto}
 /* 過夜帶回來的小紙條（js/stay.js stayNoteShow） */
 .st-paper{margin:2px 6px 4px;padding:12px 14px;background:#fff8c9;color:#7a5a12;border-radius:4px;box-shadow:0 2px 0 #e6d98a,0 4px 8px rgba(80,40,70,.12);transform:rotate(-1.5deg);font-size:15px;line-height:1.6;font-weight:800;overflow-wrap:anywhere;text-align:center}
 .pcard.st-back .pic{width:96px;height:96px;justify-self:center}
@@ -1347,8 +1360,6 @@ span.yd-kind{cursor:default}
 .yd-kind.no{background:rgba(0,0,0,.04);box-shadow:none;border-style:dashed}
 .yd-sil{display:grid;place-items:center;width:100%}
 .yd-sil svg{filter:brightness(0);opacity:.2}
-.al-books{display:flex;gap:6px;margin:0 0 8px}
-.al-books .btn{flex:1;padding:6px 4px;font-size:13px}
 /* 拍好的照片：分享不了的時候改用長按存（js/photo.js 的 photoHold） */
 .phimg{-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
 .ph-hold{margin:0;font-size:14px;line-height:1.55;font-weight:800;text-align:center;color:var(--pink2)}

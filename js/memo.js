@@ -1,5 +1,5 @@
 /* 兩個人的紀念冊、今天誰來過（2026-11-26）
-   紀念冊：跟朋友一起做過的事，自動收、照時間排。相簿最上面多一顆「紀念冊」。
+   紀念冊：跟朋友一起做過的事，自動收、照時間排。從主畫面相簿旁邊那一疊書（本子，js/hud.js）打開；返回直接回房間。
      收：成為好友、互寄的明信片、送和收到的娃娃、去對方家過夜和帶回來的日記、對方的娃娃來過夜、
          訪客簿（對方寫給你的、你寫給對方的）、躲貓貓找到的那幾次、幫忙澆水。
      兩個人各有一本，記的是同一件事從自己這邊看的樣子。
@@ -97,7 +97,7 @@ function memoOpen(uid){
 }
 $('#sheet').addEventListener('click', e => {
   if (e.target.closest('[data-memo]')){ memoOpen(); return; }
-  if (e.target.closest('[data-mmback]')){ openAlbum(); return; }
+  if (e.target.closest('[data-mmback]')){ $('#sheet').hidden = true; return; }
   const u = e.target.closest('[data-mmu]'); if (u){ memoOpen(u.dataset.mmu); return; }
   const o = e.target.closest('[data-mmold]');
   if (o && typeof memoOlder === 'function'){ o.disabled = true; const box = $('#sheet .mm-box'), top = box ? box.scrollTop : 0, top2 = $('#sheet').scrollTop;   // 讀完重畫，留在原本捲到的地方（捲的可能是裡面那一格，也可能是整張面板）
@@ -105,16 +105,6 @@ $('#sheet').addEventListener('click', e => {
   const c = e.target.closest('[data-mmc]');
   if (c && typeof cardOpen === 'function'){ const i = (S.mail.pc || []).findIndex(x => x.id === c.dataset.mmc); if (i >= 0) cardOpen(i); else if (typeof keepCardOpen === 'function') keepCardOpen(c.dataset.mmc); }
 });
-// 相簿最上面多一顆「紀念冊」
-if (typeof openAlbum === 'function'){
-  const prev = openAlbum;
-  openAlbum = function(d){
-    prev(d);
-    const hd = $('#sheet .hd');
-    if (hd && !VISIT && !hd.querySelector('[data-memo]') && (sNet() || memoList().length)) hd.insertAdjacentHTML('beforeend', '<button class="btn sm al-memo" data-memo="1">紀念冊</button>');
-  };
-}
-
 /* ---------- 在雲端那一層順手記 ---------- */
 function memoWrap(){
   const net = window.nestNet;

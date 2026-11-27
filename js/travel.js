@@ -611,7 +611,7 @@ function tvWelcome(){
       const s = TV_SOUV[z.k], by = one ? '' : tvNames(z.ds) + (z.ds.length > 1 ? '各' : '');
       const tail = z.dup ? `家裡已經有了，換成 ${TV_SOUV_COIN} 枚幣。` : one ? (z.c > 1 ? `現在有 ${z.c} ${unitOf(s)}了，都在收納架的紀念品那一頁。` : '放在收納架的紀念品那一頁，每一間都能擺。') : z.c > 1 ? `現在有 ${z.c} ${unitOf(s)}了。` : '';
       return `<div class="tv-got"><span class="tile">${furnSVG(tvSouvId(z.k))}</span><small>${by}帶回來${s.unit || '一個'}${s.name}。${tail}</small></div>`;
-    }).join('') + (one ? '' : '<small class="tv-none">都放在收納架的紀念品那一頁，每一間都能擺。</small>') : '<small class="tv-none">這趟沒有帶東西回來。</small>';
+    }).join('') + (one || sv.every(z => z.dup) ? '' : '<small class="tv-none">都放在收納架的紀念品那一頁，每一間都能擺。</small>') : '<small class="tv-none">這趟沒有帶東西回來。</small>';
     return `<div class="ev tv-wel tv-trip${fam ? ' fam' : ''}"><b>${who}從${P.abroad ? P.country : P.name}回來了</b>${pic}<div class="tv-wds">${rows}</div>${bl ? `<small class="tv-bl">${bl}</small>` : ''}<div class="tv-gots">${got}</div></div>`;
   };
   // 照 o 分組，照第一次出現的順序；沒有 o 的各自一組
@@ -711,19 +711,7 @@ function tvRows(d){
   return `<div class="al-sec">旅行</div><ul class="al-ln al-st">${o ? `<li>現在去${TV_PLACES[o.p].name}了，大概${tvWhen(o.t1)}回來</li>` : ''}${l.slice().reverse().slice(0, 6).map(x => tvLogLi(d, x)).join('')}${tvLogMore(d, 6, l.length)}</ul>`;
 }
 const tvMapNote = () => tvData().out.map(o => `<p class="bk-note tv-mapn">${TV_BAG_ICON}${tvOutLine(o)}。</p>`).join('');
-// 相簿最上面多一排：紀念冊（js/memo.js 加的那顆搬下來）、旅行、小島（花和小客人，js/yard.js）
-if (typeof openAlbum === 'function'){
-  const prev = openAlbum;
-  openAlbum = function(d){
-    prev(d);
-    const sh = $('#sheet'), hd = sh.querySelector('.hd');
-    if (!hd || VISIT || sh.querySelector('.al-books')) return;
-    const row = document.createElement('div'); row.className = 'al-books';
-    const memo = hd.querySelector('[data-memo]'); if (memo){ memo.className = 'btn sm'; row.appendChild(memo); }
-    row.insertAdjacentHTML('beforeend', '<button class="btn sm" data-tv="album">旅行</button>' + (typeof yardBookOpen === 'function' ? '<button class="btn sm" data-yd="book">小島</button>' : ''));
-    hd.after(row);
-  };
-}
+// 旅行相簿從主畫面相簿旁邊那一疊書（本子，js/hud.js）打開；以前在相簿最上面那一排（2026-11-27 拿掉）
 // 土產在收納架的「紀念品」那一頁（js/room.js 的 renderTray）
 
 /* ---------- 按鈕 ---------- */
@@ -756,7 +744,7 @@ $('#sheet').addEventListener('click', e => {
   }
   else if (a === 'pass') tvPassOpen();
   else if (a === 'shop'){ if (typeof shopOpen === 'function') shopOpen(); }
-  else if (a === 'back'){ if (typeof openAlbum === 'function') openAlbum(); }
+  else if (a === 'back') $('#sheet').hidden = true;   // 返回：回房間
   else if (a === 'welok') $('#sheet').hidden = true;
 });
 
