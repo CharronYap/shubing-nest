@@ -18,7 +18,7 @@ const fightOf = (a, b) => { const f = fightNow(); return !!f && f.k === palKey(a
 
 /* ---------- 兩隻互動 ---------- */
 function roamMeet(it, st){
-  const others = roamDolls().filter(o => o !== it && !(RS[o.uid] && (RS[o.uid].busy || Date.now() < RS[o.uid].rest)) && !(typeof asleep === 'function' && asleep(o.id)));
+  const others = roamDolls().filter(o => o !== it && !(RS[o.uid] && (RS[o.uid].busy || Date.now() < RS[o.uid].rest || roamOwnStay(o, RS[o.uid]))) && !(typeof asleep === 'function' && asleep(o.id)));   // 剛坐上專屬家具的不去打擾
   if (!others.length) return false;
   const o = others[Math.floor(Math.random() * others.length)], os = roamSt(o), [ox, oy] = roamPos(o);
   st.trips++;
@@ -210,7 +210,7 @@ function roamIn(r, rm){
 {
   const act = roamAct;
   roamAct = function(it, st, canMove){
-    if (canMove && !REDUCE){
+    if (canMove && !REDUCE && !roamOwnStay(it, st)){   // 剛坐上自己的專屬家具：先待著，不去找別隻、不串門子
       if (Math.random() < .25 && roamMeet(it, st)) return;
       if (!it.guest && Math.random() < .07 && roamVisit(it)) return;   // 客人只在客廳，不串門子
     }
