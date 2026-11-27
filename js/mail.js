@@ -1,7 +1,7 @@
 /* 信箱：娃娃寫給你的信，還有薯餅寫的「小窩更新了」
    不懲罰、不催人：信不會過期，附件沒領也一直留著；隔幾天才打開，娃娃寫的是牠這幾天的心情，不寫讓人有罪惡感的話。
    S.mail = {
-     l:[{k:'sloth.intro.0#n=5', t:'日期', r:看過, a:'snack'|'bubble'|null, g:附件領了}],   信箱裡的信，最新的在前面，最多 30 封
+     l:[{k:'sloth.intro.0#n=5', t:'日期', r:看過, a:'snack'|'bubble'|null, g:附件領了}],   信箱裡的信，最新的在前面。上限各類各算（見 MAIL_CAT_MAX）
      s:{key:'日期'},     寄過哪些（intro-sloth、cards-sloth-5、anniv-sloth-2027、miss-日期、news-v4）
      arch:{娃娃:['日期|k']},   每隻寫過的信，相簿翻得到，一隻最多留 24 封
      n:{娃娃:幾件},      跟這隻一起做完幾件小事（重複的也算）
@@ -13,7 +13,28 @@
      送娃娃自己寫的話：'娃娃.gift.0#w=名字;m=第幾句;x=字'      過夜回來（js/stay.js）：'娃娃.trip.第幾句日記#w=名字;x=小紙條'
    信裡的字寫在下面的 MAIL_TPL，存檔只存 key；同一個 key 永遠是同一封信 */
 // AI 寫的信（js/mailai.js）：key 後面多一段 ;ai=字，有這段就顯示它，沒有就照範本
-const MAIL_MAX = 30, MAIL_ARCH = 24;
+const MAIL_ARCH = 24;
+/* 分類（2026-11-27 使用者要的）：信箱上面一排分類鈕，全部｜娃娃的信｜小窩更新｜明信片｜朋友家。
+   每一封屬於哪一類看 key 的第二段：news = 小窩更新；gift（朋友送來的娃娃）、trip（過夜回來的日記）= 朋友家；pc（娃娃旅行寄回來的明信片）= 明信片；其他都是娃娃的信。
+   朋友寄來的明信片不在 l 裡，在 S.mail.pc（js/card.js），畫的時候一起排進「明信片」和「全部」。
+   上限各類各算，免得更新信把娃娃的信擠掉：小窩更新不設上限；其他三類各 60 封。滿了只刪最舊的「看過、附件也領了」的，沒看的不會不見。
+   兩台裝置合併存檔（js/account.js）也叫 mailTrim，用同一套。朋友寄來的明信片的上限在 js/card.js（CARD_KEEP），這裡不管。 */
+const MAIL_CATS = [['all', '全部'], ['doll', '娃娃的信'], ['news', '小窩更新'], ['pc', '明信片'], ['pal', '朋友家']];
+const MAIL_CAT_NAME = Object.fromEntries(MAIL_CATS);
+const MAIL_CAT_MAX = {doll: 60, pal: 60, pc: 60};
+const MAIL_EMPTY = {all: '還沒有信。娃娃們偶爾會寫信給你，不用特別等。', doll: '還沒有信。娃娃們偶爾會寫信給你，不用特別等。', news: '還沒有更新信。', pc: '還沒有明信片。朋友拍照後可以寄給你。', pal: '還沒有。娃娃去朋友家過夜回來，或朋友送娃娃來，都會放在這裡。'};
+const mailCatOf = o => { const t = (/^[a-z]+\.([a-z]+)\./.exec((o && o.k) || '') || [])[1]; return t === 'news' ? 'news' : t === 'gift' || t === 'trip' ? 'pal' : t === 'pc' ? 'pc' : 'doll'; };
+let mailCat = 'all', mailCardBack = false;   // mailCat：同一次開著遊戲時記住上次選的那一類；mailCardBack：明信片是從信箱點開的，看完回信箱
+function mailTrim(l){
+  if (!Array.isArray(l)) return l;
+  const n = {};
+  l.forEach(o => { const c = mailCatOf(o); n[c] = (n[c] || 0) + 1; });
+  for (let x = l.length - 1; x >= 0; x--){
+    const o = l[x], c = mailCatOf(o);
+    if (MAIL_CAT_MAX[c] && n[c] > MAIL_CAT_MAX[c] && o.r && (!o.a || o.g)){ l.splice(x, 1); n[c]--; }
+  }
+  return l;
+}
 const MAIL_CARDS = [5, 10, 20];          // 一起做完幾件小事時寫信
 const MAIL_MISS_DAYS = 3;                // 隔超過幾天才打開，寫一封「你不在的時候」
 const MAIL_ATT_RATE = .5;                // 一天第一封娃娃的信，有附件的機率
@@ -454,13 +475,7 @@ function mailAdd(d, type, q, today, ai){
     m.att = today;
   }
   m.l.unshift({k, t: today, r: 0, a, g: 0});
-  // 滿了先刪最舊的「看過、附件也領了」的；都還沒看就留著（不會因為太久沒看而不見）
-  while (m.l.length > MAIL_MAX){
-    let j = -1;
-    for (let x = m.l.length - 1; x >= 0; x--) if (m.l[x].r && (!m.l[x].a || m.l[x].g)){ j = x; break; }
-    if (j < 0) break;
-    m.l.splice(j, 1);
-  }
+  mailTrim(m.l);   // 滿了先刪那一類最舊的「看過、附件也領了」的；都還沒看就留著（不會因為太久沒看而不見）
   if (type !== 'news'){
     const ar = m.arch[d] = m.arch[d] || [];
     ar.push(`${today}|${k}`);
@@ -608,7 +623,7 @@ function mailBodyHTML(x){
   return `<div class="ml-tx ${x.d === 'moodeng' ? 'big' : ''} ${x.d === 'snoopy' ? 'novel' : ''}">${html}</div>`;
 }
 const mailSnip = x => x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' ? '一片葉子' : x.body.split('\n')[0].replace('[拖鞋]', '');
-function mailCard(o, j, open){
+function mailCard(o, j, open, tag){
   const x = mailText(o.k);
   const from = x.type === 'news' ? '薯餅' : x.from || DOLL_NAME[x.d];
   let inner = '';
@@ -620,22 +635,39 @@ function mailCard(o, j, open){
     if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : o.a === 'ticket' ? '附上一張' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
   }
   return `<div class="ml ${o.r ? '' : 'unread'} ${open ? 'open' : ''}">
-    <button class="ml-hd" data-ml="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${from}・${md(o.t)}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
+    <button class="ml-hd" data-ml="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${tag ? MAIL_CAT_NAME[mailCatOf(o)] + '・' : ''}${from}・${md(o.t)}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
     ${open ? `<div class="ml-bd">${inner}</div>` : ''}</div>`;
 }
 let mlOpenIx = -1;
+// 朋友寄來的明信片（S.mail.pc）在信箱裡的一列：一張一列，點了開那一張（js/card.js 的 cardOpen）
+function mailPcRow(c, i, tag){
+  return `<div class="ml pc ${c.r ? '' : 'unread'}"><button class="ml-hd" data-mpc="${i}"><span class="pc-st">${typeof CARD_ICON !== 'undefined' ? CARD_ICON : ''}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${tag ? MAIL_CAT_NAME.pc + '・' : ''}${md(c.t)}</small><i>${c.msg ? txSlot(c.msg) : '這張沒有寫字。'}</i></span></button></div>`;
+}
+const mailPcs = () => (S.mail && Array.isArray(S.mail.pc) ? S.mail.pc : []);
+// 這一類裡有哪些：信（l 裡的第幾封）和朋友的明信片（pc 裡的第幾張），照日期新的在前
+function mailRowsOf(cat){
+  const m = mailInit(), rows = [];
+  m.l.forEach((o, j) => { if (o && typeof o.k === 'string' && (cat === 'all' || mailCatOf(o) === cat)) rows.push({o, j, t: o.t || ''}); });
+  if (cat === 'all' || cat === 'pc') mailPcs().forEach((c, i) => { if (c) rows.push({c, i, t: c.t || ''}); });
+  return rows.map((r, n) => [r, n]).sort((a, b) => (a[0].t < b[0].t ? 1 : a[0].t > b[0].t ? -1 : a[1] - b[1])).map(x => x[0]);
+}
+const mailUnreadOf = cat => mailRowsOf(cat).filter(r => !(r.o || r.c).r).length;
 function openMail(keep){
   const m = mailInit();
   if (!keep) mlOpenIx = -1;
-  // 信箱只列娃娃寫的信和薯餅的更新信；朋友的明信片、送來的娃娃、過夜的日記在朋友面板（js/friend.js）
-  const mine = m.l.filter(o => !mailPalHide(o));
-  const unread = mine.filter(o => !o.r).length, todo = mine.filter(o => o.a && !o.g).length;
-  const palOn = typeof frOpen === 'function' && typeof sNet === 'function' && !!sNet(), pal = palOn && typeof frUnread === 'function' ? frUnread() : 0;
-  openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>信箱</span>${unread ? `<small>${unread} 封沒看</small>` : ''}</div>
-    <div class="ml-box">${mine.length ? m.l.map((o, j) => (mailPalHide(o) ? '' : mailCard(o, j, j === mlOpenIx))).join('') : '<p class="al-em">還沒有信。娃娃們偶爾會寫信給你，不用特別等。</p>'}
-    ${palOn ? `<p class="bk-note ml-pal">朋友寄來的明信片、送來的娃娃、過夜的日記，都收在朋友那裡。${pal ? `現在有 ${pal} 件沒看。` : ''}</p>` : ''}</div>
-    ${todo || unread || palOn ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}${palOn ? '<button class="btn" data-mall="pal">看朋友那邊</button>' : ''}</div>` : ''}`);
+  if (!MAIL_CAT_NAME[mailCat]) mailCat = 'all';
+  const rows = mailRowsOf(mailCat), all = mailCat === 'all';
+  const total = mailUnreadOf('all'), unread = rows.filter(r => !(r.o || r.c).r).length, todo = rows.filter(r => r.o && r.o.a && !r.o.g).length;
+  const on = typeof sNet === 'function' && !!sNet();
+  const chips = MAIL_CATS.map(([k, name]) => { const n = k === 'all' ? total : mailUnreadOf(k); return `<button class="ng-chip ${k === mailCat ? 'on' : ''}" data-mcat="${k}" aria-pressed="${k === mailCat}">${name}${n ? `<b>${n}</b>` : ''}</button>`; }).join('');
+  const empty = MAIL_EMPTY[mailCat] + (!on && (mailCat === 'pc' || mailCat === 'pal') ? '登入、加了好友之後才會有。' : '');
+  const tv = mailCat === 'pc' && typeof tvAlbumOpen === 'function';
+  openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>信箱</span>${total ? `<small>${total} 封沒看</small>` : ''}</div>
+    <div class="ng-chips ml-cats" role="group" aria-label="信的分類">${chips}</div>
+    <div class="ml-box">${rows.length ? rows.map(r => (r.o ? mailCard(r.o, r.j, r.j === mlOpenIx, all) : mailPcRow(r.c, r.i, all))).join('') : `<p class="al-em">${empty}</p>`}</div>
+    ${todo || unread || tv ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}${tv ? '<button class="btn" data-mall="tv">旅行的明信片</button>' : ''}</div>` : ''}`);
   evOpen = false; alOpen = false;
+  const cur = $('#sheet .ml-cats .on'); if (cur && cur.scrollIntoView) try { cur.scrollIntoView({block: 'nearest', inline: 'nearest'}); } catch (e) {}
 }
 // 附件的圖和名字：點心盒、泡泡球、幣（coin-幾枚）、機票（ticket），或小島的種子（seed-種類）
 const mailAtt = a => (a.startsWith('coin-') ? {name: `${+a.slice(5) || 0} 枚幣`, svg: COIN} : a === 'ticket' ? {name: '機票', svg: (typeof TV_GOODS !== 'undefined' && TV_GOODS.ticket ? TV_GOODS.ticket.ic : COIN)} : (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a]);
@@ -650,7 +682,12 @@ $('#sheet').addEventListener('click', e => {
   if (!$('#sheet .ml-box')) return;
   const m = S.mail, b = e.target.closest('button');
   if (!b) return;
-  if (b.dataset.ml !== undefined){
+  if (b.dataset.mcat !== undefined){
+    if (MAIL_CAT_NAME[b.dataset.mcat]) mailCat = b.dataset.mcat;
+    openMail();
+  } else if (b.dataset.mpc !== undefined){
+    if (typeof cardOpen === 'function'){ mailCardBack = true; cardOpen(+b.dataset.mpc); }
+  } else if (b.dataset.ml !== undefined){
     const j = +b.dataset.ml;
     mlOpenIx = mlOpenIx === j ? -1 : j;
     m.l[j].r = 1; save(); mailBadge(); openMail(true);
@@ -661,24 +698,23 @@ $('#sheet').addEventListener('click', e => {
     const o = m.l[+b.dataset.take]; mailTake(o); save(); renderEvBadge();
     toast(`收下${mailAtt(o.a).name}`); openMail(true);
   } else if (b.dataset.mall === 'take'){
-    const got = m.l.filter(o => o.a && !o.g && !mailPalHide(o)); got.forEach(mailTake); save(); renderEvBadge();
+    // 只處理現在這一類；在「全部」就是全部
+    const got = mailRowsOf(mailCat).filter(r => r.o && r.o.a && !r.o.g).map(r => r.o); got.forEach(mailTake); save(); renderEvBadge();
     toast(`收下 ${got.length} 個附件`); openMail(true);
   } else if (b.dataset.mall === 'read'){
-    m.l.forEach(o => { if (!mailPalHide(o)) o.r = 1; }); save(); mailBadge(); openMail(true);
-  } else if (b.dataset.mall === 'pal'){
-    frOpen('in');
+    mailRowsOf(mailCat).forEach(r => { (r.o || r.c).r = 1; }); save(); mailBadge(); openMail(true);
+  } else if (b.dataset.mall === 'tv'){
+    tvAlbumOpen();
   }
 });
 
 /* ---------- 房間右上角的信封 ---------- */
-// 朋友那邊來的（從朋友家來的娃娃的信、過夜的日記）：收在朋友面板（js/friend.js），信箱不列、紅點也不算
+// 朋友那邊來的（從朋友家來的娃娃的信、過夜的日記）。2026-11-27 起信箱也列（「朋友家」那一類），朋友面板（js/friend.js）照舊也列，兩邊是同一份資料
 const mailIsPal = o => /^[a-z]+\.(gift|trip)\./.test((o && o.k) || '');
-// 沒登入時朋友面板打不開：朋友的東西照舊列在信箱，不然過夜的日記、帶回來的紙條會找不到
-const mailPalHide = o => mailIsPal(o) && typeof frOpen === 'function' && typeof sNet === 'function' && !!sNet();
 function mailBadge(){
   const b = $('#mailBtn'); if (!b) return;
-  // 沒看的信。朋友的東西（明信片、送來的娃娃、日記）算在朋友鈕上，這裡不算，免得兩邊都亮
-  const n = S.mail ? S.mail.l.filter(o => !o.r && !mailPalHide(o)).length : 0;
+  // 全部沒看的：信、朋友家的、旅行和朋友寄來的明信片都算。朋友鈕上的數字照它自己的算法
+  const n = S.mail && Array.isArray(S.mail.l) ? S.mail.l.filter(o => o && !o.r).length + mailPcs().filter(c => c && !c.r).length : 0;
   if (typeof frBadge === 'function') frBadge();
   b.querySelector('.bd').textContent = n; b.querySelector('.bd').hidden = !n;
   b.classList.toggle('wig', !!n && !REDUCE);
@@ -707,4 +743,4 @@ function mailRows(d){
 
 mailCheck(true);
 setInterval(() => { if (S.mail && S.mail.last !== todayStr()) mailCheck(false); }, 60000);
-addEventListener('nestnet', () => mailBadge());   // 登入好了：朋友的東西改算在朋友鈕上（mailPalHide）
+addEventListener('nestnet', () => mailBadge());

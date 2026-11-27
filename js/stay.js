@@ -109,12 +109,13 @@ function stayDiary(d, room){
   const pool = hit.length && Math.random() < .8 ? hit : any.length ? any : hit;
   return pool.length ? pool[Math.floor(Math.random() * pool.length)] : 0;
 }
-// 寫一封過夜日記（信箱的 m.l，畫在朋友面板），有紙條就一起放。回傳那封信
+// 寫一封過夜日記（信箱的 m.l，畫在朋友面板和信箱的「朋友家」），有紙條就一起放。回傳那封信
 function stayLetter(d, w, note, room){
   const t = todayStr();
   const k = `${d}.trip.${stayDiary(d, room)}#w=${w}${note ? ';x=' + encodeURIComponent(note) : ''}`;
   const m = mailInit(), o = {k, t, r: 0, a: null, g: 0};
   m.l.unshift(o);
+  if (typeof mailTrim === 'function') mailTrim(m.l);
   const ar = m.arch[d] = m.arch[d] || [];
   ar.push(`${t}|${k}`); if (ar.length > MAIL_ARCH) ar.splice(0, ar.length - MAIL_ARCH);
   return o;
@@ -134,7 +135,7 @@ async function stayHome(diary){
     stayLetter(o.d, o.w, note, room);
     const tr = S.album.trips = S.album.trips || {}, l = tr[o.d] = tr[o.d] || [];
     l.push(`${o.t}|${o.w}`); if (l.length > 12) l.splice(0, l.length - 12);
-    // 日記在朋友面板（登入了才有）；沒登入時信箱會列出來（js/mail.js mailPalHide）
+    // 日記在朋友面板（登入了才有），信箱的「朋友家」那一類也有
     const where = net ? '在朋友那裡' : '在信箱';
     setTimeout(() => toast(note ? `${DOLL_NAME[o.d]}從${o.w}家回來了，帶回一張小紙條` : `${DOLL_NAME[o.d]}從${o.w}家回來了，日記${where}`), 800);
     if (typeof memoAdd === 'function') memoAdd('stayBack', o.to, o.w, {id: 'sb' + o.t + o.d, d: o.d, m: note});

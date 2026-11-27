@@ -38,7 +38,7 @@ const GUIDE = [
   {c: 'doll', ic: EV_ICON, t: '今天的小事', s: '每天有幾件小事，點有記號的娃娃去處理，做完一件 3 枚。', go: () => { setPage('room'); openEvents(); }},
   {c: 'doll', ic: ALB_ICON, t: '相簿', s: '每隻說過的話、回憶、跟誰比較好。薯餅、蛋黃哥、皮蛋、貓咪老師可以用手指轉一圈。', go: () => { setPage('room'); openAlbum(); }},
   {c: 'doll', ic: gdDoll('egg'), t: '衣櫃', s: '幫娃娃換帽子和衣服。點房間裡的衣櫃，或相簿裡的「換衣服」。', go: () => { setPage('room'); openWardrobe(); }},
-  {c: 'doll', ic: MAIL_ICON, t: '信箱', s: '娃娃和薯餅寫給你的信。有附件的記得收，不會過期。朋友寄來的在朋友那裡。', go: () => { setPage('room'); openMail(); }},
+  {c: 'doll', ic: MAIL_ICON, t: '信箱', s: '娃娃和薯餅寫給你的信、朋友寄來的明信片都在這裡，上面可以分類看。有附件的記得收，不會過期。', go: () => { setPage('room'); openMail(); }},
   {c: 'doll', ic: gdDoll('dino'), t: '娃娃自己玩', s: '牠們會自己走動、聊天、去隔壁串門子。不想要的話，小屋地圖最下面可以關。', go: () => mapOpen()},
   {c: 'doll', ic: gdDoll('snoopy'), t: '小劇場', s: '娃娃頭上出現驚嘆號，點一下就開演。演過的在相簿可以重看。', go: () => { setPage('room'); openAlbum(); }, btn: '去相簿'},
   {c: 'doll', ic: STAY_MOON, t: '娃娃的夢', s: '晚上娃娃會睡覺。點睡著的娃娃，看牠夢到什麼。'},

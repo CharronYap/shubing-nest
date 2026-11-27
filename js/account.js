@@ -400,7 +400,9 @@ function mergeSave(remote, guest) {
       if (!first) { const c = { ...o }; byKey.set(k, c); merged.push(c); return; }
       if (o.r) first.r = o.r; if (o.g) first.g = o.g; if (o.f) first.f = o.f;
     });
-    mm.l = merged.sort((a, b) => a.t < b.t ? 1 : -1).slice(0, 30);
+    mm.l = merged.sort((a, b) => a.t < b.t ? 1 : -1);
+    // 上限各類各算，跟 js/mail.js 用同一套（mailTrim）；單獨載入這個檔測試時抓不到，就先留 200 封
+    if (typeof mailTrim === 'function') mailTrim(mm.l); else mm.l = mm.l.slice(0, 200);
     mm.last = [mm.last || '', gm.last || ''].sort().pop();
     mm.att = [mm.att || '', gm.att || ''].sort().pop();
     // 從雲端領走的東西：收到的明信片、領過的編號（明信片、送來的娃娃）。兩邊都留，同一筆只留一份

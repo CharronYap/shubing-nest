@@ -165,7 +165,8 @@ function cardClose(){
   screen.classList.remove('incard');
   const top = document.getElementById('pcTop'); if (top) top.remove();
   visitClose();
-  // 收到的明信片現在收在朋友面板（js/friend.js）
+  // 從信箱點開的回信箱（留在原本那一類）；其他的照舊回朋友面板（js/friend.js）
+  if (typeof mailCardBack !== 'undefined' && mailCardBack){ mailCardBack = false; openMail(); return; }
   if (typeof frOpen === 'function' && typeof sNet === 'function' && sNet()) frOpen('in'); else openMail();
 }
 $('#sheet').addEventListener('click', e => {

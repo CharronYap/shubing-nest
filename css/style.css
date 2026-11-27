@@ -1103,6 +1103,12 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .fr-new{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pink);margin-left:6px;vertical-align:1px}
 .fr-letter{margin:0}
 .ml-pal{margin:4px 2px 0}
+/* 信箱的分類鈕：排成一排，排不下左右滑，不換行 */
+.ml-cats{flex-wrap:nowrap;gap:5px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;margin:0 -2px 8px;padding:2px}
+.ml-cats::-webkit-scrollbar{display:none}
+.ml-cats .ng-chip{flex:none;white-space:nowrap;padding:5px 8px;font-size:13px;display:inline-flex;align-items:center;gap:3px}
+.ml-cats .ng-chip b{min-width:16px;padding:0 4px;border-radius:999px;background:var(--pink);color:#fff;font-size:10.5px;font-weight:900;line-height:16px;text-align:center}
+.ml.pc button.ml-hd{cursor:pointer}
 .palb .bd{position:absolute;right:-6px;top:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--pink);color:#fff;font-size:11px;font-weight:900;display:grid;place-items:center;border:2px solid #fff;padding:0 4px;line-height:1}
 .palb.wig svg{animation:wig 2.6s ease-in-out infinite;transform-origin:50% 80%}
 @media (prefers-reduced-motion:reduce){.palb.wig svg{animation:none}}

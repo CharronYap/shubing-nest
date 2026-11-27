@@ -4,7 +4,7 @@
    - 主體是「他那邊來的」：明信片、送來的娃娃（還沒領的在這裡按「讓牠進來」）、訪客簿的留言、來過夜的娃娃、
      自己的娃娃從他家帶回來的日記、澆水、躲貓貓、愛心。新的在上面，上次打開之後才來的有一個點。
    - 另一頁「寄出去的」：還在朋友門口等的娃娃（可以收回）、寄出去的明信片、在他家訪客簿寫的、幫他澆的水……
-   - 信箱只留娃娃寫的信和薯餅的更新信（js/mail.js 的 mailIsPal 把朋友的東西濾掉），兩邊不會同一件事都亮紅點。
+   - 2026-11-27 起信箱也列朋友的東西（「明信片」「朋友家」兩類），跟這裡是同一份資料；在信箱看過的明信片和日記，這裡的數字就不再算。
    資料不另外存一份：跟相簿的「兩個人的紀念冊」共用 S.album.memo（js/memo.js），加上信箱裡的明信片（S.mail.pc）、雲端上還沒領的娃娃。
    只多一個數字 S.album.frSeen = 上次打開面板的時間（放在 album 裡，不用改規則）。新舊風格都能用。
    要放在 hud.js 前面載入（hud.js 會把 #palBtn 排進第二排）。 */
@@ -18,7 +18,12 @@ const frSeenAt = () => (S.album && S.album.frSeen) || 0;
 function frUnread(){
   if (!sNet()) return 0;
   const t = frSeenAt();
-  return frMemo().filter(e => FR_IN.includes(e.k) && e.k !== 'giftIn' && (e.ts || 0) > t).length + (typeof ngWaiting === 'function' ? ngWaiting() : 0);
+  // 明信片、過夜的日記在信箱也看得到（同一份資料）：在那邊看過的，這裡就不再算
+  const seen = e => { try {
+    if (e.k === 'cardIn' && e.c){ const c = ((S.mail && S.mail.pc) || []).find(x => x && x.id === e.c); return !!(c && c.r); }
+    if (e.k === 'stayBack' && e.d){ const o = frLetter('trip', e.d, e.u); return !!(o && o.r); }
+  } catch (err) {} return false; };
+  return frMemo().filter(e => FR_IN.includes(e.k) && e.k !== 'giftIn' && (e.ts || 0) > t && !seen(e)).length + (typeof ngWaiting === 'function' ? ngWaiting() : 0);
 }
 function frBadge(){
   const b = $('#palBtn'); if (!b) return;
