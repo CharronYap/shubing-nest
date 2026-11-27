@@ -258,6 +258,8 @@ body{background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans 
 .ev p{margin:0;flex:1;font-size:13px;line-height:1.5}
 .ev.done{background:#f6f2f4}
 .ev.done p{color:var(--soft)}
+.ev.away{background:#f6f2f4}   /* 娃娃出門了，回來再做（js/main.js 的 evAwayLine） */
+.ev.away p,.ev .nd.aw{color:var(--soft)}
 .ev.hi{box-shadow:0 0 0 2px var(--pink)}
 .ev .ck{flex:none;width:30px;height:30px;margin:0 7px;border-radius:50%;background:var(--pink);color:#fff;display:grid;place-items:center}
 .ev .ck svg{width:15px;height:15px}

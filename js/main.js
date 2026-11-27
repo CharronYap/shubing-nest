@@ -33,12 +33,31 @@ function grantCoins(){
 /* ---------- 每天的小事 ---------- */
 function mulberry32(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function hashStr(s){ let h = 2166136261; for (const c of s){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+// 不在家的娃娃（2026-11-28）：去旅行（'trip'）或去朋友家過夜（'out'），跟 travel.js 的 tvHomeDolls 同一套，在小島上的算在家。
+// 直接看存檔，不靠 whereDoll：planDay 第一次跑的時候 travel.js 還沒載入，whereDoll 還沒包上旅行那一層。
+// 旅行的回家時間已經過了、只是還沒結算的，算在家（tvCheck 馬上會把牠放回來）
+function dollAway(d){
+  const A = S.album || {};
+  if (A.out && A.out.d === d) return 'out';
+  const now = typeof tvNow === 'function' ? tvNow() : Date.now();
+  return A.tv && Array.isArray(A.tv.out) && A.tv.out.some(o => o && Array.isArray(o.ds) && o.ds.includes(d) && !(o.t1 <= now)) ? 'trip' : '';
+}
+const evAway = e => (e.d || []).filter(dollAway);
+// 排好以後才出門的：清單那一行灰掉，寫這句；按了也是 toast 這句
+function evAwayLine(e){
+  const a = evAway(e); if (!a.length) return '';
+  if (a.length > 1) return `${a.map(d => DOLL_NAME[d]).join('和')}還沒回家，回來再做。`;
+  const d = a[0], n = DOLL_NAME[d];
+  if (dollAway(d) === 'out') return `${n}在朋友家過夜，回來再做。`;
+  const o = S.album.tv.out.find(o => o && Array.isArray(o.ds) && o.ds.includes(d));
+  return o && typeof tvDest === 'function' && typeof TV_PLACES !== 'undefined' && TV_PLACES[o.p] ? `${n}去${tvDest(o.p)}了，回來再做。` : `${n}還沒回家，回來再做。`;
+}
 function planDay(){
   const today = todayStr();
   if (S.day.date === today) return;
   if (!S.seed) S.seed = Math.floor(Math.random() * 1e9);
   const rnd = mulberry32(hashStr(today) ^ S.seed);
-  const pool = EVENTS.filter(e => !e.when && e.d.every(d => DOLL_N[d]) && (typeof yardHas === 'function' ? yardHas(e.yard) : !e.yard));
+  const pool = EVENTS.filter(e => !e.when && e.d.every(d => DOLL_N[d] && !dollAway(d)) && (typeof yardHas === 'function' ? yardHas(e.yard) : !e.yard));
   for (let i = pool.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   // 節日的小事（js/season.js）：那幾天多排一件，放在最前面
   const fest = typeof festEvents === 'function' ? festEvents(today).slice(0, 1) : [];
@@ -54,11 +73,12 @@ function pending(){ return S.day.ids.filter(id => !S.day.done.includes(id)).map(
 function wishNeeded(){ return [...new Set(pending().filter(e => e.need && !S.wish[e.need]).map(e => e.need))]; }
 // 現在就做得到的：不用道具，或道具已經有了。紅點和娃娃頭上的泡泡只算這些，缺道具的等夾到再亮
 const canDo = e => !e.need || S.wish[e.need] > 0;
-function doable(){ return pending().filter(canDo); }
+// 出門的娃娃的那幾件也不算（2026-11-28），回家了才亮
+function doable(){ return pending().filter(e => canDo(e) && !evAway(e).length); }
 function renderEvBadge(){
-  const n = doable().length, left = pending().length, b = $('#evBtn .bd');
+  const n = doable().length, all = pending(), left = all.filter(e => !evAway(e).length).length, b = $('#evBtn .bd');
   b.textContent = n; b.hidden = !n;
-  $('#evBtn').setAttribute('aria-label', n ? `今天的小事，現在可以做 ${n} 件` : left ? `今天的小事，還有 ${left} 件要先去娃娃機夾道具` : '今天的小事都做完了');
+  $('#evBtn').setAttribute('aria-label', n ? `今天的小事，現在可以做 ${n} 件` : left ? `今天的小事，還有 ${left} 件要先去娃娃機夾道具` : all.length ? '今天的小事，等出門的娃娃回來再做' : '今天的小事都做完了');
 }
 let evOpen = false;
 function openEvents(focus){
@@ -66,15 +86,16 @@ function openEvents(focus){
   const done = list.filter(e => S.day.done.includes(e.id)).length;
   const wishes = Object.keys(WISH).map(k => `<span class="${S.wish[k] ? '' : 'none'}" aria-label="${WISH[k].name} ${S.wish[k] || 0} 個">${WISH[k].svg}${S.wish[k] || 0}</span>`).join('');
   const rows = list.map(e => {
-    const isDone = S.day.done.includes(e.id);
+    const isDone = S.day.done.includes(e.id), aw = isDone ? '' : evAwayLine(e);
     let btn;
     if (isDone) btn = `<span class="ck">${CKS}</span>`;
+    else if (aw) btn = '';
     else if (e.need && !S.wish[e.need]) btn = `<button class="evb go" data-go="claw" aria-label="${WISH[e.need].need}，去娃娃機夾">${CLAW_ICON}<span>去夾</span></button>`;
     else if (e.need) btn = `<button class="evb" data-ev="${e.id}" aria-label="給牠${WISH[e.need].name}">${WISH[e.need].svg}</button>`;
     else if (e.tap){ const n = S.day.tap[e.id] || 0; btn = `<button class="evb" data-ev="${e.id}" aria-label="叫牠（${n}/${e.tap}）">${PAW}<span class="tp">${Array.from({length: e.tap}, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span></button>`; }
     else btn = `<button class="evb" data-ev="${e.id}" aria-label="去看看">${HEART('#ff6fb0', '#fff')}</button>`;
-    const need = !isDone && e.need ? `<small class="nd ${S.wish[e.need] ? 'have' : ''}">${WISH[e.need].svg}${S.wish[e.need] ? `用掉一個${WISH[e.need].name}` : `${WISH[e.need].need}，娃娃機夾得到`}</small>` : '';
-    return `<div class="ev ${isDone ? 'done' : ''} ${focus === e.id ? 'hi' : ''}"><span class="fa">${e.d.map(d => `<img src="${SPR[d]}" alt="">`).join('')}</span><p>${isDone ? e.end : e.t}${need}</p>${btn}</div>`;
+    const need = aw ? `<small class="nd aw">${aw}</small>` : !isDone && e.need ? `<small class="nd ${S.wish[e.need] ? 'have' : ''}">${WISH[e.need].svg}${S.wish[e.need] ? `用掉一個${WISH[e.need].name}` : `${WISH[e.need].need}，娃娃機夾得到`}</small>` : '';
+    return `<div class="ev ${isDone ? 'done' : ''} ${aw ? 'away' : ''} ${focus === e.id ? 'hi' : ''}"><span class="fa">${e.d.map(d => `<img src="${SPR[d]}" alt="">`).join('')}</span><p>${isDone ? e.end : e.t}${need}</p>${btn}</div>`;
   }).join('');
   openSheet(`<div class="hd">${EV_ICON}<span>${done} / ${list.length}</span><span class="wishes">${wishes}</span></div>
     <div class="evs">${rows || '<p class="empty">今天很安靜。</p>'}</div>`);
@@ -83,6 +104,7 @@ function openEvents(focus){
 function doEvent(id){
   const e = evById(id);
   if (!e || S.day.done.includes(id)) return;
+  const aw = evAwayLine(e); if (aw){ toast(aw); return; }   // 有娃娃不在家：不做、不給幣
   if (e.need && !S.wish[e.need]){ toast(`${WISH[e.need].need}，娃娃機夾得到`); return; }
   if (e.tap){
     S.day.tap[id] = (S.day.tap[id] || 0) + 1;
@@ -198,7 +220,7 @@ function afterPrize(){
   if (typeof setCheck === 'function') setCheck();   // 湊齊家具系列的獎品（js/furnfx.js）
   // 夾到新娃娃後，如果今天還沒排滿，補一件跟牠有關的小事
   if (S.day.ids.length < EVENTS_PER_DAY){
-    const more = EVENTS.filter(e => !e.when && !S.day.ids.includes(e.id) && e.d.every(d => DOLL_N[d]) && (typeof yardHas === 'function' ? yardHas(e.yard) : !e.yard));
+    const more = EVENTS.filter(e => !e.when && !S.day.ids.includes(e.id) && e.d.every(d => DOLL_N[d] && !dollAway(d)) && (typeof yardHas === 'function' ? yardHas(e.yard) : !e.yard));
     if (more.length){ S.day.ids.push(more[Math.floor(Math.random() * more.length)].id); renderEvBadge(); }
   }
 }

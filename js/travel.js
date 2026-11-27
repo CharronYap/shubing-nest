@@ -258,6 +258,7 @@ function tvRefresh(){
   if (!VISIT){ if (RIDS.includes(roomId)) load(); else renderTray(); }
   if (typeof mailBadge === 'function') mailBadge();
   if (typeof renderHud === 'function') renderHud();
+  if (!VISIT && typeof renderEvBadge === 'function'){ renderEvBadge(); markDolls(); }   // 出門、回家：今天的小事跟著灰掉或亮回來（js/main.js 的 evAway）
 }
 // 打開小窩時：先結算，再補算不在的這段時間（最多連續 TV_CHAIN 趟）
 let tvOpened = false;

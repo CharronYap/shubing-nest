@@ -69,6 +69,7 @@ async function stayGo(){
       home[r].items.splice(home[r].items.indexOf(it), 1);
     }
     S.album.out = o; save();
+    if (typeof renderEvBadge === 'function'){ renderEvBadge(); markDolls(); }   // 牠的小事先灰掉（js/main.js 的 evAway）
     try { await net.push(); } catch (e) {}
     $('#sheet').hidden = true; stPick = null;
     toast(`${DOLL_NAME[d]}去${w}家過夜了，明天早上回來`);
@@ -146,6 +147,7 @@ async function stayHome(diary){
   if (doc && !mine) stayLateNote(doc);   // 雲端留著的是更早那一次的（上面可能有紙條）
   save();
   if (!VISIT){ if (RIDS.includes(roomId)) load(); mailBadge(); }
+  if (typeof renderEvBadge === 'function'){ renderEvBadge(); markDolls(); }   // 回來了：今天牠的小事又可以做
   // 日記和娃娃都回到自己的存檔了：等存檔上了雲端才結束雲端那一筆
   if (net && doc) sAfterSave(() => net.stayEnd(net.me.uid));
 }

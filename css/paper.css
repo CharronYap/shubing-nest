@@ -268,6 +268,8 @@
    ===================================================================== */
 .look-paper .ev .nd{color:var(--p-a1d)}
 .look-paper .ev .nd.have{color:var(--soft)}
+.look-paper .ev.away{background:var(--p-paperd);box-shadow:none}
+.look-paper .ev .nd.aw{color:var(--soft)}
 /* 衣櫃：娃娃那一塊、兩個分頁、試穿中的那一格、下面那條買不買 */
 .look-paper .wd-top{background:var(--p-card);border-radius:12px;box-shadow:0 2px 0 var(--p-edge)}
 .look-paper .wd-tabs button{border:0;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
