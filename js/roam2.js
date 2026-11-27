@@ -6,7 +6,8 @@
      只有朋友、吵架、和好，沒有別的關係。
    串門子：娃娃會自己跳到房間邊的門口去隔壁，過一陣子回來；隔壁的娃娃也會過來坐一下。
      去了哪裡只記在記憶體（RV），不存檔、不改房間的擺設。小屋地圖顯示的是「現在」誰在哪一間。
-     來串門子的娃娃可以點（會回一句），不能拖；拍照拍不到牠。去朋友家時不串門子。
+     來串門子的娃娃可以點（會回一句），不能拖；拍照時照牠當下的位置拍。去朋友家時不串門子。
+     （2026-11-28 多串門子：去隔壁的機會 7%→15%、待 60～150 秒、隔壁的過來每秒 1/30、同時在外面最多 4 隻。）
    點娃娃：除了原本的冒愛心和說話，牠會歪頭看你一下。
    不懲罰、不催人：吵架不會扣交情，不理牠們也會自己和好。 */
 const RV = {};   // uid → {id, from:原本的房間, to:去了哪一間, back:什麼時候回去, side:'l'|'r'（在 to 那間是從哪一邊進來的）, x, y}
@@ -126,11 +127,11 @@ function rvNeighbors(){ const i = RIDS.indexOf(roomId), out = []; if (RIDS[i - 1
 // 這間的娃娃自己走去隔壁
 function roamVisit(it){
   if (VISIT || it.sit && Math.random() < .5) return false;
-  const nb = rvNeighbors(); if (!nb.length || Object.keys(RV).length >= 3) return false;
+  const nb = rvNeighbors(); if (!nb.length || Object.keys(RV).length >= 4) return false;
   const [to, side] = nb[Math.floor(Math.random() * nb.length)], [dx, dy] = rvDoor(side), from = roomId;
   roamHopTo(it, dx, dy, () => {
     if (roomId !== from || !items.includes(it)) return;
-    RV[it.uid] = {id: it.id, from, to, back: Date.now() + rnd(40, 90) * 1000, side: side === 'l' ? 'r' : 'l', x: side === 'l' ? rnd(64, 80) : rnd(20, 36), y: rnd(64, 80)};
+    RV[it.uid] = {id: it.id, from, to, back: Date.now() + rnd(60, 150) * 1000, side: side === 'l' ? 'r' : 'l', x: side === 'l' ? rnd(64, 80) : rnd(20, 36), y: rnd(64, 80)};
     const st = RS[it.uid]; if (st){ st.x = null; st.y = null; st.sit = null; st.trips = 0; st.busy = false; }
     roamPaint();
   });
@@ -188,12 +189,12 @@ function rvTick(){
   if (roamPaused()) return;
   // 隔壁的娃娃偶爾自己過來坐一下（同時最多兩隻客人）
   const guests = Object.values(RV).filter(v => v.to === roomId).length;
-  if (guests < 2 && Object.keys(RV).length < 3 && Math.random() < 1 / 45){
+  if (guests < 2 && Object.keys(RV).length < 4 && Math.random() < 1 / 30){
     const nb = rvNeighbors().filter(([r]) => home[r]);
     if (nb.length){
       const [r, side] = nb[Math.floor(Math.random() * nb.length)];
       const c = home[r].items.filter(i => i.kind === 'doll' && ROAM_P[i.id] && !RV[i.uid] && !(typeof asleep === 'function' && asleep(i.id)) && !items.some(o => o.kind === 'doll' && o.id === i.id));
-      if (c.length){ const it = c[Math.floor(Math.random() * c.length)]; RV[it.uid] = {id: it.id, from: r, to: roomId, back: now + rnd(40, 90) * 1000, side, x: side === 'l' ? rnd(20, 36) : rnd(64, 80), y: rnd(64, 80)}; rvPaint(); }
+      if (c.length){ const it = c[Math.floor(Math.random() * c.length)]; RV[it.uid] = {id: it.id, from: r, to: roomId, back: now + rnd(60, 150) * 1000, side, x: side === 'l' ? rnd(20, 36) : rnd(64, 80), y: rnd(64, 80)}; rvPaint(); }
     }
   }
   // 客人偶爾自己說一句
@@ -212,7 +213,7 @@ function roamIn(r, rm){
   roamAct = function(it, st, canMove){
     if (canMove && !REDUCE && !roamOwnStay(it, st)){   // 剛坐上自己的專屬家具：先待著，不去找別隻、不串門子
       if (Math.random() < .25 && roamMeet(it, st)) return;
-      if (!it.guest && Math.random() < .07 && roamVisit(it)) return;   // 客人只在客廳，不串門子
+      if (!it.guest && Math.random() < .15 && roamVisit(it)) return;   // 客人只在客廳，不串門子
     }
     act(it, st, canMove);
   };

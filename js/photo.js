@@ -1,6 +1,7 @@
 /* 拍照：房間右上角的相機鈕。按下去閃一下，把現在的房間畫成一張拍立得（3:4 直式，下面留白邊寫字）
    - 用 canvas 照房間現在的樣子重畫：牆、地板、窗戶、家具、娃娃（穿的衣服和帽子）、關燈的暗色和檯燈的光
-   - 娃娃各有反應：史努比轉過來擺姿勢、彈跳豬有時候正好跳起來拍糊了、蛋黃哥背對鏡頭也懶得轉、火腿在白邊上留一句吐槽
+   - 像隨手抓拍（2026-11-28）：照按下快門那一刻的畫面畫，娃娃不停下來、不擺姿勢。正在跳的那隻拍糊了，
+     蛋黃哥背對鏡頭也懶得轉，火腿在白邊上留一句吐槽
    - 「存下來」：手機叫出分享（可以存到相簿），電腦下載成 PNG。照片不上傳雲端
    - 照片裡有的娃娃，相簿那一頁記一行「○月○日一起拍了照」
    - 拍幾張都可以，不花幣，也沒有次數限制
@@ -137,109 +138,106 @@ function paintFloor(ctx, s, W, H, wh, kind){
 /* ---------- 房間裡的東西 ---------- */
 // 元素在房間裡的位置（房間的 CSS px），含動畫的縮放
 function boxIn(el, R){ const r = el.getBoundingClientRect(); return {x: r.left - R.left, y: r.top - R.top, w: r.width, h: r.height}; }
-function sparkle(ctx, x, y, r){
-  ctx.save(); ctx.translate(x, y); ctx.fillStyle = '#ffd75e'; ctx.strokeStyle = '#fff'; ctx.lineWidth = r * .25;
-  ctx.beginPath();
-  for (let i = 0; i < 8; i++){ const a = i * Math.PI / 4, l = i % 2 ? r * .38 : r; ctx.lineTo(Math.sin(a) * l, -Math.cos(a) * l); }
-  ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore();
-}
-// 一隻娃娃：本體 png，穿衣服的話照 .dz 裡每一層的 % 疊上去（帽子可能有轉角度）
-function drawDollLayers(ctx, body, b){
-  const pic = body.firstElementChild;
-  if (!pic) return;
-  if (pic.tagName === 'IMG'){ if (pic.complete && pic.naturalWidth) ctx.drawImage(pic, b.x, b.y, b.w, b.h); return; }
-  pic.querySelectorAll('img').forEach(im => {
-    if (!im.complete || !im.naturalWidth) return;
-    if (!im.classList.contains('dz-hat') && !im.classList.contains('dz-out')){ ctx.drawImage(im, b.x, b.y, b.w, b.h); return; }
-    const p = k => parseFloat(im.style[k]) / 100 || 0;
-    const x = b.x + p('left') * b.w, y = b.y + p('top') * b.h, w = p('width') * b.w, h = p('height') * b.h;
-    const rot = /rotate\((-?[\d.]+)deg\)/.exec(im.style.transform || '');
-    ctx.save();
-    if (rot){ ctx.translate(x + w / 2, y + h / 2); ctx.rotate(+rot[1] * Math.PI / 180); ctx.drawImage(im, -w / 2, -h / 2, w, h); }
-    else ctx.drawImage(im, x, y, w, h);
-    ctx.restore();
-  });
-}
-/* 照片姿勢（2026-11-27 改善計畫 09）：每拍一張，入鏡的娃娃大約一半各自抽一個小動作，不會全部一樣。只改照片，房間不變。
-   歪頭（往左或往右 4～8 度）／跳起來（照彈跳豬原本的畫法）／左右翻／側身（有 img/spin 旋轉圖的四隻，用側面那一格；
-   穿了衣服或戴帽子的不側身，衣服是照正面畫的）／躺著（只有坐在床、小船床上的，橫過來 80～90 度）。
-   史努比擺姿勢、彈跳豬跳起來是原本就有的，機會比別隻高一點。背對鏡頭先不做（蛋黃哥原本的左右翻照舊）。
-   朋友家來過夜的客人（fx 是空的）不擺姿勢。 */
-const PH_BEDS = ['bed', 'boatbed'];
-const phSpinImg = {};   // 側身用的旋轉圖：拍照前先載好（photoShoot 的 phSpinReady）
+/* 拍照不用停、不用擺姿勢（2026-11-28 使用者說照片要像隨手抓拍）：
+   按下快門那一刻（photoShoot 第一個 await 之前）先把每個入鏡的東西記下來：位置、大小、前後順序、當下的樣子
+   （正在跳、睡著、側身的旋轉格、左右翻、衣服帽子這一刻的位置）。之後載圖、載字型的時候娃娃繼續動，照片照那一刻畫，
+   不會一隻拍到前一刻、一隻拍到後一刻。
+   - 正在跳（.body 有 roam-hop）的任何一隻：跳起來拍糊了（往上一點、殘影、腳下的動作線）。
+   - 側身就畫旋轉圖的那一格（img/spin，js/spin.js），沒有 3D 的四隻照畫面左右翻；睡著、坐著照畫面。
+   - 蛋黃哥照舊左右翻（牠本來就懶得看鏡頭，不算擺姿勢）。畫面上牠剛好側身的時候照那一格畫、不再翻，不然方向會跟畫面相反。 */
+const phSpinImg = {};   // 側身用的旋轉圖：畫之前先載好（photoShoot 的 phSpinReady）
 async function phSpinReady(){
   await Promise.all(Object.keys(typeof SPIN === 'object' ? SPIN : {}).map(d => phSpinImg[d] && phSpinImg[d].complete ? null : new Promise(ok => {
     const im = new Image(); im.onload = () => { phSpinImg[d] = im; ok(); }; im.onerror = () => ok(); im.src = SPIN[d].src;
   })));
 }
-const PH_NOLIE = ['piggy'];   // 四隻腳站著的（火腿），轉九十度像在倒立，不給躺
-function phPose(el, it){
-  const d = it.id, r = Math.random;
-  if (d === 'snoopy' && r() < .75) return {k: 'pose'};
-  if (d === 'moodeng' && r() < .7) return {k: 'jump'};
-  if (el.classList.contains('sleep') || r() >= .5) return null;   // 睡著的不擺姿勢（床上睡覺本來就躺著）
-  const ks = ['tilt', 'jump', 'flip'];
-  const dressed = el.querySelector('.dz-hat,.dz-out');
-  if (phSpinImg[d] && !dressed) ks.push('side');
-  const f = it.sit && typeof items !== 'undefined' ? items.find(o => o.uid === it.sit && o.kind === 'furn') : null;
-  if (f && PH_BEDS.includes(f.id) && !PH_NOLIE.includes(d)) ks.push('lie', 'lie');   // 坐在床上的，躺著的機會多一點
-  const k = ks[Math.floor(r() * ks.length)];
-  const sg = r() < .5 ? -1 : 1;
-  return {k, a: k === 'tilt' ? sg * (4 + r() * 4) : k === 'lie' ? sg * (80 + r() * 10) : 0, f: sg < 0 ? 18 : 6};
-}
-function drawDoll(ctx, el, R, it, fx){
+// 記下一隻娃娃這一刻的樣子：每一層圖在房間裡的位置（帽子、衣服照 .dz 裡每一層的 %，可能有轉角度、變窄、淡出）
+function phSnapDoll(el, R, d){
   const body = el.querySelector('.body'), pic = body && body.firstElementChild;
-  if (!pic) return;
-  const b = boxIn(pic, R), d = it.id, bx = b.x + b.w / 2, by = b.y + b.h;
-  const ps = fx && fx.pose ? phPose(el, it) : null, k = ps ? ps.k : '';
-  ctx.save();
-  if (k === 'pose' && d === 'snoopy'){
-    // 轉過來擺姿勢：往鏡頭歪一點，旁邊冒星星
-    ctx.translate(bx, by); ctx.rotate(-7 * Math.PI / 180); ctx.translate(-bx, -by);
-    drawDollLayers(ctx, body, b);
-    ctx.restore();
-    sparkle(ctx, b.x + b.w * .92, b.y + b.h * .14, b.w * .09);
-    sparkle(ctx, b.x + b.w * .06, b.y + b.h * .3, b.w * .06);
-    return;
+  if (!pic) return null;
+  const hop = body.classList.contains('roam-hop');
+  let dy = 0;   // 跳到一半：先放回地上，再照拍糊的畫法往上
+  if (hop && body.offsetParent === el){
+    // 動畫的 translate 是百分比，直接讀不好換算：.body 的原點在底部中間，所以底部往上移了多少就是跳起來的高度
+    const er = el.getBoundingClientRect(), k = el.offsetHeight ? er.height / el.offsetHeight : 1;
+    dy = body.getBoundingClientRect().bottom - (er.top + (body.offsetTop + body.offsetHeight) * k);
   }
-  if (k === 'jump'){
-    // 正好跳起來：往上一點、上下拉出殘影，腳下兩條動作線
+  const at = e => { const r = boxIn(e, R); r.y -= dy; return r; };
+  const b = at(pic);
+  const sst = typeof SPS !== 'undefined' ? SPS.get(el) : null, sp3 = body.querySelector('.sp3');
+  const f = sst && sp3 && typeof spinMod === 'function' ? spinMod(sst.f) : 0;
+  const spin = f ? {d, f, s: at(sp3)} : null;   // 側身：畫旋轉圖的那一格（第 0 格跟正面的 png 一樣）
+  const L = [], base = im => (spin && im.classList.contains('sp-base') ? {...b, im, spin} : {...b, im, a: 1});
+  if (pic.tagName === 'IMG') L.push(base(pic));
+  else pic.querySelectorAll('img').forEach(im => {
+    if (!im.classList.contains('dz-hat') && !im.classList.contains('dz-out')){ L.push(base(im)); return; }
+    const p = k => parseFloat(im.style[k]) / 100 || 0;
+    const rot = /rotate\((-?[\d.]+)deg\)/.exec(im.style.transform || ''), op = im.style.opacity;
+    L.push({im, x: b.x + p('left') * b.w, y: b.y + p('top') * b.h, w: p('width') * b.w, h: p('height') * b.h,
+      rot: rot ? +rot[1] : 0, sx: parseFloat(String(im.style.scale || '').split(' ')[0]) || 1, a: op === '' ? 1 : +op});
+  });
+  return {d, b: spin ? spin.s : b, L, hop,   // 側身時畫的是旋轉圖：拍糊的動作線、左右翻都照它的框（皮蛋的旋轉圖有放大，框跟正面的 png 不一樣）
+    sleep: el.classList.contains('sleep'), flip: (d === 'egg' && !spin) !== el.classList.contains('flipx'), eb: boxIn(el, R)};
+}
+function phLayers(ctx, D, off){
+  D.L.forEach(l => {
+    const sp = l.spin ? phSpinImg[l.spin.d] : null;
+    if (sp){
+      // 旋轉圖 6×4 格；位置照畫面上 .sp3 的框（皮蛋的取景放大、挪過的也算在裡面）
+      const cw = sp.naturalWidth / 6, ch = sp.naturalHeight / 4, f = l.spin.f, r = l.spin.s;
+      ctx.drawImage(sp, (f % 6) * cw, Math.floor(f / 6) * ch, cw, ch, r.x, r.y + off, r.w, r.h);
+      return;
+    }
+    if (!(l.a > 0) && !l.spin) return;
+    if (!l.im || !l.im.complete || !l.im.naturalWidth) return;
+    ctx.save(); if (!l.spin) ctx.globalAlpha *= l.a;
+    ctx.translate(l.x + l.w / 2, l.y + off + l.h / 2);
+    if (l.rot) ctx.rotate(l.rot * Math.PI / 180);
+    if (l.sx && l.sx !== 1) ctx.scale(l.sx, 1);
+    ctx.drawImage(l.im, -l.w / 2, -l.h / 2, l.w, l.h);
+    ctx.restore();
+  });
+}
+function drawDoll(ctx, D){
+  const b = D.b, bx = b.x + b.w / 2, by = b.y + b.h;
+  ctx.save();
+  if (D.flip){ ctx.translate(bx, 0); ctx.scale(-1, 1); ctx.translate(-bx, 0); }
+  if (D.hop){
+    // 正好跳起來：往上一點、上下拉出殘影，腳下三條動作線
     const up = b.h * .16;
-    for (let i = 4; i >= 1; i--){ ctx.globalAlpha = .16; drawDollLayers(ctx, body, {...b, y: b.y - up + i * b.h * .035}); }
-    ctx.globalAlpha = .85; drawDollLayers(ctx, body, {...b, y: b.y - up});
+    for (let i = 4; i >= 1; i--){ ctx.globalAlpha = .16; phLayers(ctx, D, -up + i * b.h * .035); }
+    ctx.globalAlpha = .85; phLayers(ctx, D, -up);
     ctx.globalAlpha = .7; ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.5, b.w * .025); ctx.lineCap = 'round';
     [[.3, .1], [.5, .16], [.7, .1]].forEach(([px, l]) => { ctx.beginPath(); ctx.moveTo(b.x + b.w * px, by - up * .35); ctx.lineTo(b.x + b.w * px, by - up * .35 + b.h * l); ctx.stroke(); });
-    ctx.restore();
-    return;
-  }
-  let flip = d === 'egg';   // 蛋黃哥背對鏡頭，也懶得轉回來（原本就有）
-  if (k === 'flip') flip = !flip;
-  if (k === 'tilt'){ ctx.translate(bx, by); ctx.rotate(ps.a * Math.PI / 180); ctx.translate(-bx, -by); }
-  if (k === 'lie'){
-    // 橫過來躺在床上：繞身體中間轉，再往下挪，讓躺下來的身體底下貼著原本坐的位置
-    const cy = b.y + b.h / 2;
-    ctx.translate(bx, cy + (b.h - b.w) / 2); ctx.rotate(ps.a * Math.PI / 180); ctx.translate(-bx, -cy);
-  }
-  if (flip){ ctx.translate(bx, 0); ctx.scale(-1, 1); ctx.translate(-bx, 0); }
-  const sp = k === 'side' ? phSpinImg[d] : null;
-  if (sp){
-    // 旋轉圖 6×4 格，第 6 格臉朝右、第 18 格臉朝左；皮蛋的取景比較遠，照 spin.js 的 fit 放大挪回來
-    const cw = sp.naturalWidth / 6, chh = sp.naturalHeight / 4, f = ps.f;
-    const m = /translate\((-?[\d.]+)%,\s*(-?[\d.]+)%\)\s*scale\(([\d.]+)\)/.exec(SPIN[d].fit || '');
-    // 跟房間裡的 .sp3 一樣：寬跟原圖一樣、正方形、貼齊原圖上緣
-    const sc = m ? +m[3] : 1, tx = m ? +m[1] / 100 * b.w : 0, ty = m ? +m[2] / 100 * b.w : 0, w = b.w * sc;
-    ctx.drawImage(sp, (f % 6) * cw, Math.floor(f / 6) * chh, cw, chh, bx - w / 2 + tx, b.y + b.w / 2 - w / 2 + ty, w, w);
-  } else drawDollLayers(ctx, body, b);
+  } else phLayers(ctx, D, 0);
   ctx.restore();
-  if (el.classList.contains('sleep')){
+  if (D.sleep){
     const z = (t, x, y, sz) => {
       ctx.font = `900 ${sz}px ${cvFam('z', 'head')}`;
       ctx.lineWidth = sz * .22; ctx.strokeStyle = '#fff'; ctx.lineJoin = 'round'; ctx.strokeText(t, x, y);
       ctx.fillStyle = '#7d6ed6'; ctx.fillText(t, x, y);
     };
-    const eb = boxIn(el, R);
+    const eb = D.eb;
     z('z', eb.x + eb.w * .68, eb.y + eb.h * .14, 19); z('z', eb.x + eb.w * .82, eb.y + eb.h * .02, 14);
   }
+}
+// 按下快門那一刻：這一間看得到的東西照前後順序（z-index）記下來
+// 這一間看得到的娃娃都要入鏡（2026-11-27 使用者說朋友帶來過夜的玩偶拍不到）：自己的、朋友家來過夜的客人（.gst.st-guest，穿著牠出門時的衣服）、
+// 從隔壁房間來串門子的（.rv）。客人頭上的名牌、紙條不畫
+function phSnapAll(R){
+  return [...room.querySelectorAll('.it,.drop,.gst.st-guest,.rv,.fx-bag')].filter(e => e.offsetParent !== null)
+    .map((e, i) => ({e, i, z: +getComputedStyle(e).zIndex || 0})).sort((a, b) => a.z - b.z || a.i - b.i)
+    .map(({e}) => {
+      const it = items.find(o => String(o.uid) === e.dataset.u), other = !it && e.dataset.pd && SPR[e.dataset.pd] ? {id: e.dataset.pd} : null;
+      if (e.classList.contains('doll') && (it || other)){
+        const who = it || other, D = phSnapDoll(e, R, who.id);
+        if (!D) return null;
+        const guest = e.classList.contains('st-guest') && !e.classList.contains('st-mine');   // st-mine：去朋友家時看到自己在他家過夜的那一隻，是自己的娃娃
+        return {D, who, guest, pn: e.dataset.pn, pu: e.dataset.pu};
+      }
+      const svg = e.querySelector('svg'); if (!svg) return null;
+      return {svg, b: boxIn(svg, R), name: it ? it.id : e.classList.contains('fx-bag') ? 'fx-bag' : 'drop'};
+    }).filter(Boolean);
 }
 
 /* ---------- 拍一張 ---------- */
@@ -256,6 +254,7 @@ async function photoShoot(){
   photoBad = [];
   let dirty = '';
   const chk = name => { if (!dirty && !photoClean(c)){ dirty = name; photoNote('畫完' + name + '之後'); } };
+  const shot = phSnapAll(R);   // 按下快門那一刻（一定要在第一個 await 之前）
   await cvFonts(['z'], 'head');   // 睡覺的 z 也是源泉圓體；一樣最多等 3 秒
 
   // 白邊
@@ -284,29 +283,21 @@ async function photoShoot(){
     }
   }
 
-  // 家具、娃娃、地上的小東西：照前後順序（z-index）畫
-  const fx = {pose: true};   // 每隻自己抽姿勢（phPose）
+  // 家具、娃娃、地上的小東西：照按下快門那一刻記下的前後順序畫
   await phSpinReady();
-  // 這一間看得到的娃娃都要入鏡（2026-11-27 使用者說朋友帶來過夜的玩偶拍不到）：自己的、朋友家來過夜的客人（.gst.st-guest，穿著牠出門時的衣服）、
-  // 從隔壁房間來串門子的（.rv）。客人頭上的名牌、紙條不畫。前後順序照畫面上的
-  const els = [...room.querySelectorAll('.it,.drop,.gst.st-guest,.rv,.fx-bag')].filter(e => e.offsetParent !== null)
-    .map((e, i) => ({e, i, z: +getComputedStyle(e).zIndex || 0})).sort((a, b) => a.z - b.z || a.i - b.i);
   const inShot = new Set(), guests = [];
-  for (const {e} of els){
-    const it = items.find(o => String(o.uid) === e.dataset.u), other = !it && e.dataset.pd && SPR[e.dataset.pd] ? {id: e.dataset.pd} : null;
-    if (e.classList.contains('doll') && (it || other)){
-      const who = it || other, guest = e.classList.contains('st-guest') && !e.classList.contains('st-mine');   // st-mine：去朋友家時看到自己在他家過夜的那一隻，是自己的娃娃
-      drawDoll(ctx, e, R, who, guest ? {} : fx); chk('娃娃 ' + who.id);   // 客人不擺特別的姿勢，照牠站著的樣子
-      const b = boxIn(e, R);
+  for (const o of shot){
+    if (o.D){
+      drawDoll(ctx, o.D); chk('娃娃 ' + o.who.id);
+      const b = o.D.eb;
       if (b.x + b.w * .5 > cx && b.x + b.w * .5 < cx + cw && b.y + b.h * .5 > cy && b.y + b.h * .5 < cy + ch){
-        if (guest) guests.push({d: who.id, n: e.dataset.pn || '朋友', u: e.dataset.pu || ''}); else inShot.add(who.id);
+        if (o.guest) guests.push({d: o.who.id, n: o.pn || '朋友', u: o.pu || ''}); else inShot.add(o.who.id);
       }
     } else {
       if (trip) continue;   // 出遊：家具和地上的東西不畫
-      const svg = e.querySelector('svg'); if (!svg) continue;
-      const b = boxIn(svg, R), im = await svgImg(svg, b.w * s, b.h * s);
+      const b = o.b, im = await svgImg(o.svg, b.w * s, b.h * s);
       if (im) ctx.drawImage(im, b.x, b.y, b.w, b.h);
-      chk(it ? it.id : e.classList.contains('fx-bag') ? 'fx-bag' : 'drop');
+      chk(o.name);
     }
   }
 
