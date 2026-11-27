@@ -88,6 +88,7 @@ export function friendCode(uid) {
 
 export function createCloud(config, { emulator = false } = {}) {
   let A = null, F = null, auth = null, db = null, user = null, isReady = false;
+  let keepCur = null;   // 舊明信片讀到哪裡（keepCards）
   const subs = new Set();
   // 名字：用帳號名稱開的 → 那個名字；認不出來（不是遊戲裡開的帳號）→ email 的前半
   const toUser = u => {
@@ -404,6 +405,58 @@ export function createCloud(config, { emulator = false } = {}) {
     async cardDel(id) {
       await ready;
       await F.deleteDoc(F.doc(db, 'nestCards', id));
+    },
+    // ---------- 全部都留（js/keep.js）：存檔底下的子集合，只有本人能讀寫 ----------
+    //   nestSaves/{uid}/memo/{月份}、nestSaves/{uid}/mail/{月份} = {l:[…], t}；nestSaves/{uid}/cards/{明信片編號} = 一張明信片
+    async keepGet(kind, mid) {
+      await ready;
+      if (!user) return null;
+      const s = await F.getDoc(F.doc(db, 'nestSaves', user.uid, kind, mid));
+      return s.exists() ? (s.data().l || []) : null;
+    },
+    // 讀出來、用 keyOf 合併、寫回去（transaction，兩台裝置同時寫也不會互相蓋掉）。
+    // 放不下（超過 max 筆或 maxBytes）回 {full:true}，沒有寫；呼叫的人換下一份
+    async keepMerge(kind, mid, rows, keyOf, max, maxBytes) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      const r = F.doc(db, 'nestSaves', user.uid, kind, mid);
+      return F.runTransaction(db, async tx => {
+        const s = await tx.get(r), old = s.exists() ? (s.data().l || []) : [];
+        const seen = new Set(old.map(keyOf)), add = rows.filter(x => !seen.has(keyOf(x)));
+        if (!add.length) return { ok: true, n: old.length, added: 0 };
+        const l = [...old, ...add];
+        if (l.length > max || new TextEncoder().encode(JSON.stringify(l)).length > maxBytes) return { full: true };
+        tx.set(r, { l, t: Date.now() });
+        return { ok: true, n: l.length, added: add.length };
+      });
+    },
+    async keepCardPut(c) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'nestSaves', user.uid, 'cards', c.id), c);
+    },
+    async keepCardGet(id) {
+      await ready;
+      if (!user) return null;
+      const s = await F.getDoc(F.doc(db, 'nestSaves', user.uid, 'cards', id));
+      return s.exists() ? { ...s.data(), id: s.id } : null;
+    },
+    async keepCardDel(id) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.deleteDoc(F.doc(db, 'nestSaves', user.uid, 'cards', id));
+    },
+    // 舊的明信片，照日期新到舊，一次 n 張。fresh：從頭開始；不然接著上一次讀到的地方
+    async keepCards(n, fresh) {
+      await ready;
+      if (!user) return { list: [], more: false };
+      if (fresh) keepCur = null;
+      const parts = [F.collection(db, 'nestSaves', user.uid, 'cards'), F.orderBy('t', 'desc')];
+      if (keepCur) parts.push(F.startAfter(keepCur));
+      parts.push(F.limit(n));
+      const r = await F.getDocs(F.query(...parts));
+      if (r.docs.length) keepCur = r.docs[r.docs.length - 1];
+      return { list: r.docs.map(d => ({ ...d.data(), id: d.id })), more: r.docs.length === n };
     },
     async addedMe() {
       await ready;

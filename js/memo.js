@@ -31,7 +31,8 @@ function memoAdd(k, uid, name, o){
   if (o.c) e.c = String(o.c).slice(0, 80);
   L.unshift(e);
   L.sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : b.ts - a.ts));
-  if (L.length > MEMO_MAX) L.length = MEMO_MAX;
+  // 全部都留（js/keep.js）：超過的不丟，由它搬到雲端（沒登入就放這台裝置）；沒有那個檔才照舊切掉
+  if (typeof keepLater === 'function') keepLater(); else if (L.length > MEMO_MAX) L.length = MEMO_MAX;
   save();
   return true;
 }
@@ -64,22 +65,29 @@ function memoText(e){
 let memoCur = null;
 function memoOpen(uid){
   if (VISIT) return;
-  const L = memoList();
+  // 主存檔裡最近的，加上按「看更早的」讀回來的（js/keep.js 的 memoOld）；同一筆只列一次
+  const main = memoList(), have = new Set(main.map(e => e.id));
+  const L = [...main, ...(typeof memoOld !== 'undefined' ? memoOld : []).filter(e => !have.has(e.id))].sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : (b.ts || 0) - (a.ts || 0)));
   // 有紀錄的朋友，最近有事的排前面
   const pals = [];
   L.slice().sort((a, b) => b.ts - a.ts).forEach(e => { if (!pals.some(p => p.u === e.u)) pals.push({u: e.u, n: e.n}); });
   if (uid) memoCur = uid;
   if (!pals.some(p => p.u === memoCur)) memoCur = pals.length ? pals[0].u : null;
   const me = pals.find(p => p.u === memoCur);
+  let mo = '';
   const rows = L.filter(e => e.u === memoCur).map(e => {
-    const card = e.k === 'cardIn' && e.c && S.mail && Array.isArray(S.mail.pc) && S.mail.pc.some(c => c.id === e.c);
-    return `<div class="mm-it ${card ? 'tap' : ''}" ${card ? `data-mmc="${e.c}" role="button" tabindex="0"` : ''}><small>${md(e.t)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(e)}${card ? '<i>點開看</i>' : ''}</p></div>`;
+    // 明信片：主存檔裡有，或可能搬到舊的那邊去了（點了再去讀）
+    const card = e.k === 'cardIn' && e.c && ((S.mail && Array.isArray(S.mail.pc) && S.mail.pc.some(c => c.id === e.c)) || (typeof keepCardMaybe === 'function' && keepCardMaybe(e.c)));
+    const ym = String(e.t || '').slice(0, 7), hd = ym !== mo && /^\d{4}-\d{2}$/.test(ym) ? `<div class="al-sec mm-mo">${+ym.slice(0, 4)} 年 ${+ym.slice(5)} 月</div>` : '';
+    mo = ym;
+    return hd + `<div class="mm-it ${card ? 'tap' : ''}" ${card ? `data-mmc="${e.c}" role="button" tabindex="0"` : ''}><small>${md(e.t)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(e)}${card ? '<i>點開看</i>' : ''}</p></div>`;
   }).join('');
   openSheet(`<div class="hd">${ALB_ICON}<span>${me ? `和${txSlot(me.n)}的紀念冊` : '紀念冊'}</span></div>
     <div class="mm-box">
       ${pals.length > 1 ? `<div class="ng-chips">${pals.map(p => `<button class="ng-chip ${p.u === memoCur ? 'on' : ''}" data-mmu="${p.u}" aria-pressed="${p.u === memoCur}">${txSlot(p.n)}</button>`).join('')}</div>` : ''}
       ${rows || `<p class="al-em">${sNet() ? '還沒有紀錄。跟朋友互寄明信片、送娃娃、去對方家過夜、在訪客簿留話、玩躲貓貓、幫忙澆水，都會自動記在這裡。' : '登入、加了好友之後，一起做過的事會自動記在這裡。'}</p>`}
-      <p class="bk-note">最多留最近 ${MEMO_MAX} 筆。只存在你自己的存檔裡，朋友那邊有他自己的一本。</p>
+      ${typeof memoOldMore === 'function' && memoOldMore() ? '<div class="ml-ft mm-more"><button class="btn sm" data-mmold="1">看更早的</button></div>' : ''}
+      <p class="bk-note">${sNet() ? '全部都留著。只存在你自己的存檔裡，朋友那邊有他自己的一本。' : '全部都留在這台裝置裡。登入之後會搬到雲端，換手機也看得到。'}</p>
     </div>
     <div class="ml-ft"><button class="btn" data-mmback="1">回相簿</button></div>`);
   evOpen = false; alOpen = false;
@@ -88,8 +96,11 @@ $('#sheet').addEventListener('click', e => {
   if (e.target.closest('[data-memo]')){ memoOpen(); return; }
   if (e.target.closest('[data-mmback]')){ openAlbum(); return; }
   const u = e.target.closest('[data-mmu]'); if (u){ memoOpen(u.dataset.mmu); return; }
+  const o = e.target.closest('[data-mmold]');
+  if (o && typeof memoOlder === 'function'){ o.disabled = true; const box = $('#sheet .mm-box'), top = box ? box.scrollTop : 0, top2 = $('#sheet').scrollTop;   // 讀完重畫，留在原本捲到的地方（捲的可能是裡面那一格，也可能是整張面板）
+    memoOlder().then(() => { if ($('#sheet .mm-box') && !$('#sheet').hidden){ memoOpen(); const x = $('#sheet .mm-box'); if (x) x.scrollTop = top; $('#sheet').scrollTop = top2; } }); return; }
   const c = e.target.closest('[data-mmc]');
-  if (c && typeof cardOpen === 'function'){ const i = (S.mail.pc || []).findIndex(x => x.id === c.dataset.mmc); if (i >= 0) cardOpen(i); }
+  if (c && typeof cardOpen === 'function'){ const i = (S.mail.pc || []).findIndex(x => x.id === c.dataset.mmc); if (i >= 0) cardOpen(i); else if (typeof keepCardOpen === 'function') keepCardOpen(c.dataset.mmc); }
 });
 // 相簿最上面多一顆「紀念冊」
 if (typeof openAlbum === 'function'){

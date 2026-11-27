@@ -26,7 +26,7 @@ r.classList.add('look-paper');var h=new Date().getHours();if(h>=19||h<5)r.classL
      NEST_JS 是載入順序，不能亂動：traveldata、abroad（裡面有土產的家具定義）一定要在 main 前面，main 一開始就會畫房間。 -->
 <script>
 var NEST_V='1127-21';
-var NEST_JS=['data','social','furn2','furn3','sky','looks','save','season','wardrobe','room','rooms','paper','yard','traveldata','abroad','claw','main','album','gift','away','pals','visit','photo','trip','mailai','mail','earn','games','shop','furnfx','nestgift','book','want','water','stay','card','roamdata','roam','roam2','skitdata','skit','spin','memo','hide','seen','friend','travel','hud','guide','music','cover','version'];
+var NEST_JS=['data','social','furn2','furn3','sky','looks','save','season','wardrobe','room','rooms','paper','yard','traveldata','abroad','claw','main','album','gift','away','pals','visit','photo','trip','mailai','mail','earn','games','shop','furnfx','nestgift','book','want','water','stay','card','roamdata','roam','roam2','skitdata','skit','spin','memo','hide','seen','friend','keep','travel','hud','guide','music','cover','version'];
 (function(){var v='?v='+NEST_V,h='';
 ['css/style.css','css/cover.css','css/paper.css','css/account.css'].forEach(function(f){h+='<link rel="stylesheet" href="'+f+v+'">'});
 NEST_JS.forEach(function(n){h+='<link rel="preload" as="script" href="js/'+n+'.js'+v+'">'});   // 先一起抓，照順序跑（下面是一個接一個寫出來的，沒有這一行會變成一個抓完才抓下一個）

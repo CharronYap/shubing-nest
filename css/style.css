@@ -1105,6 +1105,9 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .fr-new{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pink);margin-left:6px;vertical-align:1px}
 .fr-letter{margin:0}
 .ml-pal{margin:4px 2px 0}
+.ml-more,.mm-more{margin:4px 0 2px}
+.mm-mo{margin:6px 2px 0}
+.fr-old{margin:6px 2px 0}
 /* 信箱的分類鈕：排成一排，排不下左右滑，不換行 */
 .ml-cats{flex-wrap:nowrap;gap:5px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;margin:0 -2px 8px;padding:2px}
 .ml-cats::-webkit-scrollbar{display:none}

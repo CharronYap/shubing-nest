@@ -94,7 +94,7 @@ function frPaint(){
       `<div class="fr-it wait"><span class="ic"><img src="${SPR[g.doll]}" alt=""></span><p>${txSlot(nm)}送來的${DOLL_NAME[g.doll]}在門口等<i class="fr-new"></i></p><button class="btn y sm" data-frclaim="${g.id}">讓牠進來</button></div>`).join('');
     if (frHearts) rows += `<div class="fr-it"><small>今天</small><span class="ic">${HEART()}</span><p>收到 ${frHearts} 顆愛心</p></div>`;
     rows += memo.filter(e => FR_IN.includes(e.k)).map(e => {
-      const card = e.k === 'cardIn' && e.c && (S.mail.pc || []).some(c => c.id === e.c);
+      const card = e.k === 'cardIn' && e.c && ((S.mail.pc || []).some(c => c.id === e.c) || (typeof keepCardMaybe === 'function' && keepCardMaybe(e.c)));
       const letter = (e.k === 'stayBack' && frLetter('trip', e.d, e.n)) || (e.k === 'giftIn' && frLetter('gift', e.d, e.n));
       const tap = card ? `data-frcard="${e.c}"` : letter ? `data-frletter="${e.k === 'stayBack' ? 'trip' : 'gift'}.${e.d}" data-frw="${e.u}"` : e.k === 'bookIn' ? 'data-fr="book"' : '';
       // 過夜帶回來的紙條：直接寫在這一行（這一版以前記的沒有 m，從那封日記讀）
@@ -106,6 +106,7 @@ function frPaint(){
     const known = new Set(frMemo().filter(e => e.k === 'cardIn').map(e => e.c));
     rows += ((S.mail && S.mail.pc) || []).filter(c => !known.has(c.id) && (frList.length === 1 || c.w === nm)).map(c =>
       `<div class="fr-it tap" data-frcard="${c.id}" role="button" tabindex="0"><small>${md(c.t)}</small><span class="ic">${CARD_ICON}</span><p>收到${txSlot(c.w)}寄來的明信片${c.r ? '' : '<i class="fr-new"></i>'}<u>看明信片</u></p></div>`).join('');
+    if (rows && S.album && Array.isArray(S.album.memoM) && S.album.memoM.length) rows += '<p class="bk-note fr-old">更早的在紀念冊。</p>';   // 這裡只列主存檔裡最近的（js/keep.js）
     if (!rows) rows = `<p class="al-em">${txSlot(nm)}那邊還沒有東西來。他寄的明信片、送的娃娃、在你家訪客簿留的話，都會收在這裡。</p>`;
   } else {
     rows += (typeof ngOut !== 'undefined' ? ngOut : []).filter(g => g.to === f.uid).map(g =>
@@ -139,7 +140,7 @@ $('#sheet').addEventListener('click', async e => {
   const bk = e.target.closest('[data-frback]');
   if (bk && !frBusy){ frBusy = true; try { await ngBack(bk.dataset.frback); } finally { frBusy = false; } frPaint(); return; }
   const c = e.target.closest('[data-frcard]');
-  if (c){ const i = (S.mail.pc || []).findIndex(x => x.id === c.dataset.frcard); if (i >= 0) cardOpen(i); return; }
+  if (c){ const i = (S.mail.pc || []).findIndex(x => x.id === c.dataset.frcard); if (i >= 0) cardOpen(i); else if (typeof keepCardOpen === 'function') keepCardOpen(c.dataset.frcard); return; }
   const lt = e.target.closest('[data-frletter]');
   if (lt){ const [type, d] = lt.dataset.frletter.split('.'), f = (frList || []).find(p => p.uid === lt.dataset.frw); frLetterOpen(frLetter(type, d, f && f.name)); return; }
   const b = e.target.closest('[data-fr]'); if (!b) return;

@@ -407,13 +407,20 @@ function mergeSave(remote, guest) {
     mm.att = [mm.att || '', gm.att || ''].sort().pop();
     // 從雲端領走的東西：收到的明信片、領過的編號（明信片、送來的娃娃）。兩邊都留，同一筆只留一份
     const pcs = new Set((mm.pc || []).map(c => c && c.id));
-    mm.pc = [...(mm.pc || []), ...(gm.pc || []).filter(c => c && !pcs.has(c.id))].sort((a, b) => (a.t < b.t ? 1 : -1)).slice(0, 30);
+    mm.pc = [...(mm.pc || []), ...(gm.pc || []).filter(c => c && !pcs.has(c.id))].sort((a, b) => (a.t < b.t ? 1 : -1));
+    // 全部都留（js/keep.js）：有它的時候不在這裡切掉，超過的由它搬到雲端；兩邊記的小清單取聯集
+    if (typeof keepLater !== 'function') mm.pc = mm.pc.slice(0, 30);
+    for (const k of ['lm', 'pcx']) { const u = [...new Set([...(mm[k] || []), ...(gm[k] || [])])]; if (u.length) mm[k] = u; }
+    if (mm.pcA || gm.pcA) mm.pcA = 1;
+    if (mm.pcx) mm.pc = mm.pc.filter(c => !mm.pcx.includes(c.id));   // 另一台丟掉的明信片不要又合併回來
     for (const k of ['pcd', 'gin']) { const u = [...new Set([...(mm[k] || []), ...(gm[k] || [])])]; if (u.length) mm[k] = u.slice(-60); }
   }
   // 紀念冊、娃娃送的小禮物、過夜去過哪、看過的小劇場、處理過的躲貓貓結果：兩邊都留
   const memoIds = new Set((ma.memo || []).map(e => e && e.id));
-  const memo = [...(ma.memo || []), ...(ga.memo || []).filter(e => e && !memoIds.has(e.id))].sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : (b.ts || 0) - (a.ts || 0))).slice(0, typeof MEMO_MAX === 'number' ? MEMO_MAX : 1000);   // 上限跟 js/memo.js 同一個數字
-  if (memo.length) ma.memo = memo;
+  const memo = [...(ma.memo || []), ...(ga.memo || []).filter(e => e && !memoIds.has(e.id))].sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : (b.ts || 0) - (a.ts || 0)));
+  // 全部都留（js/keep.js）：有它的時候不切，超過的由它搬到雲端；沒有（單獨測這個檔）才照舊留 1000 筆
+  if (memo.length) ma.memo = typeof keepLater === 'function' ? memo : memo.slice(0, typeof MEMO_MAX === 'number' ? MEMO_MAX : 1000);
+  { const u = [...new Set([...(ma.memoM || []), ...(ga.memoM || [])])]; if (u.length) ma.memoM = u; }
   for (const k of ['gifts', 'trips']) {
     const src = ga[k] || {}; if (!Object.keys(src).length) continue;
     ma[k] = ma[k] || {};
@@ -465,6 +472,7 @@ async function afterLogin(u) {
       return e && e.code === 'permission-denied' ? '帳號登入了，但雲端存檔還沒開好（管理員還沒發布規則），先用訪客玩' : '連不上雲端，晚點再試';
     }
     try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    if (typeof keepAdopt === 'function') keepAdopt(u.uid);   // 訪客那一包舊紀錄（js/keep.js）跟著進這個帳號
     useSave(d, u.uid, '這台的進度已經存進帳號');
     return;
   }
@@ -483,6 +491,7 @@ function askMerge(remote, u) {
     const m = mergeSave(remote, S);
     try { await cloud.save(m, u.uid); } catch (err) { failState(err); }
     try { localStorage.removeItem(SAVE_KEY); } catch (err) {}
+    if (typeof keepAdopt === 'function') keepAdopt(u.uid);
     useSave(m, u.uid, '這台的進度已經帶進帳號');
   };
 }
@@ -722,7 +731,8 @@ window.nestNet = {
 };
 // 第五版的雲端動作，原樣轉給 cloud.js
 ['bookAdd', 'bookMine', 'book', 'bookDel', 'waterAdd', 'waterMine', 'waters', 'waterDel', 'foundAdd', 'foundMine', 'founds', 'foundDel',
-  'stayGo', 'stayMine', 'stayGuests', 'staySet', 'stayEnd', 'cardSend', 'cardsTo', 'cardDel']
+  'stayGo', 'stayMine', 'stayGuests', 'staySet', 'stayEnd', 'cardSend', 'cardsTo', 'cardDel',
+  'keepGet', 'keepMerge', 'keepCardPut', 'keepCardGet', 'keepCardDel', 'keepCards']   // 最後一排：全部都留（js/keep.js）
   .forEach(k => { window.nestNet[k] = (...a) => cloud[k](...a); });
 
 /* ---------- 開始 ---------- */

@@ -27,6 +27,7 @@ const mailCatOf = o => { const t = (/^[a-z]+\.([a-z]+)\./.exec((o && o.k) || '')
 let mailCat = 'all', mailCardBack = false;   // mailCat：同一次開著遊戲時記住上次選的那一類；mailCardBack：明信片是從信箱點開的，看完回信箱
 function mailTrim(l){
   if (!Array.isArray(l)) return l;
+  if (typeof keepLater === 'function'){ keepLater(); return l; }   // 全部都留（js/keep.js）：不丟，超過的由它搬走
   const n = {};
   l.forEach(o => { const c = mailCatOf(o); n[c] = (n[c] || 0) + 1; });
   for (let x = l.length - 1; x >= 0; x--){
@@ -624,25 +625,26 @@ function mailBodyHTML(x){
   return `<div class="ml-tx ${x.d === 'moodeng' ? 'big' : ''} ${x.d === 'snoopy' ? 'novel' : ''}">${html}</div>`;
 }
 const mailSnip = x => x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' ? '一片葉子' : x.body.split('\n')[0].replace('[拖鞋]', '');
-function mailCard(o, j, open, tag){
+// old：這一封不在主存檔裡，是按「看更早的」讀回來的（js/keep.js），j 是它在 mailOld 裡的第幾封
+function mailCard(o, j, open, tag, old){
   const x = mailText(o.k);
   const from = x.type === 'news' ? '薯餅' : x.from || DOLL_NAME[x.d];
   let inner = '';
   if (open){
     // 龍龍：先是一片葉子，點一下翻到背面
-    inner = x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && !o.f
+    inner = x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && !o.f && !old
       ? `<button class="ml-leaf" data-flip="${j}" aria-label="把葉子翻過來">${MAIL_LEAF}<small>點一下翻過來</small></button>`
       : (x.pic || '') + mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
     if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : o.a === 'ticket' ? '附上一張' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
   }
   return `<div class="ml ${o.r ? '' : 'unread'} ${open ? 'open' : ''}">
-    <button class="ml-hd" data-ml="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${tag ? MAIL_CAT_NAME[mailCatOf(o)] + '・' : ''}${from}・${md(o.t)}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
+    <button class="ml-hd" data-ml${old ? 'x' : ''}="${j}" aria-expanded="${open}"><img src="${SPR[x.d]}" alt=""><span><b>${x.title}</b><small>${tag ? MAIL_CAT_NAME[mailCatOf(o)] + '・' : ''}${from}・${md(o.t)}${o.a && !o.g ? '・有附件' : ''}</small>${open ? '' : `<i>${mailSnip(x)}</i>`}</span></button>
     ${open ? `<div class="ml-bd">${inner}</div>` : ''}</div>`;
 }
-let mlOpenIx = -1;
+let mlOpenIx = -1, mlOpenX = -1;   // 打開著的是第幾封：主存檔的、舊的那邊的
 // 朋友寄來的明信片（S.mail.pc）在信箱裡的一列：一張一列，點了開那一張（js/card.js 的 cardOpen）
-function mailPcRow(c, i, tag){
-  return `<div class="ml pc ${c.r ? '' : 'unread'}"><button class="ml-hd" data-mpc="${i}"><span class="pc-st">${typeof CARD_ICON !== 'undefined' ? CARD_ICON : ''}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${tag ? MAIL_CAT_NAME.pc + '・' : ''}${md(c.t)}</small><i>${c.msg ? txSlot(c.msg) : '這張沒有寫字。'}</i></span></button></div>`;
+function mailPcRow(c, i, tag, old){
+  return `<div class="ml pc ${c.r ? '' : 'unread'}"><button class="ml-hd" data-mpc${old ? 'x' : ''}="${i}"><span class="pc-st">${typeof CARD_ICON !== 'undefined' ? CARD_ICON : ''}</span><span><b>${txSlot(c.w)}寄來的明信片</b><small>${tag ? MAIL_CAT_NAME.pc + '・' : ''}${md(c.t)}</small><i>${c.msg ? txSlot(c.msg) : '這張沒有寫字。'}</i></span></button></div>`;
 }
 const mailPcs = () => (S.mail && Array.isArray(S.mail.pc) ? S.mail.pc : []);
 // 這一類裡有哪些：信（l 裡的第幾封）和朋友的明信片（pc 裡的第幾張），照日期新的在前
@@ -650,22 +652,30 @@ function mailRowsOf(cat){
   const m = mailInit(), rows = [];
   m.l.forEach((o, j) => { if (o && typeof o.k === 'string' && (cat === 'all' || mailCatOf(o) === cat)) rows.push({o, j, t: o.t || ''}); });
   if (cat === 'all' || cat === 'pc') mailPcs().forEach((c, i) => { if (c) rows.push({c, i, t: c.t || ''}); });
+  // 按「看更早的」讀回來的舊信、舊明信片（js/keep.js）：接在後面，主存檔裡已經有的不重複列
+  if (cat !== 'news' && typeof mailOld !== 'undefined'){
+    const haveL = new Set(m.l.map(mailSameKey)), haveC = new Set(mailPcs().map(c => c && c.id));
+    mailOld.forEach((o, j) => { if ((cat === 'all' || mailCatOf(o) === cat) && !haveL.has(mailSameKey(o))) rows.push({o, j, t: o.t || '', old: 1}); });
+    if (cat === 'all' || cat === 'pc') cardOld.forEach((c, i) => { if (!haveC.has(c.id)) rows.push({c, i, t: c.t || '', old: 1}); });
+  }
   return rows.map((r, n) => [r, n]).sort((a, b) => (a[0].t < b[0].t ? 1 : a[0].t > b[0].t ? -1 : a[1] - b[1])).map(x => x[0]);
 }
-const mailUnreadOf = cat => mailRowsOf(cat).filter(r => !(r.o || r.c).r).length;
+const mailUnreadOf = cat => mailRowsOf(cat).filter(r => !r.old && !(r.o || r.c).r).length;
 function openMail(keep){
   const m = mailInit();
-  if (!keep) mlOpenIx = -1;
+  if (!keep){ mlOpenIx = -1; mlOpenX = -1; }
   if (!MAIL_CAT_NAME[mailCat]) mailCat = 'all';
   const rows = mailRowsOf(mailCat), all = mailCat === 'all';
-  const total = mailUnreadOf('all'), unread = rows.filter(r => !(r.o || r.c).r).length, todo = rows.filter(r => r.o && r.o.a && !r.o.g).length;
+  const total = mailUnreadOf('all'), unread = rows.filter(r => !r.old && !(r.o || r.c).r).length, todo = rows.filter(r => !r.old && r.o && r.o.a && !r.o.g).length;
+  const more = typeof mailOldMore === 'function' && mailOldMore(mailCat);
   const on = typeof sNet === 'function' && !!sNet();
   const chips = MAIL_CATS.map(([k, name]) => { const n = k === 'all' ? total : mailUnreadOf(k); return `<button class="ng-chip ${k === mailCat ? 'on' : ''}" data-mcat="${k}" aria-pressed="${k === mailCat}" aria-label="${name}${n ? `，${n} 封沒看` : ''}">${name}${n ? '<b></b>' : ''}</button>`; }).join('');   // 有沒看的：右上角一顆小圓點，數量放在 aria-label（顯示數字的話 375 寬排不下五顆）
   const empty = MAIL_EMPTY[mailCat] + (!on && (mailCat === 'pc' || mailCat === 'pal') ? '登入、加了好友之後才會有。' : '');
   const tv = mailCat === 'pc' && typeof tvAlbumOpen === 'function';
   openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>信箱</span>${total ? `<small>${total} 封沒看</small>` : ''}</div>
     <div class="ng-chips ml-cats" role="group" aria-label="信的分類">${chips}</div>
-    <div class="ml-box">${rows.length ? rows.map(r => (r.o ? mailCard(r.o, r.j, r.j === mlOpenIx, all) : mailPcRow(r.c, r.i, all))).join('') : `<p class="al-em">${empty}</p>`}</div>
+    <div class="ml-box">${rows.length ? rows.map(r => (r.o ? mailCard(r.o, r.j, r.old ? r.j === mlOpenX : r.j === mlOpenIx, all, r.old) : mailPcRow(r.c, r.i, all, r.old))).join('') : `<p class="al-em">${empty}</p>`}
+    ${more ? '<div class="ml-ft ml-more"><button class="btn sm" data-mall="old">看更早的</button></div>' : ''}</div>
     ${todo || unread || tv ? `<div class="ml-ft">${todo ? '<button class="btn y" data-mall="take">全部領取</button>' : ''}${unread ? '<button class="btn" data-mall="read">全部已讀</button>' : ''}${tv ? '<button class="btn" data-mall="tv">旅行的明信片</button>' : ''}</div>` : ''}`);
   evOpen = false; alOpen = false;
   const cur = $('#sheet .ml-cats .on'); if (cur && cur.scrollIntoView) try { cur.scrollIntoView({block: 'nearest', inline: 'nearest'}); } catch (e) {}
@@ -688,9 +698,17 @@ $('#sheet').addEventListener('click', e => {
     openMail();
   } else if (b.dataset.mpc !== undefined){
     if (typeof cardOpen === 'function'){ mailCardBack = true; cardOpen(+b.dataset.mpc); }
+  } else if (b.dataset.mpcx !== undefined){
+    const c = cardOld[+b.dataset.mpcx]; if (c && typeof cardShow === 'function'){ mailCardBack = true; cardShow(c, true); }
+  } else if (b.dataset.mlx !== undefined){
+    const j = +b.dataset.mlx; mlOpenX = mlOpenX === j ? -1 : j; mlOpenIx = -1; openMail(true);
+    const card = $('#sheet .ml.open'); if (card) card.scrollIntoView({block: 'nearest'});
+  } else if (b.dataset.mall === 'old'){
+    b.disabled = true; const box = $('#sheet .ml-box'), top = box ? box.scrollTop : 0;
+    mailOlder(mailCat).then(() => { if ($('#sheet .ml-box') && !$('#sheet').hidden){ openMail(true); const x = $('#sheet .ml-box'); if (x) x.scrollTop = top; } });
   } else if (b.dataset.ml !== undefined){
     const j = +b.dataset.ml;
-    mlOpenIx = mlOpenIx === j ? -1 : j;
+    mlOpenIx = mlOpenIx === j ? -1 : j; mlOpenX = -1;
     m.l[j].r = 1; save(); mailBadge(); openMail(true);
     const card = $('#sheet .ml.open'); if (card) card.scrollIntoView({block: 'nearest'});
   } else if (b.dataset.flip !== undefined){
@@ -700,10 +718,10 @@ $('#sheet').addEventListener('click', e => {
     toast(`收下${mailAtt(o.a).name}`); openMail(true);
   } else if (b.dataset.mall === 'take'){
     // 只處理現在這一類；在「全部」就是全部
-    const got = mailRowsOf(mailCat).filter(r => r.o && r.o.a && !r.o.g).map(r => r.o); got.forEach(mailTake); save(); renderEvBadge();
+    const got = mailRowsOf(mailCat).filter(r => !r.old && r.o && r.o.a && !r.o.g).map(r => r.o); got.forEach(mailTake); save(); renderEvBadge();
     toast(`收下 ${got.length} 個附件`); openMail(true);
   } else if (b.dataset.mall === 'read'){
-    mailRowsOf(mailCat).forEach(r => { (r.o || r.c).r = 1; }); save(); mailBadge(); openMail(true);
+    mailRowsOf(mailCat).forEach(r => { if (!r.old) (r.o || r.c).r = 1; }); save(); mailBadge(); openMail(true);
   } else if (b.dataset.mall === 'tv'){
     tvAlbumOpen();
   }
