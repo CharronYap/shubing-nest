@@ -3,6 +3,7 @@
      一天煮 3 次，冰箱最多放 8 份。演的時候借用小劇場的演出（js/skit.js 的 skitPlay，重看模式：不記相簿、不給幣）。
    - 點冰箱：看裡面有什麼、是誰煮的。拿一份給這一間的娃娃吃（牠跳一下講一句，跟煮的那隻交情加一點），也可以自己吃。
    - 爐台、冰箱是廚房的家具（js/furn3.js），擺在哪一間都能用；去朋友家時點了沒反應。
+   - 有廚房、還沒有爐台或冰箱的話，火腿的小店每天都擺（排在今天的貨前面；原本是隨機的，很難等到）。
    存檔：放在相簿裡的一格 S.album.kitchen = {d:'今天', n:今天煮了幾次, f:['菜.誰煮的', …]}（跟小劇場的 S.album.skit 一樣，不用改雲端規則）。
    f 存成字串，不存成兩層的清單：雲端的資料庫不收清單裡面再放清單。
    每一道菜的圖都是自己用 SVG 畫的。樣式寫在這個檔裡（kcCss），class 都是 kc- 開頭。 */
@@ -85,7 +86,7 @@ function kcStove(){
   else body = `<p class="kc-lab">誰來煮</p><div class="kc-who">${who.map(i => `<button class="kc-d ${i.id === kcWho ? 'on' : ''}" data-kcd="${i.id}" aria-pressed="${i.id === kcWho}"><img src="${SPR[i.id]}" alt=""><b>${DOLL_NAME[i.id]}</b></button>`).join('')}</div>
     <p class="kc-lab">煮什麼</p>${Object.entries(KC_DISH).map(([id, d]) => `<div class="er-it"><span class="ic">${d.svg}</span><span class="tx2"><b>${d.n}</b><small>${d.s}</small></span><button class="btn y sm" data-kcook="${id}" aria-label="煮${d.n}">煮</button></div>`).join('')}`;
   openSheet(`<div class="hd">${KC_ICON}<span>爐台</span></div>
-    <div class="er-box"><p class="er-hi">${left > 0 ? `今天還可以煮 ${left} 次。` : ''}煮好的會放進冰箱（現在 ${k.f.length}／${KC_MAX} 份）。</p>${body}</div>`);
+    <div class="er-box"><p class="er-hi">${left > 0 ? `今天還可以煮 ${left} 次。` : ''}煮好的會放進冰箱（現在 ${k.f.length}／${KC_MAX} 份）。${FURN_OWN.fridge ? '' : '還沒有冰箱：煮好的先收著，有了冰箱就拿得出來，火腿的小店每天都有賣。'}</p>${body}</div>`);
   evOpen = false; alOpen = false;
 }
 function kcCook(dish){
@@ -159,6 +160,17 @@ $('#sheet').addEventListener('click', e => {
   else if (t.dataset.kfood !== undefined){ const i = +t.dataset.kfood; kcPick = kcPick === i ? -1 : i; kcFridge(); }
   else if (t.dataset.keat) kcEat(t.dataset.keat);
 });
+// 火腿的小店（js/shop.js）：有廚房、還沒有爐台或冰箱，就排在今天的貨前面。只是給畫面看的那一份，
+// 存檔裡今天的貨（earnData().shop.items）不動；bought 用同一個，買了照樣記得
+if (typeof shopStock === 'function'){
+  const prev = shopStock;
+  shopStock = function(){
+    const st = prev();
+    if (VISIT || !home.kitchen) return st;
+    const add = ['stove', 'fridge'].filter(id => FURN[id] && (!FURN_OWN[id] || (st.bought || []).includes('f:' + id))).map(id => 'f:' + id);   // 今天剛買的也留著，才按得到「有了・去擺」
+    return add.length ? Object.assign({}, st, {items: [...add, ...st.items.filter(x => !add.includes(x))]}) : st;
+  };
+}
 // 點爐台、冰箱（接在原本的 onFurnTap 後面，跟電視一樣）
 {
   const prev = typeof onFurnTap === 'function' ? onFurnTap : null;
