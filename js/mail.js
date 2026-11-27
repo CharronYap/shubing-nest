@@ -419,6 +419,7 @@ const MAIL_NEWS = [
   // 出國（js/abroad.js）：附一張機票（附件 'ticket'，每個人一張，收下時記在 album.tv.tk）
   {id:'air1', t:'2026-11-27', a:'ticket', b:'我跟你說喔……大家可以搭飛機了。\n信裡面有一張機票，送你的。之後火腿的小店也有賣。\n把機票放進門旁邊的背包。下一個出門的，就會飛去很遠的地方，兩三天才回來。\n現在有四個地方：雙峰塔、台北101、富士山、艾菲爾鐵塔。去哪裡牠們自己決定。\n機票加野餐籃，就是全家一起去。\n每個地方有三張明信片，還有一樣那裡才有的小東西。\n相簿的「旅行」裡多了一本護照。去過一個地方，就蓋一個章喔。\n大家都在排隊蓋章了。我還在……找我的護照。'},
   {id:'cut1', t:'2026-11-27', b:'家具……都換了新的樣子喔。\n以前有些家具，跟房間看起來不太一樣。現在每一件都是用色紙一張一張剪的。\n床、沙發、魚缸、過節的燈籠，全部都剪好了。\n東西都在原本的地方，一件都沒有少。坐的位置也一樣。\n甜甜圈坐墊看起來更好吃了。還是不能吃喔，我試過了。\n我也在剪一張。剪了三天……快剪到一半了。'},
+  {id:'box1', t:'2026-11-27', b:'信箱……整理好了喔。\n上面多了一排按鈕：全部、娃娃的信、小窩更新、明信片、朋友家。\n我寫的這種信，都放在「小窩更新」。\n朋友寄來的明信片，還有大家旅行寄回來的，都在「明信片」。\n去朋友家過夜帶回來的小紙條，在「朋友家」。\n信變多也不會把別的信擠掉了。\n「小窩更新」那一格全部都是我寫的。我數了一下……我好像很忙。'},
   // 歡迎信：不在下面的迴圈裡寄，mailCheck 最後才寄，這樣會排在信箱最上面
   {id:'hi', hi:1, title:'歡迎來小窩', a:'coin-30', b:'你……好。我是薯餅。\n這裡是小窩喔。我跟大家一起住在這裡。\n我講話很慢，走路也很慢。你慢慢聽就好。\n信裡面有 30 枚幣，送你的。\n娃娃機夾一次要 2 枚。每天第一次……不用錢喔。\n幣不夠的話，點上面那個幣。它會跟你說可以做什麼。\n下面還有好幾封信，在講小窩有什麼好玩的。不用急，慢慢看。\n我想跟你揮手。等我一下喔……手快舉起來了。'},
 ];
@@ -659,7 +660,7 @@ function openMail(keep){
   const rows = mailRowsOf(mailCat), all = mailCat === 'all';
   const total = mailUnreadOf('all'), unread = rows.filter(r => !(r.o || r.c).r).length, todo = rows.filter(r => r.o && r.o.a && !r.o.g).length;
   const on = typeof sNet === 'function' && !!sNet();
-  const chips = MAIL_CATS.map(([k, name]) => { const n = k === 'all' ? total : mailUnreadOf(k); return `<button class="ng-chip ${k === mailCat ? 'on' : ''}" data-mcat="${k}" aria-pressed="${k === mailCat}">${name}${n ? `<b>${n}</b>` : ''}</button>`; }).join('');
+  const chips = MAIL_CATS.map(([k, name]) => { const n = k === 'all' ? total : mailUnreadOf(k); return `<button class="ng-chip ${k === mailCat ? 'on' : ''}" data-mcat="${k}" aria-pressed="${k === mailCat}" aria-label="${name}${n ? `，${n} 封沒看` : ''}">${name}${n ? '<b></b>' : ''}</button>`; }).join('');   // 有沒看的：右上角一顆小圓點，數量放在 aria-label（顯示數字的話 375 寬排不下五顆）
   const empty = MAIL_EMPTY[mailCat] + (!on && (mailCat === 'pc' || mailCat === 'pal') ? '登入、加了好友之後才會有。' : '');
   const tv = mailCat === 'pc' && typeof tvAlbumOpen === 'function';
   openSheet(`<div class="hd ml-top">${MAIL_ICON}<span>信箱</span>${total ? `<small>${total} 封沒看</small>` : ''}</div>

@@ -168,7 +168,7 @@ function spinDirFrame(dx, dy){
   if (Math.hypot(dx, dy) < 1.5) return null;
   return spinMod(Math.atan2(dx, dy * 1.8) * 180 / Math.PI / 15);
 }
-const spinHost = it => room.querySelector(`.it[data-u="${it.uid}"]`);
+const spinHost = it => (it.guest ? elFor(it) : room.querySelector(`.it[data-u="${it.uid}"]`));   // 來過夜的客人（js/stay.js）是另外畫的元素
 // 這隻朝 (dx, dy) 看：3D 的轉過去，沒有 3D 的左右翻面
 function spinFace(host, d, dx, dy, o){
   if (!host) return;

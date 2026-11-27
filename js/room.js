@@ -65,6 +65,7 @@ function roomQuarantine(){
   return n;
 }
 function elFor(it){
+  if(it&&it.guest)return room.querySelector(`.st-guest[data-gu="${it.uid}"]`);   // 來過夜的客人（js/stay.js）是另外畫的元素，不在這裡建立；還沒畫出來就是 null
   let el=room.querySelector(`.it[data-u="${it.uid}"]`);
   if(!el){
     el=document.createElement('div');el.className='it';el.dataset.u=it.uid;

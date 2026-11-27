@@ -10,7 +10,9 @@
    - 玩家正在拖東西、剛動過收納架、開著面板、拍照時，全部停下來。
    - 同時最多兩隻在移動。裝置開了「減少動態效果」的話不移動，只冒字。
    - 小屋地圖最下面有開關「讓娃娃自己玩」，預設開，只記在這台裝置。
-   去朋友家時朋友的娃娃也會動，只是畫面效果，不寫任何資料。 */
+   去朋友家時朋友的娃娃也會動，只是畫面效果，不寫任何資料。
+   來過夜的客人（2026-11-27）：不在 items 裡，js/stay.js 另外畫。用一隻「假娃娃」{kind:'doll', id, x, y, uid:'g…', guest:1} 進這一套，
+   x、y 是雲端上的位置（牠的家）。只在客廳、不去坐別隻的專屬家具、不去躲、不串門子；其他跟家裡的娃娃一樣。 */
 const ROAM_KEY = 'shubingNest.roam';
 let roamOn = true;
 try { roamOn = localStorage.getItem(ROAM_KEY) !== '0'; } catch (e) {}
@@ -18,7 +20,10 @@ const RS = {};                 // uid → {x, y, sit, seat, busy, next, trips, r
 let roamHold = 0, roamTimer = 0;
 let roamFree = false;        // 故意靠著家具的移動（去坐、龍龍去躲）：js/seen.js 不要把落點換掉
 const rnd = (a, b) => a + Math.random() * (b - a);
-let roamDolls = () => items.filter(i => i.kind === 'doll' && ROAM_P[i.id]);   // 第二步（js/roam2.js）會再包一層：出門去隔壁的不算
+let roamGuests = () => (typeof stayRoamList === 'function' ? stayRoamList() : []);   // 來過夜的客人（js/stay.js）
+const roamEvery = () => [...items.filter(i => i.kind === 'doll'), ...roamGuests()];   // 這一間看得到的每一隻（含客人）
+const roamHas = it => items.includes(it) || roamGuests().includes(it);
+let roamDolls = () => [...items.filter(i => i.kind === 'doll' && ROAM_P[i.id]), ...roamGuests().filter(i => ROAM_P[i.id])];   // 第二步（js/roam2.js）會再包一層：出門去隔壁的不算
 const roamSt = it => (RS[it.uid] = RS[it.uid] || {x: null, y: null, sit: null, seat: 0, busy: false, next: Date.now() + rnd(4, 12) * 1000, trips: 0, rest: 0});
 const roamAway = st => !!st && (st.x !== null || st.sit !== null);
 // 這隻現在畫在哪裡（在外面晃就是晃到的位置，不然就是家）
@@ -31,7 +36,7 @@ function roamPos(it){
 // 把一隻娃娃畫到牠現在該在的地方（只動畫面上的元素，不動存檔）
 function roamApply(it, el){
   const st = RS[it.uid];
-  if (!roamAway(st)) return false;
+  if (!el || !roamAway(st)) return false;
   const [x, y, f] = roamPos(it);
   if (!roamAway(st)) return false;   // 坐的家具被收走了：回到家
   const v = {kind: 'doll', id: it.id, x, y, sit: f ? f.uid : null, seat: st.seat, uid: it.uid};
@@ -39,17 +44,18 @@ function roamApply(it, el){
   el.style.zIndex = f ? zOf(f) + 1 + st.seat : 20 + Math.round(y * 3) + 1;
   el.classList.toggle('sit', !!f); el.classList.toggle('breathe', !f);
   [...el.classList].forEach(c => { if (c.startsWith('sp-')) el.classList.remove(c); });
-  if (f && FURN[f.id].own === it.id) el.classList.add('sp-' + f.id);
+  if (f && FURN[f.id].own === it.id && !it.guest) el.classList.add('sp-' + f.id);
   return true;
 }
 function roamPaint(){
   room.querySelectorAll('.it.doll').forEach(el => { const it = items.find(i => String(i.uid) === el.dataset.u); if (it) roamApply(it, el); });
+  roamGuests().forEach(it => roamApply(it, elFor(it)));
 }
 // 回到家：把蓋過去的位置拿掉，照存檔的樣子畫回去
 function roamHome(it){
   const st = RS[it.uid]; if (!st) return;
   clearTimeout(st.timer); st.busy = false; st.x = null; st.y = null; st.sit = null; st.trips = 0;
-  const el = room.querySelector(`.it[data-u="${it.uid}"]`);
+  const el = it.guest ? elFor(it) : room.querySelector(`.it[data-u="${it.uid}"]`);
   if (!el) return;
   el.style.transition = ''; const b = el.querySelector('.body'); if (b) b.classList.remove('roam-hop');
   // 照存檔的樣子畫回去。不叫 render()：它會順便存檔，娃娃自己回家不應該觸發存檔
@@ -62,6 +68,7 @@ function roamReset(){ Object.keys(RS).forEach(k => { clearTimeout(RS[k].timer); 
 
 /* ---------- 一跳一跳 ---------- */
 function roamHopTo(it, tx, ty, done){
+  if (it.guest && !elFor(it)) return;   // 客人還沒畫出來
   const st = roamSt(it), P = ROAM_P[it.id], el = elFor(it), [sx, sy] = roamPos(it);
   st.sit = null; st.x = sx; st.y = sy; st.busy = true;
   const n = Math.max(1, Math.ceil(Math.hypot(tx - sx, (ty - sy) * .8) / 10));
@@ -80,7 +87,7 @@ function roamHopTo(it, tx, ty, done){
   };
   step();
 }
-const roamSeatTaken = (f, k, me) => items.some(o => o.kind === 'doll' && o.uid !== me && ((o.sit === f.uid && o.seat === k) || (RS[o.uid] && RS[o.uid].sit === f.uid && RS[o.uid].seat === k)));
+const roamSeatTaken = (f, k, me) => roamEvery().some(o => o.uid !== me && ((o.sit === f.uid && o.seat === k) || (RS[o.uid] && RS[o.uid].sit === f.uid && RS[o.uid].seat === k)));
 function roamSeats(it, want){
   const out = [];
   items.forEach(f => { if (f.kind !== 'furn' || !FURN[f.id].seats) return; if (want && !want(f)) return; FURN[f.id].seats.forEach((_, k) => { if (!roamSeatTaken(f, k, it.uid)) out.push([f, k]); }); });
@@ -94,7 +101,8 @@ function roamSitOn(it, f, k){
 }
 function roamSay(it, text){ const [x, y] = roamPos(it), st = RS[it.uid]; say({kind: 'doll', id: it.id, x, y, sit: (st && st.sit) || it.sit}, text); }
 function roamIdle(it, kind){
-  const b = elFor(it).querySelector('.body'), c = 'roam-' + kind;
+  const el = elFor(it); if (!el) return;
+  const b = el.querySelector('.body'), c = 'roam-' + kind;
   b.classList.remove(c); void b.offsetWidth; b.classList.add(c);
   setTimeout(() => b.classList.remove(c), 1500);
 }
@@ -109,15 +117,15 @@ function roamAct(it, st, canMove){
   const w = Object.assign({}, P.w);
   if (!canMove || REDUCE) ['move', 'sit', 'own', 'follow', 'hide'].forEach(k => delete w[k]);
   if (REDUCE) delete w.idle;
-  const own = roamSeats(it, f => FURN[f.id].own === it.id);
+  const own = it.guest ? [] : roamSeats(it, f => FURN[f.id].own === it.id);   // 客人不去坐專屬家具
   const onOwn = st.sit !== null && own.length === 0 && items.some(f => f.uid === st.sit && FURN[f.id].own === it.id);
   if (!own.length) delete w.own;
-  const seats = w.sit ? roamSeats(it, f => !FURN[f.id].own || FURN[f.id].own === it.id) : [];
+  const seats = w.sit ? roamSeats(it, f => !FURN[f.id].own || (FURN[f.id].own === it.id && !it.guest)) : [];
   if (!seats.length) delete w.sit;
   const others = roamDolls().filter(o => o !== it);
   if (!others.length) delete w.follow;
   const cover = items.filter(f => f.kind === 'furn' && !FURN[f.id].wall && !FURN[f.id].floor);
-  if (!cover.length) delete w.hide;
+  if (!cover.length || it.guest) delete w.hide;
   if (onOwn){ delete w.move; delete w.follow; delete w.hide; delete w.sit; }   // 在自己的專屬家具上：多待一下
   // 晃出去夠久了：回家
   if (st.trips >= 3 && canMove && !REDUCE){
@@ -154,7 +162,7 @@ function roamTick(){
     if (typeof asleep === 'function' && asleep(it.id)){
       // 晚上：還沒坐著的，自己找一個空位睡（床優先），之後就不動了
       if (!st.slept && !REDUCE && moving < 2 && !it.sit && st.sit === null){
-        const s = roamSeats(it, f => !FURN[f.id].own || FURN[f.id].own === it.id).sort((a, b) => (b[0].id === 'bed') - (a[0].id === 'bed'));
+        const s = roamSeats(it, f => !FURN[f.id].own || (FURN[f.id].own === it.id && !it.guest)).sort((a, b) => (b[0].id === 'bed') - (a[0].id === 'bed'));
         if (s.length){ roamSitOn(it, s[0][0], s[0][1]); moving++; }
       }
       st.slept = true; continue;

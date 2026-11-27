@@ -251,7 +251,7 @@ async function photoShoot(){
   for (const {e} of els){
     const it = items.find(o => String(o.uid) === e.dataset.u), other = !it && e.dataset.pd && SPR[e.dataset.pd] ? {id: e.dataset.pd} : null;
     if (e.classList.contains('doll') && (it || other)){
-      const who = it || other, guest = e.classList.contains('st-guest');
+      const who = it || other, guest = e.classList.contains('st-guest') && !e.classList.contains('st-mine');   // st-mine：去朋友家時看到自己在他家過夜的那一隻，是自己的娃娃
       drawDoll(ctx, e, R, who, guest ? {} : fx); chk('娃娃 ' + who.id);   // 客人不擺特別的姿勢，照牠站著的樣子
       const b = boxIn(e, R);
       if (b.x + b.w * .5 > cx && b.x + b.w * .5 < cx + cw && b.y + b.h * .5 > cy && b.y + b.h * .5 < cy + ch){

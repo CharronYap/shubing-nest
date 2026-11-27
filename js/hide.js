@@ -102,7 +102,7 @@ function hidePaint(){
 }
 { const prev = render; render = function(){ prev(); try { hidePaint(); } catch (e) { console.info('[hide]', e); } }; }
 // 躲著的那隻不會自己到處走
-if (typeof roamDolls !== 'undefined'){ const prev = roamDolls; roamDolls = () => { const h = hideGet(); return prev().filter(i => !(h && !VISIT && i.id === h.d)); }; }
+if (typeof roamDolls !== 'undefined'){ const prev = roamDolls; roamDolls = () => { const h = hideGet(); return prev().filter(i => !(h && !VISIT && !i.guest && i.id === h.d)); }; }   // 客人（js/stay.js）不算：跟躲起來的那隻同一種也照樣晃
 if (typeof roamPaint === 'function'){ const prev = roamPaint; roamPaint = function(){ prev(); try { hidePaint(); } catch (e) {} }; }
 
 /* ---------- 主人：朋友找的結果 ---------- */

@@ -284,8 +284,7 @@
 .look-paper .pc-st{background:var(--p-card);border-color:var(--p-a2);color:var(--p-a2)}
 .look-paper .ml.pc,.look-paper .ml.pc.unread{border-color:transparent}
 .look-paper .ml-cats .ng-chip{font-size:13.5px}
-.look-paper .ml-cats .ng-chip b{background:var(--p-a1);color:var(--p-paper);font-family:inherit}
-.look-paper .ml-cats .ng-chip.on b{background:var(--p-paper);color:var(--p-a1d)}
+.look-paper .ml-cats .ng-chip b{background:var(--p-a1);box-shadow:0 0 0 1.5px var(--p-paper)}
 /* 帳號視窗：好友那一段的分隔線、清單、加回去和移除 */
 .look-paper .ac-fr{border-top-color:var(--p-edge)}
 .look-paper .ac-list li{border-bottom-color:var(--p-edge)}

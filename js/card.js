@@ -7,8 +7,22 @@
    不懲罰、不催人：明信片不會過期，沒看也不會怎樣。
    別人打的字和名字一律走 txSlot（textContent）。
    雲端：nestCards/{自動編號} = {from, fromName, to, snap, msg, t}。收的人打開時抄進自己的存檔，再刪雲端那筆。
-   存檔（都放在 S.mail 裡）：pc = [{id, w:名字, t:'日期', msg, snap, r:看過}]（最多 10 張）、pcd = [抄過的編號]（最多 40 個）、pcn = {d:'日期', n:今天寄了幾張} */
-const CARD_DAY = 3, CARD_KEEP = 10, CARD_LEN = 80;
+   存檔（都放在 S.mail 裡）：pc = [{id, w:名字, t:'日期', msg, snap, r:看過}]（最多 CARD_KEEP 張，而且全部加起來不超過 CARD_BYTES，見 cardTrim）、pcd = [抄過的編號]（最多 40 個）、pcn = {d:'日期', n:今天寄了幾張} */
+const CARD_DAY = 3, CARD_KEEP = 30, CARD_LEN = 80;   // CARD_KEEP：2026-11-27 從 10 提到 30（跟 js/account.js 合併那邊一樣），「全部都留」做好之前先這樣
+const CARD_BYTES = 250000;   // 收到的明信片全部序列化後最多這麼大（整份存檔上限 1 MiB，明信片帶房間快照，不能讓它佔太多）
+const cardBytes = pc => { const s = JSON.stringify(pc); try { return new TextEncoder().encode(s).length; } catch (e) { return s.length * 3; } };
+// 整理收到的明信片：超過張數就丟最舊的；還是太大，從最舊、看過的開始拿掉，沒看過的不拿。有動到就回 true
+function cardTrim(m){
+  let ch = false;
+  if (m.pc.length > CARD_KEEP){ m.pc.length = CARD_KEEP; ch = true; }
+  while (m.pc.length && cardBytes(m.pc) > CARD_BYTES){
+    let j = -1;
+    for (let x = m.pc.length - 1; x >= 0; x--) if (m.pc[x] && m.pc[x].r){ j = x; break; }
+    if (j < 0) break;
+    m.pc.splice(j, 1); ch = true;
+  }
+  return ch;
+}
 const CARD_ICON = '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor"/><rect x="14.5" y="7.5" width="4.5" height="5" rx=".8" fill="#fff"/><path d="M5.5 10h6M5.5 13h6M5.5 16h4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>';
 let cardDraft = null, cardBusy = false, cardView = null;
 
@@ -105,7 +119,7 @@ async function cardRefresh(redraw){
     // 抄好了：等自己的存檔上了雲端才刪雲端那筆（js/social.js sAfterSave）；格式不對的直接刪
     if (m.pcd.includes(c.id)) sAfterSave(() => net.cardDel(c.id)); else net.cardDel(c.id).catch(e => sQuiet('card', e));
   });
-  if (m.pc.length > CARD_KEEP){ m.pc.length = CARD_KEEP; changed = true; }
+  if (cardTrim(m)) changed = true;
   if (changed){ save(); mailBadge(); if (redraw && !$('#sheet').hidden && $('#sheet .ml-box')) openMail(true); }
 }
 // 信箱最上面那一區
