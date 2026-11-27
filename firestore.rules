@@ -32,6 +32,7 @@ rules_version = '2';
 //   和它底下的 msgs/{自動編號} = {from, t, m 字（1～80）或 s 貼圖代號（1～40）}。
 //   只有編號裡的那兩個人能讀；送訊息要兩邊都在對方的好友名單裡；from 是本人、時間是伺服器時間；不能改，只能刪自己送的。其他段落沒有動。
 // 2026-11-27 收到的明信片多收 h（收到的時間 '20:58'，2026-11-27 21:21 已發布）：只動 nestSaves/{uid}/cards 那一段。
+// 2026-11-28 旅行紀錄全部都留（2026-11-28 已發布）：新的子集合 nestSaves/{uid}/trip/{月份}，放主存檔放不下的舊旅行紀錄和旅行合照，只有本人能讀寫。其他段落沒有動。
 // 前面 saves、players 兩段是從薯餅蛋蛋島（毛絨消消樂）的規則原樣複製來的；小窩用 players（好友）、nestSaves（存檔）、nestRooms（公開房間和愛心），saves 用不到。
 // 改了規則要再到 Firebase 主控台 → Firestore Database → 規則，整份換掉再按「發布」（見 docs/CLOUD.md）。
 // 下面是蛋蛋島原本的說明：
@@ -505,6 +506,32 @@ service cloud.firestore {
         && okKeepDoc(request.resource.data, 500)
         && okMailRow(request.resource.data.l[0])
         && okMailRow(request.resource.data.l[request.resource.data.l.size() - 1]);
+    }
+    // 舊的旅行紀錄和旅行合照（2026-11-27 起全部都留，這一段 2026-11-28 已發布）：主存檔留每隻娃娃最近 30 筆紀錄、最近 200 張合照，更早的照月份搬到這裡。
+    //   nestSaves/{uid}/trip/{yyyy-mm} = {l:[那個月的紀錄和合照], t:更新時間}，跟 memo、mail 一樣只有本人能讀寫。
+    //   一筆紀錄：{k:'log', d:娃娃, s:'日期|地方|同行|日記第幾句|行李|明信片張數|土產|這趟的id'}（舊的只有前四格或前七格）
+    //   一張合照：{k:'pic', id, p:地方, c:第幾張明信片的背景, ds:'娃娃用 + 接', t:'日期'}
+    function okTripRow(e) {
+      return e is map && e.k is string && (
+        (e.k == 'log'
+          && e.keys().hasOnly(['k', 'd', 's']) && e.keys().hasAll(['k', 'd', 's'])
+          && e.d is string && e.d.size() >= 1 && e.d.size() <= 20
+          && e.s is string && e.s.size() >= 10 && e.s.size() <= 200)
+        || (e.k == 'pic'
+          && e.keys().hasOnly(['k', 'id', 'p', 'c', 'ds', 't']) && e.keys().hasAll(['k', 'id', 'p', 'c', 'ds', 't'])
+          && e.id is string && e.id.size() >= 1 && e.id.size() <= 120
+          && e.p is string && e.p.size() >= 1 && e.p.size() <= 20
+          && e.c is int && e.c >= 0 && e.c <= 50
+          && e.ds is string && e.ds.size() >= 1 && e.ds.size() <= 120
+          && e.t is string && e.t.size() <= 10));
+    }
+    match /nestSaves/{uid}/trip/{mid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && okKeepMonth(mid)
+        && okKeepDoc(request.resource.data, 1000)
+        && okTripRow(request.resource.data.l[0])
+        && okTripRow(request.resource.data.l[request.resource.data.l.size() - 1]);
     }
     // 收到的明信片：一張一份，文件名字就是明信片的編號。內容跟主存檔 mail.pc 裡的一張一樣，快照沿用 okCardSnap
     //   {id 編號, w 寄的人的名字, t '日期', msg 寫的字（80 字以內）, snap 房間的快照, r 看過了沒, u 寄的人的帳號（舊的明信片沒有）,

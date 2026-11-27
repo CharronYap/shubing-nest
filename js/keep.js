@@ -4,6 +4,7 @@
    - 較舊的搬到存檔底下的子集合（規則見 firestore.rules 最下面「全部都留」那一段）：
        nestSaves/{uid}/memo/{月份} = {l:[紀念冊紀錄], t}      nestSaves/{uid}/mail/{月份} = {l:[信], t}
        nestSaves/{uid}/cards/{明信片編號} = 一張明信片
+       nestSaves/{uid}/trip/{月份} = {l:[舊的旅行紀錄 {k:'log', d, s} 和旅行合照 {k:'pic', id, p, c, ds, t}], t}（2026-11-28 加的，主存檔留每隻娃娃 TRIP_LOG_KEEP 筆、合照 TRIP_PIC_KEEP 張）
      月份 = yyyy-mm；同一個月放不下（筆數到上限或超過 KEEP_BYTES）就接 -2 ～ -9。
    - 沒登入：放這台裝置另一個 localStorage 鍵（KEEP_KEY，格式一樣的一包）。之後登入、而且訪客進度帶進帳號時（js/account.js 叫 keepAdopt），
      那一包改掛到那個帳號名下，再搬上雲端，搬成功才清。
@@ -18,30 +19,36 @@
    按「看更早的」或點到舊的那一筆才讀，讀過的留在記憶體（換帳號會重新整理頁面，記憶體裡不會留上一個帳號的）。
 
    存檔裡多的小東西（都在現有欄位裡，不動最上層）：
-     album.memoM = [有舊紀念冊的月份文件]   mail.lm = [有舊信的月份文件]
+     album.memoM = [有舊紀念冊的月份文件]   mail.lm = [有舊信的月份文件]   album.tv.tm = [有舊旅行紀錄、合照的月份文件]
      mail.pcA = 1（有明信片搬出去過）       mail.pcx = [丟掉了、雲端那一份還沒刪成功的明信片編號]
    要放在 js/memo.js、js/mail.js、js/card.js、js/friend.js 後面載入。 */
 const KEEP_MEMO = 200, KEEP_DOCS = 10, KEEP_WAIT = 8000, KEEP_BYTES = 600000, KEEP_RETRY = 30 * 60000;
-const KEEP_MAX = {memo: 1000, mail: 500};
+const KEEP_MAX = {memo: 1000, mail: 500, trip: 1000};
+const TRIP_LOG_KEEP = 30, TRIP_PIC_KEEP = 200;
 const KEEP_KEY = 'shubingNest.keep.v1';
-const KEEP_CACHE = {memo: {}, mail: {}};   // 讀過的月份：{月份文件: [那一份的內容]}
+const KEEP_CACHE = {memo: {}, mail: {}, trip: {}};   // 讀過的月份：{月份文件: [那一份的內容]}
 const KEEP_SKIP = {};                      // 寫失敗的文件：{種類:文件: 什麼時候}，隔 KEEP_RETRY 才再試
 let keepBusy = false, keepT = 0, keepLeft = KEEP_DOCS, keepOff = 0, keepFails = 0, keepWarned = false;
 const keepKey = u => (u ? KEEP_KEY + '.u.' + u : KEEP_KEY);
 const keepUid = () => { const n = sNet(); return n && n.me ? n.me.uid : ''; };
 const keepClone = x => JSON.parse(JSON.stringify(x));
 const keepMailKey = o => (typeof mailSameKey === 'function' ? mailSameKey(o) : o.t + '|' + o.k);
-const keepKeyOf = {memo: e => e.id, mail: keepMailKey};
+const keepTripKey = r => (r.k === 'pic' ? 'pic|' + r.id : 'log|' + r.d + '|' + r.s);
+const keepKeyOf = {memo: e => e.id, mail: keepMailKey, trip: keepTripKey};
+// 旅行那一份每一筆的樣子，跟規則的 okTripRow 一樣。不合的（很舊、格式怪的）留在主存檔，不搬
+const keepStr = (x, a, b) => typeof x === 'string' && x.length >= a && x.length <= b;
+const keepTripOk = r => (r.k === 'log' ? keepStr(r.d, 1, 20) && keepStr(r.s, 10, 200)
+  : keepStr(r.id, 1, 120) && keepStr(r.p, 1, 20) && Number.isInteger(r.c) && r.c >= 0 && r.c <= 50 && keepStr(r.ds, 1, 120) && keepStr(r.t, 0, 10));
 
 /* ---------- 這台裝置的那一包（沒登入時用；登入後還沒搬上去的也在這裡） ---------- */
 function keepBag(u){
-  try { const o = JSON.parse(localStorage.getItem(keepKey(u)) || 'null'); if (o && typeof o === 'object') return {memo: o.memo || {}, mail: o.mail || {}, cards: o.cards || {}}; } catch (e) {}
-  return {memo: {}, mail: {}, cards: {}};
+  try { const o = JSON.parse(localStorage.getItem(keepKey(u)) || 'null'); if (o && typeof o === 'object') return {memo: o.memo || {}, mail: o.mail || {}, trip: o.trip || {}, cards: o.cards || {}}; } catch (e) {}
+  return {memo: {}, mail: {}, trip: {}, cards: {}};
 }
 // 寫回去。回 false = 寫不進去（空間滿了），呼叫的人要把東西留在主存檔
 function keepBagPut(u, b){
   try {
-    if (!Object.keys(b.memo).length && !Object.keys(b.mail).length && !Object.keys(b.cards).length) localStorage.removeItem(keepKey(u));
+    if (!Object.keys(b.memo).length && !Object.keys(b.mail).length && !Object.keys(b.trip).length && !Object.keys(b.cards).length) localStorage.removeItem(keepKey(u));
     else localStorage.setItem(keepKey(u), JSON.stringify(b));
     return true;
   } catch (e) { return false; }
@@ -51,7 +58,7 @@ function keepAdopt(u){
   if (!u) return;
   try {
     const g = keepBag(''), a = keepBag(u);
-    ['memo', 'mail'].forEach(k => Object.keys(g[k]).forEach(m => { const seen = new Set((a[k][m] || []).map(keepKeyOf[k])); a[k][m] = [...(a[k][m] || []), ...g[k][m].filter(r => !seen.has(keepKeyOf[k](r)))]; }));
+    ['memo', 'mail', 'trip'].forEach(k => Object.keys(g[k]).forEach(m => { const seen = new Set((a[k][m] || []).map(keepKeyOf[k])); a[k][m] = [...(a[k][m] || []), ...g[k][m].filter(r => !seen.has(keepKeyOf[k](r)))]; }));
     Object.keys(g.cards).forEach(id => { if (!a.cards[id]) a.cards[id] = g.cards[id]; });
     if (keepBagPut(u, a)) localStorage.removeItem(keepKey(''));
   } catch (e) { sQuiet('keep', e); }
@@ -65,15 +72,28 @@ function keepMonth(t){
   const ym = m[1] + '-' + m[2];
   return ym < '2026-01' ? '2026-11' : ym > cur ? cur : ym;
 }
-const keepList = (kind, make) => { if (kind === 'memo'){ const a = S.album; if (!Array.isArray(a.memoM) && make) a.memoM = []; return a.memoM || []; } const m = S.mail || {}; if (!Array.isArray(m.lm) && make && S.mail) m.lm = []; return m.lm || []; };
+const keepList = (kind, make) => {
+  if (kind === 'trip'){ const t = S.album && S.album.tv; if (!t) return []; if (!Array.isArray(t.tm) && make) t.tm = []; return t.tm || []; }
+  if (kind === 'memo'){ const a = S.album; if (!Array.isArray(a.memoM) && make) a.memoM = []; return a.memoM || []; } const m = S.mail || {}; if (!Array.isArray(m.lm) && make && S.mail) m.lm = []; return m.lm || []; };
 // 有舊資料的月份文件，新的在前（2026-11-2 排在 2026-11 後面，也就是比較舊的那一邊）
 const keepMonths = kind => [...new Set(keepList(kind))].filter(x => typeof x === 'string').sort((a, b) => (a.slice(0, 7) === b.slice(0, 7) ? a.localeCompare(b) : a < b ? 1 : -1));
 
 /* ---------- 現在主存檔裡哪些要搬 ---------- */
 function keepPlan(){
-  const out = {memo: {}, mail: {}, cards: []}, put = (g, t, r) => { const k = keepMonth(t); (g[k] = g[k] || []).push(r); };
+  const out = {memo: {}, mail: {}, trip: {}, cards: []}, put = (g, t, r) => { const k = keepMonth(t); (g[k] = g[k] || []).push(r); };
   const L = (S.album && S.album.memo) || [];
   if (L.length > KEEP_MEMO) L.slice(KEEP_MEMO).forEach(e => { if (e && typeof e.id === 'string') put(out.memo, e.t, e); });
+  // 旅行：每隻娃娃最舊的那幾筆紀錄、最舊的合照。t.pf（從舊信把合照補回來）做過了才搬，免得搬走的又從信裡補回來
+  const tv = S.album && S.album.tv;
+  if (tv && typeof tv === 'object' && tv.pf){
+    if (tv.log && typeof tv.log === 'object') Object.entries(tv.log).forEach(([d, l]) => {
+      if (Array.isArray(l) && l.length > TRIP_LOG_KEEP) l.slice().sort().slice(0, l.length - TRIP_LOG_KEEP).forEach(s => { const r = {k: 'log', d, s}; if (keepTripOk(r)) put(out.trip, s, r); });
+    });
+    if (Array.isArray(tv.pics) && tv.pics.length > TRIP_PIC_KEEP){
+      const ps = tv.pics.filter(x => x && typeof x === 'object').sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
+      ps.slice(0, Math.max(0, ps.length - TRIP_PIC_KEEP)).forEach(x => { const r = {k: 'pic', id: x.id, p: x.p, c: x.c, ds: x.ds, t: x.t}; if (keepTripOk(r)) put(out.trip, x.t, r); });
+    }
+  }
   const m = S.mail;
   if (m && Array.isArray(m.l) && typeof mailCatOf === 'function'){
     // 跟原本的 mailTrim 同一個挑法：每一類超過上限時，從最舊的「看過、附件也領了」的開始；沒看的不動
@@ -95,7 +115,7 @@ function keepPlan(){
   }
   return out;
 }
-const keepNeed = () => { const p = keepPlan(), m = S.mail || {}, u = keepUid(), b = u ? keepBag(u) : null; return !!(Object.keys(p.memo).length || Object.keys(p.mail).length || p.cards.length || (u && ((m.pcx || []).length || Object.keys(b.memo).length || Object.keys(b.mail).length || Object.keys(b.cards).length))); };
+const keepNeed = () => { const p = keepPlan(), m = S.mail || {}, u = keepUid(), b = u ? keepBag(u) : null; return !!(Object.keys(p.memo).length || Object.keys(p.mail).length || Object.keys(p.trip).length || p.cards.length || (u && ((m.pcx || []).length || Object.keys(b.memo).length || Object.keys(b.mail).length || Object.keys(b.trip).length || Object.keys(b.cards).length))); };
 // 等一下搬（存檔後、收到新東西後叫）。連續叫只排一次
 function keepLater(ms){
   if (keepT || typeof VISIT === 'undefined') return;
@@ -137,6 +157,12 @@ function keepFull(){
 function keepDrop(kind, rows, mid){
   const keys = new Set(rows.map(keepKeyOf[kind]));
   if (kind === 'memo') S.album.memo = (S.album.memo || []).filter(e => !keys.has(e.id));
+  else if (kind === 'trip'){
+    const t = S.album.tv;
+    Object.keys(t.log || {}).forEach(d => { if (Array.isArray(t.log[d])) t.log[d] = t.log[d].filter(s => !keys.has('log|' + d + '|' + s)); });
+    if (Array.isArray(t.pics)) t.pics = t.pics.filter(x => !(x && keys.has('pic|' + x.id)));
+    if (typeof tvOldReset === 'function') tvOldReset();   // 相簿讀過的舊的那一段重來（下次按「看更早的」重新讀）
+  }
   else {
     S.mail.l = S.mail.l.filter(o => !keys.has(keepMailKey(o)));
     if (typeof mlOpenIx !== 'undefined') mlOpenIx = -1;   // 信箱開著的話，第幾封會變：收起來重畫
@@ -178,7 +204,7 @@ async function keepMoveCards(cards, net, u){
 // 登入了：這個帳號名下、還在這台裝置的那一包搬上雲端，搬成功的才從那一包拿掉
 async function keepUpload(net, u){
   let b = keepBag(u);
-  for (const kind of ['memo', 'mail']) for (const ym of Object.keys(b[kind]).sort()){
+  for (const kind of ['memo', 'mail', 'trip']) for (const ym of Object.keys(b[kind]).sort()){
     const mid = await keepPut(net, kind, ym.slice(0, 7), keepClone(b[kind][ym]));
     if (!mid) continue;
     b = keepBag(u); delete b[kind][ym]; keepBagPut(u, b);
@@ -214,6 +240,7 @@ async function keepFlush(){
     const plan = keepPlan();
     await keepMove('memo', plan.memo, net && u ? net : null, u);
     await keepMove('mail', plan.mail, net && u ? net : null, u);
+    await keepMove('trip', plan.trip, net && u ? net : null, u);
     await keepMoveCards(plan.cards, net && u ? net : null, u);
     if (typeof mailBadge === 'function') mailBadge();
     if (!$('#sheet').hidden && $('#sheet .ml-box') && typeof openMail === 'function') openMail(true);
