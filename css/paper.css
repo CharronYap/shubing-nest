@@ -1,11 +1,9 @@
 /* 新風格：紙雕立體・夜燈（js/paper.js）。2026-11-26 起是預設；網址加 ?look=old 就沒有 .look-paper、.screen.ppon 這兩個 class，這個檔的樣式一條都不會套上去。
    .screen.ppon = 新風格、而且現在在房間那一頁（五間房間都算；小島、娃娃機不算）。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
-   字：LXGW WenKai TC（SIL OFL 1.1，授權文字在 fonts/OFL-LXGW-WenKai-TC.txt），Medium 字重，不連外部的字型服務。
-   2026-11-27 起整套字切成很多段放在 fonts/lxgw/，@font-face 寫在 css/lxgw.css（程式產生的）。第一次打開只下載遊戲自己用得到的字那一段（lxgw-00），
-   玩家打的字、朋友的名字用到哪段才下載哪段，所以也是手寫字。只有新風格的畫面用到這個字，加了 ?look=old 的人不會下載。
-   遊戲的文字改了之後要重跑，不然新的字會晚一點才出來（要多下載一段）：做法在 ~/Desktop/GitHub收藏/薯餅小窩/工具/字型子集/說明.md。 */
+   字：2026-11-27 曾經整個換成手寫字 LXGW WenKai TC。2026-11-28 起只有娃娃說話用文楷，一個檔 lxgw-00（css/lxgw.css、--f-say）。
+   --p-hand 就是 css/style.css 的 --f-head（源泉圓體）；讀的字（toast、輸入框、聊天）用 --f-body（粉圓）；說話泡泡用 --f-say（文楷）。 */
 .screen.ppon{
-  --p-hand:"LXGW WenKai TC","Klee One","Klee","Kaiti TC","BiauKai","DFKai-SB","標楷體",serif;
+  --p-hand:var(--f-head);
   --p-fiber:url("../img/paper/fiber.png");
   --p-edge:color-mix(in srgb,var(--p-paper) 74%,var(--p-ink));       /* 紙片的厚度：下面那條硬邊 */
   --p-shadow:color-mix(in srgb,var(--p-ink) 34%,transparent);
@@ -94,11 +92,11 @@
 /* 抽屜全開時的影子 */
 .screen.ppon .tray.full{box-shadow:0 -4px 0 var(--p-edge),0 -10px 18px var(--p-shadow)}
 
-/* ---------- 對話框、提示：貼上去的小紙條，手寫字 ---------- */
-.screen.ppon .say{background:var(--p-paper);color:var(--p-ink);border-radius:6px;font-family:var(--p-hand);font-size:14.5px;font-weight:400;padding:4px 10px 5px;box-shadow:0 2px 0 var(--p-edge),0 5px 6px var(--p-shadow)}
+/* ---------- 對話框、提示：貼上去的小紙條；娃娃說話用文楷（--f-say） ---------- */
+.screen.ppon .say{background:var(--p-paper);color:var(--p-ink);border-radius:6px;font-family:var(--f-say);font-size:14.5px;font-weight:400;padding:4px 10px 5px;box-shadow:0 2px 0 var(--p-edge),0 5px 6px var(--p-shadow)}
 .screen.ppon .say::after{background:var(--p-paper);border-radius:1px;box-shadow:2px 2px 0 var(--p-edge)}
 .screen.ppon .say.dn::after{box-shadow:none}
-.screen.ppon .toast{background:var(--p-ink);color:var(--p-paper);border-radius:6px;font-family:var(--p-hand);font-size:15px;font-weight:400;box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 70%,#000),0 6px 8px var(--p-shadow)}
+.screen.ppon .toast{background:var(--p-ink);color:var(--p-paper);border-radius:6px;font-family:var(--f-body);font-size:15px;font-weight:400;box-shadow:0 3px 0 color-mix(in srgb,var(--p-ink) 70%,#000),0 6px 8px var(--p-shadow)}
 .screen.ppon.night .toast{background:var(--p-paper);color:var(--p-ink);box-shadow:0 3px 0 var(--p-edge),0 6px 8px var(--p-shadow)}
 /* 娃娃頭上的記號 */
 .screen.ppon .skit-bang{background:var(--p-sun);color:var(--p-ink);border-radius:6px;box-shadow:0 2px 0 color-mix(in srgb,var(--p-sun) 70%,var(--p-ink))}
@@ -124,7 +122,7 @@
    用變數的地方就自動跟著換；再把硬寫死的白底、粉紅框、圓膠囊一樣一樣改成紙片。
    ===================================================================== */
 .look-paper .screen{
-  --p-hand:"LXGW WenKai TC","Klee One","Klee","Kaiti TC","BiauKai","DFKai-SB","標楷體",serif;
+  --p-hand:var(--f-head);
   --p-fiber:url("../img/paper/fiber.png");
   --p-edge:color-mix(in srgb,var(--p-paper) 74%,var(--p-ink));
   --p-shadow:color-mix(in srgb,var(--p-ink) 34%,transparent);
@@ -170,7 +168,7 @@
 .look-paper .ev.hi,.look-paper .al-tabs button.on,.look-paper .sheet .tile.cur{box-shadow:0 0 0 3px var(--p-a1)}
 .look-paper .ng-chip{border:0;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge);font-family:var(--p-hand)}
 .look-paper .ng-chip.on{background:var(--p-a1);color:var(--p-paper);box-shadow:0 2px 0 var(--p-a1d)}
-.look-paper .tx-in,.look-paper .ac-form input,.look-paper .ac-add input{border:0;border-radius:8px;background:var(--p-card);color:var(--p-ink);box-shadow:inset 0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .tx-in,.look-paper .ac-form input,.look-paper .ac-add input{border:0;border-radius:8px;background:var(--p-card);color:var(--p-ink);box-shadow:inset 0 2px 0 var(--p-edge);font-family:var(--f-body)}
 .look-paper .al-sec{color:var(--p-a1d)}
 .look-paper .fr-av{border-radius:10px;background:var(--p-a2);color:var(--p-paper)}
 .look-paper .fr-a{color:var(--p-a1d)}
@@ -180,7 +178,7 @@
 .look-paper .ch-log{border:0;border-radius:12px;background:var(--p-paperd);box-shadow:inset 0 2px 0 var(--p-edge)}
 .look-paper .ch-day{background:var(--p-card);color:var(--p-ink);opacity:.75;border-radius:6px;font-family:var(--p-hand)}
 .look-paper .ch-more,.look-paper .ch-t{color:var(--p-ink);opacity:.65}
-.look-paper .ch-b{font-family:var(--p-hand);border-radius:12px}
+.look-paper .ch-b{font-family:var(--f-body);border-radius:12px}
 .look-paper .ch-m.them .ch-b{background:var(--p-card);color:var(--p-ink);border:0;box-shadow:0 2px 0 var(--p-edge);border-bottom-left-radius:4px}
 .look-paper .ch-m.me .ch-b{background:var(--p-a2);color:var(--p-paper);box-shadow:0 2px 0 var(--p-a2d);border-bottom-right-radius:4px}
 .look-paper .ch-m.me .ch-b.ch-unk{background:var(--p-card);color:var(--p-ink);border:2px dashed var(--p-edge);box-shadow:none}
@@ -290,7 +288,7 @@
 .look-paper .bk-st button.on{background:var(--p-card);box-shadow:0 0 0 3px var(--p-a1)}
 .look-paper .bk-st button.stk-b{background:none;box-shadow:none;border-radius:14px}
 .look-paper .bk-st button.stk-b.on{background:color-mix(in srgb,var(--p-a1) 14%,transparent);box-shadow:0 0 0 3px var(--p-a1)}
-.look-paper .bk-in{border:0;border-radius:8px;background:var(--p-card);color:var(--p-ink);box-shadow:inset 0 2px 0 var(--p-edge);font-family:var(--p-hand)}
+.look-paper .bk-in{border:0;border-radius:8px;background:var(--p-card);color:var(--p-ink);box-shadow:inset 0 2px 0 var(--p-edge);font-family:var(--f-body)}
 .look-paper .bk-it.new{background:color-mix(in srgb,var(--p-sun) 22%,var(--p-card))}
 .look-paper .bk-s{border:0;border-radius:10px;background:var(--p-paper);box-shadow:0 2px 0 var(--p-edge)}
 .look-paper .bk-pg button{border:0;border-radius:8px;background:var(--p-paperd);color:var(--p-ink);box-shadow:0 2px 0 var(--p-edge)}
@@ -326,9 +324,9 @@
    pp-n0：index.html 最前面那段程式在晚上先掛上的。
    ===================================================================== */
 .look-paper{--bg:#eeecee;
-  --p-hand:"LXGW WenKai TC","Klee One","Klee","Kaiti TC","BiauKai","DFKai-SB","標楷體",serif}
+  --p-hand:var(--f-head)}
 /* 2026-11-27：整個網頁的字都換成手寫字（不只房間和面板），掛在畫面外面的視窗、提示、名字也跟著換。
-   封面照舊（.cover 自己寫了字體，不受這條影響）；圖示裡畫的「春」字是圖的一部分，不換。 */
+   2026-11-28 起只有娃娃說話用文楷（一個檔 lxgw-00），其他字是源泉圓體。這條留著，整個網頁一樣跟著 --p-hand（＝ --f-head）。 */
 .look-paper body{font-family:var(--p-hand)}
 /* 按鈕、輸入框瀏覽器預設不跟著外面的字（Chrome 會變 Arial），這裡讓它們跟著；:where 讓這條很弱，有自己寫字體的地方照舊 */
 .look-paper :where(button,input,select,textarea){font-family:inherit}

@@ -233,7 +233,7 @@ function drawDoll(ctx, el, R, it, fx){
   ctx.restore();
   if (el.classList.contains('sleep')){
     const z = (t, x, y, sz) => {
-      ctx.font = `900 ${sz}px ${photoFam('z')}`;
+      ctx.font = `900 ${sz}px ${cvFam('z', 'head')}`;
       ctx.lineWidth = sz * .22; ctx.strokeStyle = '#fff'; ctx.lineJoin = 'round'; ctx.strokeText(t, x, y);
       ctx.fillStyle = '#7d6ed6'; ctx.fillText(t, x, y);
     };
@@ -243,61 +243,7 @@ function drawDoll(ctx, el, R, it, fx){
 }
 
 /* ---------- 拍一張 ---------- */
-// 合照上的字（2026-11-28）：源泉圓體整套切成很多段（css/gensen.css），畫布不會自己去下載。
-// 畫布另外用一個只有合照在用的字型名稱 "GenSenPhoto"：要畫的字用到哪幾段，就把那幾段註冊成 GenSenPhoto，自己 load 好才畫。
-// 不直接寫 "GenSenRounded"：網頁也在用那個名字，Chrome 會沿用先前字還沒載好時排出來的結果，
-// 實測合照白邊上「臥室」「又拍」用了系統字，同一行後面的字卻是源泉圓體。
-// 一行裡要用的段只要有一段 3 秒內沒載好，那一整行就用系統字，不會一行混兩種字。
-const PHOTO_FAM = 'GenSenPhoto', PHOTO_SYS = '"PingFang TC","Noto Sans TC",sans-serif';
-const PHOTO_FACES = new Map();   // 段的網址 → FontFace（載好的留著，下一張直接用）
-let photoSegList = null;
-const photoOk = new Set();
-// 從 css/gensen.css 讀每一段的網址和 unicode-range，照 css 的順序
-function photoSegs(){
-  if (photoSegList && photoSegList.length) return photoSegList;
-  const out = [];
-  for (const sh of document.styleSheets){
-    if (!/gensen\.css/.test(sh.href || '')) continue;
-    let rules; try { rules = sh.cssRules; } catch (e) { continue; }
-    for (const r of rules){
-      if (!(r instanceof CSSFontFaceRule)) continue;
-      const m = /url\(\s*["']?([^"')]+)/.exec(r.style.getPropertyValue('src')); if (!m) continue;
-      const ur = r.style.getPropertyValue('unicode-range').trim();
-      out.push({url: new URL(m[1], sh.href).href, ur, rg: ur ? ur.split(',').map(x => { const [a, b] = x.trim().replace(/^u\+/i, '').split('-'); return [parseInt(a, 16), parseInt(b || a, 16)]; }) : null});
-    }
-  }
-  return (photoSegList = out);
-}
-// 這行字要哪幾段：00（不寫範圍）一定要；其他字照瀏覽器的規則，css 越後面越優先，從後面找第一段範圍有這個字的
-function photoNeed(text){
-  const L = photoSegs(), need = new Set(L.filter(x => !x.rg));
-  for (const ch of text){
-    const u = ch.codePointAt(0);
-    for (let i = L.length - 1; i >= 0; i--){ const x = L[i]; if (x.rg && x.rg.some(([a, b]) => u >= a && u <= b)){ need.add(x); break; } }
-  }
-  return [...need];
-}
-function photoFace(x){
-  let f = PHOTO_FACES.get(x.url);
-  if (!f){
-    f = new FontFace(PHOTO_FAM, `url("${x.url}") format("woff2")`, x.ur ? {weight: '400 1000', unicodeRange: x.ur} : {weight: '400 1000'});
-    PHOTO_FACES.set(x.url, f); document.fonts.add(f);
-  }
-  return f;
-}
-// lines：這張要畫的每一行字。載好的行記在 photoOk（每拍一張先清掉），畫的時候 photoFam(那行字) 給字型名稱
-async function photoFonts(lines){
-  const L = photoSegs();
-  if (!L.length){ console.warn('合照的字：讀不到 css/gensen.css，用系統字'); return; }
-  const per = lines.map(t => photoNeed(t).map(photoFace));
-  const all = [...new Set(per.flat())];
-  const load = Promise.all(all.map(f => f.status === 'loaded' ? f : f.load().catch(e => console.warn('合照的字沒載到', e))));
-  await Promise.race([load, new Promise(r => setTimeout(r, 3000))]);
-  // 沒載好的段拿掉，畫布不會碰到還在載或載失敗的段；下一張再重新載
-  for (const f of all) if (f.status !== 'loaded'){ document.fonts.delete(f); for (const [k, v] of PHOTO_FACES) if (v === f) PHOTO_FACES.delete(k); }
-  lines.forEach((t, i) => { if (per[i].every(f => f.status === 'loaded')) photoOk.add(t); });
-}
-const photoFam = t => (photoOk.has(t) ? `"${PHOTO_FAM}",` : '') + PHOTO_SYS;
+// 合照上的字用 js/cvfont.js（跟娃娃機、明信片存照片同一套）：畫之前 cvFonts 先載好，一行沒載好就整行用系統字。
 async function photoShoot(){
   const R = room.getBoundingClientRect(), W = R.width, H = R.height;
   if (!W || !H) return null;
@@ -310,8 +256,7 @@ async function photoShoot(){
   photoBad = [];
   let dirty = '';
   const chk = name => { if (!dirty && !photoClean(c)){ dirty = name; photoNote('畫完' + name + '之後'); } };
-  photoOk.clear();
-  await photoFonts(['z']);   // 睡覺的 z 也是源泉圓體；一樣最多等 3 秒
+  await cvFonts(['z'], 'head');   // 睡覺的 z 也是源泉圓體；一樣最多等 3 秒
 
   // 白邊
   ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, PH.W, PH.H);
@@ -383,12 +328,12 @@ async function photoShoot(){
   ctx.strokeStyle = 'rgba(107,45,74,.08)'; ctx.lineWidth = 2; ctx.strokeRect(PH.pad, PH.pad, PH.pw, PH.ph);
   // 下面的白邊：薯餅的小窩、房間、日期；火腿在的話右邊留一句
   const up = guests.length ? 12 : 0;   // 有朋友家的娃娃入鏡時下面多一行，上面兩行往上讓一點
-  const by = PH.pad + PH.ph, font = (w, z, t) => `${w} ${z}px ${photoFam(t)}`;
+  const by = PH.pad + PH.ph, font = (w, z, t) => `${w} ${z}px ${cvFam(t, 'head')}`;
   const d = new Date();
   const place = `${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`;
   const quip = inShot.has('piggy') ? PIGGY_QUIPS[Math.floor(Math.random() * PIGGY_QUIPS.length)] : '';
   const gline = guests.length ? '和' + guests.slice(0, 2).map(g => `${g.n}家的${DOLL_NAME[g.d]}`).join('、') + (guests.length > 2 ? `和另外 ${guests.length - 2} 隻` : '') : '';
-  await photoFonts(['薯餅的小窩', place, `「${quip}」`, '火腿', gline]);
+  await cvFonts(['薯餅的小窩', place, `「${quip}」`, '火腿', gline]);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   const pt = window.PAPER ? window.PAPER.tone() : null;   // 新風格（js/paper.js）：標題用主色深一階、小字用墨色
   ctx.fillStyle = pt ? pt.a1d : '#e14f93'; ctx.font = font(900, 42, '薯餅的小窩'); ctx.fillText('薯餅的小窩', PH.pad + 6, by + 66 - up);

@@ -4,7 +4,7 @@ const CLAW_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const EV_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.6 3.6c-.5.4-1.2 0-1.2-.6V16h.3A2.5 2.5 0 0 1 4 13.5z"/><g fill="#fff"><circle cx="8.5" cy="9.6" r="1.4"/><circle cx="12" cy="9.6" r="1.4"/><circle cx="15.5" cy="9.6" r="1.4"/></g></svg>';
 const PAW = '<svg viewBox="0 0 24 24" fill="#6b3a00"><ellipse cx="12" cy="15.5" rx="5" ry="4.2"/><circle cx="6.2" cy="10.2" r="2.1"/><circle cx="10" cy="6.8" r="2.1"/><circle cx="14" cy="6.8" r="2.1"/><circle cx="17.8" cy="10.2" r="2.1"/></svg>';
 
-/* ---------- 換頁：房間 ⇄ 娃娃機 ---------- */
+/* ---------- 換頁：房間 ↔ 娃娃機 ---------- */
 function setPage(p){
   page = p;
   $('#roomPage').hidden = p !== 'room';
@@ -150,6 +150,7 @@ function say(it, text){
   b.style.left = Math.max(half, Math.min(100 - half, it.x)) + '%';
   b.style.top = Math.max(6, roomY(it.y) - h - 2) + '%';
   room.appendChild(b);
+  if (window.fontFix) fontFix(b);   // 有粉圓沒有的字，量之前先換成源泉圓體
   try { sayFit(b, it, h); } catch (e) { console.info('[say]', e); }
   setTimeout(() => b.classList.add('out'), 1900);
   setTimeout(() => b.remove(), 2300);

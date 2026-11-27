@@ -42,7 +42,7 @@ Object.assign(FURN, {
   couplet:{room:'living',season:'lny',name:'春字貼',vb:[48,48],w:11,wall:1,svg:()=>`
     <rect x="10" y="10" width="28" height="28" rx="3" transform="rotate(45 24 24)" fill="#ff4d4d" ${st('#c9302c',2)}/>
     <rect x="14" y="14" width="20" height="20" rx="2" transform="rotate(45 24 24)" fill="none" stroke="#ffd75e" stroke-width="1.4"/>
-    <text x="24" y="30.5" text-anchor="middle" font-size="17" font-weight="700" fill="#ffd75e" font-family="serif">春</text>`},
+    <text x="24" y="30.5" text-anchor="middle" font-size="17" font-weight="700" fill="#ffd75e" font-family="GenSenRounded,PingFang TC,Noto Sans TC,sans-serif">春</text>`},
   petal:{room:'bed',season:'spring',name:'櫻花花串',vb:[92,34],w:30,wall:1,svg:()=>`
     <path d="M4 6c22 16 62 16 84 0" fill="none" ${st('#c98aa8',1.6)}/>
     ${[[14,12],[28,17],[46,19],[64,17],[78,12]].map(([x, y]) => `<g transform="translate(${x} ${y})">

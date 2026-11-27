@@ -1,7 +1,7 @@
 /* 雲端帳號：封面左上角的帳號按鈕、登入／帳號視窗 */
 .cover .cv-acct{position:absolute;top:calc(19px + var(--sat,0px));left:74px;z-index:9;height:40px;max-width:calc(100% - 158px);
   display:flex;align-items:center;gap:6px;padding:0 14px 0 10px;border:0;border-radius:20px;cursor:pointer;
-  font:900 15px/1 "GenSenRounded","PingFang TC","Noto Sans TC",sans-serif;color:var(--ink);
+  font:900 15px/1 var(--f-head);color:var(--ink);
   background:radial-gradient(circle at 40% 30%,#fff,#ffeaf3);box-shadow:0 4px 0 #f0b8cf,0 8px 10px rgba(80,30,60,.16)}
 .cover .cv-acct[hidden]{display:none}
 .cover .cv-acct:active{transform:translateY(2px);box-shadow:0 2px 0 #f0b8cf,0 4px 6px rgba(80,30,60,.14)}
@@ -26,7 +26,7 @@
 .ac-form{display:grid;gap:10px}
 .ac-form label{display:grid;gap:5px;font-size:13px;font-weight:700;color:var(--soft)}
 .ac-form input,.ac-add input{width:100%;box-sizing:border-box;height:44px;padding:0 12px;border:2px solid #f6d2e2;border-radius:12px;background:#fff9fc;
-  font-weight:600;font-size:16px;line-height:1;font-family:inherit;color:var(--ink);outline:none}
+  font-weight:600;font-size:16px;line-height:1;font-family:var(--f-body);color:var(--ink);outline:none}
 .ac-form input:focus,.ac-add input:focus{border-color:var(--pink)}
 .ac-err{min-height:1.2em;margin:0;font-size:13px;line-height:1.4;color:#d9435f}
 .ac-b{height:46px;padding:0 18px;border:0;border-radius:23px;cursor:pointer;font-weight:900;font-size:16px;line-height:1;font-family:inherit;color:#fff;

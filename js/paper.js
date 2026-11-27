@@ -11,7 +11,7 @@
    - 紙纖維紋理是一張小圖（img/paper/fiber.png），用色彩增值疊在牆、地板、收納架這些不會動的底上。
    - 娃娃的照片不重畫，當貼紙貼上去，腳下一塊橢圓的影子（不用濾鏡，娃娃在動的時候不會卡）。
    - 顏色直接寫進圖裡（不是用 CSS 變數），這樣拍照把家具轉成圖的時候顏色還在；天色換了就把家具重畫一次。
-   字用 LXGW WenKai TC（fonts/lxgw/ 分段，在 css/lxgw.css 宣告），只有新風格的畫面會載。
+   字：2026-11-27 曾經整個用 LXGW WenKai TC。2026-11-28 起只有娃娃說話用文楷，一個檔 lxgw-00（css/lxgw.css）；其他是源泉圓體和粉圓。
    色票：晚上「夜燈」、白天「夜燈的白天」，清晨和傍晚取兩組中間。壁紙和地板：每一款對應一張色紙加一層很淡的花紋（見 PWALL、PFLOOR）。
    放在 rooms.js 後面、main.js 前面載入：main.js 第一次畫房間之前，這裡要先把畫法換掉。 */
 const PAPER_ON = (() => { try { return new URLSearchParams(location.search).get('look') !== 'old'; } catch (e) { return true; } })();
@@ -417,7 +417,7 @@ if (PAPER_ON) (() => {
     couplet: () => { const red = mix(C.a1, '#d93a34', .6), gold = mix(C.sun, C.paper, .2);
       return L(rect(10, 10, 28, 28, 3, 'rotate(45 24 24)'), red, 1)
         + `<rect x="14" y="14" width="20" height="20" rx="2" transform="rotate(45 24 24)" fill="none" stroke="${gold}" stroke-width="1.400"/>`
-        + `<text x="24" y="30.500" text-anchor="middle" font-size="17" font-weight="700" fill="${gold}" font-family="serif">春</text>`; },
+        + `<text x="24" y="30.500" text-anchor="middle" font-size="17" font-weight="700" fill="${gold}" font-family="GenSenRounded,PingFang TC,Noto Sans TC,sans-serif">春</text>`; },
     petal: () => { const pk = mix(C.a1l, C.paper, .4), fl = both(...[0, 72, 144, 216, 288].map(a => c => `<ellipse cx="0" cy="-4" rx="3" ry="4.400" transform="translate(0 10) rotate(${a})" fill="${c}"/>`));
       return strip('M4 6c22 16 62 16 84 0', C.wood2, 1.4)
         + [[14, 12], [28, 17], [46, 19], [64, 17], [78, 12]].map(([x, y]) => `<g transform="translate(${x} ${y})">${rect(-.6, 0, 1.2, 5)(C.wood2)}${L(fl, pk, .5)}${circ(0, 10, 1.9)(C.sun)}</g>`).join(''); },

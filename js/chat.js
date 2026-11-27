@@ -41,7 +41,7 @@ function chatOpen(f, back){
       <div class="ch-log" id="chLog" role="log" aria-live="polite" aria-label="和${nm.replace(/[<>&"]/g, '')}的聊天紀錄"><p class="al-em ch-em">讀取中……</p></div>
       <div class="bk-st ch-stk" id="chStk" hidden>${STK.map(s => `<button class="stk-b" data-chs="${s.id}" aria-label="${stkName(s.id)}">${stkHTML(s.id)}</button>`).join('')}</div>
       <div class="ch-bar">
-        <button class="ch-k" data-ch="stk" aria-label="貼圖" aria-expanded="false" aria-controls="chStk">${typeof STK_HT === 'function' ? `<svg viewBox="0 0 24 24" aria-hidden="true">${STK_HT(12, 12.5, .9, 'currentColor')}</svg>` : '☺'}</button>
+        <button class="ch-k" data-ch="stk" aria-label="貼圖" aria-expanded="false" aria-controls="chStk">${typeof STK_HT === 'function' ? `<svg viewBox="0 0 24 24" aria-hidden="true">${STK_HT(12, 12.5, .9, 'currentColor')}</svg>` : '貼'}</button>
         <input class="tx-in ch-in" id="chTx" maxlength="${CH_LEN}" enterkeyhint="send" autocomplete="off" aria-label="訊息，${CH_LEN} 字以內">
         <button class="btn y ch-go" data-ch="send" disabled>傳送</button>
       </div>

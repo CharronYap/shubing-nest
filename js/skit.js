@@ -202,9 +202,9 @@ function skitReplay(id){
   const here = new Set(roamDolls().map(i => i.id));
   if (!VISIT && page === 'room' && !(typeof yardOn !== 'undefined' && yardOn) && sc.cast.every(d => here.has(d))){ $('#sheet').hidden = true; alOpen = false; skitPlay(sc, true); return; }
   const out = [], walk = (steps, pad) => steps.forEach(s => {
-    if (typeof s !== 'string'){ out.push(`<p class="sk-q">${pad}（${s.q}）</p>`); s.o.forEach((o, i) => { out.push(`<p class="sk-o">${pad}▸ ${o[0]}${i === (skitData().s[sc.id] | 0) ? '（你上次選的）' : ''}</p>`); walk(o[1], pad + '　'); }); return; }
+    if (typeof s !== 'string'){ out.push(`<p class="sk-q">${pad}（${s.q}）</p>`); s.o.forEach((o, i) => { out.push(`<p class="sk-o">${pad}› ${o[0]}${i === (skitData().s[sc.id] | 0) ? '（你上次選的）' : ''}</p>`); walk(o[1], pad + '　'); }); return; }
     const p = s.split(' ');
-    if (p[0] === 's') out.push(`<p>${pad}<b>${DOLL_NAME[p[1]]}</b>：${p.slice(2).join(' ')}</p>`);
+    if (p[0] === 's') out.push(`<p class="sk-s">${pad}<b>${DOLL_NAME[p[1]]}</b>：${p.slice(2).join(' ')}</p>`);
     else if (p[0] === 'n') out.push(`<p class="sk-n">${pad}${p.slice(1).join(' ')}</p>`);
   });
   walk(sc.steps, '');

@@ -64,7 +64,7 @@ function drawChute(front){
   g.fillStyle = 'rgba(255,255,255,.5)'; rr(CHUTE.x0, CHUTE.top, CHUTE.x1-CHUTE.x0, FLOOR-CHUTE.top, 8); g.fill();
   g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 3; g.stroke();
   g.fillStyle = '#ff6fb0'; rr(CHUTE.x0+8, CHUTE.top+28, CHUTE.x1-CHUTE.x0-16, 22, 11); g.fill();
-  g.fillStyle = '#fff'; g.font = '800 12px "PingFang TC",sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+  g.fillStyle = '#fff'; g.font = '800 12px ' + cvFam('出口', 'head'); g.textAlign='center'; g.textBaseline='middle';
   g.fillText('出口', (CHUTE.x0+CHUTE.x1)/2, CHUTE.top+39.5);
 }
 function drawCap(s){
@@ -453,5 +453,6 @@ function loadImg(src){ return new Promise(res => { const i = new Image(); i.onlo
 async function initClaw(){
   await Promise.all(DOLLS.map(async t => { imgs[t] = await loadImg(SPR[t]); }));
   pile(); renderHud(); renderCtrl();
+  cvFonts(['出口'], 'head');   // 出口牌子的字（js/cvfont.js）；不等它，載好之後下一格就換成源泉圓體
   requestAnimationFrame(step);
 }
