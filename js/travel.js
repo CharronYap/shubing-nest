@@ -333,6 +333,7 @@ function tvMerge(m, g){
   t.pp = obj(t.pp); Object.entries(obj(gt.pp)).forEach(([p, d]) => { if (typeof d === 'string' && (!t.pp[p] || d < t.pp[p])) t.pp[p] = d; });
   if (gt.tk) t.tk = 1;
   if (gt.pf) t.pf = 1;
+  { const u = [...new Set([...arr(t.tm), ...arr(gt.tm)])].filter(x => typeof x === 'string'); if (u.length) t.tm = u; }   // 搬到雲端的舊紀錄、合照在哪幾個月份（js/keep.js）
   const pid = new Set(arr(t.pics).map(x => x && x.id));
   t.pics = [...arr(t.pics), ...arr(gt.pics).filter(x => x && !pid.has(x.id))].sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));   // 全部都留，用 id 去重
   // 旅程
@@ -672,12 +673,12 @@ function tvAlbumOpen(){
   // 出國的地方另外一段：上面一行說明和護照
   const abL = all.filter(tvAb), stamped = abL.filter(p => t.pp[p]).length;
   const abroad = abL.length ? `<div class="tv-abhd"><b>出國</b><span>把機票放進背包，下一趟就搭飛機。兩三天回來。</span><button class="btn sm" data-tv="pass">護照 ${stamped} / ${abL.length}</button></div>${abL.map(page).join('')}` : '';
-  const pics = t.pics.slice().reverse().filter(x => TV_PLACES[x.p] && TV_CARDS[x.p][x.c]);
+  const pics = tvPicAll().reverse().filter(x => TV_PLACES[x.p] && TV_CARDS[x.p][x.c]);
   const pk = x => String(x.ds).split('+');
   let big = '';
   if (tvBig && tvBig[0] === 'pic'){ const x = pics.find(q => q.id === tvBig[1]); if (x) big = `<div class="tv-big">${tvCardHTML(x.p, x.c, pk(x), true)}<p class="tvpc-cap">${md(x.t)}・${pk(x).length > 2 ? '大家' : tvNames(pk(x).filter(d => DOLL_NAME[d]))}在${TV_PLACES[x.p].name}</p></div>`; }
   else if (tvBig && ((t.cards[tvBig[0]] || 0) & (1 << tvBig[1]))) big = `<div class="tv-big">${tvCardHTML(tvBig[0], tvBig[1], tvWhoOf(tvBig[0], tvBig[1]))}<p class="tvpc-cap">${TV_PLACES[tvBig[0]].name}・${TV_CARDS[tvBig[0]][tvBig[1]].name}</p></div>`;
-  const picRow = pics.length ? `<div class="al-sec">合照<small>每一趟回家前拍一張</small></div><div class="tv-pics">${pics.slice(0, tvPicN).map(x => `<button class="tv-th" data-tvpic="${x.id}" aria-label="${md(x.t)}在${TV_PLACES[x.p].name}的合照">${tvCardHTML(x.p, x.c, pk(x), true)}<small>${md(x.t)}・${TV_PLACES[x.p].short || TV_PLACES[x.p].name.replace('山上的', '')}</small></button>`).join('')}</div>${pics.length > tvPicN ? `<button class="btn sm tv-more" data-tv="more">再看 ${Math.min(30, pics.length - tvPicN)} 張${pics.length - tvPicN > 30 ? `<small>還有 ${pics.length - tvPicN} 張</small>` : ''}</button>` : ''}` : '';
+  const picRow = pics.length ? `<div class="al-sec">合照<small>每一趟回家前拍一張</small></div><div class="tv-pics">${pics.slice(0, tvPicN).map(x => `<button class="tv-th" data-tvpic="${x.id}" aria-label="${md(x.t)}在${TV_PLACES[x.p].name}的合照">${tvCardHTML(x.p, x.c, pk(x), true)}<small>${md(x.t)}・${TV_PLACES[x.p].short || TV_PLACES[x.p].name.replace('山上的', '')}</small></button>`).join('')}</div>${pics.length > tvPicN ? `<button class="btn sm tv-more" data-tv="more">再看 ${Math.min(30, pics.length - tvPicN)} 張${pics.length - tvPicN > 30 && !tvOldMore() ? `<small>還有 ${pics.length - tvPicN} 張</small>` : ''}</button>` : tvOldMore() ? '<button class="btn sm tv-more" data-tv="older">看更早的</button>' : ''}` : '';
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>旅行</span><small class="pc-left">明信片 ${total} / ${all.length * 3}</small></div>
     <div class="tv-box tv-album">${t.out.length ? `<ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : ''}${big}${picRow}${pages}${abroad}
       <p class="bk-note">明信片是牠們路上寄回來的，信箱裡看得到背面寫的話。合照是回家前拍的。土產每一間都能擺。</p></div>
@@ -704,10 +705,40 @@ function tvLogLi(d, x){
   const dl = tvDiaryOf(p, d);
   return `<li>${md(day)}　${(dl[+di] || dl[0] || '').replace(/\{p\}/g, P.name)}${w === 'fam' ? '（全家一起）' : DOLL_NAME[w] ? `（和${DOLL_NAME[w]}一起）` : ''}${bl ? `<small class="tv-bl">${bl}${tvSouvLine(sv)}</small>` : ''}</li>`;
 }
-const tvLogMore = (d, n, all) => all > n ? `<li class="tv-lgm"><button class="btn sm" data-tvlog="${d}" data-n="${n}">看更早的（還有 ${all - n} 次）</button></li>` : '';
+/* 搬到雲端的舊旅行紀錄和合照（2026-11-28，js/keep.js：主存檔留每隻娃娃最近 30 筆、合照最近 200 張，更早的照月份放 nestSaves/{uid}/trip）。
+   按「看更早的」看到主存檔沒有的那一段，才一個月份一個月份去讀（讀過的 keep.js 留在記憶體）。搬家的時候 keep.js 會叫 tvOldReset 重來 */
+let tvOld = {log: {}, pics: []}, tvOldN = 0, tvOldBusy = false;
+function tvOldReset(){ tvOld = {log: {}, pics: []}; tvOldN = 0; }
+const tvOldMonths = () => (typeof keepMonths === 'function' ? keepMonths('trip') : []);
+const tvOldMore = () => tvOldMonths().length > tvOldN;
+// 再讀幾個月份，讀到 enough() 成立就停，一次最多 6 份。讀不到回 false（跟玩家說晚點再試）
+async function tvOlder(enough){
+  if (tvOldBusy || typeof keepRead !== 'function') return false;
+  tvOldBusy = true;
+  try {
+    for (let i = 0; i < 6 && tvOldMore(); i++){
+      const rows = await keepRead('trip', tvOldMonths()[tvOldN]);
+      const pid = new Set(tvOld.pics.map(x => x.id));
+      rows.forEach(r => {
+        if (!r) return;
+        if (r.k === 'log' && typeof r.d === 'string' && typeof r.s === 'string'){ const l = tvOld.log[r.d] = tvOld.log[r.d] || []; if (!l.includes(r.s)) l.push(r.s); }
+        else if (r.k === 'pic' && typeof r.id === 'string' && !pid.has(r.id)){ pid.add(r.id); tvOld.pics.push({id: r.id, p: r.p, c: r.c, ds: r.ds, t: r.t}); }
+      });
+      tvOldN++;
+      if (enough()) break;
+    }
+    return true;
+  } catch (e) { sQuiet('keep', e); toast('現在讀不到更早的，晚點再試'); return false; }
+  finally { tvOldBusy = false; }
+}
+// 一隻娃娃的紀錄、全部合照：主存檔的加上讀進來的舊的，去重、照日期舊到新
+const tvLogAll = d => [...new Set([...(tvOld.log[d] || []), ...(tvData().log[d] || [])])].sort();
+const tvPicAll = () => { const p = tvData().pics, ids = new Set(p.map(x => x && x.id)); return [...tvOld.pics.filter(x => !ids.has(x.id)), ...p].sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0)); };
+// 雲端還有沒讀的月份時不寫還有幾次（不知道那邊有幾筆）
+const tvLogMore = (d, n, all) => (all > n || tvOldMore()) ? `<li class="tv-lgm"><button class="btn sm" data-tvlog="${d}" data-n="${n}">看更早的${all > n && !tvOldMore() ? `（還有 ${all - n} 次）` : ''}</button></li>` : '';
 // 相簿裡娃娃那一頁的旅行紀錄：全部都留（2026-11-27），先列最新 6 筆，按「看更早的」一次多 20 筆
 function tvRows(d){
-  const t = tvData(), l = t.log[d] || [], o = tvTrip(d);
+  const l = tvLogAll(d), o = tvTrip(d);
   if (!l.length && !o) return '';
   return `<div class="al-sec">旅行</div><ul class="al-ln al-st">${o ? `<li>現在去${TV_PLACES[o.p].name}了，大概${tvWhen(o.t1)}回來</li>` : ''}${l.slice().reverse().slice(0, 6).map(x => tvLogLi(d, x)).join('')}${tvLogMore(d, 6, l.length)}</ul>`;
 }
@@ -721,10 +752,20 @@ $('#sheet').addEventListener('click', e => {
   const by = e.target.closest('[data-tvbuy]'); if (by){ tvBuy(by.dataset.tvbuy); return; }
   const lg = e.target.closest('[data-tvlog]');
   if (lg){
-    // 在原本那一排後面接著多列 20 筆，不重畫整頁（捲到的地方不跳）
-    const d = lg.dataset.tvlog, n = +lg.dataset.n || 6, l = (tvData().log[d] || []).slice().reverse(), li = lg.closest('li');
-    li.insertAdjacentHTML('beforebegin', l.slice(n, n + 20).map(x => tvLogLi(d, x)).join(''));
-    li.insertAdjacentHTML('afterend', tvLogMore(d, n + 20, l.length)); li.remove();
+    // 在原本那一排後面接著多列 20 筆，不重畫整頁（捲到的地方不跳）。主存檔的不夠 20 筆、雲端還有舊的，先去讀
+    const d = lg.dataset.tvlog, n = +lg.dataset.n || 6, li = lg.closest('li');
+    if (lg.disabled) return;
+    (async () => {
+      if (tvLogAll(d).length < n + 20 && tvOldMore()){
+        lg.disabled = true; lg.textContent = '讀取中…';
+        const ok = await tvOlder(() => tvLogAll(d).length >= n + 20);
+        if (!li.isConnected) return;
+        if (!ok){ lg.disabled = false; lg.textContent = '看更早的'; return; }
+      }
+      const l = tvLogAll(d).reverse();
+      li.insertAdjacentHTML('beforebegin', l.slice(n, n + 20).map(x => tvLogLi(d, x)).join(''));
+      li.insertAdjacentHTML('afterend', tvLogMore(d, n + 20, l.length)); li.remove();
+    })().catch(e => sQuiet('travel', e));
     return;
   }
   // 歡迎回家卡片上的合照：打開旅行相簿，直接開那一張大圖
@@ -742,6 +783,19 @@ $('#sheet').addEventListener('click', e => {
     const bx = $('#sheet .tv-album'), row = $('#sheet .tv-pics'), y = bx ? bx.scrollTop : 0, x = row ? row.scrollLeft : 0;
     tvPicN += 30; tvAlbumOpen();
     const bx2 = $('#sheet .tv-album'), row2 = $('#sheet .tv-pics'); if (bx2) bx2.scrollTop = y; if (row2) row2.scrollLeft = x;
+  }
+  else if (a === 'older'){
+    // 主存檔的合照都畫完了：去讀雲端舊的那一段，讀到了多畫 30 張
+    if (b.disabled) return;
+    b.disabled = true; b.textContent = '讀取中…';
+    const want = tvPicAll().length;
+    tvOlder(() => tvPicAll().length >= want + 30).then(ok => {
+      if (!b.isConnected) return;
+      if (!ok){ b.disabled = false; b.textContent = '看更早的'; return; }
+      const bx = $('#sheet .tv-album'), row = $('#sheet .tv-pics'), y = bx ? bx.scrollTop : 0, x = row ? row.scrollLeft : 0;
+      tvPicN = Math.min(tvPicN, want) + 30; tvAlbumOpen();   // 剛好接在原本最後一張後面多 30 張
+      const bx2 = $('#sheet .tv-album'), row2 = $('#sheet .tv-pics'); if (bx2) bx2.scrollTop = y; if (row2) row2.scrollLeft = x;
+    }).catch(e => sQuiet('travel', e));
   }
   else if (a === 'pass') tvPassOpen();
   else if (a === 'shop'){ if (typeof shopOpen === 'function') shopOpen(); }
