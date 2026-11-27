@@ -363,27 +363,115 @@ function tvMerge(m, g){
 }
 
 /* ---------- 明信片的樣子 ---------- */
+/* 明信片上娃娃站的位置：left、top 是腳底中間（佔卡片的 %），width 是娃娃的寬（%）。畫面（tvCardHTML）和存成照片（tvCardShot）都用這一份，兩邊才會一樣 */
+function tvCardLayout(p, c, ds, big){
+  const card = (TV_CARDS[p] || [])[c]; if (!card) return [];
+  const [x, y, w] = card.at, list = (ds || []).filter(d => SPR[d]).slice(0, 8), n = list.length;
+  const one = (d, left, top, width) => ({d, left, top, width});
+  const row = (l, top, width, step) => l.map((d, i) => one(d, 50 + (i - (l.length - 1) / 2) * step, top, width));
+  if (big){
+    if (n <= 4){ const wd = [0, 38, 33, 28, 24][n] || 24; return row(list, 98, wd, wd * .86); }
+    const back = list.slice(0, Math.floor(n / 2)), front = list.slice(back.length);
+    return [...row(back, 80, 21, 21), ...row(front, 99, 23, 22)];
+  }
+  if (n <= 2){
+    const wd = Math.min(36, w * (n > 1 ? 1.15 : 1.32)), cx = Math.max(wd * .9, Math.min(100 - wd * .9, x));
+    return list.map((d, i) => one(d, cx + (n > 1 ? (i ? wd * .46 : -wd * .46) : 0), y - (n > 1 && i ? 1.5 : 0), wd));
+  }
+  const back = n > 4 ? list.slice(0, Math.floor(n / 2)) : [], front = list.slice(back.length);
+  return [...row(back, y - 17, 17.500, Math.min(21, 80 / Math.max(1, back.length))), ...row(front, y, n > 4 ? 20 : 23, Math.min(22, 80 / front.length))];
+}
 // ds：貼在上面的娃娃（空的 = 只有風景，相簿的小圖用）
 function tvCardHTML(p, c, ds, big){
   const card = (TV_CARDS[p] || [])[c]; if (!card) return '';
-  const [x, y, w] = card.at, list = (ds || []).filter(d => SPR[d]).slice(0, 8), n = list.length;
-  const one = (d, left, top, width) => `<span class="tvpc-d" style="left:${left}%;top:${top}%;width:${width}%"><img src="${SPR[d]}" alt="${DOLL_NAME[d]}"></span>`;
-  const row = (l, top, width, step) => l.map((d, i) => one(d, 50 + (i - (l.length - 1) / 2) * step, top, width)).join('');
-  let dolls;
-  if (big){
-    // 紀念合照：娃娃在最前面、排在中間。一隻 38%、兩隻各 33%、三四隻一排、五隻以上兩排
-    if (n <= 4){ const wd = [0, 38, 33, 28, 24][n] || 24; dolls = row(list, 98, wd, wd * .86); }
-    else { const back = list.slice(0, Math.floor(n / 2)), front = list.slice(back.length); dolls = row(back, 80, 21, 21) + row(front, 99, 23, 22); }
-  } else if (n <= 2){
-    // 路上寄的明信片：娃娃比原本大三成（原本 300 寬的卡片上只有 73 寬），兩隻的時候左右各讓開、不要疊太多
-    const wd = Math.min(36, w * (n > 1 ? 1.15 : 1.32)), cx = Math.max(wd * .9, Math.min(100 - wd * .9, x));
-    dolls = list.map((d, i) => one(d, cx + (n > 1 ? (i ? wd * .46 : -wd * .46) : 0), y - (n > 1 && i ? 1.5 : 0), wd)).join('');
-  } else {
-    // 全家福：三四隻排一排，五隻以上後面一排、前面一排（後排小一點、高一點），排在畫面中間
-    const back = n > 4 ? list.slice(0, Math.floor(n / 2)) : [], front = list.slice(back.length);
-    dolls = row(back, y - 17, 17.500, Math.min(21, 80 / Math.max(1, back.length))) + row(front, y, n > 4 ? 20 : 23, Math.min(22, 80 / front.length));
-  }
+  const dolls = tvCardLayout(p, c, ds, big).map(o => `<span class="tvpc-d" style="left:${o.left}%;top:${o.top}%;width:${o.width}%"><img src="${SPR[o.d]}" alt="${DOLL_NAME[o.d]}"></span>`).join('');
   return `<div class="tvpc ${big ? 'big' : ''}"><svg viewBox="0 0 300 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${card.svg()}</svg>${dolls}</div>`;
+}
+/* ---------- 明信片單獨存成一張照片（2026-11-28 使用者：「明信片幫我做一個可以單獨存照片」）----------
+   信箱打開的明信片、旅行相簿的大圖，右邊一顆「存成照片」。畫成一張 960 寬的圖：米色底，上面是明信片正面（風景、娃娃，跟畫面上同一份位置），
+   下面一行小字；從信箱存的再加背面寫的話、署名和日期。右下角小小的「薯餅的小窩」。新風格、舊外觀存出來一樣。
+   畫布的保護照拍照那套（js/photo.js）：每一樣圖先試畫，讀不回來就跳過、記在 skipped。字用 js/cvfont.js：背面的話用粉圓，其他用源泉 */
+const tvSaveBtn = o => `<button class="btn sm tv-save" data-tvsave="${encodeURIComponent(JSON.stringify(o))}">存成照片</button>`;
+const tvPlain = s => String(s || '').replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+// 一行太長就照畫布量出來的寬度斷開；句號、逗號這類不放在下一行開頭，留在上一行尾巴（右邊有留空，凸出一點點沒關係）
+function tvWrap(ctx, t, w){
+  const out = []; let cur = '';
+  for (const ch of [...t]){ if (cur && !/[，。、！？；：」』）…～]/.test(ch) && ctx.measureText(cur + ch).width > w){ out.push(cur); cur = ch; } else cur += ch; }
+  out.push(cur);
+  return out;
+}
+async function tvCardShot(o){
+  const card = (TV_CARDS[o.p] || [])[o.c]; if (!card) return null;
+  const W = 960, pad = 30, cw = 900, ch = 600, bd = 14, rad = 16, iw = cw - bd * 2, ih = ch - bd * 2;
+  let drew = 0;
+  const skipped = [], cap = tvPlain(o.cap), from = tvPlain(o.from), date = o.date || '', mark = '薯餅的小窩';
+  const body = o.body == null ? null : tvPlain(o.body).split('\n').filter(l => l.trim());
+  const sig = [from, date].filter(Boolean).join('　');
+  // 字先載好（最多等 3 秒），量字、斷行都要用載好的字
+  await Promise.all([cvFonts([cap, sig, mark].filter(Boolean), 'head'), body ? cvFonts(body, 'body') : null]);
+  const ink = '#23264a', soft = '#5a5c78', fh = (z, t) => `800 ${z}px ${cvFam(t, 'head')}`, fb = (z, t) => `400 ${z}px ${cvFam(t, 'body')}`;
+  const BZ = 34, BL = 56, tw = cw - 40;
+  const m = document.createElement('canvas').getContext('2d');
+  const lines = [];
+  if (body) body.forEach(l => { m.font = fb(BZ, l); tvWrap(m, l, tw).forEach(x => lines.push([x, l])); });
+  // 高度照內容：正面 → 小字 → （背面） → 薯餅的小窩
+  const capY = pad + ch + 52, backY = capY + 40, sigY = backY + 48 + lines.length * BL + 28;
+  const H = (body ? sigY + 62 : capY + 56) + 10;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fbf6ea'; ctx.fillRect(0, 0, W, H);
+  const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
+  // 白邊和影子（跟 .tvpc 的 box-shadow 一樣兩層，放大到這張的比例）
+  ctx.save(); ctx.fillStyle = '#fff';
+  ctx.shadowColor = 'rgba(35,38,74,.16)'; ctx.shadowBlur = 36; ctx.shadowOffsetY = 20; rr(pad, pad, cw, ch, rad); ctx.fill();
+  ctx.shadowColor = 'rgba(35,38,74,.2)'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 8; rr(pad, pad, cw, ch, rad); ctx.fill();
+  ctx.restore();
+  const ix = pad + bd, iy = pad + bd;
+  ctx.save(); rr(ix, iy, iw, ih, rad - bd / 2); ctx.clip();
+  ctx.fillStyle = '#dfe3f0'; ctx.fillRect(ix, iy, iw, ih);
+  // 風景：card.svg() 包成一張 SVG 圖。讀不回來就換成拿掉可疑東西的版本，還是不行就只留底色
+  const svgOf = strip => {
+    let inner = card.svg();
+    if (strip) inner = inner.replace(/<(foreignObject|image|feImage|script|style)\b[\s\S]*?(<\/\1>|\/>)/gi, '').replace(/\s(filter|mask|clip-path)="[^"]*"/g, '');
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="${iw}" height="${ih}" preserveAspectRatio="xMidYMid slice">${inner}</svg>`;
+  };
+  let sc = await loadImg(svgUrl(svgOf(false)));
+  if (!photoImgOk(sc)) sc = await loadImg(svgUrl(svgOf(true)));
+  if (photoImgOk(sc)){ ctx.drawImage(sc, ix, iy, iw, ih); if (photoClean(cv)) drew++; else { skipped.push('風景'); ctx.fillStyle = '#dfe3f0'; ctx.fillRect(ix, iy, iw, ih); } }
+  else skipped.push('風景');
+  // 娃娃：位置、大小跟畫面上一樣（腳底中間在 left、top），腳下一圈影子（.tvpc-d::before）
+  for (const d of tvCardLayout(o.p, o.c, o.ds, o.big)){
+    const im = await loadImg(SPR[d.d]);
+    if (!photoImgOk(im)){ skipped.push(DOLL_NAME[d.d] || d.d); continue; }
+    const w = iw * d.width / 100, h = w * im.naturalHeight / im.naturalWidth, x = ix + iw * d.left / 100 - w / 2, y = iy + ih * d.top / 100 - h;
+    ctx.fillStyle = 'rgba(27,33,64,.3)';
+    ctx.beginPath(); ctx.ellipse(x + w / 2, y + h * 1.01 - h * .07, w * .4, h * .07, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.drawImage(im, x, y, w, h); drew++;
+  }
+  ctx.restore();
+  ctx.textBaseline = 'alphabetic';
+  if (cap){ ctx.textAlign = 'right'; ctx.fillStyle = soft; ctx.font = fh(28, cap); ctx.fillText(cap, pad + cw - 6, capY, cw - 12); }
+  if (body){
+    // 背面：一條細線，下面是寫的話（換行照原本的），最後署名和日期靠右
+    ctx.strokeStyle = 'rgba(35,38,74,.14)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pad + 20, backY); ctx.lineTo(pad + cw - 20, backY); ctx.stroke();
+    ctx.textAlign = 'left'; ctx.fillStyle = ink;
+    lines.forEach(([t, l], i) => { ctx.font = fb(BZ, l); ctx.fillText(t, pad + 20, backY + 48 + i * BL + 12); });
+    if (sig){ ctx.textAlign = 'right'; ctx.fillStyle = soft; ctx.font = fh(28, sig); ctx.fillText(sig, pad + cw - 20, sigY, cw - 40); }
+  }
+  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(90,92,120,.7)'; ctx.font = fh(22, mark); ctx.fillText(mark, W - pad, H - 22);
+  if (!photoClean(cv)){ console.info('[tvshot] 畫布讀不回來', skipped); return null; }
+  return {canvas: cv, dolls: [], guests: [], skipped, drew, name: `${o.big ? '合照' : '明信片'}-${(TV_PLACES[o.p] || {}).name || ''}`};
+}
+async function tvSaveClick(b){
+  if (b.disabled) return;
+  let o = null; try { o = JSON.parse(decodeURIComponent(b.dataset.tvsave)); } catch (e) {}
+  if (!o) return;
+  b.disabled = true; b.textContent = '做照片中…';
+  let shot = null;
+  try { shot = await tvCardShot(o); } catch (e) { console.info('[tvshot] 沒存成', e); }
+  if (b.isConnected){ b.disabled = false; b.textContent = '存成照片'; }
+  if (!shot || !shot.drew){ toast('沒存成，再試一次'); if (shot) console.info('[tvshot] 什麼都沒畫到', shot.skipped); return; }
+  photoPreview(shot);
 }
 // 相簿裡的明信片要貼誰：照寄到時記的（who）；以前收的沒記到，用去過那個地方的娃娃補（最多兩隻）
 function tvWhoOf(p, c){
@@ -398,17 +486,17 @@ function tvMailText(d, q){
   if (q.g){
     // 回家時的紀念合照
     const gd = String(q.g).split('-').filter(x => DOLLS.includes(x));
-    return {title: `${P.name}的${gd.length > 1 ? '紀念合照' : '紀念照'}`, body: gd.length > 1 ? `回家前拍的。${gd.length > 2 ? '大家' : '兩個'}都有看鏡頭。` : '回家前拍的。有看鏡頭。', from: gd.length > 2 ? '大家' : tvNames(gd), pic: tvCardHTML(q.p, c, gd, true) + `<p class="tvpc-cap">${P.name}・${gd.length > 1 ? '合照' : '紀念照'}</p>`};
+    return {title: `${P.name}的${gd.length > 1 ? '紀念合照' : '紀念照'}`, body: gd.length > 1 ? `回家前拍的。${gd.length > 2 ? '大家' : '兩個'}都有看鏡頭。` : '回家前拍的。有看鏡頭。', from: gd.length > 2 ? '大家' : tvNames(gd), pic: tvCardHTML(q.p, c, gd, true) + `<p class="tvpc-cap">${P.name}・${gd.length > 1 ? '合照' : '紀念照'}</p>`, sv: {p: q.p, c, ds: gd, big: true, cap: `${P.name}・${gd.length > 1 ? '合照' : '紀念照'}`}};
   }
   if (q.f){
     // 全家福：背面每隻各一句
     const fd = String(q.f).split('-').filter(x => DOLLS.includes(x)), ls = String(q.l || '').split('-');
-    return {title: `${P.name}的全家福`, body: fd.map((x, i) => `${DOLL_NAME[x]}：${tvLinesOf(q.p, x)[+ls[i] || 0] || ''}`).join('\n'), from: '全家', pic: tvCardHTML(q.p, c, fd) + `<p class="tvpc-cap">${P.name}・${card.name}（全家一起）</p>`};
+    return {title: `${P.name}的全家福`, body: fd.map((x, i) => `${DOLL_NAME[x]}：${tvLinesOf(q.p, x)[+ls[i] || 0] || ''}`).join('\n'), from: '全家', pic: tvCardHTML(q.p, c, fd) + `<p class="tvpc-cap">${P.name}・${card.name}（全家一起）</p>`, sv: {p: q.p, c, ds: fd, cap: `${P.name}・${card.name}（全家一起）`}};
   }
   const duo = q.u !== undefined ? TV_DUO[q.p][+q.u] : null;
   const ds = duo ? [duo[0], duo[1]] : (DOLLS.includes(q.w) ? [d, q.w] : [d]);
   const body = duo ? `${DOLL_NAME[duo[0]]}：${duo[2]}\n${DOLL_NAME[duo[1]]}：${duo[3]}` : tvLinesOf(q.p, d)[+q.l || 0] || '';
-  return {title: `${P.name}的明信片`, body, from: duo ? tvNames(ds) : DOLL_NAME[d], pic: tvCardHTML(q.p, c, ds) + `<p class="tvpc-cap">${P.name}・${card.name}${ds.length > 1 && !duo ? `（和${DOLL_NAME[q.w]}一起）` : ''}</p>`};
+  return {title: `${P.name}的明信片`, body, from: duo ? tvNames(ds) : DOLL_NAME[d], pic: tvCardHTML(q.p, c, ds) + `<p class="tvpc-cap">${P.name}・${card.name}${ds.length > 1 && !duo ? `（和${DOLL_NAME[q.w]}一起）` : ''}</p>`, sv: {p: q.p, c, ds, cap: `${P.name}・${card.name}${ds.length > 1 && !duo ? `（和${DOLL_NAME[q.w]}一起）` : ''}`}};
 }
 
 /* ---------- 背包（掛在客廳門左邊牆上的掛勾，固定在那裡）和原本位置的紙條 ---------- */
@@ -676,8 +764,8 @@ function tvAlbumOpen(){
   const pics = tvPicAll().reverse().filter(x => TV_PLACES[x.p] && TV_CARDS[x.p][x.c]);
   const pk = x => String(x.ds).split('+');
   let big = '';
-  if (tvBig && tvBig[0] === 'pic'){ const x = pics.find(q => q.id === tvBig[1]); if (x) big = `<div class="tv-big">${tvCardHTML(x.p, x.c, pk(x), true)}<p class="tvpc-cap">${md(x.t)}・${pk(x).length > 2 ? '大家' : tvNames(pk(x).filter(d => DOLL_NAME[d]))}在${TV_PLACES[x.p].name}</p></div>`; }
-  else if (tvBig && ((t.cards[tvBig[0]] || 0) & (1 << tvBig[1]))) big = `<div class="tv-big">${tvCardHTML(tvBig[0], tvBig[1], tvWhoOf(tvBig[0], tvBig[1]))}<p class="tvpc-cap">${TV_PLACES[tvBig[0]].name}・${TV_CARDS[tvBig[0]][tvBig[1]].name}</p></div>`;
+  if (tvBig && tvBig[0] === 'pic'){ const x = pics.find(q => q.id === tvBig[1]); if (x){ const cap = `${md(x.t)}・${pk(x).length > 2 ? '大家' : tvNames(pk(x).filter(d => DOLL_NAME[d]))}在${TV_PLACES[x.p].name}`; big = `<div class="tv-big">${tvCardHTML(x.p, x.c, pk(x), true)}<div class="tv-caprow"><p class="tvpc-cap">${cap}</p>${tvSaveBtn({p: x.p, c: x.c, ds: pk(x), big: true, cap})}</div></div>`; } }
+  else if (tvBig && ((t.cards[tvBig[0]] || 0) & (1 << tvBig[1]))) { const [bp, bc] = tvBig, cap = `${TV_PLACES[bp].name}・${TV_CARDS[bp][bc].name}`; big = `<div class="tv-big">${tvCardHTML(bp, bc, tvWhoOf(bp, bc))}<div class="tv-caprow"><p class="tvpc-cap">${cap}</p>${tvSaveBtn({p: bp, c: bc, ds: tvWhoOf(bp, bc), cap})}</div></div>`; }
   const picRow = pics.length ? `<div class="al-sec">合照<small>每一趟回家前拍一張</small></div><div class="tv-pics">${pics.slice(0, tvPicN).map(x => `<button class="tv-th" data-tvpic="${x.id}" aria-label="${md(x.t)}在${TV_PLACES[x.p].name}的合照">${tvCardHTML(x.p, x.c, pk(x), true)}<small>${md(x.t)}・${TV_PLACES[x.p].short || TV_PLACES[x.p].name.replace('山上的', '')}</small></button>`).join('')}</div>${pics.length > tvPicN ? `<button class="btn sm tv-more" data-tv="more">再看 ${Math.min(30, pics.length - tvPicN)} 張${pics.length - tvPicN > 30 && !tvOldMore() ? `<small>還有 ${pics.length - tvPicN} 張</small>` : ''}</button>` : tvOldMore() ? '<button class="btn sm tv-more" data-tv="older">看更早的</button>' : ''}` : '';
   openSheet(`<div class="hd">${TV_BAG_ICON}<span>旅行</span><small class="pc-left">明信片 ${total} / ${all.length * 3}</small></div>
     <div class="tv-box tv-album">${t.out.length ? `<ul class="al-ln al-st">${t.out.map(o => `<li>${tvOutLine(o)}</li>`).join('')}</ul>` : ''}${big}${picRow}${pages}${abroad}
@@ -748,6 +836,7 @@ const tvMapNote = () => tvData().out.map(o => `<p class="bk-note tv-mapn">${TV_B
 
 /* ---------- 按鈕 ---------- */
 $('#sheet').addEventListener('click', e => {
+  const sv = e.target.closest('[data-tvsave]'); if (sv){ tvSaveClick(sv); return; }
   const p = e.target.closest('[data-tvp]'); if (p){ tvPack(p.dataset.tvp); return; }
   const by = e.target.closest('[data-tvbuy]'); if (by){ tvBuy(by.dataset.tvbuy); return; }
   const lg = e.target.closest('[data-tvlog]');

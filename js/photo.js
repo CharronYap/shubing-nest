@@ -378,7 +378,8 @@ function photoFlash(){
   const f = document.createElement('div'); f.className = 'flash';
   stage.appendChild(f); setTimeout(() => f.remove(), 450);
 }
-const photoName = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `薯餅的小窩-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`; };
+// pre：檔名中間多一段，例如「明信片-山上的小木屋」（js/travel.js）；沒給就照舊
+const photoName = pre => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `薯餅的小窩-${pre ? String(pre).replace(/[\\/:*?"<>|\s]+/g, '') + '-' : ''}${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`; };
 /* 存照片。iPhone 的規矩：分享（navigator.share）一定要在手指按下去的當下叫，中間不能等任何東西，不然會被擋。
    所以檔案在照片拍好、預覽出來的時候就先做好（photoFile），按「存下來」時直接叫分享。
    分享不能用或失敗（不是自己取消）：不走下載連結（iPhone 從主畫面圖示開的時候，下載連結按了沒反應），
@@ -387,7 +388,7 @@ async function photoFile(shot){
   if (shot.file !== undefined) return shot.file;
   let blob = null;
   try { blob = await new Promise(ok => { try { shot.canvas.toBlob(ok, 'image/png'); } catch (e) { ok(null); } }); } catch (e) {}
-  shot.file = blob ? new File([blob], photoName(), {type: 'image/png'}) : null;
+  shot.file = blob ? new File([blob], photoName(shot.name), {type: 'image/png'}) : null;
   return shot.file;
 }
 function photoHold(o, why){

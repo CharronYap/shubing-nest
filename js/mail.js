@@ -611,7 +611,7 @@ function mailText(k){
   else if (type === 'pc' && typeof tvMailText === 'function'){
     // 旅行寄回來的明信片（js/travel.js）
     const r = tvMailText(d, p);
-    return {d, type, title: r.title, body: r.body, from: r.from, pic: r.pic};
+    return {d, type, title: r.title, body: r.body, from: r.from, pic: r.pic, sv: r.sv};
   } else if (type === 're'){
     // 朋友寫的信（js/letter.js）：只有他打的字，走 txSlot。最下面一行小字寫是回哪一封
     return {d, type: 're', title: p.rt ? `${p.w || '朋友'}回信了` : `${p.w || '朋友'}寫給你的信`, body: txSlot(mailDec(p.x)), from: p.w || '朋友', note: typeof letterReNote === 'function' ? letterReNote(p) : '', zz: false};
@@ -659,7 +659,8 @@ function mailCard(o, j, open, tag, old){
     // 龍龍：先是一片葉子，點一下翻到背面
     inner = x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && x.type !== 're' && !o.f && !old
       ? `<button class="ml-leaf" data-flip="${j}" aria-label="把葉子翻過來">${MAIL_LEAF}<small>點一下翻過來</small></button>`
-      : (x.pic || '') + mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
+      : (x.pic || '') + (x.type === 'pc' && x.pic && x.sv && typeof tvSaveBtn === 'function' ? `<div class="tv-caprow">${tvSaveBtn({...x.sv, body: x.body, from, date: /^\d{4}-/.test(o.t || '') ? o.t.slice(0, 4) + '年' + md(o.t) : ''})}</div>` : '') + mailBodyHTML(x) + `<p class="ml-sg">${from}</p>`;
+    // 旅行的明信片：照片下面、背面的字上面一顆「存成照片」（js/travel.js 的 tvCardShot）
     // 朋友家的信（送來的娃娃、過夜的日記、朋友寫的信）：下面一顆「回信」（js/letter.js），找不到要寄給誰就不放
     if (typeof letterBtn === 'function' && !inner.includes('data-flip')) inner += letterBtn(o, () => openMail(true));
     if (o.a) inner += `<div class="ml-att ${o.g ? 'got' : ''}">${mailAtt(o.a).svg}<span>${o.a.startsWith('coin-') ? '附上 ' : o.a === 'ticket' ? '附上一張' : '附上一個'}${mailAtt(o.a).name}</span>${o.g ? '<small>收下了</small>' : `<button class="btn y sm" data-take="${j}">收下</button>`}</div>`;
