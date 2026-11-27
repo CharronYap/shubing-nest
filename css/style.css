@@ -1146,6 +1146,12 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .fr-top .btn{flex:none;display:flex;align-items:center;gap:5px}
 .fr-top .btn svg{width:18px;height:18px}
 .fr-av{flex:none;width:44px;height:44px;border-radius:50%;background:var(--pink);color:#fff;display:grid;place-items:center;font-size:20px;font-weight:900}
+/* 手機上兩顆按鈕會把名字擠到剩一個字：頭像和名字一行，聊天、去他家換到第二行平分（要寫在上面 .fr-top .btn 後面才蓋得掉 flex:none） */
+@media (max-width:420px){
+  .fr-top{flex-wrap:wrap}
+  .fr-top b{flex:1 1 calc(100% - 60px)}
+  .fr-top .btn{flex:1;justify-content:center}
+}
 .fr-acts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
 .fr-a{appearance:none;border:2px solid #f3e7ef;background:#fff;border-radius:14px;padding:8px 2px 7px;display:grid;justify-items:center;gap:3px;color:var(--pink2);font:inherit;font-size:12px;font-weight:800;cursor:pointer;min-width:0}
 .fr-a svg{width:24px;height:24px}
