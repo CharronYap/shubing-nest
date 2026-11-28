@@ -5,7 +5,7 @@
    - 新房間跟著存檔和公開房間一起上雲端（規則 2026-11-26 發布）。js/cloud.js 留著保險：被擋時先拿掉這兩間再寫。
    - 去朋友家時只看得到自己也有的房間（朋友有廚房、你沒有，就看不到他的廚房）。 */
 const ROOM_KEY = {kitchen: {name: '廚房', key: '廚房的鑰匙', price: 40, wall: 'tile', floor: 'check'}, attic: {name: '閣樓', key: '閣樓的梯子', price: 40, wall: 'stripe', floor: 'wood'}};
-const ROOM_LABEL = {living: '客廳', bed: '臥室', bath: '浴室', kitchen: '廚房', attic: '閣樓', yard: '門外小島'};
+const ROOM_LABEL = {living: '客廳', bed: '臥室', bath: '浴室', kitchen: '廚房', attic: '閣樓', yard: '咕嚕嚕秘密花園'};
 ICON.kitchen = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 9.500a4 4 0 0 1 3-6.300 4.500 4.500 0 0 1 8 0 4 4 0 0 1 3 6.300V13H5z"/><rect x="5" y="14.500" width="14" height="6" rx="2"/></svg>';
 ICON.attic = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.500 13L12 4l9.500 9v7a1 1 0 0 1-1 1h-17a1 1 0 0 1-1-1z"/><circle cx="12" cy="13.500" r="3.200" fill="#fff"/></svg>';
 ROOM_FURN.kitchen = ROOM_FURN.kitchen || []; ROOM_FURN.attic = ROOM_FURN.attic || [];
@@ -231,7 +231,7 @@ function mapCell(r){
   if (r === 'yard'){
     const has = VISIT ? !!VISIT.yard : true;
     const st = ((H.yard && H.yard.items) || []).filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id).slice(0, 6);   // 小島現在是房間，列在上面的娃娃
-    return `<button class="hm-c hm-y ${here ? 'cur' : ''} ${has ? '' : 'lock none'}" data-hm="yard" ${has ? '' : 'disabled'} aria-label="門外小島${here ? '，你在這裡' : ''}${st.length ? '，' + st.map(d => DOLL_NAME[d]).join('、') + '在這裡' : ''}">
+    return `<button class="hm-c hm-y ${here ? 'cur' : ''} ${has ? '' : 'lock none'}" data-hm="yard" ${has ? '' : 'disabled'} aria-label="${ROOM_LABEL.yard}${here ? '，你在這裡' : ''}${st.length ? '，' + st.map(d => DOLL_NAME[d]).join('、') + '在這裡' : ''}">
       <span class="hm-pic"><svg class="hm-art" viewBox="0 0 300 110" aria-hidden="true">${HM_ART.yard()}</svg>${hmDolls(st)}${tag}</span>${nm}</button>`;
   }
   const rm = H[r], at = r === 'attic';
@@ -327,7 +327,7 @@ function fixPaint(){
   };
   const base = 'bottom:calc(100% - var(--wh,52%))';
   const r = roomId;
-  if (r === 'living'){ const can = !VISIT || !!VISIT.yard; add('fx-door', FIX.yardDoor(), `left:79%;width:15%;${base}`, can && !(VISIT && VISIT.card) ? 'yard' : '', '門外小島'); }
+  if (r === 'living'){ const can = !VISIT || !!VISIT.yard; add('fx-door', FIX.yardDoor(), `left:79%;width:15%;${base}`, can && !(VISIT && VISIT.card) ? 'yard' : '', ROOM_LABEL.yard); }
   else if (r === 'bed') add('fx-star', FIX.star(), 'left:79%;width:8%;top:calc(var(--wh,52%)*.38)');
   else if (r === 'bath') add('fx-tiles', FIX.tiles(), `left:50%;width:100%;height:calc(var(--wh,52%)*.4);${base}`);
   else if (r === 'kitchen'){ add('fx-counter', FIX.counter(), `left:50%;width:44%;${base}`); add('fx-hooks', FIX.hooks(), 'left:81%;width:24%;top:calc(var(--wh,52%)*.3)'); }

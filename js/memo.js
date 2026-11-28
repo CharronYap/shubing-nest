@@ -57,8 +57,8 @@ function memoText(e){
     case 'hideFound': return `${w}找到躲起來的${d}`;
     case 'hideMiss': return `${w}來找躲起來的${d}，沒找到`;
     case 'seekFound': return `在${w}家找到躲起來的${d}`;
-    case 'waterIn': return `${w}來幫小島澆水`;
-    case 'waterOut': return `幫${w}的小島澆水`;
+    case 'waterIn': return `${w}來幫花園澆水`;
+    case 'waterOut': return `幫${w}的花園澆水`;
     case 'letterOut': return e.m ? `寫信給${w}：「${txSlot(e.m)}」` : `寄了一封信給${w}`;
     case 'letterIn': return `收到${w}寫的信`;
     case 'picOut': return `帶${d}去${w}家拍了照`;
@@ -142,7 +142,7 @@ addEventListener('nestnet', () => { memoWrap(); memoStart(); });
 
 /* ---------- 今天誰來過 ---------- */
 const WHO_SAY = {
-  bookIn: () => '在訪客簿留了話', waterIn: () => '幫小島澆了水', guest: e => `帶${DOLL_NAME[e.d] || '娃娃'}來過夜`, cardIn: () => '寄了明信片', letterIn: () => '寫了一封信給你',
+  bookIn: () => '在訪客簿留了話', waterIn: () => '幫花園澆了水', guest: e => `帶${DOLL_NAME[e.d] || '娃娃'}來過夜`, cardIn: () => '寄了明信片', letterIn: () => '寫了一封信給你',
   picIn: e => `帶${DOLL_NAME[e.d] || '娃娃'}來拍了一張照`,
   hideFound: e => `找到躲起來的${DOLL_NAME[e.d] || '娃娃'}`, hideMiss: e => `來找躲起來的${DOLL_NAME[e.d] || '娃娃'}，沒找到`,
 };

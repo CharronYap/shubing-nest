@@ -170,7 +170,7 @@ function earnMsList(){
   Object.entries(EARN_SETS).forEach(([k, ids]) => L.push({k: 'set-' + k, n: 10, ok: ids.every(i => FURN_OWN[i]), t: `湊齊${EARN_SET_NAME[k] || '一個系列'}`}));
   DOLLS.forEach(d => [10, 30].forEach(c => L.push({k: `n${c}-${d}`, n: 10, ok: (cnt[d] || 0) >= c, t: `跟${DOLL_NAME[d]}一起做完 ${c} 件小事`})));
   // 小島重做前是「12 塊地都整好」；以前整好的人照樣算（S.yard.old12）
-  L.push({k: 'yard', n: 20, ok: !!(S.yard && (S.yard.old12 || Object.keys(S.yard.fl || {}).length >= 6)), t: '小島的花收過 6 種'});
+  L.push({k: 'yard', n: 20, ok: !!(S.yard && (S.yard.old12 || Object.keys(S.yard.fl || {}).length >= 6)), t: '花園的花收過 6 種'});
   return L;
 }
 function earnMsCheck(){
@@ -194,7 +194,7 @@ function earnMsOpen(){
 function earnMore(L){
   const e = earnData();
   L.push({ic: `<img src="${SPR.nyanko}" alt="">`, t: '電視小遊戲', s: e.g < EARN_GAME_TOP ? `今天前 ${EARN_GAME_TOP} 局 3～5 枚，還有 ${EARN_GAME_TOP - e.g} 局` : '每局 1 枚，想玩幾局都可以', btn: '玩', go: gameMenu});
-  if (typeof yardReady === 'function' && yardReady()) L.push({ic: EARN_FLOWER, t: '小島有東西可以收', s: '開的花、樹上的果子，收了拿去小店，一個 1 枚', go: () => { $('#sheet').hidden = true; setPage('room'); goRoom('yard'); }});
+  if (typeof yardReady === 'function' && yardReady()) L.push({ic: EARN_FLOWER, t: '花園有東西可以收', s: '開的花、樹上的果子，收了拿去小店，一個 1 枚', go: () => { $('#sheet').hidden = true; setPage('room'); goRoom('yard'); }});
   if (earnBagN()) L.push({ic: EARN_FRUIT, t: `手上有 ${earnBagN()} 個花和果子`, s: '拿去火腿的小店換幣', btn: '去小店', go: () => { if (typeof shopOpen === 'function') shopOpen(); }});
   // 等著送人的娃娃自動當店員，不用手動派
   if (e.work.length) L.push({ic: `<img src="${SPR[e.work[0].d]}" alt="">`, t: '等著送人的娃娃在娃娃機當店員', s: `每隻一天 ${EARN_WORK_PAY} 枚，現在 ${e.work.length} 隻。點店員可以送給朋友`, btn: '去看', go: () => { $('#sheet').hidden = true; setPage('claw'); }});

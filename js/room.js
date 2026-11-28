@@ -409,7 +409,7 @@ $('#items').addEventListener('click',e=>{
       // 土產：還有沒擺出去的，就在這一間多擺一個；都擺出去了，從別間搬一個過來；全部都在這一間，收回最後擺的那個
       const mine=items.filter(i=>i.kind==='furn'&&i.id===id),ow=RIDS.find(r=>r!==roomId&&furnIn(r,id).length);
       if(furnPlacedN(id)>=furnOwnN(id)&&!ow){if(mine.length){removeItem(mine[mine.length-1].uid);trayDone();}return;}
-      if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去小島，小島沒有牆壁');return;}
+      if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去花園，花園沒有牆壁');return;}
       if(full())return;
       if(furnPlacedN(id)>=furnOwnN(id)){const l=furnIn(ow,id);removeItem(l[l.length-1].uid,home[ow].items);toast(`從${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[ow])||'別間'}搬過來了`);}
       newFurnDel(id);
@@ -417,7 +417,7 @@ $('#items').addEventListener('click',e=>{
       if(!f.wall&&!f.floor)[it.x,it.y]=freeSpot(it);items.push(it);render();trayDone(it.uid);return;
     }
     const ex=items.find(i=>i.kind==='furn'&&i.id===id);if(ex){removeItem(ex.uid);trayDone();return;}
-    if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去小島，小島沒有牆壁');return;}
+    if(roomId==='yard'&&f.wall){toast('掛在牆上的不能帶去花園，花園沒有牆壁');return;}
     if(full())return;
     const w=whereFurn(id);if(w){removeItem(home[w].items.find(i=>i.kind==='furn'&&i.id===id).uid,home[w].items);toast(`從${(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[w])||'別間'}搬過來了`);}
     const it={uid:uid++,kind:'furn',id,x:50,y:f.wall?28:82,sit:null,seat:0};
@@ -566,7 +566,7 @@ function renderNav(){
   const ids=roomList();
   // 現在這一間的那顆變寬、圖示旁邊寫名字（.nm 只有 .on 才顯示）；其他間只有圖示
   // 最左邊的小房子：小屋地圖（js/rooms.js）
-  $('#nav').innerHTML=`${typeof mapOpen==='function'?`<button class="rmap" aria-label="小屋地圖">${typeof MAP_ICON!=='undefined'?MAP_ICON:HOUSE}</button>`:''}<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室',yard:'門外小島'})[r]}">${ICON[r]}<span class="nm">${ROOM_SHORT[r]||''}</span></button>`).join('')}</div>`;
+  $('#nav').innerHTML=`${typeof mapOpen==='function'?`<button class="rmap" aria-label="小屋地圖">${typeof MAP_ICON!=='undefined'?MAP_ICON:HOUSE}</button>`:''}<div class="rnav">${ids.map(r=>`<button data-r="${r}" class="${(yd?r==='yard':r===roomId)?'on':''}" aria-label="${(typeof ROOM_LABEL!=='undefined'?ROOM_LABEL:{living:'客廳',bed:'臥室',bath:'浴室',yard:'咕嚕嚕秘密花園'})[r]}">${ICON[r]}<span class="nm">${ROOM_SHORT[r]||''}</span></button>`).join('')}</div>`;
   const rn=$('#nav .rnav'),on=$('#nav .on');if(rn&&on&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=on.offsetLeft-rn.offsetLeft-rn.clientWidth/2+on.offsetWidth/2;   // 房間多的時候，讓現在這間留在看得到的地方
 }
 function slide(dir,swap){
@@ -596,7 +596,7 @@ function goRoom(r){
   const from=goingTo??roomId;if(r===from)return;const d=RIDS.indexOf(r)>RIDS.indexOf(from)?1:-1;goingTo=r;slide(d,()=>{roomId=r;goingTo=null;load();});renderNavTo(r);roomSign(r);}
 function renderNavTo(r){const rn=$('#nav .rnav');document.querySelectorAll('.rnav button').forEach(b=>{const on=b.dataset.r===r;b.classList.toggle('on',on);if(on&&rn&&rn.scrollWidth>rn.clientWidth)rn.scrollLeft=b.offsetLeft-rn.offsetLeft-rn.clientWidth/2+b.offsetWidth/2;});}
 // 切換鈕上寫的短名字，和換房間時上方中間跳出來的小牌子（一秒後淡掉）
-const ROOM_SHORT={living:'客廳',bed:'臥室',bath:'浴室',kitchen:'廚房',attic:'閣樓',yard:'小島'};
+const ROOM_SHORT={living:'客廳',bed:'臥室',bath:'浴室',kitchen:'廚房',attic:'閣樓',yard:'花園'};
 let signT=0;
 function roomSign(r){
   let el=$('#rsign');

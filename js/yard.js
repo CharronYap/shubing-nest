@@ -174,7 +174,7 @@ const yardHas = s => !s || ['tree', 'pond', 'grass', 'flower'].includes(s);   //
 function yardRec(d, line){ const r = S.yard.rec[d] = S.yard.rec[d] || []; r.push(`${todayStr()}|${line}`); if (r.length > 12) r.splice(0, r.length - 12); }
 function yardRows(d){
   const r = ((S.yard || {}).rec || {})[d] || []; if (!r.length) return '';
-  return `<div class="al-sec">小島</div><ul class="al-ln al-st">${r.slice().reverse().slice(0, 6).map(x => `<li>${md(x.slice(0, 10))}　${x.slice(11)}</li>`).join('')}</ul>`;
+  return `<div class="al-sec">花園</div><ul class="al-ln al-st">${r.slice().reverse().slice(0, 6).map(x => `<li>${md(x.slice(0, 10))}　${x.slice(11)}</li>`).join('')}</ul>`;
 }
 /* 兩台裝置的小島合在一起（js/account.js 的 mergeSave 會叫；m 是雲端那份，g 是這台的，都是純資料）。
    擺設（rm）跟其他房間一樣用雲端的。花的種類、收過幾朵、來過的客人：兩邊合起來。
@@ -357,11 +357,11 @@ function yardBookOpen(from){
   const gs = Object.keys(YD_GUESTS).map(g => (y.gs[g]
     ? `<span class="tile yd-kind">${YD_GUESTS[g].svg()}<small>${YD_GUESTS[g].name}</small><i>來過 ${y.gs[g]} 次</i></span>`
     : `<span class="tile yd-kind no"><span class="yd-sil">${YD_GUESTS[g].svg()}</span><small>？</small></span>`)).join('');
-  openSheet(`<div class="hd">${YARD_ICON}<span>小島</span></div>
+  openSheet(`<div class="hd">${YARD_ICON}<span>花園</span></div>
     <div class="yd-box yd-book"><div class="al-sec">花<small>${y.kinds.length} / 12 種</small></div><div class="yd-grid">${fl}</div>
       <div class="al-sec">小客人<small>${Object.keys(y.gs).filter(g => YD_GUESTS[g]).length} / 12 種</small></div><div class="yd-grid">${gs}</div>
       <p class="bk-note">新的花是小客人帶來的。點心盤放不一樣的點心，來的客人也不一樣；有幾種只在晚上來。</p></div>
-    <div class="ml-ft"><button class="btn" data-yd="go">去小島</button><button class="btn" data-yd="album">返回</button></div>`);
+    <div class="ml-ft"><button class="btn" data-yd="go">去花園</button><button class="btn" data-yd="album">返回</button></div>`);
   evOpen = false; alOpen = false;
 }
 
@@ -460,7 +460,7 @@ if (typeof fixPaint === 'function'){ const fp = fixPaint; fixPaint = function(){
   const prev = renderTray;
   renderTray = function(){
     prev.apply(this, arguments);
-    if (roomId === 'yard' && tab === 'deco') $('#items').innerHTML = '<p class="al-em yd-nodeco">小島的天空和草地跟著時間換，不用貼壁紙。</p>';
+    if (roomId === 'yard' && tab === 'deco') $('#items').innerHTML = '<p class="al-em yd-nodeco">花園的天空和草地跟著時間換，不用貼壁紙。</p>';
   };
 }
 

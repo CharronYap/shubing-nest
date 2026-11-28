@@ -954,7 +954,7 @@ if (typeof openEvents === 'function'){
     if (VISIT || !tvNobody()) return prev(focus);
     const o = tvData().out[0];
     openSheet(`<div class="hd">${typeof EV_ICON !== 'undefined' ? EV_ICON : ''}<span>今天的小事</span></div>
-      <div class="st-box"><p class="st-hi">大家都出門了，家裡現在沒有娃娃。小事等牠們回來再說。</p><p class="bk-note">${tvOutLine(o)}。信箱會收到明信片，小島和佈置都可以照常玩。</p></div>`);
+      <div class="st-box"><p class="st-hi">大家都出門了，家裡現在沒有娃娃。小事等牠們回來再說。</p><p class="bk-note">${tvOutLine(o)}。信箱會收到明信片，花園和佈置都可以照常玩。</p></div>`);
     evOpen = true; alOpen = false;
   };
 }

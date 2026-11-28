@@ -32,7 +32,7 @@ const HUD_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
   const wrap = mk('div', 'hudwrap'), hud = mk('div', 'hud'); hud.id = 'hud';
   const r2 = mk('div', 'hud-row'), r3 = mk('div', 'hud-row');
   const gL = mk('div', 'hud-g hud-l'), gR = mk('div', 'hud-g hud-r'), aL = mk('div', 'hud-g hud-a'), aR = mk('div', 'hud-g hud-m');
-  const bks = mk('button', 'ib w sm', HUD_BOOKS); bks.id = 'booksBtn'; bks.setAttribute('aria-label', '紀念冊、旅行、小島');
+  const bks = mk('button', 'ib w sm', HUD_BOOKS); bks.id = 'booksBtn'; bks.setAttribute('aria-label', '紀念冊、旅行、花園');
   bks.setAttribute('aria-haspopup', 'menu'); bks.setAttribute('aria-expanded', 'false'); topr.appendChild(bks);
   [['#swap', gL], ['#shopBtn', gL], ['#mailBtn', gR], ['#evBtn', gR], ['#bookBtn', gR], ['#albBtn', aL], ['#booksBtn', aL], ['#palBtn', aR]].forEach(([sel, box]) => { const e = $(sel); if (e) box.appendChild(e); });
   r2.append(gL, gR); r3.append(aL, aR); hud.append(r2, r3); wrap.appendChild(hud);
@@ -76,7 +76,7 @@ function bksOpen(){
   const row = (k, ic, t, s, off) => `<button class="bks-it${off ? ' off' : ''}" data-bks="${k}" role="menuitem"><span class="bks-ic">${ic}</span><span class="bks-tx"><b>${t}</b><small>${s}</small></span></button>`;
   p.innerHTML = row('memo', HEART(), '紀念冊', lock ? '登入以後才有' : '跟朋友一起做過的事', lock)
     + row('tv', typeof TV_BAG_ICON !== 'undefined' ? TV_BAG_ICON : CARD_ICON, '旅行', '明信片、合照、護照')
-    + row('yd', typeof YARD_ICON !== 'undefined' ? YARD_ICON : ICON.yard, '小島', '花和小客人');
+    + row('yd', typeof YARD_ICON !== 'undefined' ? YARD_ICON : ICON.yard, '花園', '花和小客人');
   p.hidden = false; b.setAttribute('aria-expanded', 'true');
 }
 $('#booksBtn').addEventListener('click', () => { const p = $('#booksPop'); if (p && !p.hidden) bksShut(); else bksOpen(); });

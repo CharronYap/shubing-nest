@@ -438,7 +438,7 @@ function mergeSave(remote, guest) {
   // 門外小島：用帳號裡的那份，帳號裡還沒有才用這台的；種子數量取比較多的
   if (guest.yard) {
     if (!m.yard) m.yard = guest.yard;
-    else if (typeof yardMerge === 'function' && m.yard.v === 2 && guest.yard.v === 2) { try { yardMerge(m.yard, guest.yard); } catch (e) { console.info('[account] 小島的進度合不起來，先用雲端那份', e); } }
+    else if (typeof yardMerge === 'function' && m.yard.v === 2 && guest.yard.v === 2) { try { yardMerge(m.yard, guest.yard); } catch (e) { console.info('[account] 花園的進度合不起來，先用雲端那份', e); } }
     else if (m.yard.v !== 2 && guest.yard.seeds) { const ms = m.yard.seeds = m.yard.seeds || {}; for (const [k, n] of Object.entries(guest.yard.seeds || {})) ms[k] = Math.max(ms[k] || 0, n || 0); }   // 舊版的小島才有種子
   }
   // 幣取比較多的。拿的是這台的，跟錢包對帳用的 base（earn.wb）也要用這台的，不然這段差額會重複算進蛋蛋島的錢包
