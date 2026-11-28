@@ -305,7 +305,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);
 
 /* 版面大小：電腦上整台縮到一個畫面內；手機上直接滿版 */
 .cwrap{container-type:size}
-#claw{width:min(100%, calc((100cqh - 150px) * 360 / 440));margin:0 auto}
+#claw{width:min(100%, calc((100cqh - 194px) * 360 / 440));margin:0 auto}   /* 194 = 上面模式切換 44 + 下面按鈕和選娃娃 150 */
 @media (min-width:481px){
   body{padding-block:16px}
   .phone{max-width:min(375px, calc((100dvh - 40px) * 365 / 740 + 10px))}
@@ -1555,3 +1555,20 @@ span.yd-kind{cursor:default}
 .pic-cover{position:absolute;inset:0;background:#fffdf8;z-index:645;transition:opacity .45s}
 .pic-cover.out{opacity:0;pointer-events:none}
 #room.ph-still,#room.ph-still *{animation:none!important;transition:none!important}
+
+/* 娃娃機模式切換：娃娃／家具扭蛋，右邊是稀有保障進度（CL-02、CL-05，2026-11-28） */
+.cmode{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 auto 8px;min-height:36px}
+.cmode .cm-b{border:2px solid #f3e7ef;border-radius:999px;background:#fff;padding:6px 14px;font:inherit;font-size:13px;font-weight:800;color:var(--soft);cursor:pointer}
+.cmode .cm-b[aria-pressed="true"]{border-color:transparent;color:#fff;background:linear-gradient(180deg,var(--pink),var(--pink2));box-shadow:0 2px 0 #c43f7f}
+.cmode .cm-i{display:flex;align-items:center;gap:4px;border:2px solid #f6e3a8;border-radius:999px;background:#fffaf0;padding:5px 10px;font:inherit;font-size:12px;font-weight:800;color:#a86f00;cursor:pointer}
+.cmode .cm-st{color:#d99a00;letter-spacing:-1px}
+.cmode button[disabled]{opacity:.5;cursor:default}
+.cm-card{max-width:290px}
+.cm-odds{list-style:none;margin:0;padding:0;display:grid;gap:4px;width:100%}
+.cm-odds li{display:flex;gap:8px;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.cm-note{margin:0;font-size:12px;line-height:1.5;color:var(--soft);text-align:left}
+/* 夾到家具時的等級和來源 */
+.pz-gr{margin:0;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:900}
+.g-n{color:#e14f93} .g-s{color:#7a62de} .g-r{color:#a86f00}
+.pz-src{font-size:11px;font-weight:800;color:var(--soft);background:var(--bg);border-radius:999px;padding:2px 8px}
+.pcard.pz-rare{box-shadow:0 8px 0 #f2cf6b,0 0 0 3px #ffe08a}

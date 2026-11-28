@@ -9,42 +9,165 @@ const cv = $('#claw'); let g = cv.getContext('2d');
 let toys = [];
 const claw = { x:58, y:HOME, open:1, state:'idle', hold:null, dir:0, t:0, plan:null };
 
-// 機台裡的東西：娃娃，或是扭蛋（裡面是鎖住的家具、壁紙，或願望道具）
-// 固定 5 顆扭蛋、5 隻娃娃（CAP_N）。夾走扭蛋補扭蛋、夾走娃娃補娃娃，一直維持 5 和 5
-const CAP_N = 5, TOY_N = 10;
+// 機台裡的東西：娃娃，或是扭蛋（裡面是家具、壁紙、衣服帽子，或願望道具）
+// 同一台機器兩種模式（CL-02，2026-11-28）：娃娃模式 5 顆扭蛋 5 隻娃娃（跟以前一樣），家具扭蛋模式 8 顆扭蛋 2 隻娃娃。
+// 夾走扭蛋補扭蛋、夾走娃娃補娃娃，各模式一直維持自己的數量。每天第一次免費、沒夾到的保底（S.misses）兩種模式共用。
+// 機台內容存在 S.earn.claw（CL-04）：扭蛋生成時就決定等級和裡面是什麼，換一批、切模式、離開、重整、重登都不重抽。
+//   S.earn.claw = { v:1, mode:'doll'|'furn', m:{doll:[…], furn:[…]}, seq, rp, got:[…] }
+//   m 裡每一格：{ id, t:'cap'|娃娃, k:'furn'|'wall'|'look'|'wish', g:'n'|'s'|'r', it:東西的 id, x, y }
+//   id 是穩定的編號，領過的記在 got（留最後 GOT_KEEP 個），同一顆不會領兩次；rp 是連續幾顆家具扭蛋開出來不是稀有（稀有保障）
+const TOY_N = 10, GOT_KEEP = 60, RARE_PITY = 9;
+const CLAW_MODE = { doll:{cap:5, name:'娃娃'}, furn:{cap:8, name:'家具扭蛋'} };
 const pickDoll = () => DOLLS[Math.floor(Math.random()*DOLLS.length)];
-const toyNew = (t, x, y) => ({ t, x, y, s:66+Math.random()*8, r:(Math.random()-.5)*.35, vy:0, wob:0 });
+const pickOne = a => a[Math.floor(Math.random()*a.length)];
+const toyNew = (e, x, y) => ({ e, t:e.t, x, y, s:66+Math.random()*8, r:(Math.random()-.5)*.35, vy:0, wob:0 });
 const live = () => toys.filter(t => !t.gone && !t.sink);
 const PILE_SPOTS = [[140,392],[190,396],[240,392],[290,396],[330,390],[165,354],[215,350],[265,356],[310,352],[238,316]];
-// 排 10 個：照 x 排序後兩兩一組，每組抽一個放扭蛋，扭蛋就會左右散開，不會全擠在同一邊
-function pileSpots(){
-  const byX = PILE_SPOTS.map((p, i) => i).sort((a, b) => PILE_SPOTS[a][0] - PILE_SPOTS[b][0]);
-  const cap = new Set();
-  for (let i = 0; i < byX.length; i += 2) cap.add(byX[i + (Math.random() < .5 ? 0 : 1)]);
-  return PILE_SPOTS.map(([x, y], i) => ({ t: cap.has(i) ? 'cap' : pickDoll(), x: x + (Math.random()*10-5), y }));
+
+const CAP_KIND = ['furn', 'wall', 'look', 'wish'];
+const entryOk = x => !!x && typeof x === 'object' && typeof x.id === 'string' && (x.t === 'cap' ? CAP_KIND.includes(x.k) : DOLLS.includes(x.t));
+function clawData(){
+  const E = S.earn = S.earn || {};
+  let c = E.claw;
+  if (!c || typeof c !== 'object' || Array.isArray(c) || c.v !== 1) c = E.claw = {v:1, mode:'doll', m:{}, seq:0, rp:0, got:[]};
+  if (!CLAW_MODE[c.mode]) c.mode = 'doll';
+  if (!c.m || typeof c.m !== 'object' || Array.isArray(c.m)) c.m = {};
+  c.got = Array.isArray(c.got) ? c.got.filter(x => typeof x === 'string').slice(-GOT_KEEP) : [];
+  c.seq = Number.isInteger(c.seq) && c.seq >= 0 ? c.seq : 0;
+  c.rp = Number.isInteger(c.rp) && c.rp >= 0 ? c.rp : 0;
+  const got = new Set(c.got), seen = new Set();
+  for (const k of Object.keys(CLAW_MODE)){
+    const a = (Array.isArray(c.m[k]) ? c.m[k] : []).filter(x => entryOk(x) && !got.has(x.id) && !seen.has(x.id) && seen.add(x.id));
+    a.forEach(x => { if (x.k === 'furn' && !GRADE[x.g]) x.g = (x.it && furnGrade(x.it)) || 'n'; });
+    // 陣列內容沒變就留原本那一個，機台上的東西（toys）指著的還是同一批
+    if (a.length !== (c.m[k] || []).length || !Array.isArray(c.m[k])) c.m[k] = a;
+  }
+  return c;
 }
+const cid = c => (++c.seq).toString(36) + Math.random().toString(36).slice(2, 6);
+// 兩種模式的機台裡，扭蛋已經裝了哪些東西：同一件不會同時放進兩顆扭蛋
+const taken = (c, k) => new Set(Object.values(c.m).flat().filter(e => e.t === 'cap' && e.k === k && e.it).map(e => e.it));
+const wallLeft = skip => WALLS.filter(id => !WALL_OWN[id] && !(typeof GIFT_WALL !== 'undefined' && GIFT_WALL[id]) && !skip.has(id));
+const clawHasGold = c => Object.values(c.m).some(a => a.some(e => e.t === 'cap' && e.k === 'furn' && e.g === 'r'));
+
+/* ---------- 扭蛋生成：裡面是什麼，補貨的時候就決定 ----------
+   順序跟以前開扭蛋時一樣：缺願望道具的一半機會先給道具，再來 35% 衣服帽子，剩下的照還沒拿到的件數分壁紙和家具。
+   家具才分等級（70/25/5，js/rarity.js 的 GRADE），衣服、壁紙、願望道具不算進這個比例。 */
+function newCap(c){
+  const e = {id:cid(c), t:'cap'};
+  if (wishNeeded().length && Math.random() < .5) return Object.assign(e, {k:'wish'});   // 開的時候才看缺哪一個
+  const lr = taken(c, 'look'), ll = (typeof lookLeft === 'function' ? lookLeft() : []).filter(k => !lr.has(k));
+  if (ll.length && Math.random() < .35) return Object.assign(e, {k:'look', it:pickOne(ll)});
+  const fr = taken(c, 'furn'), fl = Object.keys(FURN).filter(id => furnClawable(id) && !FURN_OWN[id] && !fr.has(id)).length;
+  const wl = wallLeft(taken(c, 'wall'));
+  if (!fl && !wl.length) return Object.assign(e, {k:'wish'});
+  if (Math.random() * (fl + wl.length) < wl.length) return Object.assign(e, {k:'wall', it:pickOne(wl)});
+  return Object.assign(e, furnCap(c, fr));
+}
+// 家具扭蛋的等級和內容。某一級新家具都拿完了：普通、特別照樣生成，開出來換幣；稀有就不再生成，也不把別級升上來
+function furnCap(c, fr){
+  const left = g => gradeLeft(g).filter(id => !fr.has(id));
+  let g;
+  // 稀有保障（CL-05）：連續 9 顆不是稀有，機台裡（兩種模式都算）又沒有金色扭蛋，這一顆就是金色。保障出現，不保障夾中
+  if (c.rp >= RARE_PITY && !clawHasGold(c) && left('r').length) g = 'r';
+  else {
+    const x = Math.random() * (GRADE.n.w + GRADE.s.w + GRADE.r.w);
+    g = x < GRADE.n.w ? 'n' : x < GRADE.n.w + GRADE.s.w ? 's' : 'r';
+    if (g === 'r' && !left('r').length) g = Math.random() * (GRADE.n.w + GRADE.s.w) < GRADE.n.w ? 'n' : 's';
+  }
+  const pool = left(g);
+  return {k:'furn', g, it:pool.length ? pickOne(pool) : ''};   // it 是空的：這一級拿完了，開出來換幣
+}
+const newDoll = c => ({id:cid(c), t:pickDoll()});
+function fillMachine(c, mode){
+  const a = c.m[mode] = c.m[mode] || [], cap = CLAW_MODE[mode].cap;
+  while (a.length < TOY_N) a.push(a.filter(e => e.t === 'cap').length < cap ? newCap(c) : newDoll(c));
+  return a;
+}
+// 開扭蛋：生成時放的東西後來在小店買到了，就換同一級的另一件；同一級都拿完了換幣。回傳 {kind, id} 或 {kind:'coin', g, n}
+function capOpen(c, e){
+  if (e.k === 'furn'){
+    let id = e.it && FURN[e.it] && !FURN_OWN[e.it] && furnGrade(e.it) === e.g ? e.it : '';
+    if (!id){ const fr = taken(c, 'furn'), l = gradeLeft(e.g).filter(i => !fr.has(i)); if (l.length) id = pickOne(l); }
+    c.rp = id && e.g === 'r' ? 0 : Math.min(RARE_PITY, c.rp + 1);   // 最多記到 9，滿了就等下一顆金色
+    return id ? {kind:'furn', id, g:e.g} : {kind:'coin', g:e.g, n:GRADE[e.g].sub || GRADE.s.sub};
+  }
+  if (e.k === 'wall'){
+    let id = e.it && WALLS.includes(e.it) && !WALL_OWN[e.it] ? e.it : '';
+    if (!id){ const l = wallLeft(taken(c, 'wall')); if (l.length) id = pickOne(l); }
+    if (id) return {kind:'wall', id};
+  }
+  if (e.k === 'look'){
+    const ok = typeof lookLeft === 'function' ? lookLeft() : [];   // 圍巾只有十二月開得到：十二月生成、一月才開，就換別件
+    let id = ok.includes(e.it) ? e.it : '';
+    if (!id){ const lr = taken(c, 'look'), l = ok.filter(k => !lr.has(k)); if (l.length) id = pickOne(l); }
+    if (id) return {kind:'look', id};
+  }
+  const need = wishNeeded();
+  return {kind:'wish', id:need.length ? pickOne(need) : pickOne(Object.keys(WISH))};
+}
+
+/* ---------- 擺位置 ---------- */
+const posOk = e => Number.isFinite(e.x) && Number.isFinite(e.y) && e.x >= CHUTE.x1 + 20 && e.x <= W - 20 && e.y >= 200 && e.y <= FLOOR;
+// 記下落地的位置；有變才回 true
+function setPos(e, x, y){ x = Math.round(x); y = Math.round(y); if (e.x === x && e.y === y) return false; e.x = x; e.y = y; return true; }
+function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+// 排 10 個：照 x 排序後平均分組，少的那一種每組放一個，扭蛋和娃娃就會左右散開，不會全擠在同一邊
+function clawLayout(list){
+  const n = Math.min(list.length, PILE_SPOTS.length);
+  const byX = PILE_SPOTS.slice(0, n).map((p, i) => i).sort((a, b) => PILE_SPOTS[a][0] - PILE_SPOTS[b][0]);
+  const caps = shuffle(list.filter(e => e.t === 'cap')), dolls = shuffle(list.filter(e => e.t !== 'cap'));
+  const [few, many] = caps.length <= dolls.length ? [caps, dolls] : [dolls, caps];
+  const pick = new Set();
+  for (let k = 0; k < few.length; k++){
+    const a = Math.floor(k * n / few.length), b = Math.floor((k + 1) * n / few.length);
+    pick.add(byX[a + Math.floor(Math.random() * (b - a))]);
+  }
+  let fi = 0, mi = 0;
+  return PILE_SPOTS.slice(0, n).map(([x, y], i) => ({ e: pick.has(i) ? few[fi++] : many[mi++], x: x + (Math.random()*10-5), y }));
+}
+// 有存位置就照存的擺；舊存檔、或剛補進來還沒落地就離開的，整台重新排（只換位置，內容不變）
+const spotsFor = list => list.length && list.every(posOk) ? list.map(e => ({e, x:e.x, y:e.y})) : clawLayout(list);
 function pile(){
-  toys = pileSpots().map(p => toyNew(p.t, p.x, p.y));
+  const c = clawData(), spots = spotsFor(fillMachine(c, c.mode));
+  spots.forEach(p => setPos(p.e, p.x, p.y));
+  toys = spots.map(p => toyNew(p.e, p.x, p.y));
 }
 function refill(){
-  const now = live();
-  if (now.length >= TOY_N) return;
-  const x = 150 + Math.random()*170;
-  const t = now.filter(t => t.t === 'cap').length < CAP_N ? 'cap' : pickDoll();
-  toys.push(Object.assign(toyNew(t, x, RAIL+60), { fall:true, rest:restY(x) }));
+  const c = clawData(), list = c.m[c.mode] || [];
+  if (list.length >= TOY_N) return;
+  const e = list.filter(e => e.t === 'cap').length < CLAW_MODE[c.mode].cap ? newCap(c) : newDoll(c);
+  list.push(e);
+  const x = 150 + Math.random()*170;   // 還沒落地沒有 y：落地時才記位置
+  toys.push(Object.assign(toyNew(e, x, RAIL+60), { fall:true, rest:restY(x) }));
 }
-// 換一批：免費、不限次數，不存檔。舊的往下掉、淡掉，新的從上面掉下來（0.5 秒內）；減少動態效果就直接換
-const clawBusy = () => claw.state !== 'idle' || toys.some(t => t.held || (t.toChute && !t.gone)) || !!document.querySelector('.over');
-function clawReroll(){
-  if (clawBusy()) return;
-  if (RM){ pile(); return; }
+// 舊的往下掉、淡掉，新的從上面掉下來（0.5 秒內）；減少動態效果就直接換
+function dropIn(spots){
+  spots.forEach(p => setPos(p.e, p.x, p.y));
+  if (RM){ toys = spots.map(p => toyNew(p.e, p.x, p.y)); return; }
   toys = toys.filter(t => !t.gone);
   toys.forEach(t => { t.sink = 1; t.fall = false; t.alpha = 1; });
-  pileSpots().forEach(p => {
-    const t = toyNew(p.t, p.x, RAIL+60), T = .3 + Math.random()*.15;   // T 秒內落地
+  spots.forEach(p => {
+    const t = toyNew(p.e, p.x, RAIL+60), T = .3 + Math.random()*.15;   // T 秒內落地
     t.fall = true; t.rest = p.y; t.vy = Math.max(0, (p.y - t.y - 450*T*T) / T);
     toys.push(t);
   });
+}
+// 換一批：免費、不限次數。只重新排位置，扭蛋的等級和內容都不重抽（CL-04）
+const clawBusy = () => claw.state !== 'idle' || toys.some(t => t.held || (t.toChute && !t.gone)) || !!document.querySelector('.over');
+function clawReroll(){
+  if (clawBusy()) return;
+  const c = clawData();
+  dropIn(clawLayout(fillMachine(c, c.mode)));
+  save();
+}
+// 切模式：這一台的東西和位置都已經存著，換上另一台存的
+function clawSwitch(m){
+  const c = clawData();
+  if (m === c.mode || !CLAW_MODE[m] || clawBusy()) return;
+  c.mode = m;
+  dropIn(spotsFor(fillMachine(c, m)));
+  save(); renderMode();
 }
 function restY(x){ // 簡單的堆疊高度
   let y = 396;
@@ -91,19 +214,29 @@ function drawChute(front){
   g.fillStyle = '#fff'; g.font = '800 12px ' + cvFam('出口', 'head'); g.textAlign='center'; g.textBaseline='middle';
   g.fillText('出口', (CHUTE.x0+CHUTE.x1)/2, CHUTE.top+39.5);
 }
-function drawCap(s){
-  const r = s*0.34;
+// 扭蛋：家具扭蛋照等級換顏色（CL-03），上半畫幾顆星、下半寫等級，不只靠顏色分。壁紙、衣服、願望道具的扭蛋照舊是粉紅色畫愛心
+// [上半, 外框, 字]：普通照舊粉紅、特別紫色、稀有金色
+const CAP_COL = { n:['#ff9cc8','#e14f93','#e14f93'], s:['#c3b2ff','#8a74e6','#7a62de'], r:['#ffd24a','#d99a00','#a86f00'] };
+function drawCap(s, e){
+  const r = s*0.34, gr = e && e.k === 'furn' && CAP_COL[e.g] ? e.g : null, [top, ink, txt] = CAP_COL[gr || 'n'];
+  if (gr === 'r'){ g.shadowColor = 'rgba(255,196,40,.85)'; g.shadowBlur = RM ? 10 : 9 + Math.sin(tick*.08)*5; }   // 金蛋外面一圈光；減少動態效果就不閃
   g.fillStyle = '#fff'; g.beginPath(); g.arc(0,0,r,0,7); g.fill();
-  g.fillStyle = '#ff9cc8'; g.beginPath(); g.arc(0,0,r,Math.PI,0); g.closePath(); g.fill();
-  g.strokeStyle = '#e14f93'; g.lineWidth = 2.4; g.beginPath(); g.arc(0,0,r,0,7); g.stroke();
+  g.shadowBlur = 0; g.shadowColor = 'transparent';
+  g.fillStyle = top; g.beginPath(); g.arc(0,0,r,Math.PI,0); g.closePath(); g.fill();
+  g.strokeStyle = ink; g.lineWidth = 2.4; g.beginPath(); g.arc(0,0,r,0,7); g.stroke();
   g.beginPath(); g.moveTo(-r,0); g.lineTo(r,0); g.stroke();
-  g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.ellipse(-r*.4,-r*.5,r*.25,r*.13,-.5,0,7); g.fill();
-  heart(0, r*.48, r*.22, '#ffc2dc');
+  g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.ellipse(-r*.55,-r*.62,r*.2,r*.1,-.5,0,7); g.fill();
+  if (!gr){ heart(0, r*.48, r*.22, '#ffc2dc'); return; }
+  const n = GRADE[gr].star, gap = r*.4;
+  g.fillStyle = '#fff'; g.strokeStyle = ink; g.lineWidth = 1.2;
+  for (let i = 0; i < n; i++){ star((i - (n-1)/2)*gap, -r*.42, r*.2); g.fill(); g.stroke(); }
+  g.fillStyle = txt; g.font = `800 ${(r*.42).toFixed(1)}px ${cvFam(GRADE[gr].name, 'head')}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(GRADE[gr].name, 0, r*.5);
 }
 function drawToy(t){
   g.save(); if (t.sink) g.globalAlpha = Math.max(0, t.alpha);   // 換一批時往下掉的舊東西，慢慢淡掉
   g.translate(t.x, t.y); g.rotate(t.r + Math.sin(t.wob)*0.18*(t.wobA||0));
-  if (t.t === 'cap') drawCap(t.s);
+  if (t.t === 'cap') drawCap(t.s, t.e);
   else { const im = imgs[t.t]; if (im) g.drawImage(im, -t.s/2, -t.s/2, t.s, t.s); }
   g.restore();
 }
@@ -374,7 +507,8 @@ function step(ts){
         // 保險：不管怎麼掉的，落地的位置在出口那一格裡，就當作夾到，繼續往下掉進出口、照樣出貨
         if (!t.toChute && inChute(t)){ t.toChute = true; t.rest = FLOOR + 60; continue; }
         t.y = t.rest; t.fall = false; t.wobA = .6; t.wob = 0;
-        if (t.toChute){ t.gone = true; S.misses = 0; S.wins++; renderHud(); save(); showPrize(t.t); }
+        if (t.toChute){ t.gone = true; S.misses = 0; S.wins++; renderHud(); save(); showPrize(t); }
+        else if (t.e && setPos(t.e, t.x, t.y)) save();   // 補進來的、半路掉下去的：記下落地的位置，重整後還在那裡
       }
     }
     // 保險：已經躺在出口那一格裡的（舊版留下來的），爪子閒著時也讓它掉進去出貨
@@ -382,7 +516,9 @@ function step(ts){
     if (t.wobA > 0 && !t.held && claw.state !== 'lift'){ t.wob += dt*12; t.wobA = Math.max(0, t.wobA - dt*1.4); }
   }
   if (toys.length > 40) toys = toys.filter(t => !t.gone);
-  const rf = $('#clawRf'); if (rf){ const b = clawBusy(); if (rf.disabled !== b) rf.disabled = b; }   // 爪子在動、卡片開著：換一批是灰的
+  // 爪子在動、卡片開著：換一批和切模式是灰的
+  const busy = clawBusy();
+  for (const b of document.querySelectorAll('#clawRf, #clawMode [data-m]')) if (b.disabled !== busy) b.disabled = busy;
   if (page === 'claw') draw();
   requestAnimationFrame(step);
 }
@@ -420,12 +556,39 @@ function renderCtrl(){
   go.innerHTML=CICON.go+`<span class="cost">${COIN}${freeNow ? 0 : COST}</span>`; go.setAttribute('aria-label', freeNow ? '放下爪子（今天第一次，不用幣）' : `放下爪子（${COST} 枚幣）`);
   const r = document.createElement('button'); r.className='rb'; r.innerHTML=CICON.r; r.setAttribute('aria-label','往右');
   [l,go,r].forEach(b => { b.disabled = busy; c.appendChild(b); });
-  const rf = document.createElement('button'); rf.className = 'rf'; rf.id = 'clawRf'; rf.innerHTML = CICON.rf + '<span>換一批</span>'; rf.setAttribute('aria-label', '換一批');
+  const rf = document.createElement('button'); rf.className = 'rf'; rf.id = 'clawRf'; rf.innerHTML = CICON.rf + '<span>換一批</span>'; rf.setAttribute('aria-label', '換一批（只換位置，裡面的東西不變）');
   rf.disabled = clawBusy(); rf.onclick = clawReroll; c.appendChild(rf);
   holdBtn(l, () => claw.dir = -1, () => claw.dir = 0);
   holdBtn(r, () => claw.dir = 1, () => claw.dir = 0);
   go.onclick = startDrop;
 }
+// 上面的模式切換：娃娃／家具扭蛋，右邊是稀有保障進度（點開看機率）
+function renderMode(){
+  const el = $('#clawMode'); if (!el) return;
+  const c = clawData(), busy = clawBusy(), left = Math.max(0, RARE_PITY - c.rp), allR = !gradeLeft('r').length;
+  el.innerHTML = Object.entries(CLAW_MODE).map(([k, m]) => `<button type="button" class="cm-b" data-m="${k}" aria-pressed="${c.mode === k}"${busy ? ' disabled' : ''}>${m.name}</button>`).join('')
+    + `<button type="button" class="cm-i" aria-label="家具扭蛋的機率和稀有保障：${allR ? '稀有家具都拿到了' : left ? `再開 ${left} 顆不是稀有的家具扭蛋，就一定會出現金色扭蛋` : '下一顆補進來的家具扭蛋會是金色的'}">`
+    + `<span class="cm-st" aria-hidden="true">★★★</span>${allR ? '都有了' : `${Math.min(c.rp, RARE_PITY)}/${RARE_PITY}`}</button>`;
+}
+function oddsOpen(){
+  if (clawBusy()) return;
+  const c = clawData(), left = Math.max(0, RARE_PITY - c.rp), allR = !gradeLeft('r').length;
+  const row = k => `<li class="g-${k}"><span aria-hidden="true">${'★'.repeat(GRADE[k].star)}</span>${GRADE[k].name} ${GRADE[k].w}%</li>`;
+  const o = document.createElement('div'); o.className = 'over';
+  o.innerHTML = `<div class="pcard cm-card" role="dialog" aria-label="家具扭蛋的機率"><p class="pz-nm"><b>家具扭蛋的等級</b></p>
+    <ul class="cm-odds">${['n', 's', 'r'].map(row).join('')}</ul>
+    <p class="cm-note">等級只算開出家具的扭蛋；扭蛋也會開出壁紙、衣服帽子和願望道具。扭蛋放進機台時就決定好了，換一批、切模式都不會變。</p>
+    <p class="cm-note">稀有保障：連續開 ${RARE_PITY} 顆不是稀有的家具扭蛋，機台裡又沒有金色扭蛋，下一顆補進來的家具扭蛋就是金色的，還是要夾到才算。${allR ? '稀有家具你都拿到了。' : left ? `現在 ${c.rp}/${RARE_PITY}。` : '現在已經滿了。'}</p>
+    <p class="cm-note">某一級的新家具都拿到了，普通換 ${GRADE.n.sub} 枚、特別換 ${GRADE.s.sub} 枚幣；稀有都拿到了就不再出現金色扭蛋。</p>
+    <button class="btn y ok" aria-label="知道了">${CKS}</button></div>`;
+  screen.appendChild(o);
+  const ok = o.querySelector('.ok'); ok.focus({preventScroll:true});
+  ok.onclick = () => { o.remove(); $('#clawMode .cm-i') && $('#clawMode .cm-i').focus({preventScroll:true}); };
+}
+$('#clawMode') && $('#clawMode').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.m) clawSwitch(b.dataset.m); else if (b.classList.contains('cm-i')) oddsOpen();
+});
 window.addEventListener('keydown', e => {
   if (page !== 'claw' || !$('#sheet').hidden || document.querySelector('.over')) return;
   if (e.key==='ArrowLeft'){ claw.dir = -1; e.preventDefault(); }
@@ -434,56 +597,52 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => { if (e.key==='ArrowLeft' || e.key==='ArrowRight') claw.dir = 0; });
 
-/* ---------- 扭蛋裡是什麼 ---------- */
-const pickOne = a => a[Math.floor(Math.random()*a.length)];
-function rollCap(){
-  const need = wishNeeded();
-  if (need.length && Math.random() < .5) return {kind:'wish', id:pickOne(need)};
-  const look = typeof lookRoll === 'function' && lookRoll();   // 衣櫃的帽子、衣服（js/wardrobe.js）
-  if (look) return look;
-  const pool = [
-    ...Object.keys(FURN).filter(id=>!FURN_OWN[id]&&!FURN[id].season&&!FURN[id].gift).map(id=>({kind:'furn', id})),   // 季節的、湊齊才送的夾不到
-    ...WALLS.filter(id=>!WALL_OWN[id]&&!(typeof GIFT_WALL!=='undefined'&&GIFT_WALL[id])).map(id=>({kind:'wall', id})),
-  ];
-  if (pool.length) return pickOne(pool);
-  return {kind:'wish', id:pickOne(Object.keys(WISH))};
-}
-
 /* ---------- 夾到了：卡片只放東西的圖 ---------- */
-function showPrize(t){
-  let pic, bonus = false, gotFurn = null;   // gotFurn：夾到的是家具，卡片上標哪一間、給「去擺」
+function showPrize(toy){
+  const c = clawData(), e = toy.e;
+  // 同一顆只領一次（CL-04）：先記下編號、從機台拿掉，再發東西，最後存一次
+  if (!e || c.got.includes(e.id)){ refill(); save(); return; }
+  c.got.push(e.id); if (c.got.length > GOT_KEEP) c.got.splice(0, c.got.length - GOT_KEEP);
+  for (const k of Object.keys(c.m)) c.m[k] = c.m[k].filter(x => x.id !== e.id);
+  const d = e.t;
+  let pic, bonus = false, gotFurn = null, grade = null, sub = null;   // gotFurn：夾到的是家具，卡片上標哪一間、給「去擺」
   let got = '';                             // 夾到娃娃：'new' 第一隻、'spare' 家裡已經有（留著送人）、'coin' 已經留著一隻（換成幣）。見 js/earn.js dollGain()
-  if (t === 'cap'){
-    const r = rollCap();
+  if (d === 'cap'){
+    const r = capOpen(c, e);
     if (r.kind === 'furn'){
-      FURN_OWN[r.id] = 1; pic = furnSVG(r.id); gotFurn = r.id; if (typeof newFurnAdd === 'function') newFurnAdd(r.id);
+      FURN_OWN[r.id] = 1; pic = furnSVG(r.id); gotFurn = r.id; grade = r.g; if (typeof newFurnAdd === 'function') newFurnAdd(r.id);
       if (!FLOOR_OWN.cloud && CLOUD_SET.every(i=>FURN_OWN[i])){ FLOOR_OWN.cloud = 1; bonus = true; }
-    } else if (r.kind === 'look'){ lookGet(r.id); pic = `<span class="lk-pic">${lookIcon(r.id)}</span>`; }
+    } else if (r.kind === 'coin'){ S.coins += r.n; renderHud(); sub = r; pic = `<span class="pz-coin">${COIN}</span>`; }
+    else if (r.kind === 'look'){ lookGet(r.id); pic = `<span class="lk-pic">${lookIcon(r.id)}</span>`; }
     else if (r.kind === 'wall'){ WALL_OWN[r.id] = 1; pic = `<span class="sw w-${r.id}"></span>`; }
     else { S.wish[r.id] = (S.wish[r.id]||0) + 1; pic = WISH[r.id].svg; evRefresh(); }
   } else {
-    got = dollGain(t); pic = `<img alt="" src="${SPR[t]}">`;
+    got = dollGain(d); pic = `<img alt="" src="${SPR[d]}">`;
   }
   save();
+  const src = gotFurn && typeof furnSrc === 'function' ? furnSrc(gotFurn) : '';
+  const gradeTag = k => `<p class="pz-gr g-${k}"><span aria-hidden="true">${'★'.repeat(GRADE[k].star)}</span>${GRADE[k].name}${src ? `<span class="pz-src">${src}</span>` : ''}</p>`;
   const o = document.createElement('div'); o.className = 'over';
-  o.innerHTML = `<div class="pcard" role="dialog" aria-label="夾到了"><div class="pic">${pic}</div>
+  o.innerHTML = `<div class="pcard${grade === 'r' ? ' pz-rare' : ''}" role="dialog" aria-label="夾到了"><div class="pic">${pic}</div>
     ${bonus ? '<div class="bonus"><span class="cl"></span><span class="sw f-cloud"></span></div>' : ''}
+    ${grade ? gradeTag(grade) : ''}
     ${gotFurn && typeof furnGo === 'function' ? `<p class="pz-nm"><b>${furnName(gotFurn)}</b>${furnRoomTag(gotFurn)}</p>` : ''}
-    ${got === 'spare' ? `<p class="pz-nm pz-sp"><b>家裡已經有${DOLL_NAME[t]}了，這隻可以送給朋友</b><small>先留著的話，牠會在娃娃機當店員，每天帶回 ${EARN_WORK_PAY} 枚</small></p>` : ''}
-    ${got === 'coin' ? `<p class="pz-nm pz-sp"><b>多的${DOLL_NAME[t]}換成 ${SPARE_COIN} 枚幣</b><small>家裡一隻、留著送人的一隻都有了</small></p>` : ''}
+    ${sub ? `<p class="pz-nm pz-sp"><b>${GRADE[sub.g].name}家具都拿到了，換成 ${sub.n} 枚幣</b></p>` : ''}
+    ${got === 'spare' ? `<p class="pz-nm pz-sp"><b>家裡已經有${DOLL_NAME[d]}了，這隻可以送給朋友</b><small>先留著的話，牠會在娃娃機當店員，每天帶回 ${EARN_WORK_PAY} 枚</small></p>` : ''}
+    ${got === 'coin' ? `<p class="pz-nm pz-sp"><b>多的${DOLL_NAME[d]}換成 ${SPARE_COIN} 枚幣</b><small>家裡一隻、留著送人的一隻都有了</small></p>` : ''}
     <div class="pz-row">${got === 'spare' ? '<button class="btn y pz-give">送給朋友</button><button class="btn ok pz-keep">先留著</button>' : `<button class="btn y ok" aria-label="收下">${CKS}</button>`}${gotFurn && typeof furnGo === 'function' ? '<button class="btn pz-go">去擺</button>' : ''}</div></div>`;
   screen.appendChild(o);
   const ok = o.querySelector('.ok'); ok.focus({preventScroll:true});
-  ok.onclick = () => { o.remove(); refill(); renderTray(); renderSet(); afterPrize(); save(); };
+  ok.onclick = () => { o.remove(); refill(); renderTray(); renderSet(); renderMode(); afterPrize(); save(); };
   const go = o.querySelector('.pz-go'); if (go) go.onclick = () => { ok.onclick(); furnGo(gotFurn); };
-  const give = o.querySelector('.pz-give'); if (give) give.onclick = () => { ok.onclick(); spareGive(t); };
+  const give = o.querySelector('.pz-give'); if (give) give.onclick = () => { ok.onclick(); spareGive(d); };
 }
 
 /* ---------- 開機 ---------- */
 function loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
 async function initClaw(){
   await Promise.all(DOLLS.map(async t => { imgs[t] = await loadImg(SPR[t]); }));
-  pile(); renderHud(); renderCtrl();
-  cvFonts(['出口'], 'head');   // 出口牌子的字（js/cvfont.js）；不等它，載好之後下一格就換成源泉圓體
+  pile(); save(); renderHud(); renderCtrl(); renderMode();
+  cvFonts(['出口', ...Object.values(GRADE).map(x => x.name)], 'head');   // 出口牌子、扭蛋上等級的字（js/cvfont.js）；不等它，載好之後下一格就換成源泉圓體
   requestAnimationFrame(step);
 }
