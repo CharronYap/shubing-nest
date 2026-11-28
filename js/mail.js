@@ -513,7 +513,7 @@ function mailAdd(d, type, q, today, ai, hm){
    2026-11-27 使用者的信箱裡同一封更新信出現兩次：兩台裝置各在不同天寄了同一封，合併時是照「日期＋內容」比，日期不同就都留下來了。
    薯餅的更新信：同一個編號只留一封（不看日期）。其他的信：同一天、同一封才算重複（同一句話隔幾個月再寄一次是正常的）。
    留下來的那一封，「看過」「附件領過」只要有一邊是，就算是：附件不會因為重複多領一次，也不會變回沒領。js/account.js 合併存檔時用同一套（mailSameKey）。 */
-const mailSameKey = o => { const k = mailBare(o.k); return /^[a-z]+\.news\./.test(k) ? k : o.t + '|' + k; };   // 不看收到的時間 h
+const mailSameKey = o => { const k = mailBare(o.k).replace(/;ro=[^;]*/, ''); return /^[a-z]+\.news\./.test(k) ? k : o.t + '|' + k; };   // 不看收到的時間 h，也不看回信抄下來的原信 ro（兩台各收一次，紀念冊不一樣時 ro 會不同；js/letter.js）
 function mailDedupe(m){
   const seen = new Map(), keep = [];
   (m.l || []).forEach(o => {
@@ -604,7 +604,7 @@ function mailFill(s, p){
     .replace(/\{w\}/g, p.w || '朋友').replace(/\{m\}/g, () => p.x ? txSlot(mailDec(p.x)) : MAIL_GIFT_LINES[p.m] || MAIL_GIFT_LINES[0])
     .replace(/\{x\}/g, () => txSlot(mailDec(p.x)));
 }
-function mailText(k){
+function mailText(k, o){   // o：信箱裡那一筆（朋友的回信找原信用，js/letter.js 的 letterReNote）
   const {d, type, i, p} = mailParse(k);
   let title = mailFill(MAIL_TITLE[type] || '', p), body;
   let zz = type !== 'news';   // 薯餅寫到一半睡著的結尾：牠自己的信都有，更新信只有標了 zz 的那幾封
@@ -615,7 +615,7 @@ function mailText(k){
     return {d, type, title: r.title, body: r.body, from: r.from, pic: r.pic, sv: r.sv};
   } else if (type === 're'){
     // 朋友寫的信（js/letter.js）：只有他打的字，走 txSlot。最下面一行小字寫是回哪一封
-    return {d, type: 're', title: p.rt ? `${p.w || '朋友'}回信了` : `${p.w || '朋友'}寫給你的信`, body: txSlot(mailDec(p.x)), from: p.w || '朋友', note: typeof letterReNote === 'function' ? letterReNote(p) : '', zz: false};
+    return {d, type: 're', title: p.rt ? `${p.w || '朋友'}回信了` : `${p.w || '朋友'}寫給你的信`, body: txSlot(mailDec(p.x)), from: p.w || '朋友', note: typeof letterReNote === 'function' ? letterReNote(p, o) : '', zz: false};
   } else if (type === 'trip'){
     // 過夜日記（data.js 的 STAY_DIARY）＋主人塞的小紙條
     const e = ((typeof STAY_DIARY !== 'undefined' && STAY_DIARY[d]) || [])[i];
@@ -653,7 +653,7 @@ function mailBodyHTML(x){
 const mailSnip = x => x.d === 'dino' && x.type !== 'news' && x.type !== 'pc' && x.type !== 're' ? '一片葉子' : x.body.split('\n')[0].replace('[拖鞋]', '');
 // old：這一封不在主存檔裡，是按「看更早的」讀回來的（js/keep.js），j 是它在 mailOld 裡的第幾封
 function mailCard(o, j, open, tag, old){
-  const x = mailText(o.k);
+  const x = mailText(o.k, o);
   const from = x.type === 'news' ? '薯餅' : x.from || DOLL_NAME[x.d];
   let inner = '';
   if (open){

@@ -59,10 +59,30 @@ function letterBtn(o, back, bare){
   const b = `<button class="btn sm lt-btn" data-ltr="${ltKey(t, back)}">回信</button>`;
   return bare ? b : `<div class="lt-row">${b}</div>`;
 }
-// 信最下面那一行小字：回的是哪一封（mail.js 的 mailText 叫）
-function letterReNote(p){
+// 信最下面那一行小字：回的是哪一封（mail.js 的 mailText 叫）。o 是信箱裡那一筆，沒給就用編號找
+// 回的是信（rt=re）：寫出自己寄給他的那封的前 40 字（2026-11-28）。新收到的在抄進信箱時就找好，放在 k 的 ro；
+// 舊信沒有 ro，打開時才從紀念冊找，不寫回去（k 一改，兩台裝置合併時要多認一次）。找不到照舊寫「你寫的信」
+function letterReNote(p, o){
   const d = DOLLS.includes(p.rd) ? DOLL_NAME[p.rd] : '娃娃';
-  return p.rt === 'gift' ? `回：從你家去的${d}` : p.rt === 'trip' ? `回：來你家過夜的${d}` : p.rt === 'pc' ? '回：你寄的明信片' : p.rt === 're' ? '回：你寫的信' : '';
+  if (p.rt === 're'){
+    let m = p.ro ? sText(mailDec(p.ro), 40) : '';
+    if (!m) m = letterOrig(p.u, letterAtOf(o || letterById(p.id)));
+    return m ? `回：你寫的「${txSlot(m)}」` : '回：你寫的信';
+  }
+  return p.rt === 'gift' ? `回：從你家去的${d}` : p.rt === 'trip' ? `回：來你家過夜的${d}` : p.rt === 'pc' ? '回：你寄的明信片' : '';
+}
+// 紀念冊裡寄給 uid 的信（letterOut），在 at 之前最後寄的那一封的字；朋友如果回的是更早那封會對錯
+function letterOrig(uid, at){
+  if (!uid || !(at > 0) || typeof memoList !== 'function') return '';
+  let best = null;
+  memoList().forEach(e => { if (e && e.k === 'letterOut' && e.u === uid && e.m && e.ts < at && (!best || e.ts > best.ts)) best = e; });
+  return best ? best.m : '';
+}
+// 舊信的回信時間：信箱那一筆的日期加收到的時間 h；更早的信沒有 h，就算那天的最後一刻
+function letterAtOf(o){
+  const t = o && /^(\d{4})-(\d{2})-(\d{2})$/.exec(o.t || ''); if (!t) return 0;
+  const h = /^(\d{1,2}):(\d{2})$/.exec(mailHm(o));
+  return new Date(+t[1], t[2] - 1, +t[3], h ? +h[1] : 23, h ? +h[2] : 59, 59, 999).getTime();
 }
 // 信箱裡編號是 id 的那一封（朋友面板用）
 function letterById(id){
@@ -144,7 +164,8 @@ async function letterRefresh(redraw){
     if (!have && ok){
       const re = LT_RE.includes(c.re) ? c.re : '', d = typeof c.d === 'string' && DOLLS.includes(c.d) ? c.d : '';
       const icon = (re === 'gift' || re === 'trip') && d ? d : 'sloth';
-      const k = `${icon}.re.0#w=${ngName(c.fromName)};u=${c.from};x=${encodeURIComponent(msg)}${re ? ';rt=' + re : ''}${d ? ';rd=' + d : ''};id=${c.id}`;
+      const ro = re === 're' ? letterOrig(c.from, +c.t || Date.now()) : '';   // 回的那封的字（letterReNote）；id 要留在最後面（letterById）
+      const k = `${icon}.re.0#w=${ngName(c.fromName)};u=${c.from};x=${encodeURIComponent(msg)}${re ? ';rt=' + re : ''}${d ? ';rd=' + d : ''}${ro ? ';ro=' + encodeURIComponent(ro) : ''};id=${c.id}`;
       m.l.unshift({k: mailWithH(k, mailHmOf(c.t || Date.now())), t: ngDay(c.t), r: 0, a: null, g: 0});   // 時間用朋友寄出的那一刻，和日期一樣
       memoAdd('letterIn', c.from, sText(c.fromName, 12) || '朋友', {id: 'li' + c.id, c: c.id, in: 1, d, m: msg});
       changed = true;
