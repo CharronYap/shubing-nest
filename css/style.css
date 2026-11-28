@@ -947,6 +947,16 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);
 button.fx{cursor:pointer}
 button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-radius:8px}
 .fx-tiles svg{height:100%}
+/* 浴室的白霧（js/rooms.js 的 fixPaint）：疊在磁磚和地毯上面、牆上掛的和家具娃娃下面（z 7）；不吃點擊。
+   每團大部分時間是透明的，一輪裡只有前 3 成看得到，三團週期不一樣，所以是偶爾冒一下（2026-11-28） */
+.fx.fx-steam{z-index:7;pointer-events:none;overflow:hidden}
+.fx-steam i{position:absolute;top:calc(var(--wh,52%) - 14%);width:16%;aspect-ratio:1/1.5;transform:translateX(-50%);opacity:0;
+  background:radial-gradient(closest-side at 50% 55%,rgba(255,255,255,.8),rgba(255,255,255,.35) 50%,rgba(255,255,255,0));animation:bsteam 21s ease-out infinite}
+.fx-steam i:nth-child(1){left:24%;animation-delay:2s}
+.fx-steam i:nth-child(2){left:31%;animation-delay:3.6s;animation-duration:23s}
+.fx-steam i:nth-child(3){left:72%;animation-delay:12s;animation-duration:27s}
+@keyframes bsteam{0%{opacity:0;transform:translate(-50%,0) scale(.6)}8%{opacity:.7}30%{opacity:0;transform:translate(-50%,-140%) scale(1.5)}100%{opacity:0;transform:translate(-50%,-140%) scale(1.5)}}
+@media (prefers-reduced-motion:reduce){.fx-steam{display:none}}
 .fx-pass.l{transform:none}
 .fx-pass.r{transform:translateX(-100%)}
 .fx-pass::after{content:"";position:absolute;inset:-6px -4px}

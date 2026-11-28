@@ -329,7 +329,12 @@ function fixPaint(){
   const r = roomId;
   if (r === 'living'){ const can = !VISIT || !!VISIT.yard; add('fx-door', FIX.yardDoor(), `left:79%;width:15%;${base}`, can && !(VISIT && VISIT.card) ? 'yard' : '', ROOM_LABEL.yard); }
   else if (r === 'bed') add('fx-star', FIX.star(), 'left:79%;width:8%;top:calc(var(--wh,52%)*.38)');
-  else if (r === 'bath') add('fx-tiles', FIX.tiles(), `left:50%;width:100%;height:calc(var(--wh,52%)*.4);${base}`);
+  else if (r === 'bath'){
+    add('fx-tiles', FIX.tiles(), `left:50%;width:100%;height:calc(var(--wh,52%)*.4);${base}`);
+    // 浴室的白霧（2026-11-28）：三團淡淡的霧偶爾往上飄，樣子在 css/style.css 的 .fx-steam。
+    //   裡面沒有 SVG，拍照（js/photo.js 只畫 .fx 的 SVG）不會拍進去；不吃點擊，娃娃和家具照樣點得到
+    add('fx-steam', '<i></i><i></i><i></i>', 'left:50%;width:100%;top:0;bottom:0');
+  }
   else if (r === 'kitchen'){ add('fx-counter', FIX.counter(), `left:50%;width:44%;${base}`); add('fx-hooks', FIX.hooks(), 'left:81%;width:24%;top:calc(var(--wh,52%)*.3)'); }
   // 通往隔壁的門口（照切換鈕的順序）。看明信片時只有一間，不畫
   if (VISIT && VISIT.card) return;
