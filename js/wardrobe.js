@@ -106,10 +106,13 @@ function redressRoom(d){
 }
 
 /* ---------- 扭蛋：claw.js 的 rollCap() 會先問這裡 ---------- */
-function lookRoll(){
-  // 不賣的（圍巾）平常開不到，十二月才會在扭蛋裡
+// 還能開到的衣服帽子；不賣的（圍巾）平常開不到，十二月才會在扭蛋裡
+function lookLeft(){
   const dec = todayStr().slice(5, 7) === '12';
-  const left = Object.keys(LOOK_ITEMS).filter(k => !hasLook(k) && (LOOK_ITEMS[k].price != null || dec));
+  return Object.keys(LOOK_ITEMS).filter(k => !hasLook(k) && (LOOK_ITEMS[k].price != null || dec));
+}
+function lookRoll(){
+  const left = lookLeft();
   if (!left.length || Math.random() >= .35) return null;
   return {kind:'look', id:left[Math.floor(Math.random() * left.length)]};
 }
