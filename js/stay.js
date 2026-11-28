@@ -146,7 +146,7 @@ async function stayHome(diary){
   } else toast(`${DOLL_NAME[o.d]}回來了`);
   if (doc && !mine) stayLateNote(doc);   // 雲端留著的是更早那一次的（上面可能有紙條）
   save();
-  if (!VISIT){ if (RIDS.includes(roomId)) load(); mailBadge(); }
+  if (!VISIT){ if (RIDS.includes(roomId)){ if (typeof evKeep === 'function') evKeep(load); else load(); } mailBadge(); }
   if (typeof evRefresh === 'function') evRefresh();   // 回來了：今天牠的小事又可以做
   // 日記和娃娃都回到自己的存檔了：等存檔上了雲端才結束雲端那一筆
   if (net && doc) sAfterSave(() => net.stayEnd(net.me.uid));

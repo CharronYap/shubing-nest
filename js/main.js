@@ -130,6 +130,12 @@ function evRefresh(){
   openEvents();
   $('#sheet').scrollTop = y;
 }
+// 房間重畫（js/room.js 的 load）會把 #sheet 關掉：出門、回家要重畫房間時，先記下清單開著沒，畫完再打開，evRefresh 才接得上（2026-11-28）
+function evKeep(fn){
+  const sh = $('#sheet'), on = evOpen && !sh.hidden, y = sh.scrollTop;
+  fn();
+  if (on){ sh.hidden = false; sh.scrollTop = y; }
+}
 $('#evBtn').addEventListener('click', () => { if (evOpen && !$('#sheet').hidden){ $('#sheet').hidden = true; return; } openEvents(); });
 $('#sheet').addEventListener('click', e => {
   if (e.target.closest('.x')){ evOpen = false; return; }

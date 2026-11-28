@@ -290,7 +290,7 @@ function tvSettle(now){
 }
 // 畫面跟著換：房間、收納架、信箱的數字
 function tvRefresh(){
-  if (!VISIT){ if (RIDS.includes(roomId)) load(); else renderTray(); }
+  if (!VISIT){ if (RIDS.includes(roomId)){ if (typeof evKeep === 'function') evKeep(load); else load(); } else renderTray(); }
   if (typeof mailBadge === 'function') mailBadge();
   if (typeof renderHud === 'function') renderHud();
   if (!VISIT && typeof evRefresh === 'function') evRefresh();   // 出門、回家：今天的小事跟著灰掉或亮回來（js/main.js 的 evAway）
