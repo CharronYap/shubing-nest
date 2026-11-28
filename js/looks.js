@@ -313,6 +313,8 @@ function outfitSvg(id, layer, who = 'sloth') {
 // ---------- 小窩加的 ----------
 // 龍龍：蛋蛋島沒有這隻，照小窩的 img/dino.png 量（2026-11-28 換成 3D 掃描的新圖後重量；臉偏左，因為取景是 3/4 側面）
 TOY_FACE.dino = { x: 0.39, top: 0.08, eyes: 0.6, cheeks: 0.7, w: 0.5 };
+// 龍龍沒有脖子，圍巾照原本的大小會橫過整個身體，像腰帶：縮小，只圍在嘴巴下面（圍巾在 js/season.js）
+ACCESSORY_TUNING.dino = { scarf: { offsetX: 0, offsetY: 0, scale: 0.75, rot: 0 } };
 // 彈跳豬：小窩的圖只有頭，蝴蝶結照蛋蛋島會掉到下巴外面，改戴在右耳旁邊
 ACCESSORY_TUNING.moodeng.bow = { offsetX: 0.02, offsetY: 0.06, scale: 0.78, rot: 18 };
 return { TOY_FACE, ACCESSORY_PLACE, ACCESSORY_TUNING, accTune, ACCESSORY_SVG, OUTFITS, OUTFIT_FIT, outfitSvg, outfitSkipped };

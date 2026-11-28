@@ -19,8 +19,9 @@ const SPIN = {
   // 皮蛋的旋轉圖取景比 img/dog.png 遠（趴著的狗轉起來比較佔位置），放大、挪一點對回原本的大小；頭不在轉軸上（hz＝頭在轉軸前面多少）
   dog: {src: 'img/spin/dog.webp', fit: 'translate(1.7%,-.4%) scale(1.28)', fr: .3, hz: .16},
   nyanko: {src: 'img/spin/nyanko.webp', fr: .4},
-  // 龍龍的臉長在大圓身體的正面，離轉軸遠（照旋轉圖第 0～4 格眼睛的位置推的）
-  dino: {src: 'img/spin/dino.webp', fr: 1.2},
+  // 龍龍的臉長在大圓身體的正面，離轉軸遠（照旋轉圖第 0～4 格眼睛的位置推的）；
+  // 臉跑得快，墨鏡、腮紅轉 2 格就會跑到身體邊緣外面，所以早一點淡出：轉 1 格照常，2 格剩三成，3 格不見（fade：開始淡、全不見的 cos）
+  dino: {src: 'img/spin/dino.webp?v=1128-08', fr: 1.2, fade: [.96, .82]},
 };
 const SPIN_N = 24, SPIN_STEP = 42;                       // 一格 42 毫秒：轉 90 度大約四分之一秒
 const SPIN_FLAT = {piggy: 'l', snoopy: 'l', moodeng: 'r'};   // 沒有 3D 的三隻：照片本來臉朝哪邊
@@ -91,7 +92,8 @@ function spinWear(host, d, f){
       const r = fw * (P.fr || .45), w = P.hz || 0;
       e.style.left = (L + (u * c + (w + r) * s - u) * 100).toFixed(2) + '%';
       e.style.scale = Math.max(.05, c).toFixed(3) + ' 1';
-      e.style.opacity = Math.max(0, Math.min(1, (c - .3) / .3)).toFixed(2);
+      const [f1, f0] = P.fade || [.6, .3];   // 預設：轉 53 度開始淡，73 度全不見
+      e.style.opacity = Math.max(0, Math.min(1, (c - f0) / (f1 - f0))).toFixed(2);
     }
   });
 }

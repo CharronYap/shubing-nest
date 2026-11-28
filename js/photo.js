@@ -143,7 +143,7 @@ function boxIn(el, R){ const r = el.getBoundingClientRect(); return {x: r.left -
    （正在跳、睡著、側身的旋轉格、左右翻、衣服帽子這一刻的位置）。之後載圖、載字型的時候娃娃繼續動，照片照那一刻畫，
    不會一隻拍到前一刻、一隻拍到後一刻。
    - 正在跳（.body 有 roam-hop）的任何一隻：跳起來拍糊了（往上一點、殘影、腳下的動作線）。
-   - 側身就畫旋轉圖的那一格（img/spin，js/spin.js），沒有 3D 的四隻照畫面左右翻；睡著、坐著照畫面。
+   - 有 3D 的五隻側身就畫旋轉圖的那一格（img/spin，js/spin.js），沒有 3D 的三隻照畫面左右翻；睡著、坐著照畫面。
    - 蛋黃哥照舊左右翻（牠本來就懶得看鏡頭，不算擺姿勢）。畫面上牠剛好側身的時候照那一格畫、不再翻，不然方向會跟畫面相反。 */
 const phSpinImg = {};   // 側身用的旋轉圖：畫之前先載好（photoShoot 的 phSpinReady）
 async function phSpinReady(){

@@ -1,5 +1,5 @@
 /* 薯餅的小窩：資料（娃娃、個性、每天的小事、家具） */
-const SPR = {sloth:'img/sloth.png',egg:'img/egg.png',dog:'img/dog.png',moodeng:'img/moodeng.png',nyanko:'img/nyanko.png',dino:'img/dino.png',snoopy:'img/snoopy.png',piggy:'img/piggy.png'};
+const SPR = {sloth:'img/sloth.png',egg:'img/egg.png',dog:'img/dog.png',moodeng:'img/moodeng.png',nyanko:'img/nyanko.png',dino:'img/dino.png?v=1128-08',snoopy:'img/snoopy.png',piggy:'img/piggy.png'};
 const DOLLS = ['sloth','egg','dog','moodeng','nyanko','dino','snoopy','piggy'];
 // 名字和個性：房間裡不顯示，相簿（js/album.js）每頁會寫
 const DOLL_NAME = {sloth:'薯餅',egg:'蛋黃哥',dog:'皮蛋',moodeng:'彈跳豬',nyanko:'貓咪老師',dino:'龍龍',snoopy:'史努比',piggy:'火腿'};
