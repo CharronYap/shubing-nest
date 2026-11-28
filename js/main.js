@@ -33,7 +33,7 @@ function grantCoins(){
 /* ---------- 每天的小事 ---------- */
 function mulberry32(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function hashStr(s){ let h = 2166136261; for (const c of s){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
-// 不在家的娃娃（2026-11-28）：去旅行（'trip'）或去朋友家過夜（'out'），跟 travel.js 的 tvHomeDolls 同一套，在小島上的算在家。
+// 不在家的娃娃（2026-11-28）：去旅行（'trip'）或去朋友家過夜（'out'），跟 travel.js 的 tvHomeDolls 同一套，在花園裡的算在家。
 // 直接看存檔，不靠 whereDoll：planDay 第一次跑的時候 travel.js 還沒載入，whereDoll 還沒包上旅行那一層。
 // 旅行的回家時間已經過了、只是還沒結算的，算在家（tvCheck 馬上會把牠放回來）
 function dollAway(d){
@@ -46,7 +46,7 @@ const evAway = e => (e.d || []).filter(dollAway);
 // 排好以後才出門的：清單那一行灰掉，寫這句；按了也是 toast 這句
 function evAwayLine(e){
   const a = evAway(e); if (!a.length) return '';
-  if (a.length > 1) return `${a.map(d => DOLL_NAME[d]).join('和')}還沒回家，回來再做。`;
+  if (a.length > 1) return `${andJoin(a.map(d => DOLL_NAME[d]))}還沒回家，回來再做。`;
   const d = a[0], n = DOLL_NAME[d];
   if (dollAway(d) === 'out') return `${n}在朋友家過夜，回來再做。`;
   const o = S.album.tv.out.find(o => o && Array.isArray(o.ds) && o.ds.includes(d));
@@ -121,6 +121,14 @@ function doEvent(id){
   toast(`+${EVENT_COINS} 枚幣`);
   if (evOpen && !$('#sheet').hidden) openEvents(id);
   return true;
+}
+// 紅點、娃娃頭上的泡泡跟著更新；清單開著的話也重畫，捲動位置留著（2026-11-28）
+function evRefresh(){
+  renderEvBadge(); markDolls();
+  if (!evOpen || $('#sheet').hidden) return;
+  const y = $('#sheet').scrollTop;
+  openEvents();
+  $('#sheet').scrollTop = y;
 }
 $('#evBtn').addEventListener('click', () => { if (evOpen && !$('#sheet').hidden){ $('#sheet').hidden = true; return; } openEvents(); });
 $('#sheet').addEventListener('click', e => {
@@ -238,7 +246,7 @@ startStep('切到房間', () => setPage('room'));
 startStep('娃娃機', initClaw);
 startStep('收納架的高度', () => { trayTo('c'); });   // 一律從收著開始（以前記的 h、f 都不用了，js/room.js）
 // 開著過了午夜：換新的一天
-setInterval(() => { if (S.day.date !== todayStr()){ planDay(); grantCoins(); renderEvBadge(); markDolls(); } }, 60000);
+setInterval(() => { if (S.day.date !== todayStr()){ planDay(); grantCoins(); evRefresh(); } }, 60000);
 
 /* 1127-25 手機防誤觸：iOS Safari 的雙指縮放不看 touch-action（css/style.css 的 #screen），遊戲畫面裡另外擋 gesturestart。
    只擋 #screen 裡面，畫面外照樣能縮放；也不動 viewport。圖片、按鈕不能被拖走（輸入框裡的字照樣能拖） */

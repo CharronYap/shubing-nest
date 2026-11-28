@@ -3,6 +3,8 @@ const SPR = {sloth:'img/sloth.png',egg:'img/egg.png',dog:'img/dog.png',moodeng:'
 const DOLLS = ['sloth','egg','dog','moodeng','nyanko','dino','snoopy','piggy'];
 // 名字和個性：房間裡不顯示，相簿（js/album.js）每頁會寫
 const DOLL_NAME = {sloth:'薯餅',egg:'蛋黃哥',dog:'皮蛋',moodeng:'彈跳豬',nyanko:'貓咪老師',dino:'龍龍',snoopy:'史努比',piggy:'火腿'};
+// 名字接成一句：兩個寫「A和B」，三個以上寫「A、B和C」（2026-11-28）
+const andJoin = a => a.length > 1 ? a.slice(0, -1).join('、') + '和' + a[a.length - 1] : (a[0] || '');
 const DOLL_TRAIT = {sloth:['愛發呆','好脾氣'],egg:['懶','厭世'],dog:['黏人','愛藏東西'],moodeng:['脾氣大','愛鬧'],nyanko:['貪吃','嘴硬心軟'],dino:['調皮','活潑'],snoopy:['愛幻想','愛演'],piggy:['愛吐槽','萬事通']};
 
 /* 點一下娃娃會說的話（照個性寫） */
@@ -53,7 +55,7 @@ const EVENTS = [
   {id:'roast', d:['piggy','nyanko'], t:'火腿和貓咪老師又在互相吐槽。', end:'吵到最後，兩隻分著吃了同一包餅乾。'},
   {id:'prank', d:['dino','piggy'], t:'龍龍的惡作劇失敗了，火腿在旁邊說風涼話。', end:'龍龍說下次一定會成功。'},
   {id:'still', d:['sloth','egg'], t:'薯餅和蛋黃哥湊在一起，一整天都沒動。', end:'牠們動了一下，換了個更舒服的姿勢。'},
-  // 小島的小事：小島上有那種地才會出現（js/yard.js 的 yardHas）
+  // 花園的小事：花園裡有那種地才會出現（js/yard.js 的 yardHas）
   {id:'sloth-tree', d:['sloth'], yard:'tree', t:'薯餅想去花園的樹下發呆。', end:'薯餅在樹下坐了一個下午，說今天很有收穫。'},
   {id:'moodeng-pond', d:['moodeng'], yard:'pond', t:'彈跳豬想去池塘泡水。', end:'彈跳豬在池塘泡到睡著，鼻子還露在外面。'},
   {id:'snoopy-runway', d:['snoopy'], yard:'grass', t:'史努比想在花園的草地上開飛機。', end:'史努比在草地上起飛又降落，降落得有點歪。'},

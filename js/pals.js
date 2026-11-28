@@ -42,7 +42,7 @@ function palsUp(up){
       if (!S.day.ids.includes(e.id)){ S.day.ids.push(e.id); added = true; }
     }
   });
-  if (added){ renderEvBadge(); markDolls(); }
+  if (added) evRefresh();
   if (msg.length) setTimeout(() => toast(msg[0] + (added ? '，今天多一件小事' : '')), 1200);
 }
 

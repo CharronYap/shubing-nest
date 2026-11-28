@@ -309,10 +309,10 @@ async function pushRoom() {
   if (!me) return;
   const data = { name: me.name.slice(0, 24), home: { living: pubRoom(home.living), bed: pubRoom(home.bed), bath: pubRoom(home.bath) }, look: S.look || {} };
   ['kitchen', 'attic'].forEach(r => { if (home[r] && Array.isArray(home[r].items)) data.home[r] = pubRoom(home[r]); });   // 買了才有的房間（js/rooms.js）
-  // 第五版：願望清單（最多 3 隻還沒有的娃娃）和小島給朋友看的樣子（每塊地是什麼，不含種子、次數）
+  // 第五版：願望清單（最多 3 隻還沒有的娃娃）和花園給朋友看的樣子（每塊地是什麼，不含種子、次數）
   const want = typeof wantList === 'function' ? wantList() : [];
   if (want.length) data.want = want;
-  // 小島（js/yard.js、js/water.js）：花圃 6 格的樣子（規則要 12 格，後面填空）；小島這間的擺設放 home.yard。
+  // 花園（js/yard.js、js/water.js）：花圃 6 格的樣子（規則要 12 格，後面填空）；花園這間的擺設放 home.yard。
   // home.yard 要等規則發布才收，沒發布時 cloud.saveRoom 會拿掉再寫，其他房間照樣放得上去
   const yp = typeof waterPublic === 'function' ? waterPublic() : null;
   if (yp) { data.yard = yp; if (home.yard && Array.isArray(home.yard.items)) data.home.yard = pubRoom(home.yard); }
@@ -435,11 +435,11 @@ function mergeSave(remote, guest) {
   if (ga.tour && !ma.tour) ma.tour = ga.tour;
   // 旅行：行李、明信片、土產、在外面的旅程（js/travel.js 的 tvMerge；同一隻在兩台各出門一趟，留比較早出門的那一趟）
   if (typeof tvMerge === 'function') { try { tvMerge(m, guest); } catch (e) { console.info('[account] 旅行的進度合不起來，先用雲端那份', e); } }
-  // 門外小島：用帳號裡的那份，帳號裡還沒有才用這台的；種子數量取比較多的
+  // 門外的花園：用帳號裡的那份，帳號裡還沒有才用這台的；種子數量取比較多的
   if (guest.yard) {
     if (!m.yard) m.yard = guest.yard;
     else if (typeof yardMerge === 'function' && m.yard.v === 2 && guest.yard.v === 2) { try { yardMerge(m.yard, guest.yard); } catch (e) { console.info('[account] 花園的進度合不起來，先用雲端那份', e); } }
-    else if (m.yard.v !== 2 && guest.yard.seeds) { const ms = m.yard.seeds = m.yard.seeds || {}; for (const [k, n] of Object.entries(guest.yard.seeds || {})) ms[k] = Math.max(ms[k] || 0, n || 0); }   // 舊版的小島才有種子
+    else if (m.yard.v !== 2 && guest.yard.seeds) { const ms = m.yard.seeds = m.yard.seeds || {}; for (const [k, n] of Object.entries(guest.yard.seeds || {})) ms[k] = Math.max(ms[k] || 0, n || 0); }   // 舊版的花園才有種子
   }
   // 幣取比較多的。拿的是這台的，跟錢包對帳用的 base（earn.wb）也要用這台的，不然這段差額會重複算進蛋蛋島的錢包
   if ((guest.coins || 0) > (m.coins || 0) && guest.earn && Number.isInteger(guest.earn.wb) && m.earn) { m.earn.wb = guest.earn.wb; m.earn.wu = guest.earn.wu; }
@@ -713,7 +713,7 @@ async function loadFriends() {
 }
 
 /* ---------- 檢查雲端（2026-11-27）----------
-   「全部都留」（js/keep.js）把舊的紀念冊、信、明信片搬到存檔底下的三個子集合。這三個地方平常很久才會用到一次，
+   「全部都留」（js/keep.js）把舊的紀念冊、信、旅行紀錄、明信片搬到存檔底下的四個子集合（旅行紀錄 2026-11-28 補進來）。這四個地方平常很久才會用到一次，
    所以在帳號面板最下面放一顆「檢查雲端」，按了實際各寫一筆、讀回來、刪掉，看雲端收不收，結果用一張面板顯示（方便截圖回報）。
    - 測試用的月份文件是「現在的年月-9」（用 UTC 的年月，跟規則同一個算法），明信片的編號用 selftest 開頭。
    - 不碰主存檔，不記進 memoM、lm、pcA，所以就算最後刪除失敗，留下的那一份遊戲也不會讀到。
@@ -742,6 +742,8 @@ async function cloudCheck(btn) {
   };
   if (!off) await month('紀念冊', 'memo', { id: 'selftest:' + ts, t: day, ts, u: who.uid, n: '檢查', k: 'selftest' }, r => r.id, 1000);
   if (!off) await month('信', 'mail', { k: 'selftest.news.0#id=t' + ts, t: day, r: 1, a: null, g: 0 }, r => r.t + '|' + r.k, 500);
+  // 旅行紀錄（nestSaves/{uid}/trip/{月份}）：寫一筆 log，keyOf 和上限跟 js/keep.js 搬旅行紀錄時一樣（2026-11-28）
+  if (!off) await month('旅行紀錄', 'trip', { k: 'log', d: day, s: 'selftest:' + ts }, keepKeyOf.trip, KEEP_MAX.trip);
   if (!off) {
     const id = 'selftest' + ts;
     try {
@@ -754,7 +756,7 @@ async function cloudCheck(btn) {
   checking = false;
   const p = n => String(n).padStart(2, '0'), d = new Date(ts), when = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
   const word = { ok: '可以', bad: '不行', skip: '跳過' };
-  const allOk = !off && res.length === 3 && res.every(r => r[1] === 'ok');
+  const allOk = !off && res.length > 0 && res.every(r => r[1] === 'ok');
   open(`<div class="ac-hd">${USER_ICON}<b>檢查雲端</b></div>
     ${off ? '<p class="ac-ck-top off">現在連不上，晚點再試</p>' : allOk ? '<p class="ac-ck-top ok">雲端都正常</p>' : ''}
     ${off ? '' : `<ul class="ac-ck">${res.map(([n, s, why]) => `<li><b>${n}</b><span class="${s}">${word[s]}${s === 'bad' && why ? `（${esc(why)}）` : ''}</span>${s !== 'bad' && why ? `<small>${esc(why)}</small>` : s === 'skip' ? '<small>那個位置已經有資料，這一項沒有檢查</small>' : ''}</li>`).join('')}</ul>`}

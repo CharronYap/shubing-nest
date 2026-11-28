@@ -75,7 +75,19 @@ function skitTarget(who, to){
   const o = skitDoll(to);
   if (o){ const [ox, oy] = roamPos(o); return [Math.max(10, Math.min(90, ox + (x < ox ? -11 : 11))), Math.max(58, Math.min(94, oy + 1))]; }
   const f = items.find(i => i.kind === 'furn' && i.id === to);
-  if (f) return [Math.max(10, Math.min(90, f.x + (x < f.x ? -8 : 8))), Math.max(58, Math.min(94, f.y + 3))];
+  if (f){
+    // 那個點已經有別的演員站著、或剛走過去，就換到家具另一邊；兩邊都有人再往外移（2026-11-28）
+    const run = skitOn, dir = x < f.x ? -1 : 1, fy = Math.max(58, Math.min(94, f.y + 3));
+    const taken = [];
+    if (run) run.sc.cast.forEach(d => {
+      if (d === who) return;
+      const o = skitDoll(d); if (o){ const [px, py] = roamPos(o); taken.push([px, py]); }
+      if (run.tgt && run.tgt[d]) taken.push(run.tgt[d]);
+    });
+    const free = ([cx, cy]) => taken.every(([px, py]) => Math.abs(px - cx) >= 9 || Math.abs(py - cy) >= 6);
+    const opts = [8, -8, 16, -16, 24, -24].map(k => [Math.max(10, Math.min(90, f.x + dir * k)), fy]);
+    return opts.find(free) || opts[0];
+  }
   return [50, 84];
 }
 function skitBar(title){
@@ -116,6 +128,7 @@ async function skitRun(run, steps){
     else if (t === 'm'){
       if (REDUCE) continue;
       const [x, y] = skitTarget(who, arg);
+      (run.tgt || (run.tgt = {}))[who] = [x, y];   // 記下要去哪裡，下一個走去同一件家具的會避開
       await new Promise(res => { roamHopTo(it, x, y, res); const t0 = Date.now(), iv = setInterval(() => { const st = RS[it.uid]; if (!st || !st.busy || Date.now() - t0 > 6000 || skitOn !== run){ clearInterval(iv); res(); } }, 120); });
       await skitSleep(200);
     }

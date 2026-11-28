@@ -86,7 +86,7 @@ function tvPicsFromMail(t){
   t.pf = 1;
 }
 const tvTrip = d => tvData().out.find(o => o.ds.includes(d)) || null;
-const tvNames = ds => ds.map(d => DOLL_NAME[d]).join('和');
+const tvNames = ds => andJoin(ds.map(d => DOLL_NAME[d]));
 const tvPacked = () => { const b = tvData().bag; return !!(b.food || b.charm || b.tool); };
 // 道具可以兩樣一起帶：bag.tool 和旅程的 tool 都是用逗號接起來的字（'torch,umb'）
 const tvToolList = s => String(s || '').split(',').filter(id => TV_GOODS[id] && TV_GOODS[id].slot === 'tool');
@@ -99,12 +99,12 @@ const tvDest = p => (tvAb(p) ? TV_PLACES[p].country : TV_PLACES[p].name.replace(
 const tvBits = b => [0, 1, 2].filter(c => (b || 0) & (1 << c)).length;
 // 家裡一隻娃娃都沒有（全家旅行中）：今天的小事等牠們回來
 const tvNobody = () => tvData().out.length > 0 && tvHomeDolls().length === 0;
-// 收納架、過夜、小島都用 whereDoll 看娃娃在哪：旅行中的回 'trip'
+// 收納架、過夜、花園都用 whereDoll 看娃娃在哪：旅行中的回 'trip'
 {
   const prev = whereDoll;
   whereDoll = function(id){ return (typeof S !== 'undefined' && S.album && S.album.tv && Array.isArray(S.album.tv.out) && S.album.tv.out.some(o => o && Array.isArray(o.ds) && o.ds.includes(id))) ? 'trip' : prev(id); };
 }
-// 在家的：有這隻、沒去旅行、沒去朋友家過夜（在小島上的也算在家）
+// 在家的：有這隻、沒去旅行、沒去朋友家過夜（在花園裡的也算在家）
 const tvHomeDolls = () => DOLLS.filter(d => DOLL_N[d] && !['trip', 'out'].includes(whereDoll(d)));
 
 /* ---------- 出門：這一刻把整趟的結果決定好 ---------- */
@@ -293,7 +293,7 @@ function tvRefresh(){
   if (!VISIT){ if (RIDS.includes(roomId)) load(); else renderTray(); }
   if (typeof mailBadge === 'function') mailBadge();
   if (typeof renderHud === 'function') renderHud();
-  if (!VISIT && typeof renderEvBadge === 'function'){ renderEvBadge(); markDolls(); }   // 出門、回家：今天的小事跟著灰掉或亮回來（js/main.js 的 evAway）
+  if (!VISIT && typeof evRefresh === 'function') evRefresh();   // 出門、回家：今天的小事跟著灰掉或亮回來（js/main.js 的 evAway）
 }
 // 打開小窩時：先結算，再補算不在的這段時間（最多連續 TV_CHAIN 趟）
 let tvOpened = false;
@@ -389,7 +389,7 @@ function tvMerge(m, g){
   t.out = keep;
   // 房間對齊
   const H = Object.assign({}, m.home || {});
-  if (m.yard && m.yard.rm && Array.isArray(m.yard.rm.items)) H.yard = m.yard.rm;   // 小島那一間的擺設存在 yard.rm（js/yard.js）
+  if (m.yard && m.yard.rm && Array.isArray(m.yard.rm.items)) H.yard = m.yard.rm;   // 花園那一間的擺設存在 yard.rm（js/yard.js）
   const rooms = Object.keys(H).filter(r => H[r] && Array.isArray(H[r].items));
   const where = d => rooms.find(r => H[r].items.some(i => i && i.kind === 'doll' && i.id === d));
   keep.forEach(o => o.ds.forEach(d => { const r = where(d); if (!r) return; const it = H[r].items.find(i => i.kind === 'doll' && i.id === d); H[r].items.forEach(x => { if (x.sit === it.uid) x.sit = null; }); H[r].items.splice(H[r].items.indexOf(it), 1); }));

@@ -13,6 +13,7 @@
 S.season = Array.isArray(S.season) ? S.season : [];
 
 // 農曆新年（初一）和中秋的日子。憑記憶寫的，待使用者決定.md 有寫要核對
+// 2026-11-28 核對過；2032 以後還沒加，2031 年中秋前要補。
 const LNY_DAY = {2027:'2027-02-06', 2028:'2028-01-26', 2029:'2029-02-13', 2030:'2030-02-03', 2031:'2031-01-23'};
 const MOON_DAY = {2027:'2027-09-15', 2028:'2028-10-03', 2029:'2029-09-22', 2030:'2030-09-12', 2031:'2031-10-01'};
 const RED_ENVELOPE = 6;   // 過年火腿給的紅包（枚幣）
@@ -144,8 +145,8 @@ function seasonGrant(t = todayStr()){
     const nl = (s.look || []).filter(k => !hasLook(k));
     nl.forEach(k => S.closet.push(k));
     if (s.coins){ S.coins += s.coins; msg.push(`火腿給你一個紅包：${s.coins} 枚幣`); }
-    if (nf.length) msg.push(`${nf.map(id => FURN[id].name).join('和')}收在收納架了`);
-    if (nl.length) msg.push(`衣櫃多了${nl.map(k => LOOK_ITEMS[k].name).join('和')}`);
+    if (nf.length) msg.push(`${andJoin(nf.map(id => FURN[id].name))}收在收納架了`);
+    if (nl.length) msg.push(`衣櫃多了${andJoin(nl.map(k => LOOK_ITEMS[k].name))}`);
   });
   msg.push(...seasonAnniv(t));
   if (msg.length){
@@ -157,7 +158,7 @@ function seasonGrant(t = todayStr()){
 // 娃娃來小窩滿一年（album.met 的月日）：送一個週年蛋糕，同一天來的寫在同一句
 function seasonAnniv(t){
   const y = +t.slice(0, 4), leap = (y % 4 === 0 && y % 100) || y % 400 === 0;
-  const due = Object.entries(S.album.met || {}).filter(([d, m]) => {
+  const due = Object.entries((S.album && S.album.met) || {}).filter(([d, m]) => {
     let md = m.slice(5);
     if (md === '02-29' && !leap) md = '02-28';
     return SPR[d] && +m.slice(0, 4) < y && md === t.slice(5) && !seasonHas(`anniv-${d}-${y}`);

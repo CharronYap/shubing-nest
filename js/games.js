@@ -256,6 +256,7 @@ function gm4Css(){
 .gm4-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .gm4-s{cursor:pointer;outline:none}
 .gm4-s .hit{fill:transparent}
+.gm4-s .ring{fill:none}
 .gm4-s .st{fill:#fff3c4;stroke:#d99a00;stroke-width:.5;stroke-linejoin:round}
 .gm4-s text{font:700 3.6px var(--f-head);fill:#5a4a52;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .gm4-s.on .st{fill:#ffd75e}
