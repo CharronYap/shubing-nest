@@ -16,7 +16,7 @@
    要加新的一組：DUO_TUCK 多一筆（a 塞進 b 裡），照片、大小、台詞都在那一筆裡。 */
 const DUO_TUCK = [{
   id: 'egg-dino', a: 'egg', b: 'dino', name: '蛋黃哥會側著塞進龍龍裡',
-  pic: 'img/duo/egg-dino.webp?v=1128-09',
+  pic: 'img/duo/egg-dino.webp?v=1128-10',
   pw: 1.04, pb: .13,        // 照片在 b 的框裡：寬度是 b 的幾倍、底部離框底多少（b 的圖底下本來就有一點空白）
   head: [.51, .05, .14],    // 照片裡 a 的頭：中間的 x、頭頂的 y、頭中間的 y（照片寬高的幾成）
   face: 'l',                // 照片裡 b 的臉朝哪邊

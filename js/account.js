@@ -792,7 +792,8 @@ window.nestNet = {
 ['bookAdd', 'bookMine', 'book', 'bookDel', 'waterAdd', 'waterMine', 'waters', 'waterDel', 'foundAdd', 'foundMine', 'founds', 'foundDel',
   'stayGo', 'stayMine', 'stayGuests', 'staySet', 'stayEnd', 'cardSend', 'cardsTo', 'cardDel', 'letterSend', 'lettersTo', 'letterDel',
   'chatSend', 'chatRecent', 'chatOlder', 'chatSince', 'chatMeta', 'chatMetas', 'chatSeen', 'chatDel',   // 朋友聊天（js/chat.js）
-  'keepGet', 'keepMerge', 'keepDel', 'keepCardPut', 'keepCardGet', 'keepCardDel', 'keepCards']   // 最後一排：全部都留（js/keep.js）
+  'keepGet', 'keepMerge', 'keepDel', 'keepCardPut', 'keepCardGet', 'keepCardDel', 'keepCards',   // 全部都留（js/keep.js）
+  'picAdd', 'picMine', 'pics', 'pic']   // 最後一排：去朋友家拍合照（js/pic.js）
   .forEach(k => { window.nestNet[k] = (...a) => cloud[k](...a); });
 
 /* ---------- 開始 ---------- */
