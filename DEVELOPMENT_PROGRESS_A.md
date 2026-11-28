@@ -1,7 +1,7 @@
 # DEVELOPMENT_PROGRESS_A.md｜Claude A（小窩核心系統）
 
 - 專案：薯餅的小窩 shubing-nest（https://github.com/CharronYap/shubing-nest）
-- 工作分支：`claude-a/nest-v3`（worktree：`.claude/worktrees/claude-a-nest-v3`），沒有設 upstream，不會誤推到 main
+- 工作分支：`claude-a/nest-v3`（worktree：`.claude/worktrees/claude-a-nest-v3`），11-28 使用者批准後推送並開 PR
 - base commit：`1c5ad5b`（origin/main，NEST_V `1128-15`，正式站 https://charronyap.github.io/shubing-nest/ ）
 - 依據：`shubing_claude_a_v3.pdf`（2026-11-28 V3.0 雙線並行分工規約）
 - 主 repo（`~/Desktop/shubing-nest`）裡使用者還沒提交的檔案（三份 PDF、`docs/gpt/gpt意見/`、`舊/`、`龍龍.usdz`）一律不動
@@ -139,6 +139,7 @@
 - 2026-11-28 21:55（UTC+8）建立分支 `claude-a/nest-v3`（base 1c5ad5b）與本檔；完成 A-00、CL-01 盤點與分級草案，尚未改任何遊戲程式。
 - 2026-11-28 22:20（UTC+8）CL-02～CL-05、CL-09 實作與測試完成（本機 commit，見 git log；沒有推送、沒有部署）。NEST_V 1128-17。
 - 2026-11-28 22:30（UTC+8）使用者確認：普通家具拿完後維持換 3 枚幣。程式不用改。
+- 2026-11-28 22:25（UTC+8）使用者說「先上線試玩」→ 推送分支、開 PR #17（https://github.com/CharronYap/shubing-nest/pull/17），一般合併（merge commit `8065135`，沒有 force push）。GitHub Pages 22:26 發布完成，正式站 NEST_V 1128-17，`rarity.js`／`claw.js` 載入正常、沒有 console 錯誤（只開頁面確認，沒有操作存檔）。等使用者試玩驗收。
 
 ## 附錄：104 件物品 ID 分級對照（2026-11-28 使用者確認）
 
