@@ -237,3 +237,35 @@ SK('f3-leafbed', '葉子被子', ['dino', 'egg'], {}, ['m dino egg', 's dino 你
 SK('r5-boot', '好大的鞋子', ['dog', 'nyanko'], {furn: 'bootstool'}, ['m dog bootstool', 's dog 汪！好大的鞋子！', 's dog 可以藏好多拖鞋！', 'm nyanko bootstool', 's nyanko 這是椅子。本大爺要坐。', 's dog 那我藏在你下面！',
   {q: '雨鞋凳要給誰用？', o: [['給貓咪老師坐', ['s nyanko 哼，坐起來不錯。', 's dog 那我在旁邊顧！'], '貓咪老師坐上雨鞋凳，皮蛋在旁邊顧。'], ['給皮蛋藏東西', ['a dog jump', 's dog 汪！藏好了！', 's nyanko ……有拖鞋味。不坐了。'], '皮蛋把拖鞋藏進雨鞋凳，貓咪老師不坐了。']]}], '');
 SK('r5-umbrella', '等下雨', ['moodeng', 'egg'], {furn: 'umbrellalamp'}, ['m moodeng umbrellalamp', 's moodeng 傘打開了！！', 's moodeng 是不是要下雨了！！', 'm egg umbrellalamp', 's egg 這是燈。', 's moodeng 那我等它下雨！！', 'n 等了很久，燈都沒有下雨。', 's egg 在傘下面躺著，也不錯。', 's moodeng ……好啦也不錯！！'], '彈跳豬在雨傘燈下等下雨，最後跟蛋黃哥一起躺著。');
+
+/* ================= 第四批：冬天和節日（2026-11-28，10 段） =================
+   冬天 3 段（雪花窗貼、小松樹、冬天的晚上）、農曆新年 2 段（紅燈籠、春字貼）、中秋 2 段（月亮燈、兔子燈籠）、
+   春天的櫻花花串 1 段、夏天的西瓜坐墊 1 段，自由 1 段（下雨天的晚上，之前沒有 rain 加 night 的）。
+   節日家具都在 js/season.js：雪花窗貼、櫻花花串、月亮燈原本放臥室，其他放客廳；演員要跟家具在同一間才排得到。
+   季節家具拿到了就一直留著，什麼時候擺出來都可以，所以只寫跟那件家具對得上的事，不寫「現在是冬天」「今天過年」。
+   字的規則跟第三批一樣：只用常用字；標點只用 ，。！？…「」～；旁白不加括號；沒有 emoji。 */
+
+/* ---------- 冬天（3 段） ---------- */
+SK('x4-snowflake', '不會化掉的雪', ['sloth', 'snoopy'], {furn: 'snowflake'}, ['m sloth snowflake', 's sloth 窗戶上有一片雪花。', 's sloth 它一直都不會化掉耶。', 'm snoopy sloth', 's snoopy 作家調查過了。', 's snoopy 這片雪是紙做的。', 's sloth 那它可以一直留下來。',
+  {q: '要怎麼陪這片雪花？', o: [['一起數它有幾個角', ['s sloth 一……二……三……', 'w', 's sloth 六。數完了耶。', 's snoopy 史上最慢的計算。精彩。'], '薯餅慢慢數完了，雪花窗貼一共有六個角。'], ['請史努比寫成故事', ['s snoopy 書名叫不會化掉的雪。', 's sloth 我可以當那片雪嗎。', 's snoopy 可以。主角很少動。'], '史努比把雪花窗貼寫成故事，薯餅演那片不會化掉的雪。']]}], '');
+SK('x4-pinegift', '樹下的禮物', ['egg', 'dog'], {furn: 'pine'}, ['m egg pine', 's egg 樹下面，好躺。', 'm dog egg', 's dog 汪！樹下有一個禮物！', 's egg 不是禮物。是我。', 's dog 那你是要送給誰的！', 's egg ……送給想睡的人。',
+  {q: '要打開這個禮物嗎？', o: [['輕輕打開看看', ['a dog jump', 's dog 打開了！是蛋黃哥！', 's egg 驚喜吧。我可以睡了嗎。'], '皮蛋打開小松樹下的禮物，裡面是蛋黃哥。'], ['讓禮物再睡一下', ['s dog 好！那我幫你顧著！', 's egg 嗯。顧小聲一點。'], '蛋黃哥在小松樹下當禮物睡著了，皮蛋在旁邊小聲顧著。']]}], '');
+SK('x4-hibernate', '報名冬眠', ['snoopy', 'egg'], {night: true, furn: 'pine'}, ['m snoopy pine', 's snoopy 晚上的小松樹，好安靜。', 'm egg snoopy', 's egg 樹在睡覺吧。', 's snoopy 聽說有的動物會冬眠。', 's snoopy 一口氣睡到春天。', 's egg ……要去哪裡報名。', 's snoopy 作家不行，還要交稿。', 's egg 我沒有稿。我去了。', 'a egg yawn', 'n 蛋黃哥在小松樹下開始冬眠。', 's snoopy 報告，冬眠第一天。'], '晚上蛋黃哥在小松樹下報名冬眠，史努比要交稿不能去。');
+
+/* ---------- 農曆新年（2 段） ---------- */
+SK('x4-lantern', '燈籠裡面', ['nyanko', 'dino'], {furn: 'lantern'}, ['m nyanko lantern', 's nyanko 那顆紅紅圓圓的……', 's nyanko 是不是一顆大饅頭。', 'm dino nyanko', 's dino 那是燈籠啦！', 's dino 過年掛的，看起來好熱鬧。', 's nyanko 哼。裡面裝什麼。',
+  {q: '燈籠裡面裝什麼？', o: [['什麼都沒有', ['s dino 空的耶！那我可以躲進去！', 's nyanko 太小了。你的尾巴會露出來。'], '紅燈籠裡是空的，龍龍想躲進去，貓咪老師說牠的尾巴會露出來。'], ['裝著新年的好運', ['s nyanko 好運可以吃嗎。', 's dino 不行啦！要大家分！', 's nyanko 哼。那本大爺先分一份。'], '貓咪老師聽說紅燈籠裡裝著好運，說要先分一份。']]}], '');
+SK('x4-couplet', '春到了', ['piggy', 'sloth'], {furn: 'couplet'}, ['m piggy couplet', 's piggy 這個春字，我來講解。', 's piggy 有人會把它倒過來貼。', 's piggy 意思是，春到了。', 'm sloth piggy', 's sloth 倒過來就會到喔。', 'a sloth look', 's sloth 那我倒過來，薯餅就到了。', 's piggy ……你本來就在這裡。', 's sloth 喔。那我已經到了。'], '火腿講解倒過來貼的春字，薯餅說牠倒過來就是薯餅到了。');
+
+/* ---------- 中秋（2 段） ---------- */
+SK('x4-moonlamp', '月亮掉進來了', ['moodeng', 'snoopy'], {furn: 'moonlamp'}, ['m moodeng moonlamp', 's moodeng 月亮掉進房間了！！', 's moodeng 我先看到的！！是我的！！', 'm snoopy moodeng', 's snoopy 慢著，太空人到了。', 's snoopy 我要在上面插一面旗子。', 's moodeng 不准插！！月亮會痛！！', 's snoopy ……有道理。改成拍照。', 'a moodeng jump', 's moodeng 拍我！！跟月亮一起！！'], '彈跳豬不准史努比在月亮燈上插旗子，最後跟月亮拍了一張照。');
+SK('x4-rabbit', '兔子去散步', ['dog', 'piggy'], {furn: 'rabbit'}, ['m dog rabbit', 's dog 汪！有一隻白兔子！', 's dog 牠的腳是輪子耶！', 'm piggy dog', 's piggy 這是兔子燈籠。', 's piggy 中秋節拉著走的。', 's dog 那我帶牠去散步！', 'm dog l', 'n 兔子燈籠沒有跟上來。', 's dog 咦？牠怎麼不走！', 's piggy 你要用拉的啦。',
+  {q: '要怎麼帶兔子散步？', o: [['幫皮蛋拉著走', ['m dog c', 's dog 走了走了！牠跟上來了！', 's piggy 慢一點，輪子會掉。'], '你幫皮蛋拉著兔子燈籠散步，火腿在後面喊慢一點。'], ['讓兔子在家休息', ['m dog rabbit', 's dog 好！那我陪牠坐！', 's piggy 燈籠本來就不太愛走。'], '兔子燈籠在家休息，皮蛋坐在旁邊陪牠。']]}], '');
+
+/* ---------- 春天、夏天（各 1 段） ---------- */
+SK('x4-petal', '賞花配點心', ['nyanko', 'moodeng'], {furn: 'petal'}, ['m nyanko petal', 's nyanko 有花，就要賞花。', 's nyanko 賞花一定要配點心。', 'm moodeng nyanko', 's moodeng 花怎麼都不會掉！！', 's moodeng 我要看花瓣飛！！', 'a moodeng jump', 'n 花串輕輕晃了一下。', 's nyanko 喂，別把花嚇跑了。', 's moodeng ……那我小聲跳！！', 's nyanko 嗯。這樣花比較好看。'], '櫻花花串下，貓咪老師要配點心賞花，彈跳豬想看花瓣飛。');
+SK('x4-melon', '頭上長西瓜', ['dino', 'egg'], {furn: 'melon'}, ['m egg melon', 's egg 西瓜坐墊。涼涼的。', 'm dino egg', 's dino 嘿嘿，跟你說一個秘密。', 's dino 吞下西瓜子，頭上會長西瓜。', 's egg ……要長多久。', 's dino 嗯……很久很久吧。', 's egg 那我躺著等。',
+  {q: '要跟蛋黃哥說實話嗎？', o: [['說是龍龍亂講的', ['s dino 好啦是我亂講的啦。', 's egg 喔。那我還是躺著。'], '龍龍說頭上長西瓜是亂講的，蛋黃哥還是繼續躺。'], ['陪牠一起等', ['s dino 等等，你真的要等喔？', 's egg 嗯。反正我也不想動。'], '蛋黃哥在西瓜坐墊上等頭上長西瓜，反正牠也不想動。']]}], '');
+
+/* ---------- 自由：下雨天的晚上（1 段） ---------- */
+SK('n4-raindrop', '數雨滴', ['nyanko', 'dog', 'dino'], {rain: true, night: true}, ['s nyanko 下雨的晚上，最好睡。', 'm dog nyanko', 's dog 我睡不著！雨好吵！', 'm dino c', 's dino 我也是！我們來玩！', 's nyanko 不准玩。數雨滴。', 's dog 一滴！兩滴！三滴！', 's dino 九十九滴！嘿嘿。', 's dog 你跳太多了啦！', 'n 數著數著，有人打呼了。', 's dino 是貓咪老師先睡著的。', 's nyanko ……本大爺在閉眼數。'], '下雨的晚上，貓咪老師叫大家數雨滴，結果自己先睡著了。');
