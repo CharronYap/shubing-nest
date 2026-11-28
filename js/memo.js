@@ -16,6 +16,7 @@ const MEMO_ICON = {
   stayOut: STAY_MOON, stayBack: STAY_MOON, guest: STAY_MOON, photoWith: typeof CAM_ICON !== 'undefined' ? CAM_ICON : STAY_MOON, bookIn: BOOK_ICON, bookOut: BOOK_ICON,
   hideFound: WANT_STAR, hideMiss: WANT_STAR, seekFound: WANT_STAR, waterIn: WATER_ICON, waterOut: WATER_ICON,
   letterOut: MAIL_ICON, letterIn: MAIL_ICON,   // 回信（js/letter.js）
+  picOut: typeof CAM_ICON !== 'undefined' ? CAM_ICON : STAY_MOON, picIn: typeof CAM_ICON !== 'undefined' ? CAM_ICON : STAY_MOON,   // 去朋友家拍合照（js/pic.js）
 };
 const memoList = () => (S.album.memo = Array.isArray(S.album.memo) ? S.album.memo : []);
 const memoDate = day => { const d = new Date((day | 0) * 864e5); return isNaN(d) || !(day > 0) ? todayStr() : d.toISOString().slice(0, 10); };
@@ -60,6 +61,8 @@ function memoText(e){
     case 'waterOut': return `幫${w}的小島澆水`;
     case 'letterOut': return e.m ? `寫信給${w}：「${txSlot(e.m)}」` : `寄了一封信給${w}`;
     case 'letterIn': return `收到${w}寫的信`;
+    case 'picOut': return `帶${d}去${w}家拍了照`;
+    case 'picIn': return `${w}帶${d}來家裡拍了照`;
   }
   return '';
 }
@@ -81,9 +84,12 @@ function memoOpen(uid){
   const rows = L.filter(e => e.u === memoCur).map(e => {
     // 明信片：主存檔裡有，或可能搬到舊的那邊去了（點了再去讀）
     const card = e.k === 'cardIn' && e.c && ((S.mail && Array.isArray(S.mail.pc) && S.mail.pc.some(c => c.id === e.c)) || (typeof keepCardMaybe === 'function' && keepCardMaybe(e.c)));
+    // 合照（js/pic.js）：照片不存，點了用那份文件重畫。picOut 在朋友家（e.u），picIn 在自己家
+    const pic = (e.k === 'picOut' || e.k === 'picIn') && /^\d+_[\w-]{1,64}$/.test(e.c || '') && typeof picOpen === 'function';
     const ym = String(e.t || '').slice(0, 7), hd = ym !== mo && /^\d{4}-\d{2}$/.test(ym) ? `<div class="al-sec mm-mo">${+ym.slice(0, 4)} 年 ${+ym.slice(5)} 月</div>` : '';
     mo = ym;
-    return hd + `<div class="mm-it ${card ? 'tap' : ''}" ${card ? `data-mmc="${e.c}" role="button" tabindex="0"` : ''}><small>${md(e.t)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(e)}${card ? '<i>點開看</i>' : ''}</p></div>`;
+    const tap = card ? `data-mmc="${e.c}" role="button" tabindex="0"` : pic ? `data-mmp="${e.c}" data-mmk="${e.k}" data-mmpu="${e.u}" role="button" tabindex="0"` : '';
+    return hd + `<div class="mm-it ${card || pic ? 'tap' : ''}" ${tap}><small>${md(e.t)}</small><span class="ic">${MEMO_ICON[e.k] || ''}</span><p>${memoText(e)}${card || pic ? '<i>點開看</i>' : ''}</p></div>`;
   }).join('');
   openSheet(`<div class="hd">${ALB_ICON}<span>${me ? `和${txSlot(me.n)}的紀念冊` : '紀念冊'}</span></div>
     <div class="mm-box">
@@ -102,6 +108,8 @@ $('#sheet').addEventListener('click', e => {
   const o = e.target.closest('[data-mmold]');
   if (o && typeof memoOlder === 'function'){ o.disabled = true; const box = $('#sheet .mm-box'), top = box ? box.scrollTop : 0, top2 = $('#sheet').scrollTop;   // 讀完重畫，留在原本捲到的地方（捲的可能是裡面那一格，也可能是整張面板）
     memoOlder().then(() => { if ($('#sheet .mm-box') && !$('#sheet').hidden){ memoOpen(); const x = $('#sheet .mm-box'); if (x) x.scrollTop = top; $('#sheet').scrollTop = top2; } }); return; }
+  const p = e.target.closest('[data-mmp]');
+  if (p && typeof picOpen === 'function'){ const pe = memoList().find(x => x.c === p.dataset.mmp && x.k === p.dataset.mmk && x.u === p.dataset.mmpu) || (typeof memoOld !== 'undefined' ? memoOld : []).find(x => x.c === p.dataset.mmp && x.k === p.dataset.mmk); if (pe) picOpen(pe); return; }
   const c = e.target.closest('[data-mmc]');
   if (c && typeof cardOpen === 'function'){ const i = (S.mail.pc || []).findIndex(x => x.id === c.dataset.mmc); if (i >= 0) cardOpen(i); else if (typeof keepCardOpen === 'function') keepCardOpen(c.dataset.mmc); }
 });
@@ -135,6 +143,7 @@ addEventListener('nestnet', () => { memoWrap(); memoStart(); });
 /* ---------- 今天誰來過 ---------- */
 const WHO_SAY = {
   bookIn: () => '在訪客簿留了話', waterIn: () => '幫小島澆了水', guest: e => `帶${DOLL_NAME[e.d] || '娃娃'}來過夜`, cardIn: () => '寄了明信片', letterIn: () => '寫了一封信給你',
+  picIn: e => `帶${DOLL_NAME[e.d] || '娃娃'}來拍了一張照`,
   hideFound: e => `找到躲起來的${DOLL_NAME[e.d] || '娃娃'}`, hideMiss: e => `來找躲起來的${DOLL_NAME[e.d] || '娃娃'}，沒找到`,
 };
 async function whoShow(){

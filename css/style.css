@@ -1520,3 +1520,8 @@ span.yd-kind{cursor:default}
 .al-ln li .tv-bl{margin:2px 0 0}
 /* 旅行紀錄的「看更早的」（js/travel.js tvRows）：一顆按鈕自己一行，不是一張小卡 */
 .al-ln li.tv-lgm,.look-paper .al-ln li.tv-lgm{flex-basis:100%;padding:2px 0 0;background:none;box-shadow:none;text-align:center}
+
+/* 去朋友家拍合照（js/pic.js）：重畫的時候蓋一層白，房間固定成 600×800、不要動 */
+.pic-cover{position:absolute;inset:0;background:#fffdf8;z-index:645;transition:opacity .45s}
+.pic-cover.out{opacity:0;pointer-events:none}
+#room.ph-still,#room.ph-still *{animation:none!important;transition:none!important}

@@ -29,6 +29,7 @@
 //   cloud.stayGo({to, doll, look, day, x, y, fromName}) / cloud.stayMine() / cloud.stayGuests() / cloud.staySet(uid, patch) / cloud.stayEnd(uid)   過夜
 //   cloud.cardSend({to, snap 或 tv, msg, fromName}) / cloud.cardsTo() / cloud.cardDel(id)                                    明信片（tv：旅行明信片，js/card.js）
 //   cloud.letterSend({to, msg, re, d, fromName}) / cloud.lettersTo() / cloud.letterDel(id)                                    回信（js/letter.js）
+//   cloud.picAdd(uid, day, {fromName, doll, look, x, y, snap}) / cloud.picMine(uid, day) / cloud.pics(since) / cloud.pic(uid, id)   去朋友家拍合照（js/pic.js）
 //   cloud.chatSend(uid, {m, s}) / chatRecent(uid) / chatOlder(uid, cur) / chatSince(uid, ts) / chatMeta(uid) / chatMetas() / chatSeen(uid) / chatDel(uid, id)   朋友聊天（js/chat.js）
 //
 // SDK 從 Google 的 CDN 載（約 110 KB gzip），只有打開遊戲後才在背景載，不會拖慢開始。
@@ -321,6 +322,38 @@ export function createCloud(config, { emulator = false } = {}) {
     async bookDel(uid, id) {
       await ready;
       await F.deleteDoc(F.doc(db, 'nestRooms', uid, 'book', id));
+    },
+    // ---------- 去朋友家拍合照（nestRooms/{主人}/pics/{日子_拍的人}，js/pic.js） ----------
+    // 照片本身不上傳，只存「怎麼畫」：snap 是朋友那間房間當時的樣子，doll、look、x、y 是帶去的那隻
+    // 一位朋友一天一張：同一份文件再寫一次就是「改」，規則不給改，會丟 permission-denied
+    async picAdd(uid, day, { fromName, doll, look, x, y, snap }) {
+      await ready;
+      if (!user) throw new Error('not signed in');
+      await F.setDoc(F.doc(db, 'nestRooms', uid, 'pics', `${day}_${user.uid}`), {
+        from: user.uid, fromName: String(fromName || user.name).slice(0, 24), day,
+        doll: String(doll).slice(0, 20), look: look || {}, x, y, snap,
+      });
+    },
+    // 今天在這個朋友家留過了沒（規則讓拍的人讀自己那張）
+    async picMine(uid, day) {
+      await ready;
+      if (!user) return null;
+      const s = await F.getDoc(F.doc(db, 'nestRooms', uid, 'pics', `${day}_${user.uid}`));
+      return s.exists() ? { ...s.data(), id: s.id } : null;
+    },
+    // 自己家收到的，day >= since 的（屋主才能 list）
+    async pics(since) {
+      await ready;
+      if (!user) return [];
+      const r = await F.getDocs(F.query(F.collection(db, 'nestRooms', user.uid, 'pics'), F.where('day', '>=', since), F.limit(60)));
+      return r.docs.map(d => ({ ...d.data(), id: d.id }));
+    },
+    // 紀念冊點開重畫用：uid 是那張照片存在誰家（自己收到的就是自己）
+    async pic(uid, id) {
+      await ready;
+      if (!user) return null;
+      const s = await F.getDoc(F.doc(db, 'nestRooms', uid, 'pics', id));
+      return s.exists() ? { ...s.data(), id: s.id } : null;
     },
     // ---------- 幫朋友的小島澆水（nestRooms/{主人}/water/{日子_澆的人}） ----------
     async waterAdd(uid, day, { fromName, plot }) {
