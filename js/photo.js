@@ -242,7 +242,10 @@ function phSnapAll(R){
 
 /* ---------- 拍一張 ---------- */
 // 合照上的字用 js/cvfont.js（跟娃娃機、明信片存照片同一套）：畫之前 cvFonts 先載好，一行沒載好就整行用系統字。
-async function photoShoot(){
+// opt（去朋友家拍合照、紀念冊重畫，js/pic.js 的 photoScene）：
+//   place 取代白邊上「房間・日期」那一行；sub 是下面多的一行小字（位置跟朋友家的娃娃入鏡那一行一樣）；
+//   quip 火腿那句用第幾句（重畫要一樣，不能抽）；notMe 帶去的那隻的 uid：不算進入鏡的娃娃（牠是火腿的話，朋友家沒有火腿就不說那句）
+async function photoShoot(opt = {}){
   const R = room.getBoundingClientRect(), W = R.width, H = R.height;
   if (!W || !H) return null;
   // 照片是 3:4：房間比較寬就切兩邊，比較長就切上下（上面少切一點，留住窗戶）
@@ -291,7 +294,7 @@ async function photoShoot(){
       drawDoll(ctx, o.D); chk('娃娃 ' + o.who.id);
       const b = o.D.eb;
       if (b.x + b.w * .5 > cx && b.x + b.w * .5 < cx + cw && b.y + b.h * .5 > cy && b.y + b.h * .5 < cy + ch){
-        if (o.guest) guests.push({d: o.who.id, n: o.pn || '朋友', u: o.pu || ''}); else inShot.add(o.who.id);
+        if (o.guest) guests.push({d: o.who.id, n: o.pn || '朋友', u: o.pu || ''}); else if (opt.notMe === undefined || o.who.uid !== opt.notMe) inShot.add(o.who.id);
       }
     } else {
       if (trip) continue;   // 出遊：家具和地上的東西不畫
@@ -318,12 +321,13 @@ async function photoShoot(){
   // 照片四周一條細線，像相紙
   ctx.strokeStyle = 'rgba(107,45,74,.08)'; ctx.lineWidth = 2; ctx.strokeRect(PH.pad, PH.pad, PH.pw, PH.ph);
   // 下面的白邊：薯餅的小窩、房間、日期；火腿在的話右邊留一句
-  const up = guests.length ? 12 : 0;   // 有朋友家的娃娃入鏡時下面多一行，上面兩行往上讓一點
+  const up = guests.length || opt.sub ? 12 : 0;   // 有朋友家的娃娃入鏡時下面多一行，上面兩行往上讓一點
   const by = PH.pad + PH.ph, font = (w, z, t) => `${w} ${z}px ${cvFam(t, 'head')}`;
   const d = new Date();
-  const place = `${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`;
-  const quip = inShot.has('piggy') ? PIGGY_QUIPS[Math.floor(Math.random() * PIGGY_QUIPS.length)] : '';
-  const gline = guests.length ? '和' + guests.slice(0, 2).map(g => `${g.n}家的${DOLL_NAME[g.d]}`).join('、') + (guests.length > 2 ? `和另外 ${guests.length - 2} 隻` : '') : '';
+  const place = opt.place || `${trip ? trip.name : ROOM_NAME[roomId] || ''}・${d.getMonth() + 1}月${d.getDate()}日`;
+  const qn = opt.quip !== undefined ? Math.abs(Math.floor(opt.quip)) % PIGGY_QUIPS.length : Math.floor(Math.random() * PIGGY_QUIPS.length);
+  const quip = inShot.has('piggy') ? PIGGY_QUIPS[qn] : '';
+  const gline = opt.sub ? opt.sub : guests.length ? '和' + guests.slice(0, 2).map(g => `${g.n}家的${DOLL_NAME[g.d]}`).join('、') + (guests.length > 2 ? `和另外 ${guests.length - 2} 隻` : '') : '';
   await cvFonts(['薯餅的小窩', place, `「${quip}」`, '火腿', gline]);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   const pt = window.PAPER ? window.PAPER.tone() : null;   // 新風格（js/paper.js）：標題用主色深一階、小字用墨色
@@ -336,7 +340,7 @@ async function photoShoot(){
     ctx.restore();
   }
   // 有朋友家的娃娃入鏡：白邊多一行小字
-  if (guests.length){ ctx.textAlign = 'left'; ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22, gline); ctx.fillText(gline, PH.pad + 8, by + 131, 560); }
+  if (gline){ ctx.textAlign = 'left'; ctx.fillStyle = pt ? '#5a5c78' : '#a8708c'; ctx.font = font(800, 22, gline); ctx.fillText(gline, PH.pad + 8, by + 131, 560); }
   chk('字');
   return {canvas: c, dolls: [...inShot], guests, skipped: photoBad.slice(), dirty};
 }

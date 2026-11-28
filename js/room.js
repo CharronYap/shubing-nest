@@ -532,6 +532,7 @@ $('#lsw').addEventListener('click',()=>{if(VISIT)return;cur().light=!lightOn();p
 // 房間的寬高比：最瘦 1:2，最寬可以比正方形再寬一點（1.18:1）。矮的手機上收納架開著時房間會比較扁，讓它扁一點把寬度用滿，不要兩邊留空
 function fitStage(W,H){const ratio=Math.max(.5,Math.min(1.18,W/H));const w=Math.min(W,H*ratio);return [w,w/ratio,ratio];}
 function layout(){
+  if(window.PIC_LOCK)return;   // 合照重畫（js/pic.js 的 photoScene）時房間固定成 600×800，拍完才放開
   const r=area.getBoundingClientRect();
   if(!r.width||!r.height)return;
   const [w,h,ratio]=fitStage(r.width,r.height);
