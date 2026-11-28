@@ -49,7 +49,7 @@ const GUIDE = [
   {c: 'coin', ic: COIN, t: '現在可以賺幣的事', s: '點上面的幣就會列出來，點了直接過去。', go: () => earnOpen(false)},
   {c: 'coin', ic: COIN, t: '每天的幣', s: `每天第一次打開送 ${typeof DAILY_COINS !== 'undefined' ? DAILY_COINS : 20} 枚，沒來也不會被扣。`},
   {c: 'coin', ic: gdDoll('nyanko'), t: '電視小遊戲', s: '接點心、翻牌、這是誰的、連星星、快門時間。每天前 3 局給得比較多，之後想玩幾局都可以。', go: () => { setPage('room'); gameMenu(); }},
-  {c: 'coin', ic: SHOP_ICON, t: '火腿的小店', s: '家具、壁紙、房間的鑰匙，每天換一批。花和果子也拿來這裡換幣。', go: gdShop},
+  {c: 'coin', ic: SHOP_ICON, t: '火腿的小店', s: '家具、壁紙、房間的鑰匙，每天換一批，也可以自己換。花和果子也拿來這裡換幣。', go: gdShop},
   {c: 'coin', ic: gdDoll('piggy'), t: '娃娃機的店員', s: '夾到家裡已經有的娃娃，可以送朋友，也可以留著。留著的那隻當店員，每隻一天 2 枚。', go: () => { gdShut(); setPage('claw'); }},
   {c: 'coin', ic: ICON.yard, t: '花園收成', s: '花開了點一下就收，樹每天三顆果子。拿去火腿的小店，一個 1 枚。', go: () => gdRoom('yard')},
   {c: 'coin', ic: WANT_STAR, t: '里程碑', s: '第一次做到某些事會有幣，補發不會漏。', go: () => earnMsOpen()},
