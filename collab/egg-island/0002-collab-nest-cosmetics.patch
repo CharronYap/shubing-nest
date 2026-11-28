@@ -1,0 +1,236 @@
+From 97307c2c331c693e353d33d712431cb67799263e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 28 Nov 2026 14:07:08 +0000
+Subject: [PATCH 2/2] =?UTF-8?q?=E5=B0=8F=E7=AA=A9=E8=81=AF=E5=90=8D?=
+ =?UTF-8?q?=E7=AC=AC=E4=B8=80=E6=89=B9=EF=BC=88=E8=8D=89=E7=A8=BF=E3=83=BB?=
+ =?UTF-8?q?=E5=BE=85=E5=AF=A9=EF=BC=89=EF=BC=9A=E6=A3=8B=E7=9B=A4=E4=B8=BB?=
+ =?UTF-8?q?=E9=A1=8C=E3=80=8C=E8=96=AF=E9=A4=85=E7=9A=84=E5=B0=8F=E7=AA=A9?=
+ =?UTF-8?q?=E3=80=8D=E3=80=81=E6=B6=88=E9=99=A4=E7=89=B9=E6=95=88=E3=80=8C?=
+ =?UTF-8?q?=E5=B0=8F=E5=B1=8B=E6=84=9B=E5=BF=83=E3=80=8D=E3=80=81=E9=A0=AD?=
+ =?UTF-8?q?=E5=83=8F=E5=A4=96=E5=9C=88=E3=80=8C=E5=B0=8F=E7=AA=A9=E3=80=8D?=
+ =?UTF-8?q?=EF=BC=8C=E5=8F=AA=E5=9C=A8=20=3Fcollab=3D1=20=E8=A9=A6?=
+ =?UTF-8?q?=E7=A9=BF?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- cosmetics.js：COLLAB_PREVIEW（網址 ?collab=1）才把 COLLAB_ITEMS 放進衣櫃；unlock: { collab } 不是已知的解鎖方式，
+  isUnlocked 一律 false，所以只能試穿、不能兌換或穿上，也不會亮「新」。一般網址 ITEMS 照舊 77 件
+- renderer.js：BOARD_THEMES.nest（小窩臥室的粉紅牆＋木頭地板配色，deco hearts）、PARTICLE_SKINS.nest（三色小房子往上飄）
+- main.js：衣櫃格子寫「聯名準備中」，試穿時跳一句說明
+- 快取版本 v=20261128b（尚未上線）
+- 字型子集沒有「窩、聯」：預覽時這兩個字用系統字型，上線前要跑 tools/font_subset.py
+- 測試：python tests/run_tests.py 81 passed；衣櫃預覽 Playwright 測試（一般網址看不到、?collab=1 三件都能試穿）
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Y8XVHmsxixjpdR8VVa53z8
+---
+ index.html      |  6 +++---
+ js/cosmetics.js | 22 +++++++++++++++++++++-
+ js/main.js      | 20 +++++++++++---------
+ js/opening.js   |  2 +-
+ js/renderer.js  | 25 ++++++++++++++++++++++---
+ 5 files changed, 58 insertions(+), 17 deletions(-)
+
+diff --git a/index.html b/index.html
+index c4210bd..7b979d3 100644
+--- a/index.html
++++ b/index.html
+@@ -12,7 +12,7 @@
+ <title>薯餅蛋蛋島</title>
+ <link rel="icon" href="assets/sprites/sloth.png">
+ <link rel="apple-touch-icon" href="assets/sprites/sloth.png">
+-<link rel="stylesheet" href="style.css?v=20261128a">
++<link rel="stylesheet" href="style.css?v=20261128b">
+ <!-- 開頭動畫要不要播（在畫任何東西之前決定，免得封面先閃一下）：?intro=1 一定播、?intro=0 不播；
+      減少動態效果不播；一天播一次（localStorage 讀不到就當作還沒播） -->
+ <style>html.op-pending::after { content: ''; position: fixed; inset: 0; z-index: 2147483000; background: #8fd3ef; }</style>
+@@ -472,7 +472,7 @@
+   }, 9000);
+ </script>
+ <!-- ?v=：改版上線時換日期，手機才不會拿到快取的舊檔（js/ 裡互相 import 的字串也要一起換，見 main.js 的 MOD_V） -->
+-<script type="module" src="js/opening.js?v=20261128a"></script>
+-<script type="module" src="js/main.js?v=20261128a"></script>
++<script type="module" src="js/opening.js?v=20261128b"></script>
++<script type="module" src="js/main.js?v=20261128b"></script>
+ </body>
+ </html>
+diff --git a/js/cosmetics.js b/js/cosmetics.js
+index b7a6edb..6748dc2 100644
+--- a/js/cosmetics.js
++++ b/js/cosmetics.js
+@@ -110,6 +110,19 @@ export const ITEMS = [
+   { id: 'ring.balloon', cat: 'ring', name: '熱氣球', unlock: { station: 136 } },
+   { id: 'ring.moon',    cat: 'ring', name: '新月',   unlock: { chest: 19 } },
+ ];
++// ---------- 小窩聯名（Claude B，2026-11-28，草稿・待審）----------
++// 跟薯餅小窩（CharronYap/shubing-nest）聯名的第一批外觀，用蛋蛋島自己的畫法畫小窩：木頭地板、粉紅條紋牆、小房子。
++// 還沒核准（取得方式、上線時間都沒決定），所以平常完全看不到：網址加 ?collab=1 才會出現在衣櫃，而且只能試穿、不能兌換或穿上
++// （unlock: { collab } 不是任何一種已知的解鎖方式，isUnlocked 一律回 false；也不會亮「新」）。
++// 核准之後：把 unlock 換成決定好的方式（幣 / 星星 / 寶箱 / 跨遊戲獎勵），再把 COLLAB_PREVIEW 的判斷拿掉。
++// 注意：字型子集（assets/fonts）沒有「窩、聯」，上線前要在有原始字型的電腦跑一次 python tools/font_subset.py。
++export const COLLAB_PREVIEW = (() => { try { return new URLSearchParams(location.search).get('collab') === '1'; } catch (e) { return false; } })();
++export const COLLAB_ITEMS = [
++  { id: 'theme.nest', cat: 'theme', name: '薯餅的小窩', unlock: { collab: 'nest' } },
++  { id: 'fx.nest',    cat: 'fx',    name: '小屋愛心',   unlock: { collab: 'nest' } },
++  { id: 'ring.nest',  cat: 'ring',  name: '小窩',       unlock: { collab: 'nest' } },
++];
++if (COLLAB_PREVIEW) ITEMS.push(...COLLAB_ITEMS);
+ export const DEFAULT_LOOK = { outfit: 'outfit.none', hat: 'hat.none', fx: 'fx.default', frame: 'frame.jelly', theme: 'theme.macaron', ring: 'ring.pink' };
+ export const itemById = id => ITEMS.find(it => it.id === id) || null;
+ 
+@@ -403,6 +416,8 @@ function themeIcon(frame, edge, a, b, extra) {
+   for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) cells += `<rect x="${(11 + c * 14).toFixed(1)}" y="${(11 + r * 14).toFixed(1)}" width="14" height="14" rx="3" fill="${(r + c) % 2 ? b : a}"/>`;
+   return svg64(`<rect x="4" y="4" width="56" height="56" rx="12" fill="${frame}" stroke="${edge}" stroke-width="3"/><rect x="10" y="10" width="44" height="44" rx="6" fill="${a}"/>${cells}${extra}`);
+ }
++// 小窩聯名的小房子（衣櫃圖示用）：x、y 是房子底部中間
++const nestHouse = (x, y, k, roof) => S(`M${x - 9 * k} ${y} V${y - 10 * k} L${x} ${y - 18 * k} L${x + 9 * k} ${y - 10 * k} V${y} Z`, '#fff4e6', '#b9773f', 2) + S(`M${x - 12 * k} ${y - 9 * k} L${x} ${y - 20 * k} L${x + 12 * k} ${y - 9 * k}`, 'none', roof, 3.2 * k) + `<rect x="${x - 2.6 * k}" y="${y - 7 * k}" width="${5.2 * k}" height="${7 * k}" rx="${1.4 * k}" fill="#ffd75e" stroke="#b9773f" stroke-width="1.2"/>`;
+ const NEW_ICON = {
+   'fx.confetti': svg64([[10, 12, 18, '#ff6f9f'], [36, 8, -24, '#ffc21a'], [48, 26, 30, '#5b8ef0'], [18, 34, -12, '#63c94f'], [40, 44, 16, '#9a5cf0'], [12, 50, 36, '#ff9a2e'], [28, 22, 60, '#ff86bd']]
+     .map(([x, y, a, f]) => `<rect x="${x}" y="${y}" width="12" height="7" rx="2" fill="${f}" stroke="#fff" stroke-width="1.5" transform="rotate(${a} ${x + 6} ${y + 3.5})"/>`).join('')),
+@@ -432,6 +447,9 @@ const NEW_ICON = {
+   'theme.bamboo': themeIcon('#8fc48a', '#4c8a48', '#eef8e8', '#d8edcc', `<rect x="24" y="12" width="8" height="40" rx="3" fill="#63c94f" stroke="#2f8a2a" stroke-width="2"/>${L('M24 24 L32 24 M24 38 L32 38', '#2f8a2a', 2)}${S('M32 22 Q44 14 50 20 Q42 26 32 22 Z', '#63c94f', '#2f8a2a', 1.6)}${S('M32 36 Q42 32 46 38 Q40 42 32 36 Z', '#63c94f', '#2f8a2a', 1.6)}`),
+   'theme.lantern': themeIcon('#5e4f80', '#2f2550', '#43386a', '#4e4278', `${L('M32 12 L32 18', '#ffd23c', 2)}<ellipse cx="32" cy="32" rx="12" ry="14" fill="url(#gR)" stroke="#8f1d1d" stroke-width="2"/>${L('M26 20 Q22 32 26 44 M38 20 Q42 32 38 44 M32 18 L32 46', '#8f1d1d', 1.2, 0.6)}<rect x="27" y="16" width="10" height="4" rx="1.5" fill="#ffd23c"/><rect x="27" y="44" width="10" height="4" rx="1.5" fill="#ffd23c"/>${L('M32 48 L32 54', '#ffd23c', 2)}`),
+   'theme.icecream': themeIcon('#ffc6d8', '#e0779c', '#fff8f0', '#e6f6f0', `${S('M23 30 L32 54 L41 30 Z', '#e8b878', '#a8682a', 2)}${L('M26 36 L36 46 M38 36 L29 46', '#a8682a', 1.2, 0.7)}${C(28, 26, 7, '#ffd0e6', '#f0468f', 2)}${C(36, 26, 7, '#d9ffc8', '#2f8a2a', 2)}${C(32, 19, 6.5, '#fff8c4', '#e48a00', 2)}`),
++  // 小窩聯名（只在 ?collab=1 出現）
++  'theme.nest': themeIcon('#f6c38f', '#b9773f', '#fff7ee', '#ffe6ef', nestHouse(32, 44, 1.1, '#ff6fa8') + `<path d="M46 18 C46 15 50 15 50 18 C50 15 54 15 54 18 C54 21 50 23 50 24 C50 23 46 21 46 18 Z" fill="#ff6fa8" stroke="#fff" stroke-width="1.2"/>`),
++  'fx.nest': svg64(nestHouse(22, 34, 1, '#ff9cc8') + nestHouse(46, 56, 0.8, '#8fd3ef') + `<path d="M40 14 C40 10 45 10 45 14 C45 10 50 10 50 14 C50 18 45 21 45 22 C45 21 40 18 40 14 Z" fill="#ff6fa8" stroke="#fff" stroke-width="1.5"/>` + C(14, 52, 3, '#ffd75e', '#fff', 1.2)),
+   'theme.moon': themeIcon('#4a5596', '#262b66', '#33397a', '#3d4488', `${S('M36 14 A15 15 0 1 0 46 40 A12 12 0 1 1 36 14 Z', 'url(#gY)', '#9a5200', 1.8)}${star(46, 20, 3.5, '#fff6a8')}${star(20, 46, 2.6, '#fff6a8')}`),
+   'theme.castle': themeIcon('#d9cff5', '#8f7fc8', '#f5f0ff', '#fff4e6', `<g fill="#fff" stroke="#8f7fc8" stroke-width="2"><rect x="18" y="28" width="28" height="20"/><rect x="15" y="20" width="9" height="28"/><rect x="40" y="20" width="9" height="28"/></g>${S('M14 21 L19.5 12 L25 21 Z', '#ff86bd', '#b8155a', 1.4)}${S('M39 21 L44.5 12 L50 21 Z', '#ff86bd', '#b8155a', 1.4)}${S('M28 48 L28 40 Q32 35 36 40 L36 48 Z', '#9a5cf0', '#5b2bb0', 1.4)}${C(12, 52, 5, '#fff', '#d6cdef', 1.2)}${C(52, 52, 5, '#fff', '#d6cdef', 1.2)}`),
+   // 薯餅王國：奶油黃格子上一頂金色皇冠，下面是城門
+@@ -562,6 +580,8 @@ export const RINGS = {
+   rainbow: { ring: 'conic-gradient(#ff6f9f,#ffc21a,#63c94f,#5b8ef0,#9a5cf0,#ff6f9f)', sh: '#7d4fb8', deco: '' },
+   gold: { ring: 'linear-gradient(#fff8c4,#ffd23c 45%,#e48a00)', sh: '#9a5200', deco: S('M27 9 L25 0.5 L31 4.5 L36 -1 L41 4.5 L47 0.5 L45 9 Z', 'url(#gY)', '#9a5200', 1.2) },
+   balloon: { ring: 'linear-gradient(#cdeefa,#8fd3ef 55%,#5aaed8)', sh: '#3f86b0', deco: L('M56.5 20.5 L58 25 M63.5 20.5 L62 25', '#7a4a1f', 0.9) + S('M60 1 C67 1 70 6 70 10.5 C70 16 65 20 60 22 C55 20 50 16 50 10.5 C50 6 53 1 60 1 Z', 'url(#gR)', '#8f1d1d', 1.2) + S('M60 1 C63.5 6 63.5 16 60 22 C56.5 16 56.5 6 60 1 Z', '#fff8c4', 'none', 0) + L('M53.5 6 Q55 3.5 57.5 3', '#fff', 1.2, 0.9) + S('M57 25 L63 25 L62.4 29.5 L57.6 29.5 Z', 'url(#gN)', '#5a3412', 0.9) + L('M10.5 63 Q12 66 10 70', '#8b86a6', 0.8) + `<ellipse cx="10.5" cy="58" rx="4.2" ry="5" fill="url(#gY)" stroke="#9a5200" stroke-width="1"/>` },
++  // 小窩聯名（只在 ?collab=1 出現）：粉紅條紋牆 → 木頭地板的顏色，右上角一間小房子、左下角一顆愛心
++  nest: { ring: 'linear-gradient(#ffe0ee,#ff9cc8 52%,#f2b880 53%,#d99a5e)', sh: '#9a6431', deco: S('M53 20 V11 L61 4 L69 11 V20 Z', '#fff4e6', '#9a6431', 1.4) + L('M51 12 L61 2.5 L71 12', '#ff6fa8', 2.6) + `<rect x="58.6" y="14" width="4.8" height="6" rx="1.2" fill="#ffd75e" stroke="#9a6431" stroke-width="1"/>` + S('M6 58 C6 54.5 10.5 54.5 10.5 58 C10.5 54.5 15 54.5 15 58 C15 61.5 10.5 64 10.5 65 C10.5 64 6 61.5 6 58 Z', '#ff6fa8', '#fff', 1.2) },
+   moon: { ring: 'radial-gradient(#6b77c0,#3b4290)', sh: '#262b66', deco: S('M14 2.5 A10 10 0 1 0 21 19 A8 8 0 1 1 14 2.5 Z', 'url(#gY)', '#9a5200', 1.2) + star(62, 60, 4.2, '#fff6a8', '#9a5200', 0.8) + star(64.5, 13, 3, '#fff6a8', '#9a5200', 0.7) + star(21, 63, 2.4, '#fff6a8') },
+ };
+ const ringKey = id => String(id || '').replace(/^ring\./, '');
+@@ -571,7 +591,7 @@ export function ringDecoSvg(id) {
+   return r && r.deco ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">${GRAD}${r.deco}</svg>` : '';
+ }
+ // 外圈的小圖示：SVG 畫不出 CSS 的 conic 漸層，用相近的顏色代替
+-const RING_STROKE = { pink: '#ff6fb0', cloud: '#e3dcf5', star: '#ffc21a', rainbow: 'url(#gRain)', gold: 'url(#gY)', balloon: '#8fd3ef', moon: '#4a5596' };
++const RING_STROKE = { pink: '#ff6fb0', cloud: '#e3dcf5', star: '#ffc21a', rainbow: 'url(#gRain)', gold: 'url(#gY)', balloon: '#8fd3ef', moon: '#4a5596', nest: '#ff9cc8' };
+ function ringIcon(k) {
+   const r = RINGS[k];
+   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">${GRAD}<circle cx="36" cy="36" r="23" fill="#fff5fb" stroke="${RING_STROKE[k]}" stroke-width="8"/><circle cx="36" cy="36" r="27.5" fill="none" stroke="${r.sh}" stroke-width="1.6" opacity=".7"/>${r.deco}</svg>`;
+diff --git a/js/main.js b/js/main.js
+index 6a0fe65..e1521db 100644
+--- a/js/main.js
++++ b/js/main.js
+@@ -1,14 +1,14 @@
+ // 薯餅蛋蛋島 — 主程式：畫面流程、HUD、輸入、存檔、音效對應（SPEC §7）
+-import { PIECES, TRIO, spritePath, spinPath } from './pieces.js?v=20261128a';
+-import { SLOGANS } from './slogans.js?v=20261128a';
+-import { createCloset, CATEGORIES, ITEMS, CHESTS, iconSvg, svgUrl, totalStars, setLevels, outfitSvg, outfitSkipped, ringData, ringDecoSvg, ACCESSORY_SVG, ACCESSORY_PLACE, TOY_FACE, accTune, AVATAR_BGS, avatarBg, cleanLook } from './cosmetics.js?v=20261128a';
+-import { blockerCanvas } from './blockers.js?v=20261128a';
+-import { mapArtHTML, mapSignsHTML, mapStations, stationAt, stationOfLevel, levelStops, levelSceneSVG } from './mapart.js?v=20261128a';
+-import { getOpAlways, setOpAlways, star4 } from './opening.js?v=20261128a';
+-import { DEMO, demoEngine, demoSegs } from './demos.js?v=20261128a';
+-import { STORY } from './story.js?v=20261128a';
++import { PIECES, TRIO, spritePath, spinPath } from './pieces.js?v=20261128b';
++import { SLOGANS } from './slogans.js?v=20261128b';
++import { createCloset, CATEGORIES, ITEMS, CHESTS, iconSvg, svgUrl, totalStars, setLevels, outfitSvg, outfitSkipped, ringData, ringDecoSvg, ACCESSORY_SVG, ACCESSORY_PLACE, TOY_FACE, accTune, AVATAR_BGS, avatarBg, cleanLook } from './cosmetics.js?v=20261128b';
++import { blockerCanvas } from './blockers.js?v=20261128b';
++import { mapArtHTML, mapSignsHTML, mapStations, stationAt, stationOfLevel, levelStops, levelSceneSVG } from './mapart.js?v=20261128b';
++import { getOpAlways, setOpAlways, star4 } from './opening.js?v=20261128b';
++import { DEMO, demoEngine, demoSegs } from './demos.js?v=20261128b';
++import { STORY } from './story.js?v=20261128b';
+ // 模組的版本參數：上面和 renderer.js 裡的 import 字串要跟這個一樣（同一個檔案用不同網址會被載成兩份）
+-const MOD_V = '?v=20261128a';
++const MOD_V = '?v=20261128b';
+ 
+ window.__plushBooted = true;
+ 
+@@ -1642,6 +1642,7 @@ function unlockText(it) {
+   if (u.chest != null) return `寶箱 ★${CHESTS[u.chest].stars}`;
+   if (u.station) return `走到第 ${u.station} 關`;
+   if (u.allClear) return '全部關卡過關';
++  if (u.collab) return '聯名準備中';   // 小窩聯名（?collab=1 才看得到），還不能拿
+   return '';
+ }
+ function renderCloset() {
+@@ -1756,6 +1757,7 @@ function onClosetItem(it) {
+   else if (u.chest != null) toast(`試穿中～星星總數 ${CHESTS[u.chest].stars} 顆的寶箱開得到`, 2000);
+   else if (u.station) toast(`試穿中～走到第 ${u.station} 關就送`, 2000);
+   else if (u.allClear) toast(`試穿中～全部 ${LEVELS ? LEVELS.length : ''} 關都過關就送`, 2000);
++  else if (u.collab) toast('試穿中～這是跟薯餅小窩的聯名，還在準備，先看看就好', 2000);
+   renderCloset();
+   renderClosetAva();
+ }
+diff --git a/js/opening.js b/js/opening.js
+index 81e06fb..1c8c327 100644
+--- a/js/opening.js
++++ b/js/opening.js
+@@ -6,7 +6,7 @@
+ // 減暈（工作單13、23）：捲動最快每秒 0.37 個螢幕高（不比工作單13那版快），底色每次換色至少 1 秒，同一時間只有一種縮放，雲不往外爆開。
+ // 要不要播是 index.html <head> 裡的小程式決定的（window.__opPlay；減少動態效果不播）；這裡只負責畫和播，跟主程式的載入同時進行。
+ // 不放聲音；點一下或按任何鍵就跳過。只用 transform / opacity / 背景色動畫，地圖只畫前 22 關（3 站）。
+-import { mapArtHTML, mapSignsHTML, mapStations, stationAt, islandMiniHTML, prefixIds } from './mapart.js?v=20261128a';
++import { mapArtHTML, mapSignsHTML, mapStations, stationAt, islandMiniHTML, prefixIds } from './mapart.js?v=20261128b';
+ 
+ const KEY = 'shubing-op';
+ const today = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+diff --git a/js/renderer.js b/js/renderer.js
+index 15400a0..23f292b 100644
+--- a/js/renderer.js
++++ b/js/renderer.js
+@@ -19,10 +19,10 @@
+ //   R.resume()  恢復迴圈並立刻重畫一次（期間尺寸若有變也會重新排版）。兩者都可以重複呼叫。
+ //   R.paused    目前是否暫停（唯讀）。
+ 
+-import { SLOGANS, cascadeSlogan } from './slogans.js?v=20261128a';
+-import { TOY_FACE, ACCESSORY_PLACE, accTune, ACCESSORY_SVG, svgUrl } from './cosmetics.js?v=20261128a';
++import { SLOGANS, cascadeSlogan } from './slogans.js?v=20261128b';
++import { TOY_FACE, ACCESSORY_PLACE, accTune, ACCESSORY_SVG, svgUrl } from './cosmetics.js?v=20261128b';
+ import { paintCage, paintFrost, paintChoco, paintSwirl, paintAlarm, paintShell, paintPot, paintWrap, paintExitArrow, PORTAL_COLORS, CRUMBS,
+-  paintTicket, paintGate, paintBalloon, paintJar, paintSurprise, paintLantern, paintOven, LANTERN_COLORS } from './blockers.js?v=20261128a';
++  paintTicket, paintGate, paintBalloon, paintJar, paintSurprise, paintLantern, paintOven, LANTERN_COLORS } from './blockers.js?v=20261128b';
+ 
+ // 數字用胖數字 PlushNum（只有數字和符號，style.css 的 unicode-range），其他字是源泉圓體
+ const FONT = '"PlushNum", "GenSenRounded", "Baloo 2", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif';
+@@ -201,6 +201,8 @@ Object.assign(BOARD_THEMES, {
+   moon: darkTheme({ glassA: [60, 68, 140], glassB: [40, 46, 106], glow: [200, 190, 255], ring: ['#c8cdf2', '#8f97d8', '#6670bf'], side: ['#4a5596', '#3b4486', '#2f3370'], shadow: [10, 10, 50], sky: 'stars', deco: 'goldstars', jelly: 'blue' }),
+   castle: lightTheme({ cellA: '#f5f0ff', cellB: '#fff4e6', ring: ['#ffffff', '#e8e0fa', '#c8b8ef'], side: ['#a898dc', '#8f7fc8', '#7262ae'], shadow: [80, 60, 140], deco: 'clouds' }),
+   // 薯餅王國（工作單40）：跟第44站地圖一樣的奶油黃，金色小星星
++  // 小窩聯名（Claude B 草稿，衣櫃只在 ?collab=1 出現）：小窩臥室的粉紅條紋牆和木頭地板，粉紅小愛心
++  nest: lightTheme({ cellA: '#fff7ee', cellB: '#ffe6ef', ring: ['#fff1dc', '#f6c38f', '#d99a5e'], side: ['#b9773f', '#9a6431', '#7a4a22'], shadow: [120, 70, 40], deco: 'hearts' }),
+   kingdom: lightTheme({ cellA: '#fffaf0', cellB: '#fff0cc', ring: ['#fff6dc', '#ffe2a0', '#f0c46a'], side: ['#dca24a', '#c48a36', '#a06c26'], shadow: [140, 90, 40], deco: 'goldstars' }),
+ });
+ // 半透明盤面（工作單17）：白色 30% 的毛玻璃底板、白色 12% / 26% 交錯的格子，外圈一條白邊和柔柔的落影。
+@@ -2463,6 +2465,18 @@ export function createRenderer(canvas, { pieces = [], images = new Map(), quiet
+     path(); g.fillStyle = col; g.fill();
+     g.strokeStyle = col; g.lineWidth = 3.4; g.beginPath(); g.moveTo(19, 29); g.lineTo(19, 6); g.lineTo(31, 11); g.stroke();
+   });
++  // 小窩聯名的小房子（粉紅 / 藍 / 黃屋頂）：奶油色牆、黃色門、白邊
++  const nestImg = i => sprite('nest' + i, 40, (g, n) => {
++    const roof = ['#ff9cc8', '#8fd3ef', '#ffd75e'][i], roofD = ['#e0609d', '#3f97c4', '#d99a00'][i];
++    const body = () => { g.beginPath(); g.moveTo(9, 34); g.lineTo(9, 19); g.lineTo(20, 9); g.lineTo(31, 19); g.lineTo(31, 34); g.closePath(); };
++    g.lineJoin = 'round'; g.lineCap = 'round';
++    body(); g.strokeStyle = '#fff'; g.lineWidth = 6; g.stroke();
++    g.beginPath(); g.moveTo(5, 20); g.lineTo(20, 6); g.lineTo(35, 20); g.lineWidth = 9; g.stroke();
++    body(); g.fillStyle = '#fff4e6'; g.fill(); g.strokeStyle = '#b9773f'; g.lineWidth = 2; g.stroke();
++    g.beginPath(); g.moveTo(5, 20); g.lineTo(20, 6); g.lineTo(35, 20); g.strokeStyle = roof; g.lineWidth = 5; g.stroke();
++    g.beginPath(); g.moveTo(7, 20.5); g.lineTo(20, 8.5); g.strokeStyle = roofD; g.lineWidth = 1.2; g.stroke();
++    g.fillStyle = '#ffd75e'; g.fillRect(17, 25, 6, 9); g.strokeStyle = '#b9773f'; g.lineWidth = 1.4; g.strokeRect(17, 25, 6, 9);
++  });
+   const fishImg = i => sprite('fish' + i, 40, (g, n) => {
+     const [a, b] = [['#ffd0a0', '#ff8a2e'], ['#cfe6ff', '#5b8ef0'], ['#ffd6ea', '#ff6fa8']][i];
+     g.beginPath(); g.moveTo(4, 20); g.quadraticCurveTo(14, 7, 26, 15); g.lineTo(36, 9); g.quadraticCurveTo(33, 20, 36, 31); g.lineTo(26, 25); g.quadraticCurveTo(14, 33, 4, 20); g.closePath();
+@@ -2597,6 +2611,11 @@ export function createRenderer(canvas, { pieces = [], images = new Map(), quiet
+       spray(x, y, t, stars, { img: () => getStarCol(SPARK_GOLD), speed, vmin: 0.35, vvar: 0.6, up: 0.5, g: 2.5, drag: 2.8, life: 420, lifeVar: 280, size: 0.3, sizeVar: 0.2 });
+     },
+     // 雨滴：水滴往下落，落地前濺出小水花
++    // 小窩聯名「小屋愛心」：三色小房子往上飄、慢慢轉，加幾顆粉紅棉花
++    nest(x, y, col, n, t, speed) {
++      spray(x, y, t, Math.max(3, Math.ceil(n * 0.6)), { img: () => nestImg(Math.floor(Math.random() * 3)), speed, vmin: 0.35, vvar: 0.5, up: 1.2, g: -0.8, drag: 2.4, life: 760, lifeVar: 320, size: 0.26, sizeVar: 0.1, spin: 1.6 });
++      spray(x, y, t, Math.ceil(n / 3), { type: 0, img: () => getFluff([255, 190, 215]), speed, vmin: 0.4, vvar: 0.6, up: 0.6, g: 6, drag: 2.4, life: 360, lifeVar: 200, size: 0.12, sizeVar: 0.1 });
++    },
+     rain(x, y, col, n, t, speed) {
+       spray(x, y, t, n + 2, { img: () => dropImg(Math.random() < 0.5 ? 0 : 1), speed, vmin: 0.3, vvar: 0.7, up: 1.2, g: 10, drag: 2, life: 520, lifeVar: 260, size: 0.18, sizeVar: 0.1 });
+       spray(x, y, t, Math.ceil(n / 2), { img: ringBubbleImg, speed, vmin: 0.6, vvar: 0.6, up: 0.4, g: 3, drag: 3, life: 360, lifeVar: 200, size: 0.1, sizeVar: 0.08, delay: 60 });
+-- 
+2.43.0
+
