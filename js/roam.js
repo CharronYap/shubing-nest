@@ -3,12 +3,17 @@
    跳到別的位置、找空座位坐、去自己的專屬家具、原地小動作、自言自語；晚上自己找地方睡。個性在 js/roamdata.js。
    跟玩家的擺設怎麼並存：
    - 玩家擺的位置（存檔裡的 x、y、坐哪裡）是那隻娃娃的「家」，這裡完全不改它。娃娃晃到哪裡只記在記憶體（RS），
-     畫的時候蓋過去而已；不存檔，也不會因為娃娃在動就觸發存檔或雲端寫入。重新打開、換房間再回來，都從家開始。
+     畫的時候蓋過去而已；不存檔，也不會因為娃娃在動就觸發存檔或雲端寫入。重新打開從家開始。
+   - 換房間再回來（2026-11-28 E）：從剛剛晃到的地方接著走（RSK 只記在記憶體）。坐的家具被移走、收起來的那隻從家開始；
+     進出朋友家全部清掉，回自己家從家開始。正在塞進別隻裡的那隻（js/duo.js）照 duo 的規定從家開始。
    - 晃出去四到六次之後會自己回家（每次回家後重新抽）。
    - 玩家抓起一隻正在外面晃的娃娃：從牠現在的位置開始拖，放下去的地方變成新的家；只是點一下的話，家不變。
    - 剛被玩家拖過的娃娃先待一分鐘。
    - 玩家正在拖東西、剛動過收納架、開著面板時，全部停下來。拍照不停（2026-11-28）：照片照按下快門那一刻的畫面畫（js/photo.js）。
-   - 同時在移動的上限：這一間有四隻以上是三隻，不然兩隻。裝置開了「減少動態效果」的話不移動，只冒字。
+   - 同時在移動的上限：這一間有四隻以上是四隻，不然全部都可以（2026-11-28 F）。裝置開了「減少動態效果」的話不移動，只冒字。
+   - 白天多跳一點（2026-11-28 F，使用者選「多一倍」）：間隔 ROAM_EVERY 縮短、比重 ROAM_W 讓 move 最大、talk 降低、
+     發呆時照 ROAM_JUMP 的機會原地跳（坐著也可以跳）、坐上專屬家具待 20～40 秒、點家具或收納架只停 5 秒。
+     ROAM_W 蓋過 js/roamdata.js 的 ROAM_P[].w，那個檔不改。
    - 小屋地圖最下面有開關「讓娃娃自己玩」，預設開，只記在這台裝置。
    去朋友家時朋友的娃娃也會動，只是畫面效果，不寫任何資料。
    來過夜的客人（2026-11-27）：不在 items 裡，js/stay.js 另外畫。用一隻「假娃娃」{kind:'doll', id, x, y, uid:'g…', guest:1} 進這一套，
@@ -146,19 +151,33 @@ function roamIdle(it, kind){
 }
 
 /* ---------- 每隻自己決定做什麼 ---------- */
+/* 白天多跳一點（2026-11-28 F）：比重蓋過 js/roamdata.js 的 ROAM_P[].w（那個檔不改）。
+   每隻 move 都是最大的，talk 降低；個性照舊：皮蛋、彈跳豬最常跳，薯餅、蛋黃哥最少。沒列在這裡的娃娃用 ROAM_P 原本的。
+   ROAM_JUMP：抽到發呆時，有多少機會是原地跳（坐著也可以跳）。 */
+const ROAM_W = {
+  sloth:   {move: 3, sit: 1.5, own: 1.5, idle: 2.5, talk: 1.5},
+  egg:     {move: 3, sit: 1.5, own: 2, idle: 2.5, talk: 1.5},
+  dog:     {move: 5, follow: 2, sit: 1, own: 1, idle: 4.5, talk: 1},
+  moodeng: {move: 5, sit: 1, own: 1.5, idle: 4.5, talk: 1},
+  nyanko:  {move: 4, sit: 2, own: 2, idle: 3.5, talk: 1},
+  dino:    {move: 4, hide: 2, follow: 1.5, sit: 1, own: 1.5, idle: 3.5, talk: 1},
+  snoopy:  {move: 4, sit: 2, own: 2, idle: 3.5, talk: 1},
+  piggy:   {move: 4, sit: 1, own: 1.5, idle: 3.5, talk: 1.5}
+};
+const ROAM_JUMP = {sloth: .25, egg: .2, dog: .5, moodeng: .6, nyanko: .3, dino: .45, snoopy: .3, piggy: .3};
 function roamPaused(){
   return !roamOn || document.hidden || (typeof page !== 'undefined' && page !== 'room') || (typeof yardOn !== 'undefined' && yardOn) || !!drag
     || !$('#sheet').hidden || !$('#cover').hidden || !!screen.querySelector('.over:not(.phov)') || Date.now() < roamHold;   // 拍照、拍完的預覽（.phov）不停
 }
 /* 專屬家具（2026-11-28 修）：
    - 坐在自己的專屬家具上時不再抽 own（以前 roamSeatTaken 把自己坐的位子算成空位，會在原地一直重跳）。
-   - 晃過去坐上之後待 60～120 秒才離開；離開後 3～5 分鐘內不再去。玩家本來就擺在專屬家具上的（在家）不限制。
+   - 晃過去坐上之後待 20～40 秒才離開（2026-11-28 F，原本 60～120 秒），這段時間可以原地跳；離開後 3～5 分鐘內不再去。玩家本來就擺在專屬家具上的（在家）不限制。
    - own 跟其他出門的動作一樣 trips++，晃夠了真的會回家。 */
 const roamOwnOf = (it, uid) => uid !== null && uid !== undefined && items.some(f => f.uid === uid && f.kind === 'furn' && FURN[f.id].own === it.id);
 const roamOwnStay = (it, st) => !!st && st.sit !== null && !!st.ownAt && Date.now() < st.ownAt + st.ownStay && roamOwnOf(it, st.sit);   // js/roam2.js 也會看
 function roamAct(it, st, canMove){
-  const P = ROAM_P[it.id], seated = st.sit !== null || (!roamAway(st) && !!it.sit);
-  const w = Object.assign({}, P.w);
+  const P = ROAM_P[it.id];
+  const w = Object.assign({}, ROAM_W[it.id] || P.w);
   if (!canMove || REDUCE) ['move', 'sit', 'own', 'follow', 'hide'].forEach(k => delete w[k]);
   if (REDUCE) delete w.idle;
   const now = Date.now();
@@ -191,7 +210,7 @@ function roamAct(it, st, canMove){
   const [x, y] = roamPos(it);
   if (act === 'move'){ st.trips++; if (Math.random() < .5) roamWalk(it, st, x, y); else roamHopTo(it, Math.max(10, Math.min(90, x + rnd(-28, 28))), Math.max(60, Math.min(94, y + rnd(-14, 14)))); }
   else if (act === 'sit'){ st.trips++; const [f, k] = seats[Math.floor(Math.random() * seats.length)]; roamSitOn(it, f, k); }
-  else if (act === 'own'){ st.trips++; st.ownOn = true; st.ownAt = Date.now(); st.ownStay = rnd(60, 120) * 1000; const [f, k] = own[0]; roamSitOn(it, f, k); }
+  else if (act === 'own'){ st.trips++; st.ownOn = true; st.ownAt = Date.now(); st.ownStay = rnd(20, 40) * 1000; const [f, k] = own[0]; roamSitOn(it, f, k); }
   else if (act === 'follow'){ st.trips++; const o = others[Math.floor(Math.random() * others.length)], [ox, oy] = roamPos(o); roamHopTo(it, Math.max(10, Math.min(90, ox + (ox > 50 ? -9 : 9))), Math.max(60, Math.min(94, oy + 1))); }
   else if (act === 'hide'){
     // 躲在家具後面：故意被擋住，躲一下就出來（js/seen.js 過 7 秒會讓牠跳到看得到的地方）
@@ -200,12 +219,17 @@ function roamAct(it, st, canMove){
     try { roamHopTo(it, Math.max(10, Math.min(90, f.x + rnd(-3, 3))), Math.max(58, Math.min(92, f.y - 2)), () => { st.hid = Date.now(); }); } finally { roamFree = false; }
     st.hid = Date.now();
   }
-  else if (act === 'idle'){ const all = roamIdles(it.id), list = seated ? all.filter(k => k !== 'jump') : all; if (list.length) roamIdle(it, list[Math.floor(Math.random() * list.length)]); }
+  else if (act === 'idle'){
+    // 照 ROAM_JUMP 的機會原地跳，坐著也可以（2026-11-28 F）；不然從原本的小動作裡挑
+    const list = roamIdles(it.id).filter(k => k !== 'jump');
+    if (Math.random() < (ROAM_JUMP[it.id] || 0) || !list.length) roamIdle(it, 'jump');
+    else roamIdle(it, list[Math.floor(Math.random() * list.length)]);
+  }
   else if (act === 'talk'){ const s = roamLine(it.id, st.last); st.last = s; if (s) roamSay(it, s); }
 }
 /* 走遠一點（2026-11-28）：move 有一半是在整個地板上挑一個點。離得遠的話，先跳到半路停一下再走完，像在散步。
    落點一樣會經過 js/seen.js（被家具擋住就換位置）。半路停的時候有別的事插進來（被拖、回家、去坐、睡覺、停下來），就留在半路。 */
-const roamCap = () => (roamDolls().length >= 4 ? 3 : 2);   // 同時在跳的上限
+const roamCap = () => { const n = roamDolls().length; return n >= 4 ? 4 : Math.max(1, n); };   // 同時在跳的上限（2026-11-28 F：4 隻以上 4 隻，不然全部）
 const roamMoving = () => roamDolls().filter(d => RS[d.uid] && RS[d.uid].busy).length;
 function roamWalk(it, st, x, y){
   const tx = rnd(10, 90), ty = rnd(60, 94);
@@ -222,14 +246,17 @@ function roamWalk(it, st, x, y){
     }, wait);
   });
 }
-// 兩個動作之間隔幾秒（2026-11-28 比 js/roamdata.js 的 every 短大約三分之一，快慢照舊；那個檔不改，這裡蓋過去）
-const ROAM_EVERY = {sloth: [15, 28], egg: [25, 45], dog: [4, 8], moodeng: [5, 10], nyanko: [8, 15], dino: [7, 13], snoopy: [8, 15], piggy: [8, 15]};
-const roamEveryOf = id => ROAM_EVERY[id] || ROAM_P[id].every.map(v => v * 2 / 3);
+// 兩個動作之間隔幾秒（2026-11-28 F；js/roamdata.js 的 every 不改，這裡蓋過去）
+// 規格原本寫皮蛋 2～4、彈跳豬 3～5、龍龍 3～6、貓咪老師／史努比／火腿 4～7、薯餅 8～14、蛋黃哥 10～16 秒，
+// 照那個值實測客廳薯餅＋火腿白天 83 秒跳 16～17 次，超過研究對話的驗收範圍 8～14 次（move 一半是兩段跳、還有 meet 和回家），
+// 所以全部拉長 1.5 倍，快慢的順序不變。以驗收次數為準。
+const ROAM_EVERY = {sloth: [12, 21], egg: [15, 24], dog: [3, 6], moodeng: [4.5, 7.5], nyanko: [6, 10.5], dino: [4.5, 9], snoopy: [6, 10.5], piggy: [6, 10.5]};
+const roamEveryOf = id => ROAM_EVERY[id] || ROAM_P[id].every.map(v => v / 3);
 function roamTick(){
   if (roamPaused()) return;
   const now = Date.now(), dolls = roamDolls();
   let moving = dolls.filter(d => RS[d.uid] && RS[d.uid].busy).length;
-  const cap = dolls.length >= 4 ? 3 : 2;
+  const cap = roamCap();
   for (const it of dolls){
     const st = roamSt(it);
     if (st.busy || now < st.rest) continue;
@@ -255,14 +282,53 @@ document.addEventListener('visibilitychange', roamStart);   // 頁面在背景�
 /* ---------- 跟原本的畫房間、拖娃娃接起來 ---------- */
 // 房間每次重畫完，把在外面晃的娃娃蓋回牠晃到的位置
 { const prev = render; render = function(){ prev(); roamPaint(); }; }
-// 換房間、進出朋友家：全部從家開始
-{ const prev = load; load = function(){ roamReset(); prev(); }; }
+/* 換房間再回來，從剛剛晃到的地方接著走（2026-11-28 E）：
+   - 離開自己家的一間時，把在外面晃的那幾隻（位置、坐哪裡、那張家具當時在哪）記進 RSK[房間]，只在記憶體。
+   - 回到那一間時照記的畫回去；坐的家具被移走、收起來，或娃娃被收起來的，就從家開始。
+   - 進朋友家（VISIT）時整個 RSK 清掉，回自己家從家開始（照舊）。
+   - 看明信片（js/card.js）和拍照重畫（js/pic.js 的 photoScene，PIC_LOCK）只是借用畫面：進去前記下、拍完照記的畫回來，不清。 */
+const RSK = {};
+let roamAt = null;   // 上一次 load 的是哪裡：{r:房間, mine:是不是自己家}
+const RS_KEEP = ['x', 'y', 'sit', 'seat', 'trips', 'tripMax', 'ownOn', 'ownAt', 'ownStay', 'ownOff', 'ownCool', 'lastAct', 'acted', 'last', 'hid', 'rest', 'slept'];
+function roamKeep(){
+  const out = {}, tuck = typeof duoT !== 'undefined' && duoT ? duoT.a : null;   // js/duo.js：正在塞（或正要去塞）的那隻照 duo 的規定從家開始，不記
+  items.forEach(it => {
+    const st = RS[it.uid]; if (it.kind !== 'doll' || it === tuck || !roamAway(st)) return;
+    const k = {}; RS_KEEP.forEach(n => { if (st[n] !== undefined) k[n] = st[n]; });
+    if (st.sit !== null){ const f = items.find(o => o.uid === st.sit && o.kind === 'furn'); if (!f) return; k.fx = f.x; k.fy = f.y; }
+    out[it.uid] = k;
+  });
+  return out;
+}
+function roamBack(r){
+  const K = RSK[r]; delete RSK[r]; if (!K) return;
+  const now = Date.now();
+  Object.entries(K).forEach(([u, k]) => {
+    const it = items.find(i => i.kind === 'doll' && String(i.uid) === u); if (!it) return;
+    if (k.sit !== null){ const f = items.find(o => o.uid === k.sit && o.kind === 'furn'); if (!f || f.x !== k.fx || f.y !== k.fy) return; }
+    const st = roamSt(it);
+    RS_KEEP.forEach(n => { if (k[n] !== undefined) st[n] = k[n]; });
+    st.busy = false; st.next = now + rnd(1, 4) * 1000;
+  });
+  roamPaint();
+}
+{
+  const prev = load;
+  load = function(){
+    const lock = !!window.PIC_LOCK, mine = !VISIT && !lock;
+    if (roamAt && roamAt.mine) RSK[roamAt.r] = roamKeep();
+    if (VISIT && !VISIT.card && !lock) Object.keys(RSK).forEach(k => delete RSK[k]);   // 看明信片（js/card.js，VISIT.card）不算出門，不清
+    roamReset(); prev();
+    if (mine) roamBack(roomId);
+    roamAt = {r: roomId, mine};
+  };
+}
 // 玩家抓起一隻在外面晃的娃娃：從牠現在的位置開始拖（先把那個位置暫時當成家）
 let roamGrab = null;
 room.addEventListener('pointerdown', e => {
   const el = (typeof dollUnder === 'function' && dollUnder(e)) || (e.target.closest && e.target.closest('.it')); if (!el) return;   // 被家具、背包蓋住的娃娃也算（room.js 的 dollUnder）
   const it = items.find(i => String(i.uid) === el.dataset.u); if (!it) return;
-  if (it.kind !== 'doll'){ roamHold = Date.now() + 15000; return; }
+  if (it.kind !== 'doll'){ roamHold = Date.now() + 5000; return; }
   if (VISIT) return;
   const st = RS[it.uid];
   roamGrab = {it, home: {x: it.x, y: it.y, sit: it.sit, seat: it.seat}, away: false};
@@ -290,7 +356,7 @@ addEventListener('pointerup', () => {
   roamDolls().forEach(o => { const s = RS[o.uid]; if (s && s.sit !== null && items.some(q => q !== o && q.kind === 'doll' && q.sit === s.sit && q.seat === s.seat)) roamHome(o); });
 });
 // 動收納架（放東西、換分頁）時先停一下
-['#items', '.tabs'].forEach(sel => { const e = document.querySelector(sel); if (e) e.addEventListener('pointerdown', () => { roamHold = Date.now() + 15000; }); });
+['#items', '.tabs'].forEach(sel => { const e = document.querySelector(sel); if (e) e.addEventListener('pointerdown', () => { roamHold = Date.now() + 5000; }); });
 
 /* ---------- 開關：小屋地圖最下面 ---------- */
 function roamToggleHTML(){
