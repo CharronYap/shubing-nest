@@ -171,7 +171,7 @@ function seasonAnniv(t){
   const by = {};
   due.forEach(([d, m]) => (by[y - +m.slice(0, 4)] = by[y - +m.slice(0, 4)] || []).push(DOLL_NAME[d]));
   const yr = n => n === 1 ? '一' : n === 2 ? '兩' : n;
-  return [...Object.entries(by).map(([n, who]) => `今天是${who.join('、')}來小窩滿${yr(+n)}年`), ...(cake ? ['收納架多了一個週年蛋糕'] : [])];
+  return [...Object.entries(by).map(([n, who]) => `今天是${andJoin(who)}來小窩滿${yr(+n)}年`), ...(cake ? ['收納架多了一個週年蛋糕'] : [])];
 }
 // 提示一則一則來（toast 只有一個，連著叫會蓋掉）。封面還開著就等進房間再說
 function seasonToast(msgs){

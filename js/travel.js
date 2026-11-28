@@ -235,7 +235,7 @@ function tvBagLine(b, p, n){
   const ids = String(b).split(',').filter(id => TV_GOODS[id]), P = TV_PLACES[p] || TV_PLACES.park, cards = TV_ZH_N[+n] || String(+n || 0);
   if (!ids.length) return `這趟沒帶行李，只去了${P.name}，寄了${cards}張明信片。`;
   const nm = ids.map(id => TV_GOODS[id].name);
-  return `這趟帶了${nm.length > 1 ? nm.slice(0, -1).join('、') + '和' + nm[nm.length - 1] : nm[0]}，寄了${cards}張明信片。`;
+  return `這趟帶了${andJoin(nm)}，寄了${cards}張明信片。`;
 }
 function tvSouvLine(k){ const s = TV_SOUV[k]; return s ? `帶回來${s.unit || '一個'}${s.name}。` : '這趟沒有帶東西回來。'; }
 function tvReturn(o){
