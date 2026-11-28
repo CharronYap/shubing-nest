@@ -2,6 +2,7 @@
    第一組：蛋黃哥側著塞進龍龍裡。塞好的樣子直接用使用者的照片（img/duo/egg-dino.webp：照片去背、加跟其他娃娃一樣的白邊，
    龍龍下面薯餅的腳和背景都切掉了）。使用者說要跟照片一模一樣。
    - 蛋黃哥跟龍龍在同一間、兩隻都醒著、龍龍站在地上沒在忙：蛋黃哥自己決定做什麼的時候，有時候會去塞。
+     玩家把兩隻放在一起（把蛋黃哥放到龍龍旁邊，或反過來），蛋黃哥會馬上去塞（2026-11-28）；冷卻中就講一句，一次冷卻最多講一次。
      1. 蛋黃哥跳到龍龍旁邊。
      2. 蛋黃哥往龍龍那邊倒、側著身體從龍龍側邊擠進去（一邊扭、一邊縮、身體被龍龍蓋住）。龍龍不轉。
      3. 擠進去之後龍龍鼓一下，換成照片的樣子：龍龍長長一條，蛋黃哥只露出頭。這時候蛋黃哥自己那張圖不畫。
@@ -30,6 +31,7 @@ const DUO_TUCK = [{
   tapB: ['裡面有蛋黃哥喔。', '噓，牠快睡著了。', '不能搖，會掉出來。', '我們現在是一隻。'],
   bye: [['a', '好熱。出來一下。', '下次再來喔！'], ['b', '到站囉！', '……再坐一站不行嗎。'], ['a', '腳麻了。', '你明明沒有在用腳。'], ['b', '我要去玩了，你下車。', '好啦。']],
   pull: ['欸，被拉走了。', '我的蛋黃哥！', '下次再來喔。'],
+  wait: ['剛出來，等一下再進去。', '腳還麻麻的，晚點。', '讓我在外面躺一下。'],   // 玩家放到旁邊、可是還在冷卻：a 講一句
 }];
 const DUO_PUSH = 1700, DUO_OUT = 1300;   // 擠進去、擠出來各要多久（毫秒）
 let duoT = null;                          // 正在塞的那一組：{c 設定, a, b, ph:'go'|'in'|'on'|'out', side, t0, until, …}
@@ -42,11 +44,11 @@ let duoTap = null;                        // 最後一次按在房間的哪裡�
 room.addEventListener('pointerdown', e => { duoTap = [e.clientX, e.clientY]; }, true);
 { const img = new Image(); img.src = DUO_TUCK[0].pic; }   // 先載好，換上去的時候不會空一下
 
-// b 現在可不可以讓 a 塞：站在地上、沒在忙、醒著、沒在躲
-function duoHostOk(b){
+// b 現在可不可以讓 a 塞：站在地上、沒在忙、醒著、沒在躲。dropped：玩家剛放下的，放下時的 st.rest 不擋
+function duoHostOk(b, dropped){
   const st = RS[b.uid], el = duoEl(b);
   if (!el || !el.offsetParent || el.classList.contains('hiding') || duoAsleep(b) || b.guest) return false;
-  if (st && (st.busy || st.sit !== null || Date.now() < st.rest || st.hid || roamOwnStay(b, st))) return false;
+  if (st && (st.busy || st.sit !== null || (!dropped && Date.now() < st.rest) || st.hid || roamOwnStay(b, st))) return false;
   return !(!(st && roamAway(st)) && b.sit);
 }
 function duoCan(){ return roamOn && !REDUCE && !(VISIT && VISIT.card) && !(typeof skitOn !== 'undefined' && skitOn); }
@@ -137,6 +139,42 @@ function duoStart(c, a, b){
   duoLoop();
   return true;
 }
+
+/* ---------- 玩家把兩隻放在一起：過一下下蛋黃哥就去塞 ---------- */
+// 放下的是 a 或 b、另一隻在同一間、照 duoTry 的算法離 25 以內、放下的那隻站在地上。等 0.6～1 秒讓放下的動作停好再看一次。
+// 玩家剛放下設的 st.rest（兩隻都是）這次不擋，其他條件照 duoTry。冷卻還沒到：a 講一句 wait，一次冷卻最多講一次
+let duoDropTm = 0;
+const duoWaitSaid = {};                   // 設定 id → 已經講過 wait 的那一次冷卻（duoCool 的值）
+function duoNear(it){
+  if (VISIT || it.guest || it.sit || !items.includes(it)) return null;
+  for (const c of DUO_TUCK){
+    if (it.id !== c.a && it.id !== c.b) continue;
+    const other = it.id === c.a ? c.b : c.a, [x, y] = roamPos(it);
+    const dist = o => { const [ox, oy] = roamPos(o); return Math.hypot(ox - x, (oy - y) * .8); };
+    const L = roamDolls().filter(o => o !== it && o.id === other && !o.guest && dist(o) <= 25).sort((p, q) => dist(p) - dist(q));
+    if (L.length) return it.id === c.a ? {c, a: it, b: L[0]} : {c, a: L[0], b: it};
+  }
+  return null;
+}
+roamDropped.push(it => {
+  clearTimeout(duoDropTm);
+  if (!duoNear(it)) return;
+  const rid = roomId;
+  duoDropTm = setTimeout(() => {
+    if (roomId !== rid || VISIT || duoT || !duoCan()) return;
+    if (drag && drag.it && drag.it.kind === 'doll') return;   // 又被拿起來了
+    const n = duoNear(it); if (!n) return;
+    const {c, a, b} = n, sa = RS[a.uid];
+    if (!items.includes(a) || !items.includes(b) || roamOwnStay(a, sa) || duoAsleep(a) || !duoHostOk(b, true)) return;
+    const el = duoEl(a); if (!el || !el.offsetParent || el.classList.contains('hiding') || (sa && sa.hid)) return;
+    const cool = duoCool[c.id] || 0;
+    if (Date.now() < cool){
+      if (duoWaitSaid[c.id] !== cool && c.wait){ duoWaitSaid[c.id] = cool; roamSay(a, duoPick(c.wait)); }
+      return;
+    }
+    duoStart(c, a, b);
+  }, rnd(600, 1000));
+});
 function duoPushIn(){
   const el = duoEl(duoT.a); if (!el){ duoDrop(); return; }
   duoT.ph = 'in'; duoT.t0 = Date.now(); duoT.from = [parseFloat(el.style.left), parseFloat(el.style.top), parseFloat(el.style.width)];

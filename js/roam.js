@@ -325,6 +325,7 @@ function roamBack(r){
 }
 // 玩家抓起一隻在外面晃的娃娃：從牠現在的位置開始拖（先把那個位置暫時當成家）
 let roamGrab = null;
+const roamDropped = [];   // 玩家把娃娃放到新的地方之後要做的事（js/duo.js：放到龍龍旁邊，蛋黃哥就去塞）。每個收到放下的那一隻
 room.addEventListener('pointerdown', e => {
   const el = (typeof dollUnder === 'function' && dollUnder(e)) || (e.target.closest && e.target.closest('.it')); if (!el) return;   // 被家具、背包蓋住的娃娃也算（room.js 的 dollUnder）
   const it = items.find(i => String(i.uid) === el.dataset.u); if (!it) return;
@@ -354,6 +355,8 @@ addEventListener('pointerup', () => {
   }
   // 玩家把別隻放到某個座位上：原本晃過去坐在那裡的讓開，回自己家
   roamDolls().forEach(o => { const s = RS[o.uid]; if (s && s.sit !== null && items.some(q => q !== o && q.kind === 'doll' && q.sit === s.sit && q.seat === s.seat)) roamHome(o); });
+
+  if (moved) roamDropped.forEach(f => { try { f(it); } catch (e) { console.info('[roam]', e); } });
 });
 // 動收納架（放東西、換分頁）時先停一下
 ['#items', '.tabs'].forEach(sel => { const e = document.querySelector(sel); if (e) e.addEventListener('pointerdown', () => { roamHold = Date.now() + 5000; }); });
