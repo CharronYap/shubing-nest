@@ -1,9 +1,9 @@
-/* 新風格：紙雕立體・夜燈（2026-11-26）。同一天晚上使用者看過封面、娃娃機、小島後說「現在就改」，改成預設：
+/* 新風格：紙雕立體・夜燈（2026-11-26）。同一天晚上使用者看過封面、娃娃機、花園後說「現在就改」，改成預設：
    不加參數就是新風格（從主畫面圖示開也是）；網址加 ?look=old 回到原本的樣子，這個檔就什麼都不做。選過的不記在存檔，網址有帶才算。
    index.html 最前面有一小段程式看同一個參數，先把 .look-paper 掛上去，第一眼才不會閃一下舊的顏色。
    第一版只換客廳（使用者看過說「可以，繼續換」）。現在五間房間都是新風格：牆、地板、窗戶和窗外、門口、每一間固定的構造、所有家具、
-   上面的按鈕、收納架、對話框和提示。門外小島、娃娃機那一頁、封面還是原本的樣子。不改存檔、不改規則、不動玩法。
-   家具：71 件都是手畫的，在 PF（客廳最早那 7 件、第一批 16 件、第二批 13 件、第三批 35 件）。旅行的土產、小島的戶外家具和之後新增還沒手畫的，用 paperize() 自動轉：拿掉描邊和亮面的反光、顏色換成色票裡最接近的那一個、
+   上面的按鈕、收納架、對話框和提示。門外的花園、娃娃機那一頁、封面還是原本的樣子。不改存檔、不改規則、不動玩法。
+   家具：71 件都是手畫的，在 PF（客廳最早那 7 件、第一批 16 件、第二批 13 件、第三批 35 件）。旅行的土產、花園的戶外家具和之後新增還沒手畫的，用 paperize() 自動轉：拿掉描邊和亮面的反光、顏色換成色票裡最接近的那一個、
    每一塊下面加一塊往下錯開的影子。之後新增的家具不用另外畫，會自動轉。
    畫法（照 樣張/小窩風格樣板.html 的 B 款）：
    - 每一樣東西是色紙剪出來的色塊，沒有描邊；每一層下面有一塊往下錯開的深色影子，越前面錯得越多。
@@ -580,7 +580,7 @@ if (PAPER_ON) (() => {
       ${L(rect(0, 54, 80, 6, 2.5), C.wood2, 1.2)}
       ${L(path('M1 0h15c1 19-3 40-9 54H1z'), C.a2, 1.6)}</svg>`;
   }
-  /* ---------- 門口：通往小島的門、通往隔壁的拱門 ---------- */
+  /* ---------- 門口：通往花園的門、通往隔壁的拱門 ---------- */
   const doorPaper = () => `<svg viewBox="0 0 60 100">
     ${L(rect(2, 4, 56, 96, 4), C.wood, 1.6)}
     <clipPath id="pp-door"><rect x="7" y="9" width="46" height="91"/></clipPath>
@@ -621,9 +621,9 @@ if (PAPER_ON) (() => {
     room.querySelectorAll('.it:not(.doll)').forEach(el => { const it = items.find(i => String(i.uid) === el.dataset.u); if (it && FURN[it.id]) el.innerHTML = furnSVG(it.id); });
     if (typeof renderTray === 'function' && typeof tab !== 'undefined') try { renderTray(); } catch (e) {}
   }
-  // 只有「房間那一頁的客廳」才算（小島、娃娃機不算）：合成一個 class，樣式都掛在 .ppon 下面
+  // 只有「房間那一頁的客廳」才算（花園、娃娃機不算）：合成一個 class，樣式都掛在 .ppon 下面
   const sync = () => {
-    const on = screen.classList.contains('pp');   // 第一版只算客廳那一頁；現在房間、小島、娃娃機都算
+    const on = screen.classList.contains('pp');   // 第一版只算客廳那一頁；現在房間、花園、娃娃機都算
     if (screen.classList.contains('ppon') !== on) screen.classList.toggle('ppon', on);
   };
   new MutationObserver(sync).observe(screen, {attributes: true, attributeFilter: ['class']});
@@ -685,7 +685,7 @@ if (PAPER_ON) (() => {
       });
     }
   } catch (e) { console.info('[paper] 娃娃機的顏色換不了，先用原本的', e); }
-  // 小島：地圖是另外畫的一張圖（js/yard.js 比這個檔晚載入）。每次畫都轉一次，不記
+  // 花園：地圖是另外畫的一張圖（js/yard.js 比這個檔晚載入）。每次畫都轉一次，不記
   addEventListener('DOMContentLoaded', () => {
     if (typeof yardSVG === 'function'){ const y0 = yardSVG; yardSVG = function(...a){ const m = y0.apply(this, a); try { return paperize(m, null, /^\s*<svg/.test(m)); } catch (e) { return m; } }; }
   });

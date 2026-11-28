@@ -13,7 +13,7 @@ const BOOK_BFLY = '<svg viewBox="0 0 40 40"><path d="M20 20c-3-8-9-11-13-9-3 2-2
 const BOOK_BIRD = '<svg viewBox="0 0 40 40"><path d="M9 24c0-8 6-13 13-13 5 0 9 3 9 8 0 7-6 12-13 12-5 0-9-3-9-7z" fill="#9ed8f5" stroke="#4a9fd0" stroke-width="2"/><path d="M31 17l6-1-5 5z" fill="#ffb400" stroke="#d48a00" stroke-width="1.6" stroke-linejoin="round"/><circle cx="26" cy="16.5" r="1.8" fill="#3a2a35"/><path d="M13 23c3 3 8 3 11-1" fill="none" stroke="#4a9fd0" stroke-width="2" stroke-linecap="round"/><path d="M17 31v4M22 31v4" stroke="#d48a00" stroke-width="2" stroke-linecap="round"/></svg>';
 let bk = null;
 
-/* 貼紙：32 張貼圖（js/stickers.js）一開始就有，一隻娃娃三張排成一欄；季節家具有哪幾樣、貓咪老師在小島招來過蝴蝶或小鳥，就各多一張，排在後面 */
+/* 貼紙：32 張貼圖（js/stickers.js）一開始就有，一隻娃娃三張排成一欄；季節家具有哪幾樣、貓咪老師在花園招來過蝴蝶或小鳥，就各多一張，排在後面 */
 function bookStickers(){
   const l = STK.map(s => s.id);
   if (typeof SEASON_FURN !== 'undefined') SEASON_FURN.forEach(id => { if (FURN_OWN[id]) l.push('f-' + id); });

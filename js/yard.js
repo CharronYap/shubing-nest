@@ -1,5 +1,5 @@
-/* 門外小島（2026-11-26 重做，企劃「小島重做」）。原本是斜 45 度的 12 塊地，使用者說不好看、玩法看不懂，整個換掉。
-   現在的小島是「第六個房間」：跟房間同一種看法（正面），可以拖娃娃進來、擺戶外家具，娃娃會自己走動、演小劇場。
+/* 門外的花園（2026-11-26 重做，企劃「花園重做」；2026-11-28 改名咕嚕嚕秘密花園，畫面上寫「花園」）。原本是斜 45 度的 12 塊地，使用者說不好看、玩法看不懂，整個換掉。
+   現在的花園是「第六個房間」：跟房間同一種看法（正面），可以拖娃娃進來、擺戶外家具，娃娃會自己走動、演小劇場。
    畫面是紙雕畫法手畫的：一層層紙雲、浮在上面的一塊草地（邊緣看得到土的層次）、遠山和天空跟著時間換、後面一條小路通往遠方。
    草地上固定四樣：左邊大樹、中間一排 6 格花圃、右邊小池塘、前面野餐墊和點心盤。晚上樹上的小燈會亮。
    玩法只有三件事，都是點一下：
@@ -9,15 +9,15 @@
    - 招待小客人：點心盤放一份點心，過一陣子有小客人來（12 種），走的時候留小東西；不在的時候也會來。
    不懲罰、不催人：沒有任何東西會枯掉、過期、變回去。
    存檔：全部在 S.yard（規則本來就收這一欄，內容不限），所以不用等規則發布。
-     yard = {v:2, rm:{wall,floor,items}（小島這間房間的擺設）, bed:[null 或 {k:花, t:種下的時間, w:'澆水那天'}×6], kinds:[有哪幾種花],
+     yard = {v:2, rm:{wall,floor,items}（花園這間房間的擺設）, bed:[null 或 {k:花, t:種下的時間, w:'澆水那天'}×6], kinds:[有哪幾種花],
              fl:{花:收過幾朵}, tree:{d:'日期', n:樹上幾顆}, drop:[{k,x,y}]（地上的東西）, plate:{k:點心, g:客人, at, till, gift}, left:[{g,gift}]（客人留的）,
              gs:{客人:來過幾次}, dig:'皮蛋挖到幣那天', rec:{…舊的事蹟}, ws:[{p,n}]（朋友澆水的牌子）, wd, wn}
-     小島的擺設照理要放 home.yard，但規則的 home 只收五間，放進去整份存檔會被擋。所以實際存在 yard.rm，
+     花園的擺設照理要放 home.yard，但規則的 home 只收五間，放進去整份存檔會被擋。所以實際存在 yard.rm，
      跑的時候掛在 home.yard（不會被存進 home），房間的程式照常用 home[房間]。公開給朋友看的那份才需要改規則（firestore.rules）。
    舊進度：打開時轉一次（yardMigrate）。整好的草地、花圃、樹每塊 2 枚幣，花圃另外在新花圃種好一朵開的花；
      三種裝飾變成戶外家具；種子每顆 1 枚幣；薯餅寫一封信附上幣。 */
 const YARD_ICON = ICON.yard;
-let yardOn = false;   // 以前小島是另外一頁，別的檔案會看這個；現在是房間，一直是 false
+let yardOn = false;   // 以前花園是另外一頁，別的檔案會看這個；現在是房間，一直是 false
 const YD_H = 36e5, YD_SPROUT_H = 4, YD_BLOOM_H = 12, YD_WATER_H = 2, YD_FRIEND_H = 3, YD_FRUIT = 3, YD_LEFT_MAX = 3;
 const ydNow = () => Date.now() + (typeof tvSkew === 'number' ? tvSkew : 0);   // 測試時跟旅行一起把時間往後撥
 
@@ -135,7 +135,7 @@ function yardMigrate(o){
     if (p.s === 'deco' && FURN['yd' + p.k]) FURN_OWN['yd' + p.k] = 1;
   });
   Object.values(o.seeds || {}).forEach(n => { coins += Math.max(0, n | 0); });
-  // 在小島「放一晚」的娃娃：回到原本的房間
+  // 在花園「放一晚」的娃娃：回到原本的房間
   Object.keys(o.stay || {}).forEach(d => {
     if (!DOLL_N[d] || RIDS.some(r => home[r] && home[r].items.some(i => i.kind === 'doll' && i.id === d))) return;
     const st = o.stay[d] || {}, r = home[st.from] ? st.from : 'living';
@@ -166,17 +166,17 @@ function yardInit(){
   return y;
 }
 yardInit();
-// 小島這間房間：掛在 home.yard，但不會被存進 home（存在 S.yard.rm）
+// 花園這間房間：掛在 home.yard，但不會被存進 home（存在 S.yard.rm）
 function yardHook(){ Object.defineProperty(home, 'yard', {value: S.yard.rm, enumerable: false, configurable: true, writable: true}); }
 yardHook();
 if (!RIDS.includes('yard')) RIDS.push('yard');
-const yardHas = s => !s || ['tree', 'pond', 'grass', 'flower'].includes(s);   // 小島的小事（js/data.js）：新的小島一開始就有樹、池塘、草地
+const yardHas = s => !s || ['tree', 'pond', 'grass', 'flower'].includes(s);   // 花園的小事（js/data.js）：新的花園一開始就有樹、池塘、草地
 function yardRec(d, line){ const r = S.yard.rec[d] = S.yard.rec[d] || []; r.push(`${todayStr()}|${line}`); if (r.length > 12) r.splice(0, r.length - 12); }
 function yardRows(d){
   const r = ((S.yard || {}).rec || {})[d] || []; if (!r.length) return '';
   return `<div class="al-sec">花園</div><ul class="al-ln al-st">${r.slice().reverse().slice(0, 6).map(x => `<li>${md(x.slice(0, 10))}　${x.slice(11)}</li>`).join('')}</ul>`;
 }
-/* 兩台裝置的小島合在一起（js/account.js 的 mergeSave 會叫；m 是雲端那份，g 是這台的，都是純資料）。
+/* 兩台裝置的花園合在一起（js/account.js 的 mergeSave 會叫；m 是雲端那份，g 是這台的，都是純資料）。
    擺設（rm）跟其他房間一樣用雲端的。花的種類、收過幾朵、來過的客人：兩邊合起來。
    花圃每一格：只有一邊有就用那一邊；兩邊都有，用比較晚種的。樹、地上的東西、點心盤、客人留的東西：用這台的（玩家剛剛看到的是這台）。 */
 function yardMerge(m, g){
@@ -291,7 +291,7 @@ function ydPlateSet(k){
   const e = typeof earnData === 'function' ? earnData() : null;
   if (k === 'cookie'){ if (S.coins < YD_COOKIE){ toast(`還差 ${YD_COOKIE - S.coins} 枚幣`); return; } S.coins -= YD_COOKIE; }
   else { if (!e || !(e.bag[k] > 0)){ toast(k === 'fruit' ? '手上沒有果子。搖一搖樹就有' : '手上沒有花。花圃開花了點一下就收得到'); return; } e.bag[k]--; }
-  const now = ydNow(), wait = (10 + Math.random() * 30) * (ydInYard('nyanko') ? .5 : 1) * 60000;   // 貓咪老師在小島的時候，客人來得比較快
+  const now = ydNow(), wait = (10 + Math.random() * 30) * (ydInYard('nyanko') ? .5 : 1) * 60000;   // 貓咪老師在花園的時候，客人來得比較快
   const g = ydGuestPick(k, now + wait), locked = Object.keys(YD_FLOWERS).filter(f => !y.kinds.includes(f) && !y.left.some(l => l.gift === 'kind-' + f));
   const r = Math.random();
   const gift = r < .28 && locked.length ? 'kind-' + locked[Math.floor(Math.random() * locked.length)] : 'coin-' + (r > .88 ? 5 : 2 + Math.floor(Math.random() * 3));
@@ -454,7 +454,7 @@ function ydPaint(){
     el.style.transform = 'translate(-50%,-100%)';
   });
 }
-// 房間固定的構造重畫時（換房間、換天色）一起畫；收納架的牆和地板那一頁在小島不用
+// 房間固定的構造重畫時（換房間、換天色）一起畫；收納架的牆和地板那一頁在花園不用
 if (typeof fixPaint === 'function'){ const fp = fixPaint; fixPaint = function(){ fp.apply(this, arguments); ydPaint(); }; }
 {
   const prev = renderTray;
@@ -464,7 +464,7 @@ if (typeof fixPaint === 'function'){ const fp = fixPaint; fixPaint = function(){
   };
 }
 
-/* ---------- 娃娃在小島上自己會做的事（照個性，不用派）。開著「讓娃娃自己玩」才會動 ---------- */
+/* ---------- 娃娃在花園裡自己會做的事（照個性，不用派）。開著「讓娃娃自己玩」才會動 ---------- */
 const YD_SPOT = {
   sloth: [26, 66, ['樹下的影子剛剛好。', '……我在聽葉子的聲音。']],
   dog: [36, 72, ['我在挖洞！', '這裡的土很好挖！']],
@@ -501,7 +501,7 @@ function ydAct(){
 }
 setInterval(() => {
   ydAct();
-  // 客人來了、走了：人在小島的時候畫面要跟著換
+  // 客人來了、走了：人在花園的時候畫面要跟著換
   if (roomId === 'yard' && !VISIT && !document.hidden){ const p = S.yard.plate, had = !!room.querySelector('.yd-guest'); if (p && ((ydNow() >= p.at) !== had || ydNow() >= p.till)) ydPaint(); }
 }, 28000);
 
@@ -514,7 +514,7 @@ $('#sheet').addEventListener('click', e => {
   else if (b.dataset.yd === 'go'){ $('#sheet').hidden = true; setPage('room'); goRoom('yard'); }
   else if (b.dataset.yd === 'album'){ if (ydBookPlate){ ydPlateTap(); if ($('#sheet .yd-book')) $('#sheet').hidden = true; } else $('#sheet').hidden = true; }   // 返回
 });
-// 賺幣清單用（js/earn.js）：小島現在有沒有東西可以收
+// 賺幣清單用（js/earn.js）：花園現在有沒有東西可以收
 const yardReady = () => { const y = S.yard; if (!y || y.v !== 2) return false; return y.bed.some(b => ydStage(b) === 3) || y.tree.d !== todayStr() || y.tree.n > 0 || y.drop.length > 0 || y.left.length > 0; };
 // 舊進度換算的幣：薯餅寫一封信附上（信箱載好之後由 js/mail.js 的 mailCheck 叫）
 function yardMigMail(){

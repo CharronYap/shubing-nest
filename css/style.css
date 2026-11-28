@@ -546,7 +546,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);
 .al-ml .ml-tx p{font-size:13px}
 .al-ml .ml-tx.big p{font-size:16px}
 
-/* 門外小島（js/yard.js）：蓋在房間和收納架上面，上面是小島，下面是像收納架的面板 */
+/* 門外的花園（js/yard.js）：蓋在房間和收納架上面，上面是花園，下面是像收納架的面板 */
 .yard{position:absolute;inset:0;z-index:31;display:flex;flex-direction:column;background:linear-gradient(#cfe9ff,#fde7f1 70%,#fff4f8);transition:background .6s}
 .yard.night{background:linear-gradient(#3b3570,#6b5a96 70%,#a58bb8)}
 .yd-map{flex:1;min-height:0;display:grid;place-items:center;padding:4px 6px 0}
@@ -597,7 +597,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);
 .screen.inyard #tray,.screen.inyard #vbar{visibility:hidden}
 .al-yd small{margin-left:6px;font-size:11px;color:var(--soft)}
 @media (prefers-reduced-motion:reduce){.yd-z,.yd-hop,.yd-me{animation:none}}
-/* 多了小島那顆，上面四顆鈕擠一點 */
+/* 多了花園那顆，上面四顆鈕擠一點 */
 .rnav:has(>:nth-child(4)) button{width:28px}
 .rnav:has(>:nth-child(4)) button svg{width:19px;height:19px}
 @container (max-width:360px){.rnav:has(>:nth-child(4)) button{width:26px}}
@@ -683,7 +683,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);
 .want-h{display:block;margin-top:8px;font-size:12px;color:var(--soft);line-height:1.5}
 .vb-want{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;background:#e9c79c;border:2px solid #b98958;color:#5f3b1c;font-size:13px;font-weight:800;box-shadow:0 2px 0 #b98958}
 .vb-want svg{width:14px;height:14px;color:#fff3c4;flex:none}
-/* 幫朋友的小島澆水 */
+/* 幫朋友的花園澆水 */
 .wg-ttl{font-size:15px;font-weight:900;color:var(--pink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wg-nt{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .yd-a[data-wg] .yd-hand svg{color:#6cc0ee}
@@ -889,8 +889,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);
 .rmap{flex:none;width:30px;height:30px;border-radius:50%;border:3px solid #fff;background:#fff;color:var(--pink);box-shadow:0 3px 0 #ead9e2;display:grid;place-items:center;padding:0;cursor:pointer}
 .rmap svg{width:17px;height:17px}
 .rmap:active{transform:translateY(2px);box-shadow:0 1px 0 #ead9e2}
-/* 小屋地圖（js/rooms.js 的 mapOpen）。2026-11-27 照使用者的設計圖重畫：紙雕的紅瓦屋頂、屋頂底下三角形的閣樓、木頭房子裡四間、雲上的小島。
-   顏色都用 js/paper.js 的色票（--p-*），?look=old 沒有色票時用後面寫的白天那一組。屋頂、家具、小島是 SVG（js/rooms.js 的 HM_ART），這裡只排位置 */
+/* 小屋地圖（js/rooms.js 的 mapOpen）。2026-11-27 照使用者的設計圖重畫：紙雕的紅瓦屋頂、屋頂底下三角形的閣樓、木頭房子裡四間、雲上的花園。
+   顏色都用 js/paper.js 的色票（--p-*），?look=old 沒有色票時用後面寫的白天那一組。屋頂、家具、花園是 SVG（js/rooms.js 的 HM_ART），這裡只排位置 */
 .hm{--hm-ink:var(--p-ink,#23264a);--hm-paper:var(--p-paper,#fbf6ea);--hm-a1:var(--p-a1,#ff8a66);--hm-wood:var(--p-wood,#8a5a45);--hm-wood2:var(--p-wood2,#623f30);
   --hm-edge:var(--p-edge,#d2cfcd);display:grid;gap:0;padding:2px 0 0}
 .hm-top{position:relative;width:100%;aspect-ratio:340/178}
@@ -936,7 +936,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);
 .hm-at.cur .hm-nm svg{color:var(--hm-paper)}
 .hm-at:focus-visible{outline:none}
 .hm-at:focus-visible .hm-nm{outline:3px solid var(--hm-a1);outline-offset:2px}
-/* 門外小島：一張天空色的卡片 */
+/* 門外的花園：一張天空色的卡片 */
 .hm-out{width:100%;margin-top:14px}
 .hm-y .hm-pic{aspect-ratio:300/110;background:linear-gradient(var(--p-sky,#a9c8ea),color-mix(in srgb,var(--p-sky,#a9c8ea) 45%,var(--hm-paper)))}
 .hm-y .hm-dolls{bottom:42%}
@@ -1353,7 +1353,7 @@ button.fx:focus-visible{outline:3px solid var(--pink);outline-offset:2px;border-
 .pcard.wl-ask .wl-row .btn{width:auto;height:auto;padding:10px 16px}
 
 /* =====================================================================
-   門外小島（js/yard.js，2026-11-27 重做）：跟房間同一種看法的戶外房間
+   門外的花園（js/yard.js，2026-11-27 重做）：跟房間同一種看法的戶外房間
    ===================================================================== */
 .room[data-rid="yard"] #win,.room[data-rid="yard"] .lsw,.room[data-rid="yard"] .wall::before,.room[data-rid="yard"] .wall::after{display:none!important}
 .room[data-rid="yard"] .wall,.room[data-rid="yard"] .floor{background:none!important}

@@ -21,7 +21,7 @@ const shopKeyPic = r => (r === 'kitchen'
 function shopKeyBuy(r){
   const k = ROOM_KEY[r]; if (!k || home[r]) return;
   home[r] = {wall: k.wall, floor: k.floor, items: []};
-  if (!RIDS.includes(r)){ const i = RIDS.indexOf('yard'); if (i >= 0) RIDS.splice(i, 0, r); else RIDS.push(r); }   // 小島排最後
+  if (!RIDS.includes(r)){ const i = RIDS.indexOf('yard'); if (i >= 0) RIDS.splice(i, 0, r); else RIDS.push(r); }   // 花園排最後
   $('#sheet').hidden = true;
   renderNav();
   setTimeout(() => { toast(`${k.name}打開了，上面的箭頭和小屋地圖都可以過去`); goRoom(r); }, 300);
@@ -84,7 +84,7 @@ setInterval(() => {
 }, 7000);
 
 /* ---------- 小屋地圖（看得出自己在哪一間 2） ----------
-   上面中間的地圖鈕：打開整棟雲上小屋的剖面圖。最上面是紅瓦屋頂底下的閣樓，二樓是臥室和浴室，一樓是客廳和廚房，門外是浮在雲上的小島。
+   上面中間的地圖鈕：打開整棟雲上小屋的剖面圖。最上面是紅瓦屋頂底下的閣樓，二樓是臥室和浴室，一樓是客廳和廚房，門外是浮在雲上的花園。
    2026-11-27 照使用者用 Gemini 畫的設計圖重畫（娃娃不照那張圖，還是原本的照片貼紙）：
    - 畫法跟房間一樣是紙雕：色紙色塊、沒有描邊、每一塊下面墊一塊往下錯開的影子。顏色用 js/paper.js 寫在 #screen 上的色票，
      跟著天色換；?look=old 沒有色票時用白天那一組（HM_K）。
@@ -191,7 +191,7 @@ const HM_ART = {
     + hL(hAll(hR(150, 54, 2.6, 46, 1), hR(165, 54, 2.6, 46, 1)), 'wood', .8)
     + [62, 72, 82, 92].map(y => hL(hR(150, y, 17.6, 2.2, 1), 'wood3', .5)).join('')
     + hL(hR(176, 92, 12, 8, 1.5), 'a1', .6) + hR(179, 89, 6, 3, 1)('a1d'),
-  // 門外小島：浮在雲上，看得到底下一層一層的土；小路、池塘、果樹
+  // 門外的花園：浮在雲上，看得到底下一層一層的土；小路、池塘、果樹
   yard: () => hL(hAll(hE(52, 88, 24, 8), hC(42, 83, 9), hC(58, 79, 11), hC(72, 85, 8)), 'cloud', 1)
     + hL(hAll(hE(262, 28, 16, 5), hC(256, 25, 6), hC(266, 23, 7)), 'cloud', .8) + hL(hAll(hE(32, 24, 12, 4), hC(30, 21, 5)), 'cloud', .7)
     + hL(hP('M78 64Q150 140 222 64z'), 'wood2', 1.4)
@@ -230,7 +230,7 @@ function mapCell(r){
   const nm = `<span class="hm-nm">${ICON[r] || ''}${ROOM_LABEL[r]}${here && r === 'attic' ? '・你在這裡' : ''}</span>`, tag = here && r !== 'attic' ? '<span class="hm-here">你在這裡</span>' : '';
   if (r === 'yard'){
     const has = VISIT ? !!VISIT.yard : true;
-    const st = ((H.yard && H.yard.items) || []).filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id).slice(0, 6);   // 小島現在是房間，列在上面的娃娃
+    const st = ((H.yard && H.yard.items) || []).filter(i => i.kind === 'doll' && SPR[i.id]).map(i => i.id).slice(0, 6);   // 花園現在是房間，列在上面的娃娃
     return `<button class="hm-c hm-y ${here ? 'cur' : ''} ${has ? '' : 'lock none'}" data-hm="yard" ${has ? '' : 'disabled'} aria-label="${ROOM_LABEL.yard}${here ? '，你在這裡' : ''}${st.length ? '，' + st.map(d => DOLL_NAME[d]).join('、') + '在這裡' : ''}">
       <span class="hm-pic"><svg class="hm-art" viewBox="0 0 300 110" aria-hidden="true">${HM_ART.yard()}</svg>${hmDolls(st)}${tag}</span>${nm}</button>`;
   }
@@ -276,7 +276,7 @@ $('#sheet').addEventListener('click', e => {
 
 /* ---------- 每一間固定的樣子（看得出自己在哪一間 3） ----------
    房間本身的構造，不管換什麼壁紙地板都在，用來一眼認出是哪一間：
-   - 客廳：窗戶比較大；牆上右邊有一扇開著的門，門外看得到小島的一角（點了去小島）
+   - 客廳：窗戶比較大；牆上右邊有一扇開著的門，門外看得到花園的一角（點了去花園）
    - 臥室：窗戶比較小；牆上有一盞星星小夜燈
    - 浴室：牆的下半截是磁磚，窗戶小小的在高處
    - 廚房：窗戶下面是流理台，牆上一排掛勾
@@ -286,7 +286,7 @@ $('#sheet').addEventListener('click', e => {
    拍照時 js/photo.js 會把 .fx 的 SVG 一起畫進去。全部自己畫的。 */
 const fxIcon = r => (ICON[r] || '').replace(/currentColor/g, '#ff6fb0');
 const FIX = {
-  // 開著的門，門外是天空和小島的一角
+  // 開著的門，門外是天空和花園的一角
   yardDoor: () => `<svg viewBox="0 0 60 100"><rect x="2" y="4" width="56" height="96" rx="6" fill="#c98f56"/><rect x="7" y="9" width="46" height="91" rx="3" fill="#bfe8ff"/>
     <circle cx="42" cy="24" r="6" fill="#fff3b0"/><path d="M12 40c-3 0-4-4-1-5 1-4 6-4 8-2 3-1 7 1 6 4 3 1 2 3-1 3z" fill="#fff"/>
     <path d="M7 86l22-13 24 12v15H7z" fill="#bfe6a0"/><path d="M7 86l22-13 24 12" fill="none" stroke="#9fd17f" stroke-width="2"/>
@@ -333,7 +333,7 @@ function fixPaint(){
   else if (r === 'kitchen'){ add('fx-counter', FIX.counter(), `left:50%;width:44%;${base}`); add('fx-hooks', FIX.hooks(), 'left:81%;width:24%;top:calc(var(--wh,52%)*.3)'); }
   // 通往隔壁的門口（照切換鈕的順序）。看明信片時只有一間，不畫
   if (VISIT && VISIT.card) return;
-  // 小島不排在「隔壁」裡：它是從客廳的門走出去的，所以小島左邊的門口通客廳，最後一間的右邊沒有門口
+  // 花園不排在「隔壁」裡：它是從客廳的門走出去的，所以花園左邊的門口通客廳，最後一間的右邊沒有門口
   const L = roomList().filter(x => x !== 'yard'), i = L.indexOf(r), prev = r === 'yard' ? 'living' : L[i - 1], next = r === 'yard' ? null : L[i + 1];
   if (prev) add('fx-pass l', FIX.pass(prev, 'l'), `left:0;width:9%;${base}`, prev, `去${ROOM_LABEL[prev]}`);
   if (next) add('fx-pass r', FIX.pass(next, 'r'), `left:100%;width:9%;${base}`, next, `去${ROOM_LABEL[next]}`);

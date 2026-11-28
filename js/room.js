@@ -14,7 +14,7 @@ const ICON = {
 };
 ICON.yard='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 11.5L12 7l9.5 4.5L12 16z"/><path d="M2.5 11.5V13l9.5 4.5 9.5-4.5v-1.5L12 16z" opacity=".55"/><path d="M12 7V3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 3.4c1.6-.8 3.3-.4 4.4.6-1.5.8-3.1.7-4.4-.6z"/><path d="M5 19.4c1-1 2.6-1 3.4 0 .8-.8 2.2-.7 2.8.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const RIDS=['living','bed','bath'];
-// 上面的房間鈕、通往隔壁的門口用這個：去朋友家時，對方還沒有新的小島就不列小島（js/yard.js 會把 yard 加進 RIDS）
+// 上面的房間鈕、通往隔壁的門口用這個：去朋友家時，對方還沒有新的花園就不列花園（js/yard.js 會把 yard 加進 RIDS）
 const roomList=()=>RIDS.filter(r=>r!=='yard'||!VISIT||!!VISIT.yard);
 let roomId='living', items=[];
 // 去朋友家的時候（visit.js）：VISIT = {name, home, look}，房間畫朋友的，不能拖、不存檔
@@ -240,13 +240,13 @@ function whereDoll(id){if(typeof S!=='undefined'&&S.album&&S.album.out&&S.album.
 /* 收納架（2026-11-27 重新整理，使用者說分類亂）：四個分頁 娃娃｜家具｜牆和地板｜紀念品。
    - 每一頁「已經有的」在前面；「還沒有的」收在最下面一排「還沒有的 N 樣」，預設收起來，點了才展開，展開後每一格寫怎麼拿。
    - 娃娃：在這一間的 → 在別間的（標房間）→ 出門旅行或過夜的（標背包或月亮）→ 還沒有的。
-   - 家具：每一間都能擺，所以列全部的（掛牆上的不放小島），分三組：可以坐的躺的、擺著的、牆上和地上的。
+   - 家具：每一間都能擺，所以列全部的（掛牆上的不放花園），分三組：可以坐的躺的、擺著的、牆上和地上的。
      每組裡：新的 → 還沒擺的 → 擺在這一間的 → 擺在別間的（標房間，點了搬過來）；小標題寫幾件，點了收起來。
    - 紀念品：旅行的土產和節日的東西，每一間都能擺；擺在別間的標房間，點了搬過來。
    收起來還是展開不存檔，重新整理就收回去。 */
 const trayMore={doll:false,furn:false,deco:false,keep:false};
 const trayShut={};   // 家具那一頁哪幾組收起來了
-// 這一間放不放得下：掛牆上的不放小島（小島沒有牆）。已經擺在小島上的照樣列出來，才收得回去
+// 這一間放不放得下：掛牆上的不放花園（花園沒有牆）。已經擺在花園裡的照樣列出來，才收得回去
 const furnFits=id=>!(roomId==='yard'&&FURN[id].wall&&whereFurn(id)!=='yard');
 /* 一件家具同時只在一間。兩台裝置的房間合在一起時（js/account.js 的 mergeSave 會留著這台剛買的房間）可能同一件出現在兩間：
    留前面那一間的，後面的拿掉，坐在上面的娃娃站回地上。開始的時候跟「不認得的東西」一起檢查。
@@ -307,7 +307,7 @@ function renderTray(){
     h+=trayLocked(DOLLS.filter(id=>!DOLL_N[id]),id=>`<button class="tile lock" data-doll="${id}" aria-label="還沒來的娃娃，${trayHow('doll',id)[1]}"><img src="${SPR[id]}" alt=""><small class="how">${trayHow('doll',id)[0]}</small></button>`);
   } else if(tab==='furn'){
     // 家具每一間都能擺（2026-11-27）：列全部的家具，不只這一間的。一件同時只在一間，擺在別間的標那一間的小圖、點了搬過來。
-    // 掛牆上的不放小島。三組，每組裡：新的 → 還沒擺的 → 擺在這一間的 → 擺在別間的；同一種裡「這一間常用的」（原本限定這一間的）排前面
+    // 掛牆上的不放花園。三組，每組裡：新的 → 還沒擺的 → 擺在這一間的 → 擺在別間的；同一種裡「這一間常用的」（原本限定這一間的）排前面
     const ids=Object.keys(FURN).filter(id=>!FURN[id].season&&!FURN[id].souv&&furnFits(id));
     const lab=w=>(typeof ROOM_LABEL!=='undefined'&&ROOM_LABEL[w])||'別間';
     const tile=id=>{const w=whereFurn(id),here=w===roomId,away=!!w&&!here,isNew=!w&&nw.includes(id);
@@ -364,7 +364,7 @@ function furnRoomTag(id){
   const f=FURN[id];if(!f)return '';
   return `<span class="rm-tag">${f.wall?'屋裡每一間都能掛':'每一間都能擺'}</span>`;
 }
-// 去擺：留在現在這一間（掛牆上的在小島擺不了，帶去客廳），打開收納架的家具分頁、捲到那一件並閃一下
+// 去擺：留在現在這一間（掛牆上的在花園擺不了，帶去客廳），打開收納架的家具分頁、捲到那一件並閃一下
 function furnGo(id){
   const f=FURN[id];if(!f||VISIT)return;
   const now=goingTo??roomId,r=now==='yard'&&f.wall?'living':now;
@@ -544,7 +544,7 @@ function layout(){
   if(Math.abs(ratio-RATIO)>.001||Math.abs(wall-WALL)>.001){
     RATIO=ratio;WALL=wall;
     if(items.length)render();
-    if(typeof yardPaint==='function')yardPaint();   // 小島地上的東西是照牆高算位置的，比例變了要重畫
+    if(typeof yardPaint==='function')yardPaint();   // 花園地上的東西是照牆高算位置的，比例變了要重畫
   }
 }
 new ResizeObserver(layout).observe(area);

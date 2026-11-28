@@ -3,7 +3,7 @@
    - 點娃娃冒一顆愛心
    - 下面一條：「留一顆愛心」，每個朋友一天一顆（firestore.rules 擋）。不顯示誰送的，對方只看得到今天收到幾顆
    - 「回家」回自己的房間
-   - 第五版：下面多一排小按鈕（訪客簿、看小島、讓娃娃過夜）和願望木牌，各自寫在 book.js、water.js、stay.js、want.js */
+   - 第五版：下面多一排小按鈕（訪客簿、看花園、讓娃娃過夜）和願望木牌，各自寫在 book.js、water.js、stay.js、want.js */
 const VB_HEART = HEART('#ff6fb0', '#fff');
 let visitBack = 'living';
 
@@ -72,7 +72,7 @@ function visitOpen(f){
     }
   };
   bar.querySelector('.vb-home').onclick = visitClose;
-  // 第五版：訪客簿、願望木牌、看小島、過夜，各自在自己的檔案裡加按鈕（js/social.js 的 visitExtras）
+  // 第五版：訪客簿、願望木牌、看花園、過夜，各自在自己的檔案裡加按鈕（js/social.js 的 visitExtras）
   const more = bar.querySelector('.vb-more');
   if (f.uid) visitExtras.forEach(fn => { try { fn(f, more); } catch (e) { console.info('[visit]', e); } });
   bar.hidden = false;
@@ -80,7 +80,7 @@ function visitOpen(f){
 
 function visitClose(){
   if (!VISIT) return;
-  if (typeof yardOn !== 'undefined' && yardOn) yardClose();   // 正在看朋友的小島
+  if (typeof yardOn !== 'undefined' && yardOn) yardClose();   // 正在看朋友的花園
   VISIT = null;
   screen.classList.remove('visiting');
   $('#vbar').hidden = true;

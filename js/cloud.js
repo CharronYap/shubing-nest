@@ -227,12 +227,12 @@ export function createCloud(config, { emulator = false } = {}) {
       if (!user) throw new Error('not signed in');
       try { await F.setDoc(F.doc(db, 'nestRooms', user.uid), data); }
       catch (e) {
-        // 小島重做（2026-11-27）：小島這間的擺設放 home.yard，規則發布前不收。先只拿掉這一間再寫一次，其他都留著
+        // 花園重做（2026-11-27）：花園這間的擺設放 home.yard，規則發布前不收。先只拿掉這一間再寫一次，其他都留著
         if (e && e.code === 'permission-denied' && data.home && data.home.yard) {
           const h = { ...data.home }; delete h.yard;
           return this.saveRoom({ ...data, home: h });
         }
-        // 保險（規則已發布，正常不會走到這裡）：第五版的 want（願望清單）、yard（小島給朋友看的樣子）舊版規則不收。還沒發布時先拿掉再寫，房間照樣放得上去
+        // 保險（規則已發布，正常不會走到這裡）：第五版的 want（願望清單）、yard（花園給朋友看的樣子）舊版規則不收。還沒發布時先拿掉再寫，房間照樣放得上去
         // 躲貓貓的 hide（規則 2026-11-26 已發布）也一樣留著保險：被擋就先拿掉，房間照樣放得上去
         const extra = ['want', 'yard', 'hide'].filter(k => k in data);
         const rooms = data.home ? ['kitchen', 'attic'].filter(k => k in data.home) : [];
@@ -355,7 +355,7 @@ export function createCloud(config, { emulator = false } = {}) {
       const s = await F.getDoc(F.doc(db, 'nestRooms', uid, 'pics', id));
       return s.exists() ? { ...s.data(), id: s.id } : null;
     },
-    // ---------- 幫朋友的小島澆水（nestRooms/{主人}/water/{日子_澆的人}） ----------
+    // ---------- 幫朋友的花園澆水（nestRooms/{主人}/water/{日子_澆的人}） ----------
     async waterAdd(uid, day, { fromName, plot }) {
       await ready;
       if (!user) throw new Error('not signed in');

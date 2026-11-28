@@ -1,7 +1,7 @@
 /* 天色和天氣（2026-11-26）：不用存檔、不用連網路。
    - 天色四段：清晨 5–7 點（窗外偏粉橘）、白天、傍晚 17–19 點（偏橘紅）、晚上。開著燈的房間光線也跟著帶一點顏色。
    - 天氣照日期算出來，同一天每個人看到的一樣：晴天五成、多雲三成、下雨兩成。下雨隔天早上（7–11 點）有機會出現彩虹。
-   - 下雨天：娃娃有對應的小事（多排一件）和說的話；小島那天不用澆水，種好的地自己冒芽。
+   - 下雨天：娃娃有對應的小事（多排一件）和說的話；花園那天不用澆水，種好的地自己冒芽。
    - 窗外的季節景色（js/season.js 的 winSeason）照樣疊在上面。
    不懲罰、不催人：下雨只是多一點事可以看，沒有任何東西會因為天氣變壞。 */
 const SKY_NAME = {sun: '晴天', cloud: '多雲', rain: '下雨'};
@@ -69,7 +69,7 @@ function skyEvents(t){
   return pool.length ? [pool[skyHash('ev' + t) % pool.length]] : [];
 }
 const skyLine = d => (skyWeather() === 'rain' && Math.random() < .35 ? SKY_LINES[d] : '');
-// 下雨天小島不用澆水：還沒開的花都算澆過了（js/yard.js）
+// 下雨天花園不用澆水：還沒開的花都算澆過了（js/yard.js）
 function skyRainWater(){
   if (VISIT || skyWeather() !== 'rain') return;
   if (typeof yardRain === 'function') yardRain();

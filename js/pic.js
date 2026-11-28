@@ -14,7 +14,7 @@ let picBusy = false;
 const picCan = () => DOLLS.filter(d => DOLL_N[d] && !(typeof dollAway === 'function' && dollAway(d)));
 
 // 按快門那一刻，朋友這間房間的樣子。晃到別的地方的照牠現在的位置記，睡著的記 zz
-// 在朋友家的小島（yard）上按的：拍客廳
+// 在朋友家的花園（yard）上按的：拍客廳
 function picSnap(){
   const rid = ROOM_NAME[roomId] ? roomId : 'living', here = rid === roomId;
   const r = here ? cur() : VISIT.home[rid], look = {}, its = [];

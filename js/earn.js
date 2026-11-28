@@ -43,7 +43,7 @@ $('#coinPill').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key
    存檔：S.earn = {
      d:'今天', g:今天玩了幾局小遊戲,
      work:[{d:娃娃, t:'上次領錢的日子'}],        等著送人的娃娃自動當店員（照 DOLL_N 算出來，不用手動派），最多算 3 隻
-     hv:{第幾塊地:'上次收成的日子'}, bag:{flower, fruit},   小島收成，拿去小店換幣
+     hv:{第幾塊地:'上次收成的日子'}, bag:{flower, fruit},   花園收成，拿去小店換幣
      hc:{d:第幾天, n:今天朋友的愛心換了幾枚},
      ms:[領過的里程碑],
      shop:{d:'今天', items:[今天擺的], bought:[今天買過的]}   （js/shop.js）
@@ -140,7 +140,7 @@ $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('[data-clerkg]'); if (b) spareGive(b.dataset.clerkg);
 });
 
-/* ---------- 小島收成：花和果子在小島上點一下就收（js/yard.js），這裡只管拿去小店換幣 ---------- */
+/* ---------- 花園收成：花和果子在花園裡點一下就收（js/yard.js），這裡只管拿去小店換幣 ---------- */
 const EARN_FLOWER = '<svg viewBox="0 0 40 40"><path d="M20 36V22" stroke="#4f9a3c" stroke-width="3" stroke-linecap="round"/><g fill="#ffb3d3" stroke="#e0609d" stroke-width="2"><circle cx="20" cy="9" r="5"/><circle cx="12" cy="15" r="5"/><circle cx="28" cy="15" r="5"/><circle cx="15" cy="23" r="5"/><circle cx="25" cy="23" r="5"/></g><circle cx="20" cy="16.5" r="4.4" fill="#ffd75e" stroke="#d99a1c" stroke-width="1.8"/></svg>';
 const EARN_FRUIT = '<svg viewBox="0 0 40 40"><circle cx="20" cy="23" r="12" fill="#ff9aa8" stroke="#d95a70" stroke-width="2.4"/><path d="M20 12c0-4 2-6 5-7" fill="none" stroke="#8a5a3a" stroke-width="2.4" stroke-linecap="round"/><path d="M22 9c4-3 8-2 9 1-3 2-7 2-9-1z" fill="#8fd47a" stroke="#4f9a3c" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 20c1-3 3-4 5-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';
 const earnBagN = () => { const b = earnData().bag; return (b.flower || 0) + (b.fruit || 0); };
@@ -169,7 +169,7 @@ function earnMsList(){
   DOLLS.forEach(d => L.push({k: 'doll-' + d, n: 5, ok: !!met[d], t: `第一次遇到${DOLL_NAME[d]}`}));
   Object.entries(EARN_SETS).forEach(([k, ids]) => L.push({k: 'set-' + k, n: 10, ok: ids.every(i => FURN_OWN[i]), t: `湊齊${EARN_SET_NAME[k] || '一個系列'}`}));
   DOLLS.forEach(d => [10, 30].forEach(c => L.push({k: `n${c}-${d}`, n: 10, ok: (cnt[d] || 0) >= c, t: `跟${DOLL_NAME[d]}一起做完 ${c} 件小事`})));
-  // 小島重做前是「12 塊地都整好」；以前整好的人照樣算（S.yard.old12）
+  // 花園重做前是「12 塊地都整好」；以前整好的人照樣算（S.yard.old12）
   L.push({k: 'yard', n: 20, ok: !!(S.yard && (S.yard.old12 || Object.keys(S.yard.fl || {}).length >= 6)), t: '花園的花收過 6 種'});
   return L;
 }

@@ -1,11 +1,11 @@
-/* 幫朋友的小島澆水（第五版；2026-11-26 跟著小島重做改寫）
-   去朋友家：走到他的小島（客廳的門，或上面的房間鈕），點一朵還沒開的花，幫他澆一次水。
+/* 幫朋友的花園澆水（第五版；2026-11-26 跟著花園重做改寫）
+   去朋友家：走到他的花園（客廳的門，或上面的房間鈕），點一朵還沒開的花，幫他澆一次水。
    - 每個朋友每天一次、一次一朵，澆的人拿 1 枚幣。已經開的花、空的格子不用澆。
    主人：下次打開遊戲，那朵花快 3 小時（那一格已經開了或空了，就換另一朵還沒開的），那一格插一支小牌子，點一下看是誰、順便收掉。
    - 一天最多收 3 個朋友的澆水，多的留到隔天。
    不懲罰、不催人：沒人來澆不會怎樣，花一樣會開；牌子不收也不會怎樣。
    雲端：公開資料 nestRooms/{自己}.yard = {p:[12 格]}。規則要剛好 12 格，所以前 6 格是花圃（{s:'f', k:花, g:長到哪} 或 {s:'e'} 空的），後 6 格填 {s:'x'}。
-         舊版的 12 塊地沒有 x，看到就當作對方還沒有新的小島。
+         舊版的 12 塊地沒有 x，看到就當作對方還沒有新的花園。
          nestRooms/{主人}/water/{日子_澆的人} = {from, fromName, day, plot}，plot 是第幾格（0～5）
    存檔（都放在 S.yard 裡）：wd = [套用過的編號]（最多 30 個，刪除失敗也不會算兩次）、ws = [{p:第幾格, n:名字}]（小牌子）、wn = {d:'日期', n:今天收了幾個} */
 const WATER_DAY = 3, WATER_COIN = 1;
@@ -17,7 +17,7 @@ function waterPublic(){
   const y = S.yard; if (!y || y.v !== 2 || !Array.isArray(y.bed)) return null;
   return {p: [...y.bed.slice(0, 6).map(b => (b ? {s: 'f', k: b.k, g: ydStage(b)} : {s: 'e'})), ...Array.from({length: 6}, () => ({s: 'x'}))]};
 }
-// 朋友公開的那一份：格式不對、或還是舊版的 12 塊地，就當作他還沒有新的小島
+// 朋友公開的那一份：格式不對、或還是舊版的 12 塊地，就當作他還沒有新的花園
 function waterClean(y){
   if (!y || !Array.isArray(y.p) || y.p.length !== 12 || !y.p.slice(6).every(p => p && p.s === 'x')) return null;
   return {bed: y.p.slice(0, 6).map(p => (p && p.s === 'f' && YD_FLOWERS[p.k] ? {k: p.k, g: Math.max(1, Math.min(3, p.g | 0))} : null)), done: null, asked: false, busy: false};

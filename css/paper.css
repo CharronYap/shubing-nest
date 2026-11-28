@@ -1,5 +1,5 @@
 /* 新風格：紙雕立體・夜燈（js/paper.js）。2026-11-26 起是預設；網址加 ?look=old 就沒有 .look-paper、.screen.ppon 這兩個 class，這個檔的樣式一條都不會套上去。
-   .screen.ppon = 新風格、而且現在在房間那一頁（五間房間都算；小島、娃娃機不算）。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
+   .screen.ppon = 新風格、而且現在在房間那一頁（五間房間都算；花園、娃娃機不算）。顏色（--p-*）由 js/paper.js 照天色寫在 #screen 上。
    字：2026-11-27 曾經整個換成手寫字 LXGW WenKai TC。2026-11-28 起只有娃娃說話用文楷，一個檔 lxgw-00（css/lxgw.css、--f-say）。
    --p-hand 就是 css/style.css 的 --f-body（粉圓）；標題用 --f-head（源泉圓體，規則寫在 style.css）；說話泡泡用 --f-say（文楷）。 */
 .screen.ppon{
@@ -208,7 +208,7 @@
 .look-paper .roam-tg.on{background:var(--p-a2);color:var(--p-paper)}
 
 /* =====================================================================
-   娃娃機那一頁、門外小島、封面（B4、B2 的小島）
+   娃娃機那一頁、門外的花園、封面（B4、B2 的花園）
    ===================================================================== */
 /* 娃娃機：機台是畫布（顏色在 js/paper.js 換），這裡是外框和下面的按鈕 */
 .look-paper #claw{border-radius:14px;box-shadow:0 5px 0 var(--p-edge),0 12px 16px var(--p-shadow)}
@@ -224,7 +224,7 @@
 .look-paper .pity i{border-radius:2px;background:var(--p-edge)}
 .look-paper .pity i.on{background:var(--p-a1)}
 .look-paper .wk-row small{background:var(--p-ink);color:var(--p-paper);border-radius:5px;font-family:var(--p-hand)}
-/* 小島：天空和下面那張紙 */
+/* 花園：天空和下面那張紙 */
 .look-paper .yard,.look-paper .yard.night{background:linear-gradient(var(--p-sky),color-mix(in srgb,var(--p-sky) 55%,var(--p-wall)) 72%,var(--p-wall2))}
 .look-paper .yd-panel{background:linear-gradient(color-mix(in srgb,var(--p-paper) 66%,transparent),color-mix(in srgb,var(--p-paper) 66%,transparent)),var(--p-fiber),var(--p-paper);
   background-size:auto,192px 192px,auto;background-blend-mode:normal,multiply,normal;color:var(--p-ink);border-radius:16px;box-shadow:0 -2px 0 var(--p-edge),0 -6px 10px var(--p-shadow)}
@@ -369,7 +369,7 @@
 .look-paper .al-pal svg.on{fill:var(--p-a1)}
 
 /* =====================================================================
-   門外小島（js/yard.js）：風景那兩大張不要加影子濾鏡；面板裡的格子
+   門外的花園（js/yard.js）：風景那兩大張不要加影子濾鏡；面板裡的格子
    ===================================================================== */
 #room .fx.yd-bg svg{filter:none!important}
 .look-paper .yd-kind.no{border:0;background:var(--p-paperd);box-shadow:none}

@@ -412,7 +412,7 @@ const MAIL_NEWS = [
   {id:'one1', t:'2026-11-26', b:'娃娃的事改了一下……我跟你說。\n每一種娃娃，家裡就住一隻。\n如果夾到家裡已經有的，那一隻可以送給朋友，也可以先留著。\n留著的那一隻，會站在娃娃機旁邊當店員，每天帶 2 枚幣回來。想送人的時候，點牠就可以。\n已經留一隻了，又夾到一樣的，會變成 3 枚幣。以前多出來的，也幫你換成幣了。\n我也想當店員。可是火腿說……客人等不了那麼久。'},
   {id:'look1', t:'2026-11-26', b:'小窩變了一個樣子喔。你有發現嗎。\n牆壁、家具、按鈕，都變成一張一張的紙，疊在一起。字也換了，像用筆寫的。\n晚上房間會暗暗的，窗戶旁邊有一圈黃黃的光。\n東西都在原本的地方。娃娃、家具、幣，一個都沒有少。\n壁紙和地板的花紋變得淡淡的，要靠很近才看得到。\n我每一間都去看過了。走了……一個下午。沙發還是我的。'},
   {id:'tv1', t:'2026-11-26', b:'我跟你說喔……大家可以去旅行了。\n客廳的門旁邊有一個背包。點它，可以放點心進去。點心在火腿的小店買。\n放好就不用管了喔。誰想出門，會自己背著走。要去哪裡，牠們自己決定。\n出門的那一隻，會留一張紙條給你。牠在路上會寄明信片回來，回家還會帶小東西給你。\n沒有放點心，牠們也會出門，只是走不遠。\n相簿上面有一顆「旅行」，明信片都貼在那裡。\n我也想去泡溫泉。現在出發的話……大概明年會到。'},
-  // 小島重做：yard2 只寄給有舊進度換到幣的人（js/yard.js 的 yardMigMail 寄，幣附在那一封上）；其他人收 yard2n
+  // 花園重做：yard2 只寄給有舊進度換到幣的人（js/yard.js 的 yardMigMail 寄，幣附在那一封上）；其他人收 yard2n
   {id:'yard2', mig:1, t:'2026-11-27', b:'我跟你說喔……門外面的花園，整個換新了。\n現在從客廳的門走出去，就是花園。娃娃可以帶過去玩。\n中間有一排花圃。點空的地方就可以種花，大概半天會開。開了點一下，就收起來了。\n左邊有一棵大樹，每天會長三顆果子。點樹，果子就掉下來。\n前面的墊子上有一個盤子。放一份點心，會有小客人跑來吃，還會留東西給你。\n以前種的東西，我幫你換成幣了，放在信裡面。\n我也想搖那棵樹。我搖了喔……它還沒有動。'},
   {id:'yard2n', t:'2026-11-27', b:'我跟你說喔……門外面的花園，整個換新了。\n現在從客廳的門走出去，就是花園。娃娃可以帶過去玩。\n中間有一排花圃。點空的地方就可以種花，大概半天會開。開了點一下，就收起來了。\n左邊有一棵大樹，每天會長三顆果子。點樹，果子就掉下來。\n前面的墊子上有一個盤子。放一份點心，會有小客人跑來吃，還會留東西給你。\n你不在的時候，小客人也會來喔。\n我也想搖那棵樹。我搖了喔……它還沒有動。'},
   {id:'fam1', t:'2026-11-27', b:'大家……可以一起出門了喔。\n火腿的小店多了一個野餐籃。放進門邊的背包，下一次就是全家一起去。\n全家出門的時候，客廳會留一張大紙條。上面寫去哪裡、什麼時候回來。\n牠們會寄全家福回來。回家的時候，每一隻都帶一樣小東西。\n還有喔，每次回家都會多一張合照。相簿上面的「旅行」點進去，最上面那一排就是。\n全家一起走的時候，大家都在前面等我。謝謝大家……等我。'},
@@ -494,7 +494,7 @@ function mailAdd(d, type, q, today, ai, hm){
   let a = null;
   if (type === 'news') a = (MAIL_NEWS.find(x => 'id=' + x.id === q) || {}).a || null;
   if (type !== 'news' && m.att !== today && d !== 'nyanko' && Math.random() < MAIL_ATT_RATE){
-    // 去過小島之後，三成的附件改成一顆種子
+    // 去過花園之後，三成的附件改成一顆種子
     const seed = typeof yardPickSeed === 'function' && S.yard && S.yard.day && Math.random() < .3;
     a = seed ? 'seed-' + yardPickSeed() : d === 'moodeng' ? 'bubble' : Math.random() < .5 ? 'snack' : 'bubble';
     m.att = today;
@@ -534,7 +534,7 @@ function mailCheck(atOpen){
   const m = mailInit(), t = todayStr(), y = +t.slice(0, 4);
   const met = S.album.met || {};
   const dup = mailDedupe(m);   // 兩台裝置合併留下的重複信：清一次
-  const ydMig = typeof yardMigMail === 'function' && yardMigMail();   // 小島舊進度換成的幣：薯餅的信（js/yard.js）
+  const ydMig = typeof yardMigMail === 'function' && yardMigMail();   // 花園舊進度換成的幣：薯餅的信（js/yard.js）
   const first = Object.values(met).sort()[0] || t;
   let changed = !!ydMig || dup > 0;
   const old = first < MAIL_HI_FROM;   // 歡迎信做好以前就在玩的人
@@ -743,13 +743,13 @@ function openMail(keep){
   evOpen = false; alOpen = false;
   const cur = $('#sheet .ml-cats .on'); if (cur && cur.scrollIntoView) try { cur.scrollIntoView({block: 'nearest', inline: 'nearest'}); } catch (e) {}
 }
-// 附件的圖和名字：點心盒、泡泡球、幣（coin-幾枚）、機票（ticket），或小島的種子（seed-種類）
+// 附件的圖和名字：點心盒、泡泡球、幣（coin-幾枚）、機票（ticket），或花園的種子（seed-種類）
 const mailAtt = a => (a.startsWith('coin-') ? {name: `${+a.slice(5) || 0} 枚幣`, svg: COIN} : a === 'ticket' ? {name: '機票', svg: (typeof TV_GOODS !== 'undefined' && TV_GOODS.ticket ? TV_GOODS.ticket.ic : COIN)} : (typeof yardAtt === 'function' && yardAtt(a)) || WISH[a]);
 function mailTake(o){
   if (!o.a || o.g) return; o.g = 1;
   if (o.a.startsWith('coin-')){ S.coins += +o.a.slice(5) || 0; renderHud(); return; }
   if (o.a === 'ticket'){ if (typeof tvTicketTake === 'function') tvTicketTake(); return; }   // 機票放進行李的用品裡（js/travel.js）；另一台收過了就不再多一張
-  if (o.a.startsWith('seed-')){ S.coins += 1; return; }   // 小島重做後沒有種子了，舊信裡的種子換成 1 枚幣
+  if (o.a.startsWith('seed-')){ S.coins += 1; return; }   // 花園重做後沒有種子了，舊信裡的種子換成 1 枚幣
   S.wish[o.a] = (S.wish[o.a] || 0) + 1;
 }
 $('#sheet').addEventListener('click', e => {
