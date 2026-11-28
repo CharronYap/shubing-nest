@@ -30,6 +30,7 @@
 //   cloud.cardSend({to, snap 或 tv, msg, fromName}) / cloud.cardsTo() / cloud.cardDel(id)                                    明信片（tv：旅行明信片，js/card.js）
 //   cloud.letterSend({to, msg, re, d, fromName}) / cloud.lettersTo() / cloud.letterDel(id)                                    回信（js/letter.js）
 //   cloud.picAdd(uid, day, {fromName, doll, look, x, y, snap}) / cloud.picMine(uid, day) / cloud.pics(since) / cloud.pic(uid, id)   去朋友家拍合照（js/pic.js）
+//     doll 是 'none' 的是沒帶娃娃、拍朋友家現況的照片（2026-11-28 合照改法之後都是這種），look 是 {}，x、y 沒有意義（寫 50、86）
 //   cloud.chatSend(uid, {m, s}) / chatRecent(uid) / chatOlder(uid, cur) / chatSince(uid, ts) / chatMeta(uid) / chatMetas() / chatSeen(uid) / chatDel(uid, id)   朋友聊天（js/chat.js）
 //
 // SDK 從 Google 的 CDN 載（約 110 KB gzip），只有打開遊戲後才在背景載，不會拖慢開始。

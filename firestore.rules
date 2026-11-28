@@ -445,6 +445,8 @@ service cloud.firestore {
     //   x、y 牠站的位置（0～100）、snap 屋主那間房間當時的樣子（跟明信片同一個 okCardSnap）。兩邊之後照這份重畫，畫出來是同一張
     //   文件名字由今天和拍的人組成，所以一位朋友一天只能留一張；只能留在好友家（任一邊加了對方都算，跟愛心一樣），不能是自己家
     //   屋主讀得到全部、能刪；拍的人只能讀自己那張（確認今天留過沒、紀念冊重畫），不能刪；寫了不能改
+    //   2026-11-28 合照改法：改成直接拍朋友家現在的樣子，不帶娃娃去。新的照片 doll 寫 'none'、look 寫 {}，
+    //   x、y 寫 50、86（沒有意義，只是讓下面的檢查照舊通過）。doll 是真的娃娃的是改法之前的舊照片。下面的檢查沒有改
     match /nestRooms/{uid}/pics/{pid} {
       allow get: if request.auth != null
         && (request.auth.uid == uid || pid.split('_')[1] == request.auth.uid);

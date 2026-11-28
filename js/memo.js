@@ -61,8 +61,9 @@ function memoText(e){
     case 'waterOut': return `幫${w}的花園澆水`;
     case 'letterOut': return e.m ? `寫信給${w}：「${txSlot(e.m)}」` : `寄了一封信給${w}`;
     case 'letterIn': return `收到${w}寫的信`;
-    case 'picOut': return `帶${d}去${w}家拍了照`;
-    case 'picIn': return `${w}帶${d}來家裡拍了照`;
+    // 合照：e.d 空的是改法之後的新照片（沒帶娃娃，拍朋友家現在的樣子），有娃娃的是舊紀錄
+    case 'picOut': return e.d ? `帶${d}去${w}家拍了照` : `去${w}家拍了照`;
+    case 'picIn': return e.d ? `${w}帶${d}來家裡拍了照` : `${w}來家裡拍了照`;
   }
   return '';
 }
@@ -143,7 +144,7 @@ addEventListener('nestnet', () => { memoWrap(); memoStart(); });
 /* ---------- 今天誰來過 ---------- */
 const WHO_SAY = {
   bookIn: () => '在訪客簿留了話', waterIn: () => '幫花園澆了水', guest: e => `帶${DOLL_NAME[e.d] || '娃娃'}來過夜`, cardIn: () => '寄了明信片', letterIn: () => '寫了一封信給你',
-  picIn: e => `帶${DOLL_NAME[e.d] || '娃娃'}來拍了一張照`,
+  picIn: e => (e.d ? `帶${DOLL_NAME[e.d] || '娃娃'}來拍了一張照` : '來拍了一張照'),
   hideFound: e => `找到躲起來的${DOLL_NAME[e.d] || '娃娃'}`, hideMiss: e => `來找躲起來的${DOLL_NAME[e.d] || '娃娃'}，沒找到`,
 };
 async function whoShow(){
