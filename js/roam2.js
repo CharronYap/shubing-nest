@@ -197,7 +197,7 @@ function rvBg(){
   if (to) rvGo(i, r, to);
 }
 // 出門的那一間：門口留一個小腳印（同一個門出去的共用一個），點了說誰去哪裡玩了。不是房間的東西，拍照不畫
-const RV_PAW = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#b98a6a" opacity=".8"><ellipse cx="12" cy="15.6" rx="5" ry="4.3"/><circle cx="5.8" cy="9.6" r="2.2"/><circle cx="9.8" cy="6.2" r="2.2"/><circle cx="14.2" cy="6.2" r="2.2"/><circle cx="18.2" cy="9.6" r="2.2"/></g></svg>';
+const RV_PAW = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#8a5a3c"><ellipse cx="12" cy="15.6" rx="5" ry="4.3"/><circle cx="5.8" cy="9.6" r="2.2"/><circle cx="9.8" cy="6.2" r="2.2"/><circle cx="14.2" cy="6.2" r="2.2"/><circle cx="18.2" cy="9.6" r="2.2"/></g></svg>';
 function rvPaws(){
   const out = {};
   if (!VISIT && !window.PIC_LOCK) Object.values(RV).forEach(v => { if (v.from === roomId) (out[v.out] = out[v.out] || []).push(v); });
@@ -207,7 +207,7 @@ function rvPaws(){
     if (!el){
       el = document.createElement('button'); el.className = 'rvp'; el.dataset.door = door; el.innerHTML = RV_PAW;
       const x = door === 'l' ? 5.5 : door === 'r' ? 94.5 : rvDoor(door)[0];   // 門口正下方的地板上
-      el.setAttribute('style', `position:absolute;left:${x}%;top:${roomY(52.6)}%;width:9%;padding:1.5%;transform:translateX(-50%);background:none;border:0;cursor:pointer;z-index:300;-webkit-tap-highlight-color:transparent`);
+      el.setAttribute('style', `position:absolute;left:${x}%;top:${roomY(52.6)}%;width:12%;padding:1.5%;transform:translateX(-50%);background:none;border:0;cursor:pointer;z-index:300;-webkit-tap-highlight-color:transparent`);
       el.addEventListener('click', e => { e.stopPropagation(); const L = Object.values(RV).filter(v => v.from === roomId && v.out === el.dataset.door); if (L.length) toast(L.map(v => `${DOLL_NAME[v.id]}去${ROOM_SHORT[v.to] || ROOM_LABEL[v.to]}玩了`).join('，')); });
       room.appendChild(el);
     }
@@ -274,7 +274,7 @@ function rvTick(){
   // 沒在看的房間：每 1～2 分鐘可能有一隻換去另一間
   if (now >= rvBgAt){ rvBgAt = now + rnd(60, 120) * 1000; rvBg(); rvPaint(); }
   // 別間的娃娃偶爾自己過來坐一下
-  if (Math.random() < 1 / 30 && rvBring(roomId)) rvPaint();
+  if (Math.random() < 1 / 90 && rvBring(roomId)) rvPaint();
   // 客人偶爾自己說一句
   Object.values(RV).filter(v => v.to === roomId).forEach(v => { if (Math.random() < 1 / 18){ const L = ROAM_LINES[v.id]; say({kind: 'doll', id: v.id, x: v.x, y: v.y}, L[Math.floor(Math.random() * L.length)]); } });
 }
