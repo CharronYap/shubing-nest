@@ -5,6 +5,10 @@
      樣式寫在這個檔裡（gm3Css，class 都是 gm3- 開頭），沒有放進 css/style.css。
    - 連星星（2026-11-28）：夜空裡有標了 1、2、3 的星星，照順序點，連成一個形狀（每隻娃娃一個），連完那隻冒出來講一句。
      45 秒算連出幾個。點錯的星星只會晃一下，不扣東西；下一顆一直在閃，不用記。樣式在 gm4Css，class 都是 gm4- 開頭。
+   - 快門時間（2026-11-28）：娃娃一隻一隻從畫面左邊或右邊跳過去，快慢和跳多高照個性（ROAM_P），跳進中間的相框時按快門（點畫面、按鈕或空白鍵）。
+     照離框中間多遠分成很清楚、還不錯、有點晃到，晃到的照片糊一點。40 秒算拍了幾張，最後排成一條底片。框外按只提示一下，不扣東西。
+     每隻經過只有一次機會，張數大家差不多，所以給幣（gameEnd 的 3～5）看「很清楚」有幾張。
+     樣式在 gm5Css，class 都是 gm5- 開頭。
    給幣：每天前 3 局照成績給 3～5 枚，之後每一局固定 1 枚，沒有次數上限（js/earn.js 的 earnGameDone）。
    不懲罰、不催人：漏接、翻錯都不扣東西，中途關掉也不會怎樣（只是那一局沒有幣）。 */
 const GAME_TV = '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3" fill="currentColor"/><rect x="5.5" y="8.5" width="10" height="7" rx="1.5" fill="#fff"/><circle cx="18" cy="10" r="1" fill="#fff"/><circle cx="18" cy="13.5" r="1" fill="#fff"/><path d="M9 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -339,6 +343,135 @@ function gameStars(){
   gmRaf = requestAnimationFrame(tick);
 }
 
+/* ---------- 快門時間 ---------- */
+// 拍到時那隻說的（兩句輪流）。對話框只有一行，所以每句都短
+const GM5_SAY = {sloth: ['……拍好了嗎。', '我有在笑，慢慢的。'], egg: ['拍完了吧。好累。', '躺著拍比較好看。'], dog: ['汪！再拍一張！', '我有看你這邊！'], moodeng: ['我最好看！！', '再拍！！拍跳起來的！！'],
+  nyanko: ['哼，拍好看一點。', '本大爺很上相吧。'], dino: ['嘿嘿，我做鬼臉了。', '被拍到了，嘿嘿。'], snoopy: ['作家的封面照。', '拍我帥的那一邊。'], piggy: ['這張我給八十分。', '拍照費下次再算。']};
+// 圖片 112 格高，腳踩在第幾格（img/ 的圖下面留的透明不一樣，照這個往下移，娃娃才會站在地上）。龍龍 2026-11-28 換成趴著的 3D 圖
+const GM5_FOOT = {sloth: 98, egg: 108, dog: 105, moodeng: 91, nyanko: 108, dino: 97, snoopy: 106, piggy: 107};
+const GM5_GRADE = [['ok3', '很清楚'], ['ok2', '還不錯'], ['ok1', '有點晃到']];
+const GM5_ICON = '<svg viewBox="0 0 40 40"><rect x="4" y="11" width="32" height="23" rx="6" fill="#8fc6e6" stroke="#4a8fb8" stroke-width="2.2"/><path d="M14 11l2.6-4.4h6.8L26 11" fill="#cdeeff" stroke="#4a8fb8" stroke-width="2.2" stroke-linejoin="round"/><circle cx="20" cy="22.5" r="7.4" fill="#fff" stroke="#4a8fb8" stroke-width="2.2"/><circle cx="20" cy="22.5" r="3.6" fill="#4a8fb8"/><circle cx="30.5" cy="16" r="1.8" fill="#ffd75e"/></svg>';
+function gm5Css(){
+  if (document.getElementById('gm5-css')) return;
+  const s = document.createElement('style'); s.id = 'gm5-css';
+  s.textContent = `
+.gm5-field{position:relative;height:min(52dvh,400px);border-radius:16px;overflow:hidden;background:linear-gradient(var(--p-sky,#e9f6ff),var(--p-wall,#fff6e6) 62%,var(--p-floor,#f6e3ec) 62%);touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer;outline:none}
+.gm5-field:focus-visible{box-shadow:inset 0 0 0 3px var(--p-sun,#ffd66b)}
+.gm5-frame{position:absolute;left:32%;width:36%;top:20%;bottom:7%;border-radius:10px;background:rgba(255,255,255,.22);pointer-events:none}
+.gm5-frame i{position:absolute;width:18%;aspect-ratio:1;border:3.5px solid var(--p-paper,#fff);opacity:.9;filter:drop-shadow(0 1px 1px rgba(90,70,80,.35));transition:border-color .12s}
+.gm5-frame i:nth-child(1){left:-2px;top:-2px;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+.gm5-frame i:nth-child(2){right:-2px;top:-2px;border-left:0;border-bottom:0;border-radius:0 10px 0 0}
+.gm5-frame i:nth-child(3){left:-2px;bottom:-2px;border-right:0;border-top:0;border-radius:0 0 0 10px}
+.gm5-frame i:nth-child(4){right:-2px;bottom:-2px;border-left:0;border-top:0;border-radius:0 0 10px 0}
+.gm5-frame.on i{border-color:var(--p-sun,#ffd66b);opacity:1}
+.gm5-frame b{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;border:2px solid var(--p-paper,#fff);opacity:.7}
+.gm5-doll{position:absolute;bottom:7%;width:25%;transform:translateX(-50%);pointer-events:none}
+.gm5-doll img{display:block;width:100%;aspect-ratio:1;object-fit:contain;position:relative;z-index:1}
+.gm5-sh{position:absolute;left:50%;bottom:0;width:60%;height:9px;margin-bottom:-4px;border-radius:50%;background:var(--p-ink,#7a5a6a);opacity:.15;transform:translateX(-50%)}
+.gm5-doll.snap img{animation:gm5Pose .5s ease-out}
+.gm5-say{position:absolute;z-index:3;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);white-space:nowrap;padding:3px 8px;border-radius:10px;font-size:12px;font-weight:800;font-style:normal;line-height:1.3;background:var(--p-paper,#fff);color:var(--p-ink,var(--ink,#5a4650));box-shadow:0 2px 0 var(--p-edge,#ead9e2);animation:gm5Say 1.4s forwards}
+.gm5-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.gm5-flash.on{animation:gm5Flash .32s ease-out}
+.gm5-msg{position:absolute;left:0;right:0;top:9%;text-align:center;font-size:15px;font-weight:900;color:var(--p-ink,var(--ink,#5a4650));text-shadow:0 1px 0 var(--p-paper,#fff);pointer-events:none;animation:gm5Msg 1.1s forwards}
+.gm5-msg.soft{font-size:13px;font-weight:800;opacity:.85}
+.gm5-strip{position:absolute;left:6px;top:6px;display:flex;gap:4px;pointer-events:none}
+.gm5-ph{position:relative;flex:none;width:34px;height:40px;box-sizing:border-box;padding:3px 3px 8px;border-radius:4px;background:var(--p-paper,#fff);box-shadow:0 2px 0 var(--p-edge,#ead9e2);overflow:hidden}
+.gm5-ph span{display:block;width:100%;height:100%;border-radius:2px;overflow:hidden;background:linear-gradient(var(--p-sky,#e9f6ff),var(--p-wall,#fff6e6) 70%,var(--p-floor,#f6e3ec) 70%)}
+.gm5-ph img{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 100%}
+.gm5-ph.ok2 img{filter:blur(.5px)}
+.gm5-ph.ok1 img{filter:blur(1.3px)}
+.gm5-strip .gm5-ph{animation:gm5Pop .3s ease-out}
+.gm5-shoot{display:flex;justify-content:center;margin-top:10px}
+.gm5-btn{display:flex;align-items:center;gap:8px;padding:9px 22px 9px 12px;border-radius:999px;font-size:15px}
+.gm5-btn svg{width:30px;height:30px;display:block}
+.gm5-film{display:flex;gap:6px;max-width:100%;overflow-x:auto;margin:8px auto 2px;padding:7px 8px;border-radius:8px;box-sizing:border-box;background:#4a3f48 repeating-linear-gradient(90deg,transparent 0 7px,rgba(255,255,255,.55) 7px 11px,transparent 11px 18px) top/100% 4px no-repeat;-webkit-overflow-scrolling:touch}
+.gm5-film .gm5-ph{width:46px;height:54px;padding:4px 4px 11px;box-shadow:none}
+@keyframes gm5Pose{0%,100%{transform:none}40%{transform:translateY(-10%) scale(1.06,.94)}}
+@keyframes gm5Say{0%{opacity:0;margin-bottom:-4px}12%,78%{opacity:1;margin-bottom:0}100%{opacity:0}}
+@keyframes gm5Flash{0%{opacity:.85}100%{opacity:0}}
+@keyframes gm5Msg{0%{opacity:0;transform:translateY(4px)}15%,75%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes gm5Pop{0%{transform:scale(.5);opacity:.2}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.gm5-doll.snap img,.gm5-strip .gm5-ph,.gm5-msg{animation:none}.gm5-flash.on{animation:none;opacity:.35}}`;
+  document.head.appendChild(s);
+}
+// 一張照片（小格子）：娃娃在照片裡的位置照按下去那時離框中間多遠，晃到的比較糊
+const gm5Photo = p => `<span class="gm5-ph ${p.g}"><span><img src="${SPR[p.d]}" alt="" style="transform:translateX(${(p.off * 22).toFixed(1)}%)"></span></span>`;
+function gameShutter(){
+  gm5Css();
+  const SEC = 40;
+  const own = DOLLS.filter(d => DOLL_N[d] > 0), pool = own.length ? own : DOLLS.slice();
+  const o = gameShell('快門時間', `<div class="gm-body"><div class="gm5-field" tabindex="0" role="button" aria-label="娃娃跳進相框時按一下拍照，也可以按空白鍵">
+      <div class="gm5-frame" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
+      <div class="gm5-strip" aria-hidden="true"></div><div class="gm5-flash"></div>
+    </div>
+    <div class="gm5-shoot"><button class="btn y gm5-btn" aria-label="按快門">${GM5_ICON}<span>按快門</span></button></div>
+    <p class="gm-tip">娃娃跳進相框時按快門，越中間越清楚。沒拍到不扣東西。</p></div>`);
+  const field = o.querySelector('.gm5-field'), frame = o.querySelector('.gm5-frame'), strip = o.querySelector('.gm5-strip'), flash = o.querySelector('.gm5-flash'), st = o.querySelector('.gm-st');
+  const HALF = 18;   // 相框一半的寬度（場地寬度的 %），跟 .gm5-frame 的 left、width 對得上
+  const photos = [], said = {};
+  let cur = null, last = '', wait = 0, over = false, msgEl = null;
+  const t0 = performance.now();
+  let prev = t0;
+  const msg = (t, soft) => { if (msgEl) msgEl.remove(); msgEl = document.createElement('p'); msgEl.className = 'gm5-msg' + (soft ? ' soft' : ''); msgEl.setAttribute('aria-live', 'polite'); msgEl.textContent = t; field.appendChild(msgEl); const m = msgEl; setTimeout(() => { if (m === msgEl){ m.remove(); msgEl = null; } }, 1100); };
+  // 下一隻上場：從左邊或右邊跳進來。快慢和跳多高照個性（js/roamdata.js 的 ROAM_P：hop 越大越慢、high 跳得高；蛋黃哥幾乎是滾過去）
+  const spawn = now => {
+    let d, k = 0; do d = pool[Math.floor(Math.random() * pool.length)]; while (pool.length > 1 && d === last && k++ < 20);
+    last = d;
+    const P = ROAM_P[d] || {hop: 450}, dir = Math.random() < .5 ? 1 : -1, el = (now - t0) / 1000;
+    const cross = (2 + P.hop / 1000 * 3.6) / (1 + el / SEC * .3);   // 走完整個畫面要幾秒，後面慢慢快一點
+    const e = document.createElement('div'); e.className = 'gm5-doll';
+    e.innerHTML = `<span class="gm5-sh"></span><img src="${SPR[d]}" alt="" style="transform:translateY(${((112 - (GM5_FOOT[d] || 106)) / 112 * 100).toFixed(1)}%)">`;
+    field.insertBefore(e, strip);
+    cur = {d, dir, x: dir > 0 ? -16 : 116, v: 132 / cross, hop: P.hop * 1.25, amp: REDUCE ? 0 : d === 'egg' ? 2 : P.high ? 15 : d === 'sloth' ? 5 : 9, t: 0, shot: false, pose: 0, el: e};
+  };
+  const shoot = () => {
+    if (over || !o.isConnected) return;
+    if (!cur || cur.shot){ msg(cur && cur.shot ? '拍好了，等下一隻' : '等娃娃跳進框裡再按', 1); return; }
+    const off = (cur.x - 50) / HALF;
+    if (Math.abs(off) > 1){ msg('等娃娃跳進框裡再按', 1); return; }
+    const a = Math.abs(off), g = a <= .3 ? 0 : a <= .65 ? 1 : 2;
+    cur.shot = true; cur.pose = .55;
+    const p = {d: cur.d, g: GM5_GRADE[g][0], off}; photos.push(p);
+    flash.classList.remove('on'); void flash.offsetWidth; flash.classList.add('on');
+    if (!REDUCE){ cur.el.classList.remove('snap'); void cur.el.offsetWidth; cur.el.classList.add('snap'); }
+    msg(GM5_GRADE[g][1]);
+    const k = said[cur.d] = ((said[cur.d] ?? -1) + 1) % GM5_SAY[cur.d].length;
+    const b = document.createElement('i'); b.className = 'gm5-say'; b.textContent = GM5_SAY[cur.d][k]; cur.el.appendChild(b);
+    strip.insertAdjacentHTML('beforeend', gm5Photo(p));
+    while (strip.children.length > 5) strip.firstElementChild.remove();
+  };
+  field.addEventListener('pointerdown', e => { e.preventDefault(); shoot(); });
+  field.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); shoot(); } });
+  o.querySelector('.gm5-btn').addEventListener('click', shoot);
+  field.focus({preventScroll: true});
+  const tick = now => {
+    if (over || !o.isConnected) return;
+    const dt = Math.min(50, now - prev) / 1000, el = (now - t0) / 1000; prev = now;
+    if (!cur && now >= wait && el < SEC - 1.2) spawn(now);
+    if (cur){
+      if (cur.pose > 0){ cur.pose -= dt; if (cur.pose <= 0) cur.t = 0; }       // 拍到了：停下來擺一下（在半空中的慢慢落地），擺完從地上重新起跳
+      else { cur.x += cur.dir * cur.v * (cur.shot ? 2.2 : 1) * dt; cur.t += dt * 1000; }   // 拍完的跑快一點離開
+      const y = cur.amp * Math.abs(Math.sin(Math.PI * cur.t / cur.hop)) * (cur.pose > 0 ? cur.pose / .55 : 1);
+      cur.el.style.left = cur.x + '%';
+      cur.el.style.bottom = `calc(7% + ${y.toFixed(2)}%)`;
+      frame.classList.toggle('on', !cur.shot && Math.abs(cur.x - 50) <= HALF);
+      if (cur.x < -18 || cur.x > 118){ cur.el.remove(); cur = null; frame.classList.remove('on'); wait = now + 250 + Math.random() * 350; }
+    }
+    st.textContent = `${photos.length} 張・${Math.max(0, Math.ceil(SEC - el))} 秒`;
+    if (el >= SEC){
+      over = true; st.textContent = '';
+      const good = photos.filter(p => p.g === 'ok3').length;
+      gameEnd(o, photos.length ? `拍了 ${photos.length} 張照片${good ? `，${good} 張很清楚` : ''}` : '這一局還沒拍到，下次再來', good >= 8 ? 5 : good >= 4 ? 4 : 3, gameShutter);
+      // 這一局拍到的排成一條底片
+      const res = o.querySelector('.gm-end .gm-res');
+      if (res && photos.length){ const f = document.createElement('div'); f.className = 'gm5-film'; f.setAttribute('aria-label', `這一局拍到的 ${photos.length} 張照片`); f.innerHTML = photos.map(gm5Photo).join(''); res.after(f); }
+      return;
+    }
+    gmRaf = requestAnimationFrame(tick);
+  };
+  gmRaf = requestAnimationFrame(tick);
+}
+
 /* ---------- 選單 ---------- */
 function gameMenu(){
   if (VISIT) return;
@@ -348,12 +481,13 @@ function gameMenu(){
       <div class="er-it"><span class="ic">${HEART('#ffb3d3', '#fff')}</span><span class="tx2"><b>翻牌</b><small>12 張牌，找出一樣的兩張</small></span><button class="btn y sm" data-gm="flip">玩</button></div>
       <div class="er-it"><span class="ic">${GM3_BOX}</span><span class="tx2"><b>這是誰的</b><small>40 秒，把東西送回給牠的主人</small></span><button class="btn y sm" data-gm="whose">玩</button></div>
       <div class="er-it"><span class="ic">${GM4_ICON}</span><span class="tx2"><b>連星星</b><small>45 秒，照順序點星星，連出一個形狀</small></span><button class="btn y sm" data-gm="stars">玩</button></div>
+      <div class="er-it"><span class="ic">${GM5_ICON}</span><span class="tx2"><b>快門時間</b><small>40 秒，娃娃跳進相框時按快門</small></span><button class="btn y sm" data-gm="shutter">玩</button></div>
     </div>`);
   evOpen = false; alOpen = false;
 }
 $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('[data-gm]'); if (!b) return;
-  if (b.dataset.gm === 'catch') gameCatch(); else if (b.dataset.gm === 'whose') gameWhose(); else if (b.dataset.gm === 'stars') gameStars(); else gameFlip();
+  if (b.dataset.gm === 'catch') gameCatch(); else if (b.dataset.gm === 'whose') gameWhose(); else if (b.dataset.gm === 'stars') gameStars(); else if (b.dataset.gm === 'shutter') gameShutter(); else gameFlip();
 });
 // 點電視（接在衣櫃的 onFurnTap 後面）
 {
