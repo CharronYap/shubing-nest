@@ -10,21 +10,45 @@ let toys = [];
 const claw = { x:58, y:HOME, open:1, state:'idle', hold:null, dir:0, t:0, plan:null };
 
 // 機台裡的東西：娃娃，或是扭蛋（裡面是鎖住的家具、壁紙，或願望道具）
-const CAP_RATE = .2;
-function pickToy(){ return Math.random() < CAP_RATE ? 'cap' : DOLLS[Math.floor(Math.random()*DOLLS.length)]; }
+// 固定 5 顆扭蛋、5 隻娃娃（CAP_N）。夾走扭蛋補扭蛋、夾走娃娃補娃娃，一直維持 5 和 5
+const CAP_N = 5, TOY_N = 10;
+const pickDoll = () => DOLLS[Math.floor(Math.random()*DOLLS.length)];
+const toyNew = (t, x, y) => ({ t, x, y, s:66+Math.random()*8, r:(Math.random()-.5)*.35, vy:0, wob:0 });
+const live = () => toys.filter(t => !t.gone && !t.sink);
+const PILE_SPOTS = [[140,392],[190,396],[240,392],[290,396],[330,390],[165,354],[215,350],[265,356],[310,352],[238,316]];
+// 排 10 個：照 x 排序後兩兩一組，每組抽一個放扭蛋，扭蛋就會左右散開，不會全擠在同一邊
+function pileSpots(){
+  const byX = PILE_SPOTS.map((p, i) => i).sort((a, b) => PILE_SPOTS[a][0] - PILE_SPOTS[b][0]);
+  const cap = new Set();
+  for (let i = 0; i < byX.length; i += 2) cap.add(byX[i + (Math.random() < .5 ? 0 : 1)]);
+  return PILE_SPOTS.map(([x, y], i) => ({ t: cap.has(i) ? 'cap' : pickDoll(), x: x + (Math.random()*10-5), y }));
+}
 function pile(){
-  toys = [];
-  const spots = [[140,392],[190,396],[240,392],[290,396],[330,390],[165,354],[215,350],[265,356],[310,352],[238,316]];
-  spots.forEach(([x,y]) => toys.push({ t:pickToy(), x:x+(Math.random()*10-5), y, s:66+Math.random()*8, r:(Math.random()-.5)*.35, vy:0, wob:0 }));
+  toys = pileSpots().map(p => toyNew(p.t, p.x, p.y));
 }
 function refill(){
-  if (toys.filter(t=>!t.gone).length >= 9) return;
+  const now = live();
+  if (now.length >= TOY_N) return;
   const x = 150 + Math.random()*170;
-  toys.push({ t:pickToy(), x, y:RAIL+60, s:66+Math.random()*8, r:(Math.random()-.5)*.35, vy:0, wob:0, fall:true, rest:restY(x) });
+  const t = now.filter(t => t.t === 'cap').length < CAP_N ? 'cap' : pickDoll();
+  toys.push(Object.assign(toyNew(t, x, RAIL+60), { fall:true, rest:restY(x) }));
+}
+// 換一批：免費、不限次數，不存檔。舊的往下掉、淡掉，新的從上面掉下來（0.5 秒內）；減少動態效果就直接換
+const clawBusy = () => claw.state !== 'idle' || toys.some(t => t.held || (t.toChute && !t.gone)) || !!document.querySelector('.over');
+function clawReroll(){
+  if (clawBusy()) return;
+  if (RM){ pile(); return; }
+  toys = toys.filter(t => !t.gone);
+  toys.forEach(t => { t.sink = 1; t.fall = false; t.alpha = 1; });
+  pileSpots().forEach(p => {
+    const t = toyNew(p.t, p.x, RAIL+60), T = .3 + Math.random()*.15;   // T 秒內落地
+    t.fall = true; t.rest = p.y; t.vy = Math.max(0, (p.y - t.y - 450*T*T) / T);
+    toys.push(t);
+  });
 }
 function restY(x){ // 簡單的堆疊高度
   let y = 396;
-  for (const t of toys) if (!t.gone && !t.held && !t.fall && Math.abs(t.x-x) < 34) y = Math.min(y, t.y - 38);
+  for (const t of toys) if (!t.gone && !t.sink && !t.held && !t.fall && Math.abs(t.x-x) < 34) y = Math.min(y, t.y - 38);
   return Math.max(y, 250);
 }
 function fit(){
@@ -77,10 +101,11 @@ function drawCap(s){
   heart(0, r*.48, r*.22, '#ffc2dc');
 }
 function drawToy(t){
-  if (t.t === 'cap'){ g.save(); g.translate(t.x, t.y); g.rotate(t.r + Math.sin(t.wob)*0.18*(t.wobA||0)); drawCap(t.s); g.restore(); return; }
-  const im = imgs[t.t]; if (!im) return;
-  g.save(); g.translate(t.x, t.y); g.rotate(t.r + Math.sin(t.wob)*0.18*(t.wobA||0));
-  g.drawImage(im, -t.s/2, -t.s/2, t.s, t.s); g.restore();
+  g.save(); if (t.sink) g.globalAlpha = Math.max(0, t.alpha);   // 換一批時往下掉的舊東西，慢慢淡掉
+  g.translate(t.x, t.y); g.rotate(t.r + Math.sin(t.wob)*0.18*(t.wobA||0));
+  if (t.t === 'cap') drawCap(t.s);
+  else { const im = imgs[t.t]; if (im) g.drawImage(im, -t.s/2, -t.s/2, t.s, t.s); }
+  g.restore();
 }
 /* ---------- 爪子：五種樣子（形狀和轉軸都一樣，只換外觀） ---------- */
 let clawStyle = S.clawStyle;
@@ -275,7 +300,7 @@ const SLIP_MIN_X = CHUTE.x1 + 36;                    // 半路掉下去最左只
 const inChute = t => t.x < CHUTE.x1 + 6;             // 娃娃的中心在出口那一格裡
 function topToyAt(x){
   let best = null;
-  for (const t of toys) if (!t.gone && !t.fall && Math.abs(t.x - x) < 26) if (!best || t.y < best.y) best = t;
+  for (const t of toys) if (!t.gone && !t.sink && !t.fall && Math.abs(t.x - x) < 26) if (!best || t.y < best.y) best = t;
   return best;
 }
 function startDrop(){
@@ -342,6 +367,7 @@ function step(ts){
   if (h){ h.x = claw.x; h.y = claw.y + h.s*0.42; }
   // 掉落
   for (const t of toys){
+    if (t.sink){ t.y += 160*dt; t.alpha -= dt*4; if (t.alpha <= 0) t.gone = true; continue; }   // 換一批：舊的往下掉、0.25 秒淡掉
     if (t.fall){
       t.vy += 900*dt; t.y += t.vy*dt;
       if (t.y >= t.rest){
@@ -355,6 +381,8 @@ function step(ts){
     else if (!t.gone && !t.held && claw.state === 'idle' && inChute(t)){ t.fall = true; t.vy = 0; t.rest = FLOOR + 60; t.toChute = true; }
     if (t.wobA > 0 && !t.held && claw.state !== 'lift'){ t.wob += dt*12; t.wobA = Math.max(0, t.wobA - dt*1.4); }
   }
+  if (toys.length > 40) toys = toys.filter(t => !t.gone);
+  const rf = $('#clawRf'); if (rf){ const b = clawBusy(); if (rf.disabled !== b) rf.disabled = b; }   // 爪子在動、卡片開著：換一批是灰的
   if (page === 'claw') draw();
   requestAnimationFrame(step);
 }
@@ -364,6 +392,7 @@ const CICON = {
   l:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   r:'<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   go:'<svg viewBox="0 0 24 24"><path d="M12 3v11" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M6 13c0 4 2.5 7 6 7s6-3 6-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M8 13l4 3 4-3" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  rf:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9.5A7.5 7.5 0 0 0 5.6 8M5 14.5A7.5 7.5 0 0 0 18.4 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M19.5 4.5v5h-5M4.5 19.5v-5h5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   hold:'<svg viewBox="0 0 24 24"><path d="M5 12h13" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/><path d="M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 function holdBtn(el, onDown, onUp){
@@ -391,6 +420,8 @@ function renderCtrl(){
   go.innerHTML=CICON.go+`<span class="cost">${COIN}${freeNow ? 0 : COST}</span>`; go.setAttribute('aria-label', freeNow ? '放下爪子（今天第一次，不用幣）' : `放下爪子（${COST} 枚幣）`);
   const r = document.createElement('button'); r.className='rb'; r.innerHTML=CICON.r; r.setAttribute('aria-label','往右');
   [l,go,r].forEach(b => { b.disabled = busy; c.appendChild(b); });
+  const rf = document.createElement('button'); rf.className = 'rf'; rf.id = 'clawRf'; rf.innerHTML = CICON.rf + '<span>換一批</span>'; rf.setAttribute('aria-label', '換一批');
+  rf.disabled = clawBusy(); rf.onclick = clawReroll; c.appendChild(rf);
   holdBtn(l, () => claw.dir = -1, () => claw.dir = 0);
   holdBtn(r, () => claw.dir = 1, () => claw.dir = 0);
   go.onclick = startDrop;

@@ -34,7 +34,7 @@ const GUIDE = [
   {c: 'room', ic: CAM_ICON, t: '拍照', s: '右上角的相機。把現在的房間拍下來，可以存到手機。', go: () => { gdRoom(roomId === 'yard' ? 'living' : null); toast('右上角的相機，按一下就拍'); }},
   {c: 'room', ic: gdDoll('moodeng'), t: '窗外和季節', s: '窗外跟著時間、天氣、月份變。過節那幾天，收納架的紀念那一頁會多出節日的東西。'},
   // ---- 娃娃
-  {c: 'doll', ic: CLAW_ICON, t: '娃娃機', s: '夾娃娃、家具和扭蛋。每天第一次不用幣。', go: () => { gdShut(); setPage('claw'); }},
+  {c: 'doll', ic: CLAW_ICON, t: '娃娃機', s: '夾娃娃、家具和扭蛋。每天第一次不用幣，不喜歡這一批可以換。', go: () => { gdShut(); setPage('claw'); }},
   {c: 'doll', ic: EV_ICON, t: '今天的小事', s: '每天有幾件小事，點有記號的娃娃去處理，做完一件 3 枚。', go: () => { setPage('room'); openEvents(); }},
   {c: 'doll', ic: ALB_ICON, t: '相簿', s: '每隻說過的話、回憶、跟誰比較好。薯餅、蛋黃哥、皮蛋、貓咪老師可以用手指轉一圈。', go: () => { setPage('room'); openAlbum(); }},
   {c: 'doll', ic: gdDoll('egg'), t: '衣櫃', s: '幫娃娃換帽子和衣服。點房間裡的衣櫃，或相簿裡的「換衣服」。', go: () => { setPage('room'); openWardrobe(); }},
